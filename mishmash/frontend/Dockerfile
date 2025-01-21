@@ -4,15 +4,17 @@ WORKDIR /app
 
 # Add python and build tools for node-gyp
 RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with increased memory limit and network timeout
-RUN  npm install --legacy-peer-deps
+# Install dependencies 
+RUN npm install --legacy-peer-deps
 
 # Copy project files
 COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Use environment variable to determine whether to build and serve, or just serve in dev mode
+CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm run build && echo 'Production build complete'; else npm start; fi"]

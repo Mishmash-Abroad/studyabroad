@@ -10,27 +10,27 @@ app
 
 ```bash
 # Backup database
-docker-compose exec db pg_dump -U postgres postgres > backup.sql
+docker compose exec db mysqldump -u root -proot mishmash > backup.sql
 
 # Backup with timestamp
 timestamp=$(date +%Y%m%d_%H%M%S)
-docker-compose exec db pg_dump -U postgres postgres > backup_${timestamp}.sql
+docker compose exec db mysqldump -u root -proot mishmash > backup_${timestamp}.sql
 
 # Backup specific tables
-docker-compose exec db pg_dump -U postgres -t table_name postgres > table_backup.sql
+docker compose exec db mysqldump -u root -proot mishmash table_name > table_backup.sql
 ```
 
 #### Production Backup
 
 ```bash
 # Full backup with compression
-docker-compose exec db pg_dump -U postgres postgres | gzip > backup.sql.gz
+docker compose exec db mysqldump -u root -proot mishmash | gzip > backup.sql.gz
 
 # Automated daily backups (add to crontab)
 0 0 * * * /path/to/backup-script.sh
 
 # Backup to remote storage (example with AWS S3)
-docker-compose exec db pg_dump -U postgres postgres | gzip | aws s3 cp - s3://bucket/backup_$(date +%Y%m%d).sql.gz
+docker compose exec db mysqldump -u root -proot mishmash | gzip | aws s3 cp - s3://bucket/backup_$(date +%Y%m%d).sql.gz
 ```
 
 ### 2. Restore Procedures
@@ -39,56 +39,58 @@ docker-compose exec db pg_dump -U postgres postgres | gzip | aws s3 cp - s3://bu
 
 ```bash
 # Stop dependent services
-docker-compose stop backend
+docker compose stop backend
 
 # Restore database
-cat backup.sql | docker-compose exec -T db psql -U postgres postgres
+docker compose exec -T db mysql -u root -proot mishmash < backup.sql
 
 # Start services
-docker-compose start backend
+docker compose start backend
 ```
 
 #### Production Restore
 
 ```bash
 # 1. Stop application
-docker-compose stop backend
+docker compose stop backend
 
-# 2. Drop existing database (if needed)
-docker-compose exec db dropdb -U postgres postgres
-docker-compose exec db createdb -U postgres postgres
+# 2. Drop and recreate database (if needed)
+docker compose exec db mysql -u root -proot -e "DROP DATABASE IF EXISTS mishmash; CREATE DATABASE mishmash;"
 
 # 3. Restore from backup
-gunzip -c backup.sql.gz | docker-compose exec -T db psql -U postgres postgres
+gunzip -c backup.sql.gz | docker compose exec -T db mysql -u root -proot mishmash
 
 # 4. Start application
-docker-compose start backend
+docker compose start backend
 ```
 
 ### 3. Maintenance Procedures
 
-1. **Regular Maintenance**: ?idk what this does
+1. **Regular Maintenance**:
    ```bash
-   # Vacuum database
-   docker-compose exec db vacuumdb -U postgres -d postgres --analyze
+   # Optimize tables
+   docker compose exec db mysqlcheck -u root -proot --optimize mishmash
 
-   # Reindex database
-   docker-compose exec db reindexdb -U postgres postgres
+   # Analyze tables
+   docker compose exec db mysqlcheck -u root -proot --analyze mishmash
    ```
 
 2. **Monitoring**:
    ```bash
    # Check database size
-   docker-compose exec db psql -U postgres -c "\l+"
+   docker compose exec db mysql -u root -proot -e "SELECT table_schema 'Database', ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) 'Size (MB)' FROM information_schema.tables WHERE table_schema='mishmash' GROUP BY table_schema;"
 
    # Check table sizes
-   docker-compose exec db psql -U postgres -c "\dt+"
+   docker compose exec db mysql -u root -proot -e "SELECT table_name, ROUND((data_length + index_length) / 1024 / 1024, 2) 'Size (MB)' FROM information_schema.tables WHERE table_schema='mishmash';"
    ```
 
 3. **Performance Tuning**:
    ```bash
-   # Show slow queries
-   docker-compose exec db psql -U postgres -c "SELECT * FROM pg_stat_activity WHERE state = 'active';"
+   # Show running processes
+   docker compose exec db mysql -u root -proot -e "SHOW PROCESSLIST;"
+
+   # Show slow queries (if slow query log is enabled)
+   docker compose exec db mysql -u root -proot -e "SELECT * FROM mysql.slow_log;"
    ```
 
 ### 4. Backup Retention Policy
@@ -111,7 +113,7 @@ services:
   backend:    # Django API
   frontend:   # React SPA
   nginx:      # Reverse Proxy
-  db:         # PostgreSQL
+  db:         # MySQL
 ```
 
 ### 1. Backend (Django)
@@ -197,9 +199,15 @@ services:
       - media_volume:/app/media
     environment:
       - DEBUG=1
-      - DJANGO_ALLOWED_HOSTS=localhost dev-mishmash.colab.duke.edu mishmash.colab.duke.edu
+      - ALLOWED_HOSTS=localhost dev-mishmash.colab.duke.edu mishmash.colab.duke.edu
+      - DATABASE_NAME=mishmash
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=root
+      - DATABASE_HOST=db
+      - DATABASE_PORT=3306
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
@@ -227,16 +235,23 @@ services:
       - frontend
 
   db:
-    image: postgres:13
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - mysql_data:/var/lib/mysql
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=mishmash
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_data:
+  mysql_data:
   static_volume:
   media_volume:
   build_volume:
@@ -267,7 +282,7 @@ volumes:
 
 ### Volume Management
 
-- **postgres_data**: Persistent database storage
+- **mysql_data**: Persistent database storage
 - **static_volume**: Django static files
 - **media_volume**: User-uploaded content
 - **build_volume**: React production build
@@ -276,7 +291,12 @@ volumes:
 
 1. **Backend:**
    - `DEBUG`: Debug mode
-   - `DJANGO_ALLOWED_HOSTS`: Allowed host domains
+   - `ALLOWED_HOSTS`: Allowed host domains
+   - `DATABASE_NAME`: Database name
+   - `DATABASE_USER`: Database user
+   - `DATABASE_PASSWORD`: Database password
+   - `DATABASE_HOST`: Database host
+   - `DATABASE_PORT`: Database port
 
 2. **Frontend:**
    - `NODE_ENV`: Development/production mode
@@ -285,9 +305,8 @@ volumes:
    - `NGINX_CONFIG`: Configuration environment (dev/prod)
 
 4. **Database:**
-   - `POSTGRES_DB`: Database name
-   - `POSTGRES_USER`: Database user
-   - `POSTGRES_PASSWORD`: Database password
+   - `MYSQL_ROOT_PASSWORD`: Database root password
+   - `MYSQL_DATABASE`: Database name
 
 ## Docker Testing
 
@@ -468,7 +487,7 @@ docker-compose ps
 #          Name                     Command              State                    Ports
 # -------------------------------------------------------------------------------------------------
 # studyabroad_backend_1   python manage.py runserver ...   Up      8000/tcp
-# studyabroad_db_1        docker-entrypoint.sh postgres   Up      5432/tcp
+# studyabroad_db_1        docker-entrypoint.sh mysql ...   Up      0.0.0.0:3306->3306/tcp
 # studyabroad_frontend_1  npm start                       Up      3000/tcp
 # studyabroad_nginx_1     nginx -g daemon off;            Up      0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
 ```
@@ -560,3 +579,15 @@ docker-compose down --rmi all
 
 # Start fresh
 docker-compose up --build
+
+# Notes
+
+NODE_ENV=production docker compose up
+would set frontend container to npm run build. 
+
+docker compose exec backend env | grep DJANGO_ALLOWED_HOSTS
+test if env var is set 
+
+django user creation 
+
+docker compose exec backend python manage.py createsuperuser
