@@ -1,3 +1,10 @@
+# prod start
+
+docker compose -f docker-compose.prod.yml up
+
+
+
+
 # prod.conf
 
 server {
@@ -110,3 +117,9 @@ server {
         proxy_set_header Connection "upgrade";
     }
 }
+
+
+
+# Docker
+
+we have 2 docker compose files
