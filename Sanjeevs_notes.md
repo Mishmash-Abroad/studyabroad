@@ -1,3 +1,5 @@
+# prod.conf
+
 server {
     listen 80;
     server_name mishmash.colab.duke.edu;
@@ -55,5 +57,56 @@ server {
         try_files $uri $uri/ /index.html;
         expires 1h;
         add_header Cache-Control "public, no-transform";
+    }
+}
+
+
+
+# nginx.conf
+upstream backend {
+    server backend:8000;
+}
+
+upstream frontend {
+    server frontend:3000;
+}
+
+server {
+    listen 80;
+    server_name localhost dev.studyabroad.local;
+    
+    # Static files
+    location /static/ {
+        alias /app/static/;
+    }
+
+    location /media/ {
+        alias /app/media/;
+    }
+    
+    location /api/ {
+        proxy_pass http://backend;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+    }
+
+    location /admin/ {
+        proxy_pass http://backend;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+    }
+
+    location / {
+        proxy_pass http://frontend;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+        
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 }

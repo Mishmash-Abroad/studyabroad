@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     command: >
       sh -c "python manage.py wait_for_db &&
-             python manage.py migrate &&
+             python manage.py migrate && 
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./mishmash:/app
@@ -40,22 +40,6 @@ services:
       - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000/api}
     depends_on:
       - backend
-
-  nginx:
-    build: ./nginx
-    ports:
-      - "8080:80"   # Main HTTP port
-      - "8443:443"  # Main HTTPS port
-    volumes:
-      - static_volume:/app/static
-      - media_volume:/app/media
-      - build_volume:/app/frontend/build
-      - ./nginx/ssl:/etc/nginx/ssl
-    environment:
-      - NGINX_CONFIG=${NGINX_CONFIG:-dev}
-    depends_on:
-      - backend
-      - frontend
 
   db:
     image: mysql:8.0
