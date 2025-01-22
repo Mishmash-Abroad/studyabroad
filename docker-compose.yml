@@ -8,7 +8,6 @@ services:
              python manage.py migrate && 
              python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./mishmash:/app
       - static_volume:/app/static
       - media_volume:/app/media
     ports:
@@ -29,15 +28,28 @@ services:
     build: 
       context: ./mishmash/frontend
       dockerfile: Dockerfile
+    develop:
+      watch:
+        - path: ./mishmash/frontend/src
+          target: /app/src
+          action: sync
+          ignore:
+            - node_modules/
+            - build/
+        - path: ./mishmash/frontend/public
+          target: /app/public
+          action: sync
     volumes:
       - ./mishmash/frontend:/app
       - /app/node_modules
-      - build_volume:/app/build
     ports:
-      - "3000:3000"  # For development debugging
+      - "3000:3000"
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000/api}
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8000/api
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    command: npm start
     depends_on:
       - backend
 
