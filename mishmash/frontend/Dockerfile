@@ -8,13 +8,21 @@ RUN apk add --no-cache python3 make g++
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies 
+# Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy project files
+# Copy source for production build
+# In development, this will be overridden by the mounted volume
 COPY . .
 
 EXPOSE 3000
 
-# Use environment variable to determine whether to build and serve, or just serve in dev mode
-CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm run build && echo 'Production build complete'; else npm start; fi"]
+# If NODE_ENV=production, build static files, otherwise run dev server
+CMD sh -c "if [ \"$NODE_ENV\" = \"production\" ]; then \
+           echo 'Building production static files...' && \
+           npm run build && \
+           echo 'Build complete. Static files are in /app/build' && \
+           tail -f /dev/null; \
+           else \
+           npm start; \
+           fi"
