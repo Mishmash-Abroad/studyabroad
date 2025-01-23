@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-function TopNavBar() {
+function TopNavBar() {    
     return (
         <div>
            <button> Login </button>

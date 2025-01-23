@@ -64,7 +64,9 @@ services:
       - REACT_APP_API_URL=http://localhost:8000/api
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
-    command: npm start
+    command: >
+      sh -c "npm install react-router-dom --save &&
+            npm start"
     depends_on:
       - backend
 
