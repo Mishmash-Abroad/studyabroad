@@ -20,8 +20,8 @@ const Register = () => {
                 <form>
                     <TextField fullWidth label='Name' placeholder="Enter your name" />
                     <TextField fullWidth label='Email' placeholder="Enter your email" />
-                    <TextField fullWidth label='Password' placeholder="Enter your password"/>
-                    <TextField fullWidth label='Confirm Password' placeholder="Confirm your password"/>
+                    <TextField fullWidth label='Password' type='password' placeholder="Enter your password"/>
+                    <TextField fullWidth label='Confirm Password' type='password' placeholder="Confirm your password"/>
                     <Button type='submit' variant='contained' color='primary'>Sign up</Button>
                 </form>
             </Paper>
