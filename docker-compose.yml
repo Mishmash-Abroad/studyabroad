@@ -66,6 +66,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
     command: >
       sh -c "npm install react-router-dom --save &&
+            npm install @mui/material @mui/icons-material @mui/material @emotion/react @emotion/styled --save &&
             npm start"
     depends_on:
       - backend

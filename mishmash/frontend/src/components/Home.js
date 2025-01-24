@@ -1,15 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import TopNavBar from "./TopNavBar";
 function Home() {
   return (
     <>
       <div>
-        <Link to="/login">
-          <button>Go to Login</button>
-        </Link>
-        <Link to="/register">
-          <button>Go to Register</button>
-        </Link>
+       <TopNavBar />
         <div>
           <img
             src="https://student-cms.prd.timeshighereducation.com/sites/default/files/styles/default/public/2023-05/iStock-1371940128.jpg?itok=t4ZO_mEd"
