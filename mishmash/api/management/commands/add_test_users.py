@@ -1,3 +1,29 @@
+"""
+Study Abroad Program - Test Users Creation Command
+===============================================
+
+This Django management command creates test users for development and testing purposes.
+It populates the database with an admin user and multiple student users with diverse
+backgrounds to simulate real-world usage scenarios.
+
+Features:
+- Creates one admin user with full system access
+- Creates multiple student users with varied academic backgrounds
+- Sets up proper password hashing for security
+- Creates associated student profiles with academic information
+- All users created have password set to 'guest'
+
+Usage:
+    python manage.py add_test_users
+
+Note: This command should only be used in development/testing environments,
+      never in production as it creates users with known passwords.
+
+Related Models:
+- User: Custom user model with authentication fields
+- Student: Profile model containing academic information
+"""
+
 from django.core.management.base import BaseCommand
 from django.contrib.auth.hashers import make_password
 from api.models import User, Student
@@ -7,19 +33,20 @@ class Command(BaseCommand):
     help = 'Creates test users including admin and students'
 
     def handle(self, *args, **options):
-        # Create admin user
+        # Create admin user with full system access
         admin = User.objects.create(
             username='admin',
-            password=make_password('admin'),
+            password=make_password('admin'),  # Properly hashed password
             display_name='System Administrator',
             is_admin=True,
-            is_staff=True,
-            is_superuser=True,
-            is_active=True
+            is_staff=True,  # Allows access to Django admin interface
+            is_superuser=True,  # Grants all system permissions
+            is_active=True  # Account is active and can log in
         )
         self.stdout.write(f'Created admin user: {admin.username}')
 
-        # Create students with diverse backgrounds
+        # List of diverse student profiles with varied academic backgrounds
+        # Format: (display_name, username, major, gpa)
         students_data = [
             ('Emma Wilson', 'EmmaW', 'Computer Science', 3.8),
             ('James Chen', 'JamesC', 'International Relations', 3.9),
@@ -33,23 +60,24 @@ class Command(BaseCommand):
             ('Tom Anderson', 'TomA', 'Physics', 3.7)
         ]
 
+        # Create student users and their associated profiles
         for display_name, username, major, gpa in students_data:
-            # Create user with properly hashed password
+            # Create base user account with authentication fields
             user = User.objects.create(
                 username=username,
-                password=make_password('guest'),
+                password=make_password('guest'),  # All test users have password 'guest'
                 display_name=display_name,
                 is_admin=False,
                 is_staff=False,
                 is_superuser=False,
-                is_active=True
+                is_active=True  # Account is active and can log in
             )
             
-            # Create student profile
+            # Create associated student profile with academic information
             Student.objects.create(
                 user=user,
-                date_of_birth=date(2000, 1, 1),  # Example date
-                gpa=gpa,
-                major=major
+                date_of_birth=date(2000, 1, 1),  # Example birthdate
+                major=major,
+                gpa=gpa
             )
             self.stdout.write(f'Created student: {username} ({major})')
