@@ -1,9 +1,11 @@
-from rest_framework import viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import viewsets, filters
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from django.utils import timezone
+from django.db.models import Q
 from .models import Program, Application
 from .serializers import ProgramSerializer, ApplicationSerializer
 
@@ -32,8 +34,43 @@ def login_view(request):
     })
 
 class ProgramViewSet(viewsets.ModelViewSet):
-    queryset = Program.objects.all()
     serializer_class = ProgramSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'faculty_leads']
+    ordering_fields = ['application_deadline']
+    ordering = ['application_deadline']  # Default ordering
+
+    def get_queryset(self):
+        today = timezone.now().date()
+        queryset = Program.objects.filter(end_date__gte=today)
+        
+        # Get search query
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(faculty_leads__icontains=search)
+            )
+        
+        return queryset
+
+    @action(detail=True, methods=['get'])
+    def application_status(self, request, pk=None):
+        program = self.get_object()
+        if not request.user.is_authenticated:
+            return Response({'status': None})
+            
+        try:
+            application = Application.objects.get(
+                student__user=request.user,
+                program=program
+            )
+            return Response({
+                'status': application.status,
+                'application_id': application.id
+            })
+        except Application.DoesNotExist:
+            return Response({'status': None})
 
 class ApplicationViewSet(viewsets.ModelViewSet):
     queryset = Application.objects.all()
