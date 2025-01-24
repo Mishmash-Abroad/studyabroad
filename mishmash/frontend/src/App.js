@@ -1,11 +1,73 @@
 import "./App.css";
-import React from "react";
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Dashboard from "./pages/Dashboard";
+import axiosInstance from './utils/axios';
+import { useAuth } from "./context/AuthContext";
 import TopNavBar from "./components/TopNavBar";
 
-function App() {
+const LoginForm = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axiosInstance.post("/api/login/", {
+        username,
+        password,
+      });
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        axiosInstance.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
+        login(response.data);
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.error || "Invalid username or password");
+    }
+  };
+
   return (
-    <div>
-      <TopNavBar></TopNavBar>
+    <div style={{ maxWidth: "300px", margin: "20px auto", padding: "20px" }}>
+      <h2>Login</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={{ padding: "8px" }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ padding: "8px" }}
+        />
+        <button type="submit" style={{ padding: "8px", backgroundColor: "#007bff", color: "white", border: "none" }}>
+          Login
+        </button>
+      </form>
+    </div>
+  );
+};
+
+const HomePage = () => {
+  return (
+    <div style={{ padding: "20px" }}>
+      <h1>HCC Study Abroad Program</h1>
+      <p>Welcome to the Hypothetical City College Study Abroad Program portal.</p>
+      <LoginForm />
       <div>
         <img
           src="https://student-cms.prd.timeshighereducation.com/sites/default/files/styles/default/public/2023-05/iStock-1371940128.jpg?itok=t4ZO_mEd"
@@ -47,7 +109,7 @@ function App() {
         with a broader worldview and experiences that will enrich your personal
         and professional life. **Who Can Apply?** The HCC Study Abroad Program
         is open to all currently enrolled students who meet academic and conduct
-        requirements. Whether you're a first-time traveler or an experienced
+        requirements. Whether you’re a first-time traveler or an experienced
         globetrotter, our program has something to offer. **How to Get
         Started:** 1. Attend an informational session to learn about program
         options, costs, and application deadlines. 2. Meet with a study abroad
@@ -61,6 +123,27 @@ function App() {
         or contact us at studyabroad@hcc.edu. Your adventure awaits!
       </p>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <TopNavBar></TopNavBar>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
 
