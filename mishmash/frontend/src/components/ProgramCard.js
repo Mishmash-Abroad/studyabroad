@@ -1,16 +1,56 @@
+/**
+ * Study Abroad Program - Program Card Component
+ * =========================================
+ * 
+ * This component displays detailed information about a single study abroad program.
+ * It handles the display of program details, application status, and provides
+ * appropriate actions based on the current state of the application process.
+ * 
+ * Features:
+ * - Dynamic application button states
+ * - Real-time application status display
+ * - Date-aware application windows
+ * - Responsive layout
+ * - Admin vs student view handling
+ * 
+ * Application States:
+ * - Not Open: Before application window
+ * - Open: During application window
+ * - Closed: After application deadline
+ * - Applied: Application submitted
+ * - Enrolled: Student accepted and enrolled
+ * - Withdrawn/Canceled: Previous application exists
+ * 
+ * Used by:
+ * - ProgramBrowser for program listing
+ * - Dashboard for program management
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axios';
 
+/**
+ * Program Card Component
+ * 
+ * @param {Object} props
+ * @param {Object} props.program - Program data object containing details about the study abroad program
+ */
 const ProgramCard = ({ program }) => {
+    // State and context management
     const [applicationStatus, setApplicationStatus] = useState(null);
     const { user } = useAuth();
     const navigate = useNavigate();
+
+    // Date calculations for application window
     const today = new Date();
     const applicationOpenDate = new Date(program.application_open_date);
     const applicationDeadline = new Date(program.application_deadline);
 
+    /**
+     * Effect hook to fetch the current user's application status for this program
+     */
     useEffect(() => {
         const fetchApplicationStatus = async () => {
             try {
@@ -23,6 +63,12 @@ const ProgramCard = ({ program }) => {
         fetchApplicationStatus();
     }, [program.id]);
 
+    /**
+     * Determines and returns the appropriate application button or status badge
+     * based on current application status and dates
+     * 
+     * @returns {JSX.Element} Button or status badge component
+     */
     const getApplicationButton = () => {
         // For enrolled or applied applications, show status badge
         if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
@@ -67,6 +113,7 @@ const ProgramCard = ({ program }) => {
             );
         }
 
+        // Application window not yet open
         if (today < applicationOpenDate) {
             return (
                 <div className="not-open-badge" style={{
@@ -80,6 +127,7 @@ const ProgramCard = ({ program }) => {
             );
         }
 
+        // Application deadline passed
         if (today > applicationDeadline) {
             return (
                 <div className="deadline-passed-badge" style={{
@@ -93,6 +141,7 @@ const ProgramCard = ({ program }) => {
             );
         }
 
+        // Default apply button (disabled for admin users)
         return (
             <button
                 onClick={() => navigate(`/apply/${program.id}`)}
@@ -120,6 +169,7 @@ const ProgramCard = ({ program }) => {
             backgroundColor: 'white',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
+            {/* Program header with title and action button */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h3 style={{ margin: '0 0 10px 0' }}>{program.title}</h3>
@@ -132,8 +182,10 @@ const ProgramCard = ({ program }) => {
                 </div>
             </div>
             
+            {/* Program description */}
             <p style={{ margin: '15px 0' }}>{program.description}</p>
             
+            {/* Program dates and details */}
             <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

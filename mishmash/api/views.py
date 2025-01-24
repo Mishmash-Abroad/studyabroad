@@ -1,3 +1,32 @@
+"""
+Study Abroad Program API Views
+============================
+
+This module implements the core business logic and API endpoints for the Study Abroad Program.
+It provides ViewSets and views for managing programs, applications, and user authentication.
+
+Key Components:
+-------------
+1. Authentication
+   - User login with token generation
+   - Current user profile retrieval
+
+2. Programs
+   - List/search available programs
+   - Program details and management
+   - Application status checking
+
+3. Applications
+   - Submit and track applications
+   - Application status updates
+
+Security:
+--------
+- Token-based authentication required for most endpoints
+- Permission checks for admin-only operations
+- Proper request validation and error handling
+"""
+
 from rest_framework import viewsets, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
@@ -13,7 +42,14 @@ from .serializers import ProgramSerializer, ApplicationSerializer
 @permission_classes([IsAuthenticated])
 def get_current_user(request):
     """
-    Get the current user's data based on their authentication token
+    Retrieve the currently authenticated user's profile information.
+    
+    Requires:
+        - Valid authentication token in request header
+    
+    Returns:
+        - User ID, username, display name, and admin status
+        - 401 if not authenticated
     """
     user = request.user
     return Response({
@@ -26,17 +62,31 @@ def get_current_user(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
+    """
+    Authenticate a user and provide an access token.
+    
+    Accepts:
+        - username: User's login name
+        - password: User's password
+    
+    Returns:
+        - Authentication token and user details on success
+        - 400 if missing credentials
+        - 401 if invalid credentials
+    """
     username = request.data.get('username')
     password = request.data.get('password')
     
+    # Validate input
     if not username or not password:
         return Response({'error': 'Please provide both username and password'}, status=400)
     
+    # Authenticate user
     user = authenticate(username=username, password=password)
-    
     if not user:
         return Response({'error': 'Invalid credentials'}, status=401)
     
+    # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
     
     return Response({
@@ -48,6 +98,19 @@ def login_view(request):
     })
 
 class ProgramViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing study abroad programs.
+    
+    Provides CRUD operations for programs and includes:
+    - Search by title or faculty leads
+    - Ordering by application deadline
+    - Filtering for current/future programs only
+    - Application status checking for authenticated users
+    
+    Permissions:
+    - List/Retrieve: All users
+    - Create/Update/Delete: Admin only
+    """
     serializer_class = ProgramSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'faculty_leads']
@@ -55,10 +118,16 @@ class ProgramViewSet(viewsets.ModelViewSet):
     ordering = ['application_deadline']  # Default ordering
 
     def get_queryset(self):
+        """
+        Get the list of programs, filtered by:
+        - End date (only current/future programs)
+        - Search query (title or faculty leads)
+        """
+        # Only show current and future programs
         today = timezone.now().date()
         queryset = Program.objects.filter(end_date__gte=today)
         
-        # Get search query
+        # Apply search filter if provided
         search = self.request.query_params.get('search', None)
         if search:
             queryset = queryset.filter(
@@ -70,6 +139,13 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def application_status(self, request, pk=None):
+        """
+        Check the current user's application status for a specific program.
+        
+        Returns:
+        - Application status and ID if an application exists
+        - None if no application found or user not authenticated
+        """
         program = self.get_object()
         if not request.user.is_authenticated:
             return Response({'status': None})
@@ -87,5 +163,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
             return Response({'status': None})
 
 class ApplicationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing study abroad applications.
+    
+    Provides:
+    - List user's applications
+    - Submit new applications
+    - Update application status
+    - View application details
+    
+    Permissions:
+    - Users can only view/edit their own applications
+    - Admins can view/edit all applications
+    """
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer

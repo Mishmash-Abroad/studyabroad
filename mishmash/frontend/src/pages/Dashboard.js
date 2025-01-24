@@ -1,18 +1,54 @@
+/**
+ * Study Abroad Program - Dashboard Page Component
+ * =========================================
+ * 
+ * This component serves as the main interface for authenticated users,
+ * providing access to program browsing and user-specific information.
+ * It implements a tabbed interface to organize different sections of
+ * functionality.
+ * 
+ * Features:
+ * - Tabbed navigation system
+ * - User welcome message
+ * - Program browsing integration
+ * - Logout functionality
+ * - Responsive layout
+ * 
+ * Tabs:
+ * - Overview: Welcome message and quick actions
+ * - Programs: Full program browser interface
+ * 
+ * Used by:
+ * - Main application router
+ * - Protected route wrapper
+ */
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProgramBrowser from '../components/ProgramBrowser';
 
 const Dashboard = () => {
+  // State and context management
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
+  /**
+   * Handles user logout action
+   * Clears auth state and redirects to home
+   */
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  /**
+   * Generates styles for tab buttons based on active state
+   * 
+   * @param {boolean} isActive - Whether the tab is currently active
+   * @returns {Object} Style object for the tab
+   */
   const tabStyle = (isActive) => ({
     padding: '10px 20px',
     cursor: 'pointer',
@@ -26,6 +62,11 @@ const Dashboard = () => {
     fontWeight: isActive ? 'bold' : 'normal'
   });
 
+  /**
+   * Renders content based on active tab
+   * 
+   * @returns {JSX.Element} Content for the active tab
+   */
   const renderTabContent = () => {
     switch (activeTab) {
       case 'programs':
@@ -43,6 +84,7 @@ const Dashboard = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+      {/* Dashboard header with logout */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -65,6 +107,7 @@ const Dashboard = () => {
         </button>
       </div>
 
+      {/* Tab navigation */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', borderBottom: '1px solid #ddd' }}>
           <div
@@ -82,6 +125,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Tab content container */}
       <div style={{ 
         backgroundColor: '#fff',
         border: '1px solid #ddd',
