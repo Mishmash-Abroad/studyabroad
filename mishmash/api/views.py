@@ -1,13 +1,26 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.db.models import Q
 from .models import Program, Application
 from .serializers import ProgramSerializer, ApplicationSerializer
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    """
+    Get the currently authenticated user's data
+    """
+    return Response({
+        'user_id': request.user.id,
+        'username': request.user.username,
+        'display_name': request.user.display_name,
+        'is_admin': request.user.is_admin
+    })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
