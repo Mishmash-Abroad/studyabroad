@@ -11,15 +11,16 @@ from .serializers import ProgramSerializer, ApplicationSerializer
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def current_user(request):
+def get_current_user(request):
     """
-    Get the currently authenticated user's data
+    Get the current user's data based on their authentication token
     """
+    user = request.user
     return Response({
-        'user_id': request.user.id,
-        'username': request.user.username,
-        'display_name': request.user.display_name,
-        'is_admin': request.user.is_admin
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
     })
 
 @api_view(['POST'])

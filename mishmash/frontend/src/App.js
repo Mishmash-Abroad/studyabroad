@@ -24,9 +24,8 @@ const LoginForm = () => {
       });
       
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        axiosInstance.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
-        login(response.data);
+        const { token, ...userData } = response.data;
+        login(userData, token); // Pass both user data and token to login function
         navigate("/dashboard");
       }
     } catch (err) {

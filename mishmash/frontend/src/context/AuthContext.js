@@ -5,32 +5,28 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // Try to get the user data from localStorage on initial load
+    // Initialize user from localStorage if available
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [loading, setLoading] = useState(true);
-
+  // Effect to check token validity and fetch user data on mount
   useEffect(() => {
-    const initializeAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token && !user) {
-        try {
-          // Verify token and get user data
-          const response = await axiosInstance.get('/api/users/me/');
+    const token = localStorage.getItem('token');
+    if (token && !user) {
+      // Verify token and get user data
+      axiosInstance.get('/api/users/me/')
+        .then(response => {
           setUser(response.data);
           localStorage.setItem('user', JSON.stringify(response.data));
-        } catch (error) {
-          // If token is invalid, clear storage
+        })
+        .catch(() => {
+          // If token is invalid, clear everything
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-        }
-      }
-      setLoading(false);
-    };
-
-    initializeAuth();
+          setUser(null);
+        });
+    }
   }, []);
 
   const login = (userData, token) => {
@@ -44,10 +40,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
