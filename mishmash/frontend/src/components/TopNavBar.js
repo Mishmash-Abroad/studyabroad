@@ -21,13 +21,15 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axios';
 
 /**
  * Top Navigation Bar Component
  * 
+ * @param {function} onLoginClick - Callback function for login button click
  * @returns {React.ReactElement} The navigation bar component
  */
-function TopNavBar() {
+function TopNavBar({ onLoginClick }) {
     // Get authentication state and navigation function
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -36,64 +38,129 @@ function TopNavBar() {
      * Handle user logout
      * Clears auth state and redirects to home
      */
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
-
-    // Styles for the navigation bar
-    const navStyle = {
-        backgroundColor: '#007bff',
-        padding: '1rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        color: 'white'
-    };
-
-    // Styles for navigation buttons
-    const buttonStyle = {
-        padding: '8px 16px',
-        backgroundColor: 'transparent',
-        border: '1px solid white',
-        color: 'white',
-        cursor: 'pointer',
-        marginLeft: '10px'
+    const handleLogout = async () => {
+        try {
+            // Call logout endpoint
+            await axiosInstance.post('/api/logout/');
+            // Clear auth context
+            logout();
+            // Navigate to home
+            navigate('/');
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Still clear local state even if server call fails
+            logout();
+            navigate('/');
+        }
     };
 
     return (
-        <div style={navStyle}>
-            {/* Application Title */}
-            <div>
-                <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+        <div style={{
+            backgroundColor: '#1a237e',
+            padding: '1rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            color: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000
+        }}>
+            {/* Logo and Title */}
+            <div 
+                onClick={() => navigate('/')}
+                style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer'
+                }}
+            >
+                <img 
+                    src="/logo.png"
+                    alt="HCC Logo"
+                    style={{
+                        height: '40px',
+                        width: 'auto'
+                    }}
+                />
+                <span style={{ 
+                    fontSize: '1.4rem', 
+                    fontWeight: 'bold',
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                }}>
                     HCC Study Abroad
                 </span>
             </div>
 
             {/* Navigation Controls */}
-            <div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '20px'
+            }}>
                 {user ? (
-                    // Authenticated User Controls
                     <>
-                        <span>Welcome, {user.display_name}!</span>
+                        <span style={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontSize: '1rem'
+                        }}>
+                            Welcome, {user.display_name}!
+                        </span>
                         <button 
-                            style={buttonStyle} 
                             onClick={() => navigate('/dashboard')}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '4px',
+                                color: 'white',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.2)'
+                                }
+                            }}
                         >
                             Dashboard
                         </button>
                         <button 
-                            style={buttonStyle} 
                             onClick={handleLogout}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '4px',
+                                color: 'white',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.1)'
+                                }
+                            }}
                         >
                             Logout
                         </button>
                     </>
                 ) : (
-                    // Unauthenticated User Controls
                     <button 
-                        style={buttonStyle} 
-                        onClick={() => navigate('/')}
+                        onClick={onLoginClick}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            color: '#1a237e',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                                backgroundColor: '#f5f5f5'
+                            }
+                        }}
                     >
                         Login
                     </button>
