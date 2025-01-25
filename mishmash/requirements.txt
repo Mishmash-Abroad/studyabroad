@@ -1,7 +1,28 @@
-asgiref==3.8.1
+# Study Abroad Program Backend Dependencies
+# This file lists all Python packages required to run the backend service.
+# The backend is a Django-based REST API that manages study abroad programs,
+# user authentication, and application processing.
+
+# Core Framework Dependencies
+# Django: Main web framework
+# DRF: REST API framework
+# ASGI: Async server gateway interface
 Django==5.1.5
 djangorestframework==3.15.2
+asgiref==3.8.1
+
+# Database Connectors and Utils
+# MySQL: Primary database
+# SQLParse: SQL query parsing and formatting
 mysqlclient==2.2.1
-python-decouple==3.8
+PyMySQL==1.1.0
 sqlparse==0.5.3
+
+# Security and Configuration
+# python-decouple: Environment-based configuration
+# cors-headers: Handle Cross-Origin Resource Sharing
+python-decouple==3.8
+django-cors-headers==4.3.1
+
+# Time and Internationalization
 tzdata==2024.2
