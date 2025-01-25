@@ -145,14 +145,8 @@ const ProgramCard = ({ program }) => {
     fetchApplicationStatus();
   }, [program.id]);
 
-  // Logic that returns e.g. "Open", "Closed", etc.
-  const getStatusBadge = () => {
-    if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
-      return applicationStatus;
-    }
-    if (applicationStatus === 'Withdrawn' || applicationStatus === 'Canceled') {
-      return applicationStatus;
-    }
+  // Logic that returns the program status
+  const getProgramStatus = () => {
     if (today < applicationOpenDate) {
       return 'Opening Soon';
     }
@@ -162,9 +156,52 @@ const ProgramCard = ({ program }) => {
     return 'Open';
   };
 
+  // Get the display status, prioritizing application status over program status
+  const getStatusBadge = () => {
+    // Application-specific statuses take precedence
+    if (applicationStatus) {
+      switch (applicationStatus) {
+        case 'Enrolled':
+        case 'Applied':
+          return applicationStatus;
+        case 'Withdrawn':
+        case 'Canceled':
+          // Only show Withdrawn/Canceled in the detailed view, not in the badge
+          return getProgramStatus();
+        default:
+          return getProgramStatus();
+      }
+    }
+    return getProgramStatus();
+  };
+
+  // Get the detailed status message for the application button section
+  const getDetailedStatus = () => {
+    if (!applicationStatus) {
+      return null;
+    }
+
+    switch (applicationStatus) {
+      case 'Enrolled':
+        return 'Currently enrolled';
+      case 'Applied':
+        return 'Application submitted';
+      case 'Withdrawn':
+        return 'Previously withdrawn - eligible to reapply';
+      case 'Canceled':
+        return 'Previously canceled - eligible to reapply';
+      default:
+        return null;
+    }
+  };
+
   // Different inline display for the "Apply Now" or "Status" label
   const getApplicationButton = () => {
-    if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
+    const detailedStatus = getDetailedStatus();
+    const programStatus = getProgramStatus();
+
+    // Show status for enrolled/applied users
+    if (['Enrolled', 'Applied'].includes(applicationStatus)) {
       return (
         <div
           style={{
@@ -175,23 +212,26 @@ const ProgramCard = ({ program }) => {
             display: 'inline-block',
           }}
         >
-          Status: {applicationStatus}
+          {detailedStatus}
         </div>
       );
     }
 
-    if (applicationStatus === 'Withdrawn' || applicationStatus === 'Canceled') {
+    // Show reapply option for withdrawn/canceled applications
+    if (['Withdrawn', 'Canceled'].includes(applicationStatus)) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-          <ApplicationButton
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/apply/${program.id}`);
-            }}
-            variant="success"
-          >
-            Apply Again
-          </ApplicationButton>
+          {programStatus === 'Open' && (
+            <ApplicationButton
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/apply/${program.id}`);
+              }}
+              variant="success"
+            >
+              Apply Again
+            </ApplicationButton>
+          )}
           <div
             style={{
               fontSize: '0.8em',
@@ -199,57 +239,61 @@ const ProgramCard = ({ program }) => {
               fontStyle: 'italic',
             }}
           >
-            Previously {applicationStatus.toLowerCase()}
+            {detailedStatus}
           </div>
         </div>
       );
     }
 
-    if (today < applicationOpenDate) {
-      return (
-        <div
-          className="not-open-badge"
-          style={{
-            padding: '8px 16px',
-            borderRadius: '4px',
-            backgroundColor: theme.palette.status.warning.background,
-            color: theme.palette.status.warning.main,
-          }}
-        >
-          Applications open on {program.application_open_date}
-        </div>
-      );
-    }
+    // Handle different program statuses
+    switch (programStatus) {
+      case 'Opening Soon':
+        return (
+          <div
+            className="not-open-badge"
+            style={{
+              padding: '8px 16px',
+              borderRadius: '4px',
+              backgroundColor: theme.palette.status.warning.background,
+              color: theme.palette.status.warning.main,
+            }}
+          >
+            Applications open on {program.application_open_date}
+          </div>
+        );
 
-    if (today > applicationDeadline) {
-      return (
-        <div
-          className="deadline-passed-badge"
-          style={{
-            padding: '8px 16px',
-            borderRadius: '4px',
-            backgroundColor: theme.palette.status.error.background,
-            color: theme.palette.status.error.main,
-          }}
-        >
-          Application Deadline Passed
-        </div>
-      );
-    }
+      case 'Closed':
+        return (
+          <div
+            className="deadline-passed-badge"
+            style={{
+              padding: '8px 16px',
+              borderRadius: '4px',
+              backgroundColor: theme.palette.status.error.background,
+              color: theme.palette.status.error.main,
+            }}
+          >
+            Application Deadline Passed
+          </div>
+        );
 
-    // "Apply Now" button
-    return (
-      <ApplicationButton
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/apply/${program.id}`);
-        }}
-        disabled={user?.is_admin}
-        variant={user?.is_admin ? 'disabled' : 'success'}
-      >
-        Apply Now
-      </ApplicationButton>
-    );
+      case 'Open':
+        return (
+          <ApplicationButton
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/apply/${program.id}`);
+            }}
+            disabled={user?.is_admin}
+            variant={user?.is_admin ? 'disabled' : 'success'}
+          >
+            Apply Now
+          </ApplicationButton>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -268,7 +312,9 @@ const ProgramCard = ({ program }) => {
         }}
       />
       {/* Status badge */}
-      <StatusBadge status={getStatusBadge()}>{getStatusBadge()}</StatusBadge>
+      <StatusBadge status={getStatusBadge()}>
+        {getStatusBadge()}
+      </StatusBadge>
 
       {/* Program title and location */}
       <div
@@ -278,7 +324,7 @@ const ProgramCard = ({ program }) => {
           left: '20px',
           right: '20px',
           padding: '10px',
-          paddingRight: expanded ?'60px' : '20px',
+          paddingRight: expanded ? '60px' : '20px',
           zIndex: 1,
         }}
       >
