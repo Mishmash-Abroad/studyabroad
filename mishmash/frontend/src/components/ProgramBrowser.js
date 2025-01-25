@@ -161,7 +161,7 @@ const ProgramBrowser = () => {
         case 'applied':
           return (
             program.applicationStatus &&
-            program.applicationStatus.toLowerCase() === 'applied'
+            ['applied', 'withdrawn', 'canceled'].includes(program.applicationStatus.toLowerCase())
           );
         case 'enrolled':
           return (
@@ -278,7 +278,11 @@ const ProgramBrowser = () => {
         ) : (
           <ProgramGrid>
             {getFilteredPrograms().map((program) => (
-              <ProgramCard key={program.id} program={program} />
+              <ProgramCard 
+                key={program.id} 
+                program={program} 
+                isInAppliedSection={filter === 'applied'}
+              />
             ))}
           </ProgramGrid>
         )}
