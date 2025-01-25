@@ -30,6 +30,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axios';
+import { ProgramCard as StyledProgramCard, StatusBadge, ApplicationButton } from './styled';
 
 /**
  * Program Card Component
@@ -65,74 +66,26 @@ const ProgramCard = ({ program }) => {
     }, [program.id]);
 
     const getStatusBadge = () => {
-        let style = {
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            padding: '6px 12px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            zIndex: 1
-        };
-
         if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
-            return {
-                text: applicationStatus,
-                style: {
-                    ...style,
-                    backgroundColor: '#e3f2fd',
-                    color: '#1976d2'
-                }
-            };
+            return applicationStatus;
         }
 
         if (applicationStatus === 'Withdrawn' || applicationStatus === 'Canceled') {
-            return {
-                text: applicationStatus,
-                style: {
-                    ...style,
-                    backgroundColor: '#fce4ec',
-                    color: '#c2185b'
-                }
-            };
+            return applicationStatus;
         }
 
         if (today < applicationOpenDate) {
-            return {
-                text: 'Opening Soon',
-                style: {
-                    ...style,
-                    backgroundColor: '#fff3e0',
-                    color: '#f57c00'
-                }
-            };
+            return 'Opening Soon';
         }
 
         if (today > applicationDeadline) {
-            return {
-                text: 'Closed',
-                style: {
-                    ...style,
-                    backgroundColor: '#ffebee',
-                    color: '#c62828'
-                }
-            };
+            return 'Closed';
         }
 
-        return {
-            text: 'Open',
-            style: {
-                ...style,
-                backgroundColor: '#e8f5e9',
-                color: '#2e7d32'
-            }
-        };
+        return 'Open';
     };
 
     const getApplicationButton = () => {
-        // For enrolled or applied applications, show status badge
         if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
             return (
                 <div className="status-badge" style={{
@@ -147,26 +100,18 @@ const ProgramCard = ({ program }) => {
             );
         }
 
-        // For withdrawn or cancelled applications, show apply button with status note
         if (applicationStatus === 'Withdrawn' || applicationStatus === 'Canceled') {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                    <button
+                    <ApplicationButton
                         onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/apply/${program.id}`);
                         }}
-                        style={{
-                            padding: '8px 16px',
-                            borderRadius: '4px',
-                            backgroundColor: '#4caf50',
-                            color: 'white',
-                            border: 'none',
-                            cursor: 'pointer'
-                        }}
+                        variant="success"
                     >
                         Apply Again
-                    </button>
+                    </ApplicationButton>
                     <div style={{
                         fontSize: '0.8em',
                         color: '#666',
@@ -178,7 +123,6 @@ const ProgramCard = ({ program }) => {
             );
         }
 
-        // Application window not yet open
         if (today < applicationOpenDate) {
             return (
                 <div className="not-open-badge" style={{
@@ -192,7 +136,6 @@ const ProgramCard = ({ program }) => {
             );
         }
 
-        // Application deadline passed
         if (today > applicationDeadline) {
             return (
                 <div className="deadline-passed-badge" style={{
@@ -206,44 +149,24 @@ const ProgramCard = ({ program }) => {
             );
         }
 
-        // Default apply button (disabled for admin users)
         return (
-            <button
+            <ApplicationButton
                 onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/apply/${program.id}`);
                 }}
                 disabled={user?.is_admin}
-                style={{
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    backgroundColor: user?.is_admin ? '#ccc' : '#4caf50',
-                    color: 'white',
-                    border: 'none',
-                    cursor: user?.is_admin ? 'not-allowed' : 'pointer'
-                }}
+                variant={user?.is_admin ? 'disabled' : 'success'}
             >
                 Apply Now
-            </button>
+            </ApplicationButton>
         );
     };
 
-    const badge = getStatusBadge();
-
     return (
-        <div
+        <StyledProgramCard
+            expanded={expanded}
             onClick={() => setExpanded(!expanded)}
-            style={{
-                position: 'relative',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                backgroundColor: 'white',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                transform: expanded ? 'scale(1.02)' : 'scale(1)',
-                height: expanded ? 'auto' : '200px'
-            }}
         >
             {/* Background image placeholder */}
             <div style={{
@@ -258,9 +181,9 @@ const ProgramCard = ({ program }) => {
             }} />
 
             {/* Status badge */}
-            <div style={badge.style}>
-                {badge.text}
-            </div>
+            <StatusBadge status={getStatusBadge()}>
+                {getStatusBadge()}
+            </StatusBadge>
 
             {/* Program title and location */}
             <div style={{
@@ -334,7 +257,7 @@ const ProgramCard = ({ program }) => {
                     </div>
                 </div>
             )}
-        </div>
+        </StyledProgramCard>
     );
 };
 
