@@ -1,6 +1,7 @@
 """
 Study Abroad Program - Test Programs Creation Command
 ===============================================
+To run this use docker compose exec backend python manage.py add_test_programs
 
 This Django management command creates a diverse set of test study abroad programs
 with various scenarios to simulate real-world program offerings and timelines.
