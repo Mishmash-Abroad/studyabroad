@@ -22,6 +22,15 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
+import {
+    NavBar,
+    NavLogo,
+    NavLogoImage,
+    NavTitle,
+    NavControls,
+    NavButton,
+    WelcomeText,
+} from './styled';
 
 /**
  * Top Navigation Bar Component
@@ -55,118 +64,30 @@ function TopNavBar({ onLoginClick }) {
     };
 
     return (
-        <div style={{
-            backgroundColor: '#1a237e',
-            padding: '1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            color: 'white',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1000
-        }}>
-            {/* Logo and Title */}
-            <div 
-                onClick={() => navigate('/')}
-                style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    cursor: 'pointer'
-                }}
-            >
-                <img 
-                    src="/logo.png"
-                    alt="HCC Logo"
-                    style={{
-                        height: '40px',
-                        width: 'auto'
-                    }}
-                />
-                <span style={{ 
-                    fontSize: '1.4rem', 
-                    fontWeight: 'bold',
-                    textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
-                }}>
-                    HCC Study Abroad
-                </span>
-            </div>
+        <NavBar>
+            <NavLogo onClick={() => navigate('/')}>
+                <NavLogoImage src="/logo.png" alt="HCC Logo" />
+                <NavTitle>HCC Study Abroad</NavTitle>
+            </NavLogo>
 
-            {/* Navigation Controls */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px'
-            }}>
+            <NavControls>
                 {user ? (
                     <>
-                        <span style={{
-                            color: 'rgba(255,255,255,0.9)',
-                            fontSize: '1rem'
-                        }}>
-                            Welcome, {user.display_name}!
-                        </span>
-                        <button 
-                            onClick={() => navigate('/dashboard')}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '4px',
-                                color: 'white',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.2)'
-                                }
-                            }}
-                        >
+                        <WelcomeText>Welcome, {user.display_name}!</WelcomeText>
+                        <NavButton variant="light" onClick={() => navigate('/dashboard')}>
                             Dashboard
-                        </button>
-                        <button 
-                            onClick={handleLogout}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: 'transparent',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '4px',
-                                color: 'white',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.1)'
-                                }
-                            }}
-                        >
+                        </NavButton>
+                        <NavButton variant="transparent" onClick={handleLogout}>
                             Logout
-                        </button>
+                        </NavButton>
                     </>
                 ) : (
-                    <button 
-                        onClick={onLoginClick}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            color: '#1a237e',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                                backgroundColor: '#f5f5f5'
-                            }
-                        }}
-                    >
+                    <NavButton onClick={onLoginClick}>
                         Login
-                    </button>
+                    </NavButton>
                 )}
-            </div>
-        </div>
+            </NavControls>
+        </NavBar>
     );
 }
 
