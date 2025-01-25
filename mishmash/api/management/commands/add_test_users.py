@@ -1,6 +1,7 @@
 """
 Study Abroad Program - Test Users Creation Command
 ===============================================
+To run this use docker compose exec backend python manage.py add_test_users
 
 This Django management command creates test users for development and testing purposes.
 It populates the database with an admin user and multiple student users with diverse
