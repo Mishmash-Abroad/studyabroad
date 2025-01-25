@@ -1,36 +1,70 @@
-/**
- * Study Abroad Program - Dashboard Page Component
- * =========================================
- * 
- * This component serves as the main interface for authenticated users,
- * providing access to program browsing and user-specific information.
- * It implements a tabbed interface to organize different sections of
- * functionality.
- * 
- * Features:
- * - Tabbed navigation system
- * - User welcome message
- * - Program browsing integration
- * - Responsive layout
- * 
- * Tabs:
- * - Overview: Welcome message and quick actions
- * - Programs: Full program browser interface
- */
-
 import React, { useState } from 'react';
+import { styled } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import ProgramBrowser from '../components/ProgramBrowser';
-import {
-  DashboardContainer,
-  DashboardContent,
-  DashboardHeader,
-  DashboardTitle,
-  TabContainer,
-  TabButton,
-  TabContent,
-} from '../components/styled';
 
+// -------------------- STYLES (moved from index.js) --------------------
+const DashboardContainer = styled('div')(({ theme }) => ({
+  paddingTop: '72px',
+  minHeight: '100vh',
+  backgroundColor: theme.palette.background.default,
+}));
+
+const DashboardContent = styled('div')(({ theme }) => ({
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: '20px',
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows.card,
+  borderRadius: theme.shape.borderRadius.large,
+}));
+
+const DashboardHeader = styled('div')({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '20px',
+});
+
+const DashboardTitle = styled('h1')(({ theme }) => ({
+  margin: 0,
+  color: theme.palette.primary.main,
+  fontSize: theme.typography.h3.fontSize,
+  fontWeight: theme.typography.h3.fontWeight,
+  fontFamily: theme.typography.fontFamily,
+}));
+
+const TabContainer = styled('div')(({ theme }) => ({
+  marginBottom: '20px',
+  borderBottom: `1px solid ${theme.palette.border.light}`,
+}));
+
+const TabButton = styled('button')(({ theme, active }) => ({
+  padding: '10px 20px',
+  cursor: 'pointer',
+  backgroundColor: active ? theme.palette.background.paper : theme.palette.background.default,
+  border: `1px solid ${theme.palette.border.light}`,
+  borderBottom: active ? 'none' : `1px solid ${theme.palette.border.light}`,
+  borderRadius: `${theme.shape.borderRadius.small}px ${theme.shape.borderRadius.small}px 0 0`,
+  marginRight: '5px',
+  position: 'relative',
+  top: '1px',
+  fontWeight: active ? theme.typography.button.fontWeight : 'normal',
+  fontFamily: theme.typography.fontFamily,
+  fontSize: theme.typography.button.fontSize,
+  color: active ? theme.palette.primary.main : theme.palette.text.primary,
+  transition: theme.transitions.quick,
+  '&:hover': {
+    backgroundColor: active ? theme.palette.background.paper : theme.palette.background.card.hover,
+  },
+}));
+
+const TabContent = styled('div')(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  minHeight: '400px',
+}));
+
+// -------------------- COMPONENT LOGIC --------------------
 const Dashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -54,9 +88,7 @@ const Dashboard = () => {
     <DashboardContainer>
       <DashboardContent>
         <DashboardHeader>
-          <DashboardTitle>
-            Student Dashboard
-          </DashboardTitle>
+          <DashboardTitle>Student Dashboard</DashboardTitle>
         </DashboardHeader>
 
         <TabContainer>
@@ -74,9 +106,7 @@ const Dashboard = () => {
           </TabButton>
         </TabContainer>
 
-        <TabContent>
-          {renderTabContent()}
-        </TabContent>
+        <TabContent>{renderTabContent()}</TabContent>
       </DashboardContent>
     </DashboardContainer>
   );
