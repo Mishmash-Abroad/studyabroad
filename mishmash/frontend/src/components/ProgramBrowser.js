@@ -20,6 +20,8 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../utils/axios';
 import ProgramCard from './ProgramCard';
+import { PageContainer, ContentContainer, SearchContainer, SearchInput, FilterButton, ProgramGrid } from './styled';
+import SearchIcon from '@mui/icons-material/Search';
 
 const ProgramBrowser = () => {
     const [programs, setPrograms] = useState([]);
@@ -96,148 +98,106 @@ const ProgramBrowser = () => {
         });
     };
 
-    const FilterButton = ({ label, value }) => (
-        <button
-            onClick={() => setFilter(value)}
-            style={{
-                padding: '8px 16px',
-                backgroundColor: filter === value ? '#1a237e' : 'white',
-                color: filter === value ? 'white' : '#1a237e',
-                border: `1px solid ${filter === value ? '#1a237e' : '#ddd'}`,
-                borderRadius: '20px',
-                cursor: 'pointer',
-                margin: '0 8px',
-                transition: 'all 0.2s ease',
-                fontSize: '0.9rem',
-                fontWeight: filter === value ? '500' : 'normal',
-                '&:hover': {
-                    backgroundColor: filter === value ? '#1a237e' : '#f5f5f5'
-                }
-            }}
-        >
-            {label}
-        </button>
-    );
-
     return (
-        <div style={{ padding: '20px' }}>
-            {/* Search and Filter Section */}
-            <div style={{
-                backgroundColor: 'white',
-                padding: '24px',
-                borderRadius: '12px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                marginBottom: '24px'
-            }}>
-                {/* Search Bar */}
-                <div style={{
-                    position: 'relative',
-                    maxWidth: '600px',
-                    margin: '0 auto 20px'
-                }}>
-                    <input
-                        type="text"
-                        placeholder="Search programs by name, location, or description..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '12px 48px 12px 48px',
-                            fontSize: '1rem',
-                            border: '2px solid #e0e0e0',
-                            borderRadius: '25px',
-                            outline: 'none',
-                            transition: 'all 0.2s ease',
-                            '&:focus': {
-                                borderColor: '#1a237e',
-                                boxShadow: '0 0 0 3px rgba(26,35,126,0.1)'
-                            }
-                        }}
-                    />
-                    <span style={{
-                        position: 'absolute',
-                        left: '16px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: '#666',
-                        fontSize: '1.2rem',
-                        pointerEvents: 'none'
-                    }}>
-                        🔍
-                    </span>
-                </div>
-
-                {/* Filter Buttons */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    flexWrap: 'wrap',
-                    gap: '8px'
-                }}>
-                    <FilterButton label="All Programs" value="all" />
-                    <FilterButton label="Currently Open" value="open" />
-                    <FilterButton label="Applied" value="applied" />
-                    <FilterButton label="Enrolled" value="enrolled" />
-                    <button
-                        onClick={() => setShowPastPrograms(!showPastPrograms)}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: showPastPrograms ? '#f5f5f5' : 'white',
-                            color: '#666',
-                            border: '1px solid #ddd',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            margin: '0 8px',
-                            fontSize: '0.9rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                        }}
-                    >
-                        <span style={{
-                            display: 'inline-block',
-                            width: '16px',
-                            height: '16px',
-                            border: '1px solid #666',
-                            borderRadius: '3px',
-                            backgroundColor: showPastPrograms ? '#666' : 'transparent'
-                        }} />
-                        Show Past Programs
-                    </button>
-                </div>
-            </div>
-
-            {/* Programs Grid */}
-            {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                    Loading programs...
-                </div>
-            ) : error ? (
-                <div style={{ 
-                    textAlign: 'center', 
-                    padding: '40px',
-                    color: '#f44336'
-                }}>
-                    {error}
-                </div>
-            ) : (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '24px',
-                    padding: '20px 0',
-                    maxWidth: '1200px',
-                    margin: '0 auto'
-                }}>
-                    {getFilteredPrograms().map(program => (
-                        <ProgramCard 
-                            key={program.id} 
-                            program={program}
+        <PageContainer>
+            <ContentContainer>
+                {/* Search and Filter Section */}
+                <SearchContainer>
+                    {/* Search Bar */}
+                    <div style={{ position: 'relative' }}>
+                        <SearchInput
+                            fullWidth
+                            placeholder="Search programs by name, location, or description..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                    ))}
-                </div>
-            )}
-        </div>
+                        <SearchIcon 
+                            style={{
+                                position: 'absolute',
+                                left: '16px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: '#666',
+                                fontSize: '1.2rem',
+                                pointerEvents: 'none'
+                            }}
+                        />
+                    </div>
+
+                    {/* Filter Buttons */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        marginTop: '20px'
+                    }}>
+                        <FilterButton active={filter === 'all'} onClick={() => setFilter('all')}>
+                            All Programs
+                        </FilterButton>
+                        <FilterButton active={filter === 'open'} onClick={() => setFilter('open')}>
+                            Currently Open
+                        </FilterButton>
+                        <FilterButton active={filter === 'applied'} onClick={() => setFilter('applied')}>
+                            Applied
+                        </FilterButton>
+                        <FilterButton active={filter === 'enrolled'} onClick={() => setFilter('enrolled')}>
+                            Enrolled
+                        </FilterButton>
+                        <button
+                            onClick={() => setShowPastPrograms(!showPastPrograms)}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: showPastPrograms ? '#f5f5f5' : 'white',
+                                color: '#666',
+                                border: '1px solid #ddd',
+                                borderRadius: '20px',
+                                cursor: 'pointer',
+                                margin: '0 8px',
+                                fontSize: '0.9rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}
+                        >
+                            <span style={{
+                                display: 'inline-block',
+                                width: '16px',
+                                height: '16px',
+                                border: '1px solid #666',
+                                borderRadius: '3px',
+                                backgroundColor: showPastPrograms ? '#666' : 'transparent'
+                            }} />
+                            Show Past Programs
+                        </button>
+                    </div>
+                </SearchContainer>
+
+                {/* Programs Grid */}
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                        Loading programs...
+                    </div>
+                ) : error ? (
+                    <div style={{ 
+                        textAlign: 'center', 
+                        padding: '40px',
+                        color: '#f44336'
+                    }}>
+                        {error}
+                    </div>
+                ) : (
+                    <ProgramGrid>
+                        {getFilteredPrograms().map(program => (
+                            <ProgramCard 
+                                key={program.id} 
+                                program={program}
+                            />
+                        ))}
+                    </ProgramGrid>
+                )}
+            </ContentContainer>
+        </PageContainer>
     );
 };
 
