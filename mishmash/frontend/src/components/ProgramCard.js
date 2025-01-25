@@ -40,10 +40,11 @@ import axiosInstance from '../utils/axios';
 const ProgramCard = ({ program }) => {
     // State and context management
     const [applicationStatus, setApplicationStatus] = useState(null);
+    const [expanded, setExpanded] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // Date calculations for application window
+    // Date calculations
     const today = new Date();
     const applicationOpenDate = new Date(program.application_open_date);
     const applicationDeadline = new Date(program.application_deadline);
@@ -63,12 +64,73 @@ const ProgramCard = ({ program }) => {
         fetchApplicationStatus();
     }, [program.id]);
 
-    /**
-     * Determines and returns the appropriate application button or status badge
-     * based on current application status and dates
-     * 
-     * @returns {JSX.Element} Button or status badge component
-     */
+    const getStatusBadge = () => {
+        let style = {
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: '500',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            zIndex: 1
+        };
+
+        if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
+            return {
+                text: applicationStatus,
+                style: {
+                    ...style,
+                    backgroundColor: '#e3f2fd',
+                    color: '#1976d2'
+                }
+            };
+        }
+
+        if (applicationStatus === 'Withdrawn' || applicationStatus === 'Canceled') {
+            return {
+                text: applicationStatus,
+                style: {
+                    ...style,
+                    backgroundColor: '#fce4ec',
+                    color: '#c2185b'
+                }
+            };
+        }
+
+        if (today < applicationOpenDate) {
+            return {
+                text: 'Opening Soon',
+                style: {
+                    ...style,
+                    backgroundColor: '#fff3e0',
+                    color: '#f57c00'
+                }
+            };
+        }
+
+        if (today > applicationDeadline) {
+            return {
+                text: 'Closed',
+                style: {
+                    ...style,
+                    backgroundColor: '#ffebee',
+                    color: '#c62828'
+                }
+            };
+        }
+
+        return {
+            text: 'Open',
+            style: {
+                ...style,
+                backgroundColor: '#e8f5e9',
+                color: '#2e7d32'
+            }
+        };
+    };
+
     const getApplicationButton = () => {
         // For enrolled or applied applications, show status badge
         if (applicationStatus === 'Enrolled' || applicationStatus === 'Applied') {
@@ -90,7 +152,10 @@ const ProgramCard = ({ program }) => {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                     <button
-                        onClick={() => navigate(`/apply/${program.id}`)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/apply/${program.id}`);
+                        }}
                         style={{
                             padding: '8px 16px',
                             borderRadius: '4px',
@@ -144,7 +209,10 @@ const ProgramCard = ({ program }) => {
         // Default apply button (disabled for admin users)
         return (
             <button
-                onClick={() => navigate(`/apply/${program.id}`)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/apply/${program.id}`);
+                }}
                 disabled={user?.is_admin}
                 style={{
                     padding: '8px 16px',
@@ -160,50 +228,112 @@ const ProgramCard = ({ program }) => {
         );
     };
 
+    const badge = getStatusBadge();
+
     return (
-        <div style={{
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            padding: '20px',
-            marginBottom: '20px',
-            backgroundColor: 'white',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-            {/* Program header with title and action button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <h3 style={{ margin: '0 0 10px 0' }}>{program.title}</h3>
-                    <p style={{ color: '#666', margin: '0 0 5px 0' }}>
-                        {program.year_semester} • Led by {program.faculty_leads}
-                    </p>
-                </div>
-                <div>
-                    {getApplicationButton()}
-                </div>
-            </div>
-            
-            {/* Program description */}
-            <p style={{ margin: '15px 0' }}>{program.description}</p>
-            
-            {/* Program dates and details */}
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '10px',
+        <div
+            onClick={() => setExpanded(!expanded)}
+            style={{
+                position: 'relative',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                backgroundColor: 'white',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                transform: expanded ? 'scale(1.02)' : 'scale(1)',
+                height: expanded ? 'auto' : '200px'
+            }}
+        >
+            {/* Background image placeholder */}
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
                 backgroundColor: '#f5f5f5',
-                padding: '10px',
-                borderRadius: '4px',
-                marginTop: '15px'
-            }}>
-                <div>
-                    <strong>Application Window:</strong>
-                    <div>{program.application_open_date} - {program.application_deadline}</div>
-                </div>
-                <div>
-                    <strong>Program Dates:</strong>
-                    <div>{program.start_date} - {program.end_date}</div>
-                </div>
+                opacity: 0.8,
+                zIndex: 0
+            }} />
+
+            {/* Status badge */}
+            <div style={badge.style}>
+                {badge.text}
             </div>
+
+            {/* Program title and location */}
+            <div style={{
+                position: 'absolute',
+                bottom: expanded ? 'auto' : '20px',
+                left: '20px',
+                right: '20px',
+                padding: '10px',
+                zIndex: 1
+            }}>
+                <h3 style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '24px',
+                    color: '#1a237e',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                }}>
+                    {program.title}
+                </h3>
+                <p style={{
+                    margin: 0,
+                    fontSize: '16px',
+                    color: '#424242',
+                    opacity: 0.9
+                }}>
+                    {program.location}
+                </p>
+            </div>
+
+            {/* Expanded content */}
+            {expanded && (
+                <div style={{
+                    padding: '20px',
+                    marginTop: '100px',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderTop: '1px solid rgba(0,0,0,0.1)',
+                    zIndex: 1,
+                    position: 'relative'
+                }}>
+                    <div style={{ marginBottom: '15px' }}>
+                        <p style={{ color: '#666', margin: '0 0 5px 0' }}>
+                            {program.year_semester} • Led by {program.faculty_leads}
+                        </p>
+                        <p style={{ margin: '15px 0' }}>{program.description}</p>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '15px',
+                        backgroundColor: '#f8f9fa',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        marginBottom: '20px'
+                    }}>
+                        <div>
+                            <strong>Application Window:</strong>
+                            <div>{program.application_open_date} - {program.application_deadline}</div>
+                        </div>
+                        <div>
+                            <strong>Program Dates:</strong>
+                            <div>{program.start_date} - {program.end_date}</div>
+                        </div>
+                    </div>
+
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        marginTop: '20px'
+                    }}>
+                        {getApplicationButton()}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
