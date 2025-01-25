@@ -278,6 +278,7 @@ const ProgramCard = ({ program }) => {
           left: '20px',
           right: '20px',
           padding: '10px',
+          paddingRight: expanded ?'60px' : '20px',
           zIndex: 1,
         }}
       >
