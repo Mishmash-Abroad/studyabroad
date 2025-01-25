@@ -23,76 +23,10 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-route
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
+import TopNavBar from "./components/TopNavBar";
+import LoginModal from "./components/LoginModal";
 import axiosInstance from './utils/axios';
 import { useAuth } from "./context/AuthContext";
-import TopNavBar from "./components/TopNavBar";
-
-/**
- * Login Form Component
- * 
- * Handles user authentication through a form interface.
- * Manages its own state for username, password, and error messages.
- * On successful login, redirects to the dashboard.
- */
-const LoginForm = () => {
-  // Form state management
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  /**
-   * Handle form submission
-   * Attempts to authenticate user with provided credentials
-   */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Attempt login through API
-      const response = await axiosInstance.post("/api/login/", {
-        username,
-        password,
-      });
-      
-      // Handle successful login
-      if (response.data.token) {
-        const { token, ...userData } = response.data;
-        login(userData, token);
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.error || "Invalid username or password");
-    }
-  };
-
-  return (
-    <div style={{ maxWidth: "300px", margin: "20px auto", padding: "20px" }}>
-      <h2>Login</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ padding: "8px" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ padding: "8px" }}
-        />
-        <button type="submit" style={{ padding: "8px", backgroundColor: "#007bff", color: "white", border: "none" }}>
-          Login
-        </button>
-      </form>
-    </div>
-  );
-};
 
 /**
  * Home Page Component
@@ -103,52 +37,201 @@ const LoginForm = () => {
  * - Program information and images
  */
 const HomePage = () => {
-  return (
-    <div style={{ padding: "20px" }}>
-      <h1>HCC Study Abroad Program</h1>
-      <p>Welcome to the Hypothetical City College Study Abroad Program portal.</p>
-      <LoginForm />
-      <div>
-        {/* Program showcase images */}
-        <img
-          src="https://student-cms.prd.timeshighereducation.com/sites/default/files/styles/default/public/2023-05/iStock-1371940128.jpg?itok=t4ZO_mEd"
-          alt="Happy students smiling and enjoying their time together"
-          style={{ width: "30%", borderRadius: "8px" }}
-        />
-        <img
-          src="https://student-cms.prd.timeshighereducation.com/sites/default/files/styles/default/public/2023-05/iStock-1371940128.jpg?itok=t4ZO_mEd"
-          alt="Happy students smiling and enjoying their time together"
-          style={{ width: "30%", borderRadius: "8px" }}
-        />
-        <img
-          src="https://student-cms.prd.timeshighereducation.com/sites/default/files/styles/default/public/2023-05/iStock-1371940128.jpg?itok=t4ZO_mEd"
-          alt="Happy students smiling and enjoying their time together"
-          style={{ width: "30%", borderRadius: "8px" }}
-        />
-      </div>
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { user } = useAuth();
 
-      <p>
-        {/* Program description and highlights */}
-        Hypothetical City College Study Abroad Program Discover the world and
-        expand your horizons with the Hypothetical City College (HCC) Study
-        Abroad Program! Designed to provide students with transformative global
-        experiences, our program offers immersive opportunities to study, live,
-        and grow in diverse cultural settings around the globe.
-        
-        **Program Highlights:**
-        1. **Global Destinations:** Choose from a wide range of locations including
-           Europe, Asia, South America, and beyond. Each destination is carefully
-           selected to provide rich educational and cultural experiences.
-        2. **Academic Excellence:** Earn credits towards your degree while studying
-           at prestigious partner institutions. Our programs include a variety of
-           disciplines, ensuring students from all majors can participate.
-        3. **Cultural Immersion:** Engage with local communities through language
-           courses, cultural activities, and hands-on experiences that will
-           shape your future.
-        
-        For more information, visit our Study Abroad Office or contact us at
-        studyabroad@hcc.edu. Your adventure awaits!
-      </p>
+  const Hero = () => (
+    <div style={{
+      position: 'relative',
+      height: '500px',
+      width: '100%',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      marginBottom: '50px',
+      backgroundColor: '#1a237e' // Added background color in case image fails to load
+    }}>
+      {/* Hero background */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Dark overlay
+        zIndex: 1
+      }} />
+      
+      {/* Logo overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: 'url(/logo.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        opacity: 0.2,
+        zIndex: 0
+      }} />
+      
+      {/* Hero content */}
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        maxWidth: '800px',
+        padding: '0 20px'
+      }}>
+        <h1 style={{
+          fontSize: '3.5rem',
+          marginBottom: '20px',
+          fontWeight: 'bold',
+          color: 'white',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.7)'
+        }}>
+          Discover Your World
+        </h1>
+        <p style={{
+          fontSize: '1.5rem',
+          marginBottom: '30px',
+          color: 'white',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
+        }}>
+          {user ? 
+            `Welcome back, ${user.first_name}! Continue your journey with us.` :
+            'Transform your education through global experiences with HCC Study Abroad'}
+        </p>
+        {!user && (
+          <button 
+            onClick={() => setShowLoginModal(true)}
+            style={{
+              padding: '15px 30px',
+              fontSize: '1.2rem',
+              backgroundColor: 'white',
+              color: '#1a237e',
+              border: 'none',
+              borderRadius: '30px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                backgroundColor: '#f5f5f5'
+              }
+            }}
+          >
+            Get Started
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const Features = () => (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+      gap: '30px',
+      padding: '50px 20px',
+      maxWidth: '1200px',
+      margin: '0 auto'
+    }}>
+      {[
+        {
+          title: 'Global Destinations',
+          description: 'Choose from a wide range of locations across Europe, Asia, South America, and beyond.',
+          icon: '🌎'
+        },
+        {
+          title: 'Academic Excellence',
+          description: 'Earn credits while studying at prestigious partner institutions worldwide.',
+          icon: '📚'
+        },
+        {
+          title: 'Cultural Immersion',
+          description: 'Engage with local communities through language courses and cultural activities.',
+          icon: '🤝'
+        }
+      ].map((feature, index) => (
+        <div key={index} style={{
+          padding: '30px',
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '15px' }}>{feature.icon}</div>
+          <h3 style={{ 
+            fontSize: '1.5rem', 
+            marginBottom: '10px', 
+            color: '#1a237e',
+            fontWeight: '600' // Enhanced contrast
+          }}>
+            {feature.title}
+          </h3>
+          <p style={{ 
+            color: '#333' // Darker text for better contrast
+          }}>
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+
+  const PhotoGallery = () => (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '20px',
+      padding: '50px 20px',
+      maxWidth: '1200px',
+      margin: '0 auto'
+    }}>
+      {[1, 2, 3].map((index) => (
+        <div key={index} style={{
+          position: 'relative',
+          paddingBottom: '66.67%', // 3:2 aspect ratio
+          overflow: 'hidden',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        }}>
+          <img
+            src={`/study-abroad-${index}.jpg`}
+            alt={`Study abroad experience ${index}`}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.3s',
+              '&:hover': {
+                transform: 'scale(1.05)'
+              }
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ 
+      minHeight: '100vh',
+      backgroundColor: '#fafafa',
+      paddingTop: '72px' // Added padding to account for fixed navbar
+    }}>
+      <Hero />
+      <Features />
+      <PhotoGallery />
+      {showLoginModal && (
+        <LoginModal onClose={() => setShowLoginModal(false)} />
+      )}
     </div>
   );
 };
@@ -162,10 +245,12 @@ const HomePage = () => {
  * - Protected and public routes
  */
 function App() {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   return (
     <Router>
       <AuthProvider>
-        <TopNavBar />
+        <TopNavBar onLoginClick={() => setShowLoginModal(true)} />
         <Routes>
           {/* Public homepage route */}
           <Route path="/" element={<HomePage />} />
@@ -180,6 +265,9 @@ function App() {
             }
           />
         </Routes>
+        {showLoginModal && (
+          <LoginModal onClose={() => setShowLoginModal(false)} />
+        )}
       </AuthProvider>
     </Router>
   );

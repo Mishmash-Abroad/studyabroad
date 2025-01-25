@@ -83,56 +83,71 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      {/* Dashboard header with logout */}
+    <div style={{ 
+      paddingTop: '72px', // Account for fixed navbar
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f5'
+    }}>
       <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '20px'
+        maxWidth: '1200px', 
+        margin: '0 auto', 
+        padding: '20px',
+        backgroundColor: 'white',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        borderRadius: '8px'
       }}>
-        <h1>Student Dashboard</h1>
-        <button 
-          onClick={handleLogout}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#f44336',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Logout
-        </button>
-      </div>
+        {/* Dashboard header */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h1 style={{ 
+            margin: 0,
+            color: '#1a237e',
+            fontSize: '2rem'
+          }}>
+            Student Dashboard
+          </h1>
+          <button 
+            onClick={handleLogout}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#f44336',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
 
-      {/* Tab navigation */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid #ddd' }}>
-          <div
-            style={tabStyle(activeTab === 'overview')}
+        {/* Tab navigation */}
+        <div style={{ marginBottom: '20px', borderBottom: '1px solid #ddd' }}>
+          <button
             onClick={() => setActiveTab('overview')}
+            style={tabStyle(activeTab === 'overview')}
           >
             Overview
-          </div>
-          <div
-            style={tabStyle(activeTab === 'programs')}
+          </button>
+          <button
             onClick={() => setActiveTab('programs')}
+            style={tabStyle(activeTab === 'programs')}
           >
             Browse Programs
-          </div>
+          </button>
         </div>
-      </div>
 
-      {/* Tab content container */}
-      <div style={{ 
-        backgroundColor: '#fff',
-        border: '1px solid #ddd',
-        borderRadius: '0 4px 4px 4px',
-        minHeight: '400px'
-      }}>
-        {renderTabContent()}
+        {/* Tab content */}
+        <div style={{ 
+          backgroundColor: 'white',
+          minHeight: '400px'
+        }}>
+          {renderTabContent()}
+        </div>
       </div>
     </div>
   );
