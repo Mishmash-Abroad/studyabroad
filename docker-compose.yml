@@ -1,14 +1,33 @@
+# Study Abroad Program - Docker Compose Configuration
+# This file orchestrates the multi-container Docker application for the Study Abroad Program portal.
+# It sets up and connects four main services:
+#   1. Backend (Django REST API)
+#   2. Frontend (React application)
+#   3. Database (MySQL)
+#   4. Nginx (Reverse proxy)
+#
+# Usage:
+#   Development: docker compose up
+#   Production:  docker compose -f docker-compose.prod.yml up
+#
+# Author: Duke University
+# Version: 1.0
+
 services:
+  # Django Backend Service
+  # Handles API requests, database operations, and business logic
   backend:
     build: 
       context: ./mishmash
       dockerfile: Dockerfile
     develop:
       watch:
+        # Hot-reload configuration for development
         - path: ./mishmash
           target: /app
           action: sync
           ignore:
+            # Exclude cache and virtual environment files
             - "**/__pycache__"
             - "**/*.pyc"
             - "**/*.pyo"
@@ -23,10 +42,10 @@ services:
              python manage.py migrate && 
              python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - static_volume:/app/static
-      - media_volume:/app/media
+      - static_volume:/app/static    # Persistent storage for static files
+      - media_volume:/app/media      # Persistent storage for uploaded media
     ports:
-      - "8000:8000"  # For development debugging
+      - "8000:8000"  # Exposed for development debugging
     environment:
       - DEBUG=1
       - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu
@@ -37,14 +56,17 @@ services:
       - DATABASE_PORT=3306
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_healthy  # Ensures database is ready before starting
 
+  # React Frontend Service
+  # Serves the user interface and handles client-side logic
   frontend:
     build: 
       context: ./mishmash/frontend
       dockerfile: Dockerfile
     develop:
       watch:
+        # Hot-reload configuration for frontend development
         - path: ./mishmash/frontend/src
           target: /app/src
           action: sync
@@ -55,37 +77,57 @@ services:
           target: /app/public
           action: sync
     volumes:
-      - ./mishmash/frontend:/app
-      - /app/node_modules
+      - ./mishmash/frontend:/app      # Mount source code
+      - /app/node_modules             # Preserve node_modules in container
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
       - REACT_APP_API_URL=http://localhost:8000/api
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true        # Enable file watching on Windows
+      - CHOKIDAR_USEPOLLING=true     # Enable polling for hot reload
     command: npm start
     depends_on:
       - backend
 
+  # MySQL Database Service
+  # Stores all application data with persistence
   db:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql    # Persistent database storage
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=mishmash
     ports:
-      - "3306:3306"  # For development debugging
+      - "3306:3306"  # Exposed for development debugging
     healthcheck:
+      # Ensure database is accepting connections
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # Nginx Reverse Proxy Service
+  # Handles routing and serves static/media files
+  nginx:
+    image: nginx:1.21-alpine
+    ports:
+      - "80:80"     # HTTP
+      - "443:443"   # HTTPS (for future SSL implementation)
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # Routing configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf            # Base configuration
+      - static_volume:/app/static                          # Static files
+      - media_volume:/app/media                            # Media files
+    depends_on:
+      - backend
+      - frontend
+
+# Persistent Data Storage
 volumes:
-  mysql_data:
-  static_volume:
-  media_volume:
+  mysql_data:      # Database persistence
+  static_volume:   # Django static files
+  media_volume:    # User-uploaded media files
   build_volume:
