@@ -53,34 +53,76 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         applications_data = [
-            # Format: (username, program_title, status, date_of_birth, gpa, major)
-            ('EmmaW', 'Technology Innovation in Tokyo', 'Enrolled', '2002-05-10', 3.8, 'Computer Science'),
-            ('EmmaW', 'Digital Innovation in Silicon Valley', 'Applied', '2002-05-10', 3.8, 'Computer Science'),
-
-            ('JamesC', 'European Politics Tour', 'Enrolled', '2001-03-15', 3.6, 'Political Science'),
-            ('JamesC', 'Global Business in Singapore', 'Withdrawn', '2001-03-15', 3.6, 'Political Science'),
-
-            ('MariaG', 'Wildlife Conservation in Kenya', 'Enrolled', '2002-07-22', 3.9, 'Environmental Science'),
-            ('MariaG', 'Sustainable Engineering in Stockholm', 'Applied', '2002-07-22', 3.9, 'Environmental Science'),
-
-            ('DavidK', 'Global Business in Singapore', 'Enrolled', '2001-12-01', 3.7, 'Business Administration'),
-            ('DavidK', 'European Politics Tour', 'Canceled', '2001-12-01', 3.7, 'Business Administration'),
-
-            ('SarahJ', 'Marine Biology in Great Barrier Reef', 'Applied', '2003-02-10', 3.5, 'Marine Biology'),
-
-            ('MohammedA', 'Sustainable Engineering in Stockholm', 'Applied', '2002-09-30', 3.4, 'Mechanical Engineering'),
-            ('MohammedA', 'Digital Innovation in Silicon Valley', 'Withdrawn', '2002-09-30', 3.4, 'Mechanical Engineering'),
-
-            ('PriyaP', 'Marine Biology in Great Barrier Reef', 'Enrolled', '2003-03-14', 3.8, 'Marine Biology'),
-
-            ('LucasS', 'Global Business in Singapore', 'Applied', '2001-11-25', 3.6, 'Business Administration'),
-
-            ('NinaW', 'Art and Architecture in Florence', 'Enrolled', '2003-06-17', 3.7, 'Art History'),
-
-            ('TomA', 'Antarctic Research Expedition', 'Applied', '2002-04-20', 3.9, 'Biology')
+            # Emma's diverse application history - Tech and Innovation focus
+            ('EmmaW', 'Technology Innovation in Tokyo', 'Enrolled'),
+            ('EmmaW', 'Business Innovation in Singapore', 'Applied'),
+            ('EmmaW', 'Digital Innovation in Berlin', 'Applied'),
+            ('EmmaW', 'Game Development in Seoul', 'Applied'),
+            ('EmmaW', 'Finance and Economics in London', 'Withdrawn'),
+            ('EmmaW', 'Artificial Intelligence in Montreal', 'Canceled'),
+            
+            # David's extensive program history - Business and Tech focus
+            ('DavidK', 'Business Innovation in Singapore', 'Enrolled'),
+            ('DavidK', 'Sustainable Engineering in Stockholm', 'Applied'),
+            ('DavidK', 'Environmental Science in Costa Rica', 'Applied'),
+            ('DavidK', 'Urban Planning in Barcelona', 'Applied'),
+            ('DavidK', 'Finance and Economics in London', 'Withdrawn'),
+            ('DavidK', 'Renewable Energy in Dubai', 'Withdrawn'),
+            ('DavidK', 'Film and Media Studies in Mumbai', 'Canceled'),
+            ('DavidK', 'Artificial Intelligence in Montreal', 'Canceled'),
+            
+            # James's applications - Humanities and Culture
+            ('JamesC', 'Ancient Philosophy in Athens', 'Enrolled'),
+            ('JamesC', 'Art and Architecture in Florence', 'Withdrawn'),
+            ('JamesC', 'Culinary Arts in Paris', 'Applied'),
+            ('JamesC', 'Film and Media Studies in Mumbai', 'Applied'),
+            
+            # Maria's applications - Environmental and Sustainability focus
+            ('MariaG', 'Environmental Science in Costa Rica', 'Enrolled'),
+            ('MariaG', 'Sustainable Engineering in Stockholm', 'Applied'),
+            ('MariaG', 'Marine Biology in Great Barrier Reef', 'Applied'),
+            ('MariaG', 'Renewable Energy in Dubai', 'Withdrawn'),
+            
+            # Sarah's applications - Health and Science
+            ('SarahJ', 'Marine Biology in Great Barrier Reef', 'Applied'),
+            ('SarahJ', 'Global Health in Cape Town', 'Enrolled'),
+            ('SarahJ', 'Environmental Science in Costa Rica', 'Applied'),
+            ('SarahJ', 'Archaeology in Petra', 'Withdrawn'),
+            
+            # Mohammed's applications - Engineering and Tech
+            ('MohammedA', 'Sustainable Engineering in Stockholm', 'Applied'),
+            ('MohammedA', 'Technology Innovation in Tokyo', 'Withdrawn'),
+            ('MohammedA', 'Digital Innovation in Berlin', 'Applied'),
+            ('MohammedA', 'Renewable Energy in Dubai', 'Canceled'),
+            
+            # Priya's applications - Science and Health
+            ('PriyaP', 'Marine Biology in Great Barrier Reef', 'Enrolled'),
+            ('PriyaP', 'Global Health in Cape Town', 'Applied'),
+            ('PriyaP', 'Environmental Science in Costa Rica', 'Applied'),
+            ('PriyaP', 'Archaeology in Petra', 'Withdrawn'),
+            
+            # Lucas's applications - Business and Urban Studies
+            ('LucasS', 'Business Innovation in Singapore', 'Applied'),
+            ('LucasS', 'Urban Planning in Barcelona', 'Applied'),
+            ('LucasS', 'Finance and Economics in London', 'Withdrawn'),
+            ('LucasS', 'Renewable Energy in Dubai', 'Canceled'),
+            
+            # Nina's applications - Arts and Culture
+            ('NinaW', 'Art and Architecture in Florence', 'Enrolled'),
+            ('NinaW', 'Ancient Philosophy in Athens', 'Applied'),
+            ('NinaW', 'Fashion Design in Milan', 'Applied'),
+            ('NinaW', 'Film and Media Studies in Mumbai', 'Withdrawn'),
+            ('NinaW', 'Culinary Arts in Paris', 'Canceled'),
+            
+            # Tom's applications - Technology and Innovation
+            ('TomA', 'Digital Innovation in Berlin', 'Applied'),
+            ('TomA', 'Technology Innovation in Tokyo', 'Withdrawn'),
+            ('TomA', 'Game Development in Seoul', 'Applied'),
+            ('TomA', 'Artificial Intelligence in Montreal', 'Canceled')
         ]
 
-        for username, program_title, status, dob, gpa, major in applications_data:
+        # Create each application and handle potential errors
+        for username, program_title, status in applications_data:
             try:
                 # Lookup user and program objects
                 user = User.objects.get(username=username)
@@ -95,21 +137,11 @@ class Command(BaseCommand):
                     major=major,
                     status=status
                 )
+                self.stdout.write(f'Created application for {username} - {program_title}: {status}')
                 
-                self.stdout.write(f'Created application: {username} -> {program_title} ({status})')
-
-                # Add a specific question and response for TomA's application
-                if username == 'TomA' and program_title == 'Antarctic Research Expedition':
-                    question = ApplicationQuestion.objects.create(
-                        program=program,
-                        text="Why do you want to participate in this study abroad program?",
-                        is_required=True
-                    )
-                    ApplicationResponse.objects.create(
-                        application=application,
-                        question=question,
-                        response="I am passionate about studying polar ecosystems and their impact on global climate."
-                    )
-
-            except (User.DoesNotExist, Program.DoesNotExist) as e:
-                self.stdout.write(self.style.ERROR(f'Error creating application: {str(e)}'))
+            except User.DoesNotExist:
+                self.stderr.write(f'Error: User {username} not found')
+            except Program.DoesNotExist:
+                self.stderr.write(f'Error: Program {program_title} not found')
+            except Exception as e:
+                self.stderr.write(f'Error creating application: {str(e)}')
