@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
-    display_name = models.CharField(max_length=100)
+    display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
 
     groups = models.ManyToManyField(
@@ -21,12 +21,12 @@ class User(AbstractUser):
 class Program(models.Model):
     title = models.CharField(max_length=80)
     year_semester = models.CharField(max_length=20)
-    description = models.TextField()
-    faculty_leads = models.CharField(max_length=255)
-    application_open_date = models.DateField()
-    application_deadline = models.DateField()
-    start_date = models.DateField()
-    end_date = models.DateField()
+    description = models.TextField(blank=True, default="No description provided.")
+    faculty_leads = models.CharField(max_length=255, default="Unknown")
+    application_open_date = models.DateField(null=True, blank=True)
+    application_deadline = models.DateField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -34,9 +34,9 @@ class Program(models.Model):
 class Application(models.Model):
     student = models.ForeignKey('User', on_delete=models.CASCADE)
     program = models.ForeignKey('Program', on_delete=models.CASCADE)
-    date_of_birth = models.DateField()
-    gpa = models.DecimalField(max_digits=3, decimal_places=2)
-    major = models.CharField(max_length=100)
+    date_of_birth = models.DateField(null=True, blank=True)  # Allow null to avoid immediate data issues
+    gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True, default=0.00)
+    major = models.CharField(max_length=100, default="Undeclared")
     status = models.CharField(
         max_length=20,
         choices=[
@@ -53,7 +53,7 @@ class Application(models.Model):
         return f"{self.student.display_name} - {self.program.title}"
 
 class ApplicationQuestion(models.Model):
-    text = models.TextField()
+    text = models.TextField(default="Default question text.")
     program = models.ForeignKey('Program', on_delete=models.CASCADE, related_name='questions')
     is_required = models.BooleanField(default=True)
 
@@ -62,8 +62,8 @@ class ApplicationQuestion(models.Model):
 
 class ApplicationResponse(models.Model):
     application = models.ForeignKey('Application', on_delete=models.CASCADE, related_name='responses')
-    question = models.ForeignKey('ApplicationQuestion', on_delete=models.CASCADE)
-    response = models.TextField()
+    question = models.ForeignKey('ApplicationQuestion', on_delete=models.CASCADE, default=1)  # Replace 1 with the ID of an existing ApplicationQuestion
+    response = models.TextField(blank=True, default="")
 
     class Meta:
         constraints = [
