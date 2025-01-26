@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
-import { Card } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axios';
 
-const StyledProgramCard = styled(Card)(({ theme, expanded }) => ({
+const StyledProgramCard = styled('div')(({ theme, expanded }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius.large,
   overflow: 'hidden',
