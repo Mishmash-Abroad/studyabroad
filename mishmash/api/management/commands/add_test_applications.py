@@ -44,70 +44,72 @@ Related Models:
 """
 
 from django.core.management.base import BaseCommand
-from api.models import User, Program, Application
+from api.models import User, Program, Application, ApplicationQuestion, ApplicationResponse
 from django.utils import timezone
+from datetime import datetime
 
 class Command(BaseCommand):
-    help = 'Creates test applications with various statuses'
+    help = 'Creates test applications with various statuses, matching the updated database schema.'
 
     def handle(self, *args, **options):
-        # Application scenarios with different statuses
-        # Format: (username, program_title, status)
         applications_data = [
-            # Emma has multiple applications - Mix of enrolled and pending
-            ('EmmaW', 'Technology Innovation in Tokyo', 'Enrolled'),
-            ('EmmaW', 'Digital Innovation in Silicon Valley', 'Applied'),
-            
-            # James applied to multiple programs - Shows enrollment and withdrawal
-            ('JamesC', 'European Politics Tour', 'Enrolled'),
-            ('JamesC', 'Global Business in Singapore', 'Withdrawn'),
-            
-            # Maria's applications - Environmental focus
-            ('MariaG', 'Wildlife Conservation in Kenya', 'Enrolled'),
-            ('MariaG', 'Sustainable Engineering in Stockholm', 'Applied'),
-            
-            # David's applications - Business focus with a cancellation
-            ('DavidK', 'Global Business in Singapore', 'Enrolled'),
-            ('DavidK', 'European Politics Tour', 'Canceled'),
-            
-            # Sarah's applications - Single pending application
-            ('SarahJ', 'Marine Biology in Great Barrier Reef', 'Applied'),
-            
-            # Mohammed's applications - Engineering focus with mixed status
-            ('MohammedA', 'Sustainable Engineering in Stockholm', 'Applied'),
-            ('MohammedA', 'Digital Innovation in Silicon Valley', 'Withdrawn'),
-            
-            # Priya's applications - Science focus
-            ('PriyaP', 'Marine Biology in Great Barrier Reef', 'Enrolled'),
-            
-            # Lucas's applications - Business focus
-            ('LucasS', 'Global Business in Singapore', 'Applied'),
-            
-            # Nina's applications - Arts focus
-            ('NinaW', 'Art and Architecture in Florence', 'Enrolled'),
-            
-            # Tom's applications - Research focus
-            ('TomA', 'Antarctic Research Expedition', 'Applied')
+            # Format: (username, program_title, status, date_of_birth, gpa, major)
+            ('EmmaW', 'Technology Innovation in Tokyo', 'Enrolled', '2002-05-10', 3.8, 'Computer Science'),
+            ('EmmaW', 'Digital Innovation in Silicon Valley', 'Applied', '2002-05-10', 3.8, 'Computer Science'),
+
+            ('JamesC', 'European Politics Tour', 'Enrolled', '2001-03-15', 3.6, 'Political Science'),
+            ('JamesC', 'Global Business in Singapore', 'Withdrawn', '2001-03-15', 3.6, 'Political Science'),
+
+            ('MariaG', 'Wildlife Conservation in Kenya', 'Enrolled', '2002-07-22', 3.9, 'Environmental Science'),
+            ('MariaG', 'Sustainable Engineering in Stockholm', 'Applied', '2002-07-22', 3.9, 'Environmental Science'),
+
+            ('DavidK', 'Global Business in Singapore', 'Enrolled', '2001-12-01', 3.7, 'Business Administration'),
+            ('DavidK', 'European Politics Tour', 'Canceled', '2001-12-01', 3.7, 'Business Administration'),
+
+            ('SarahJ', 'Marine Biology in Great Barrier Reef', 'Applied', '2003-02-10', 3.5, 'Marine Biology'),
+
+            ('MohammedA', 'Sustainable Engineering in Stockholm', 'Applied', '2002-09-30', 3.4, 'Mechanical Engineering'),
+            ('MohammedA', 'Digital Innovation in Silicon Valley', 'Withdrawn', '2002-09-30', 3.4, 'Mechanical Engineering'),
+
+            ('PriyaP', 'Marine Biology in Great Barrier Reef', 'Enrolled', '2003-03-14', 3.8, 'Marine Biology'),
+
+            ('LucasS', 'Global Business in Singapore', 'Applied', '2001-11-25', 3.6, 'Business Administration'),
+
+            ('NinaW', 'Art and Architecture in Florence', 'Enrolled', '2003-06-17', 3.7, 'Art History'),
+
+            ('TomA', 'Antarctic Research Expedition', 'Applied', '2002-04-20', 3.9, 'Biology')
         ]
 
-        # Create each application and handle potential errors
-        for username, program_title, status in applications_data:
+        for username, program_title, status, dob, gpa, major in applications_data:
             try:
-                # Lookup student and program objects
-                student = User.objects.get(username=username).student
+                # Lookup user and program objects
+                user = User.objects.get(username=username)
                 program = Program.objects.get(title=program_title)
-                
-                # Create application with specified status
+
+                # Create application with required fields
                 application = Application.objects.create(
-                    student=student,
+                    student=user,
                     program=program,
+                    date_of_birth=datetime.strptime(dob, '%Y-%m-%d').date(),
+                    gpa=gpa,
+                    major=major,
                     status=status
                 )
-                self.stdout.write(
-                    f'Created application: {username} -> {program_title} ({status})'
-                )
+                
+                self.stdout.write(f'Created application: {username} -> {program_title} ({status})')
+
+                # Add a specific question and response for TomA's application
+                if username == 'TomA' and program_title == 'Antarctic Research Expedition':
+                    question = ApplicationQuestion.objects.create(
+                        program=program,
+                        text="Why do you want to participate in this study abroad program?",
+                        is_required=True
+                    )
+                    ApplicationResponse.objects.create(
+                        application=application,
+                        question=question,
+                        response="I am passionate about studying polar ecosystems and their impact on global climate."
+                    )
+
             except (User.DoesNotExist, Program.DoesNotExist) as e:
-                # Log error if student or program not found
-                self.stdout.write(
-                    self.style.ERROR(f'Error creating application: {str(e)}')
-                )
+                self.stdout.write(self.style.ERROR(f'Error creating application: {str(e)}'))
