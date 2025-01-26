@@ -36,6 +36,7 @@ const ContentContainer = styled('div')(({ theme }) => ({
   borderRadius: theme.shape.borderRadius.large,
   boxShadow: theme.shadows.card,
   marginBottom: '24px',
+  elevation: 0,
 }));
 
 const SearchContainer = styled('div')(({ theme }) => ({
