@@ -4,14 +4,12 @@ Study Abroad Program - Test Users Creation Command
 To run this use docker compose exec backend python manage.py add_test_users
 
 This Django management command creates test users for development and testing purposes.
-It populates the database with an admin user and multiple student users with diverse
-backgrounds to simulate real-world usage scenarios.
+It populates the database with an admin user and multiple student users.
 
 Features:
 - Creates one admin user with full system access
-- Creates multiple student users with varied academic backgrounds
+- Creates multiple student users 
 - Sets up proper password hashing for security
-- Creates associated student profiles with academic information
 - All users created have password set to 'guest'
 
 Usage:
@@ -22,13 +20,11 @@ Note: This command should only be used in development/testing environments,
 
 Related Models:
 - User: Custom user model with authentication fields
-- Student: Profile model containing academic information
 """
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth.hashers import make_password
-from api.models import User, Student
-from datetime import date
+from api.models import User
 
 class Command(BaseCommand):
     help = 'Creates test users including admin and students'
@@ -47,22 +43,22 @@ class Command(BaseCommand):
         self.stdout.write(f'Created admin user: {admin.username}')
 
         # List of diverse student profiles with varied academic backgrounds
-        # Format: (display_name, username, major, gpa)
+        # Format: (display_name, username)
         students_data = [
-            ('Emma Wilson', 'EmmaW', 'Computer Science', 3.8),
-            ('James Chen', 'JamesC', 'International Relations', 3.9),
-            ('Maria Garcia', 'MariaG', 'Environmental Science', 3.7),
-            ('David Kim', 'DavidK', 'Business Administration', 3.6),
-            ('Sarah Johnson', 'SarahJ', 'Psychology', 3.95),
-            ('Mohammed Ali', 'MohammedA', 'Engineering', 3.85),
-            ('Priya Patel', 'PriyaP', 'Biology', 3.75),
-            ('Lucas Silva', 'LucasS', 'Economics', 3.5),
-            ('Nina Williams', 'NinaW', 'Art History', 3.9),
-            ('Tom Anderson', 'TomA', 'Physics', 3.7)
+            ('Emma Wilson', 'EmmaW'),
+            ('James Chen', 'JamesC'),
+            ('Maria Garcia', 'MariaG'),
+            ('David Kim', 'DavidK'),
+            ('Sarah Johnson', 'SarahJ'),
+            ('Mohammed Ali', 'MohammedA'),
+            ('Priya Patel', 'PriyaP'),
+            ('Lucas Silva', 'LucasS'),
+            ('Nina Williams', 'NinaW'),
+            ('Tom Anderson', 'TomA')
         ]
 
         # Create student users and their associated profiles
-        for display_name, username, major, gpa in students_data:
+        for display_name, username in students_data:
             # Create base user account with authentication fields
             user = User.objects.create(
                 username=username,
@@ -74,11 +70,4 @@ class Command(BaseCommand):
                 is_active=True  # Account is active and can log in
             )
             
-            # Create associated student profile with academic information
-            Student.objects.create(
-                user=user,
-                date_of_birth=date(2000, 1, 1),  # Example birthdate
-                major=major,
-                gpa=gpa
-            )
-            self.stdout.write(f'Created student: {username} ({major})')
+            self.stdout.write(f'Created student: {username}')
