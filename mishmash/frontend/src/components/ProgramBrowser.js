@@ -225,7 +225,7 @@ const ProgramBrowser = () => {
               Enrolled
             </FilterButton>
 
-            {/* Show Past Programs toggle */}
+            {/* Show Past Deadline Programs toggle */}
             <button
               onClick={() => setShowPastPrograms(!showPastPrograms)}
               style={{
@@ -256,7 +256,7 @@ const ProgramBrowser = () => {
                     : 'transparent',
                 }}
               />
-              Show Past Programs
+              Show Programs Past Deadline
             </button>
           </div>
         </SearchContainer>

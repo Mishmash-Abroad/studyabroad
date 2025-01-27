@@ -89,7 +89,7 @@ const ApplicationStatusBadge = styled('div')(({ theme, status }) => {
       case 'canceled':
         return {
           bg: theme.palette.status.error.background,
-          color: theme.palette.status.error.main,
+          color: theme.palette.status.warning.main,
         };
       default:
         return {
@@ -373,8 +373,8 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
         {getStatusBadge()}
       </StatusBadge>
 
-      {/* Application Status badge - only shown in applied section */}
-      {program.applicationStatus && isInAppliedSection && (
+      {/* Application Status badge - only shown for withdrawn/cancelled applications */}
+      {applicationStatus && ['withdrawn', 'canceled'].includes(applicationStatus.toLowerCase()) && (
         <ApplicationStatusBadge status={applicationStatus}>
           {getApplicationStatusText()}
         </ApplicationStatusBadge>

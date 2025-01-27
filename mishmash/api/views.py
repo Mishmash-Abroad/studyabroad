@@ -31,7 +31,7 @@ from rest_framework import viewsets, filters, permissions, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.db.models import Q
@@ -305,3 +305,94 @@ def login_view(request):
         'display_name': user.display_name,
         'is_admin': user.is_admin
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """
+    Logout the current user
+    """
+    auth_logout(request)
+    return Response({'detail': 'Successfully logged out'})
+
+class ProgramViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing study abroad programs.
+    
+    Provides CRUD operations for programs and includes:
+    - Search by title or faculty leads
+    - Ordering by application deadline
+    - Filtering for current/future programs only
+    - Application status checking for authenticated users
+    
+    Permissions:
+    - List/Retrieve: All users
+    - Create/Update/Delete: Admin only
+    """
+    serializer_class = ProgramSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'faculty_leads']
+    ordering_fields = ['application_deadline']
+    ordering = ['application_deadline']  # Default ordering
+
+    def get_queryset(self):
+        """
+        Get the list of programs, filtered by:
+        - End date (only current/future programs)
+        - Search query (title or faculty leads)
+        """
+        # Only show current and future programs
+        today = timezone.now().date()
+        queryset = Program.objects.filter(end_date__gte=today)
+        
+        # Apply search filter if provided
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(faculty_leads__icontains=search)
+            )
+        
+        return queryset
+
+    @action(detail=True, methods=['get'])
+    def application_status(self, request, pk=None):
+        """
+        Check the current user's application status for a specific program.
+        
+        Returns:
+        - Application status and ID if an application exists
+        - None if no application found or user not authenticated
+        """
+        program = self.get_object()
+        if not request.user.is_authenticated:
+            return Response({'status': None})
+            
+        try:
+            application = Application.objects.get(
+                student=request.user,
+                program=program
+            )
+            return Response({
+                'status': application.status,
+                'application_id': application.id
+            })
+        except Application.DoesNotExist:
+            return Response({'status': None})
+
+class ApplicationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing study abroad applications.
+    
+    Provides:
+    - List user's applications
+    - Submit new applications
+    - Update application status
+    - View application details
+    
+    Permissions:
+    - Users can only view/edit their own applications
+    - Admins can view/edit all applications
+    """
+    queryset = Application.objects.all()
+    serializer_class = ApplicationSerializer

@@ -5,6 +5,14 @@ To run this use docker compose exec backend python manage.py add_test_programs
 
 This Django management command creates a diverse set of test study abroad programs
 with various scenarios to simulate real-world program offerings and timelines.
+
+Program States:
+- Past Programs: Already completed
+- Current Programs: Currently running
+- Future Programs: Not yet started
+- Open Applications: Currently accepting applications
+- Closed Applications: Application deadline passed
+- Upcoming Applications: Not yet open for applications
 """
 
 from django.core.management.base import BaseCommand
@@ -21,66 +29,98 @@ class Command(BaseCommand):
         
         # Define program data with various scenarios and timelines
         programs_data = [
-            # Currently Open Programs - Fall 2025
+            # Past Programs (Fall 2024)
             {
-                'title': 'Technology Innovation in Tokyo',
-                'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Sarah Chen, Prof. Hiroshi Tanaka',
-                'description': 'Explore the intersection of traditional culture and cutting-edge technology in Japan\'s bustling capital. Work with leading tech companies and experience Japanese innovation firsthand.',
-                'application_open_date': today - timedelta(days=10),
-                'application_deadline': today + timedelta(days=45),
-                'start_date': today + timedelta(days=180),
-                'end_date': today + timedelta(days=270)
+                'title': 'Ancient Philosophy in Athens',
+                'year_semester': '2024 Fall',
+                'faculty_leads': 'Prof. Elena Papadopoulos, Dr. Marcus Wisdom',
+                'description': 'Study ancient Greek philosophy where it all began. Visit historical sites and engage with contemporary scholars in philosophical discussions.',
+                'application_open_date': today - timedelta(days=300),
+                'application_deadline': today - timedelta(days=240),
+                'start_date': today - timedelta(days=180),
+                'end_date': today - timedelta(days=90)
             },
             {
-                'title': 'Sustainable Engineering in Stockholm',
-                'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Erik Anderson, Dr. Maria Nilsson',
-                'description': 'Study renewable energy solutions and sustainable urban planning in one of the world\'s greenest cities. Includes visits to leading clean tech companies and research facilities.',
-                'application_open_date': today - timedelta(days=5),
-                'application_deadline': today + timedelta(days=60),
-                'start_date': today + timedelta(days=200),
-                'end_date': today + timedelta(days=290)
+                'title': 'Digital Innovation in Silicon Valley',
+                'year_semester': '2024 Fall',
+                'faculty_leads': 'Dr. Tech Expert, Prof. Innovation Leader',
+                'description': 'Experience Silicon Valley\'s thriving tech scene and startup ecosystem. Work on projects with local tech companies and attend industry events.',
+                'application_open_date': today - timedelta(days=310),
+                'application_deadline': today - timedelta(days=250),
+                'start_date': today - timedelta(days=190),
+                'end_date': today - timedelta(days=100)
             },
             {
-                'title': 'Business Innovation in Singapore',
-                'year_semester': '2025 Fall',
-                'faculty_leads': 'Prof. Michael Chang, Dr. Lisa Tan',
-                'description': 'Gain insights into Asian business practices and innovation ecosystems. Work directly with startups and established companies in Singapore\'s dynamic business environment.',
-                'application_open_date': today - timedelta(days=15),
-                'application_deadline': today + timedelta(days=30),
-                'start_date': today + timedelta(days=190),
-                'end_date': today + timedelta(days=280)
+                'title': 'Sustainable Agriculture in New Zealand',
+                'year_semester': '2024 Fall',
+                'faculty_leads': 'Dr. Farm Expert, Prof. Sustainable Practices',
+                'description': 'Study sustainable farming practices and agricultural innovation in New Zealand. Work with local farmers and research sustainable methods.',
+                'application_open_date': today - timedelta(days=305),
+                'application_deadline': today - timedelta(days=245),
+                'start_date': today - timedelta(days=185),
+                'end_date': today - timedelta(days=95)
             },
             {
-                'title': 'Film and Media Studies in Mumbai',
-                'year_semester': '2025 Fall',
-                'faculty_leads': 'Prof. Priya Sharma, Dr. James Director',
-                'description': 'Experience the vibrant world of Bollywood and Indian cinema. Learn about film production, storytelling techniques, and the impact of media on society.',
-                'application_open_date': today - timedelta(days=12),
-                'application_deadline': today + timedelta(days=40),
-                'start_date': today + timedelta(days=185),
-                'end_date': today + timedelta(days=275)
-            },
-            {
-                'title': 'Urban Planning in Barcelona',
-                'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Carlos Martinez, Prof. Anna Urban',
-                'description': 'Study innovative urban design and architecture in one of Europe\'s most dynamic cities. Focus on sustainable city planning and historical preservation.',
-                'application_open_date': today - timedelta(days=8),
-                'application_deadline': today + timedelta(days=50),
-                'start_date': today + timedelta(days=195),
-                'end_date': today + timedelta(days=285)
+                'title': 'Journalism in New York City',
+                'year_semester': '2024 Fall',
+                'faculty_leads': 'Prof. Media Expert, Dr. Journalism Pro',
+                'description': 'Experience journalism in the media capital of the world. Work with leading news organizations and learn modern digital journalism.',
+                'application_open_date': today - timedelta(days=315),
+                'application_deadline': today - timedelta(days=255),
+                'start_date': today - timedelta(days=195),
+                'end_date': today - timedelta(days=105)
             },
             
-            # Summer 2025 Programs
+            # Currently Running Programs (Spring 2025)
+            {
+                'title': 'European Politics Tour',
+                'year_semester': '2025 Spring',
+                'faculty_leads': 'Dr. Euro Expert, Prof. Political Science',
+                'description': 'Travel through major European capitals studying political systems and international relations. Meet with government officials and policy makers.',
+                'application_open_date': today - timedelta(days=150),
+                'application_deadline': today - timedelta(days=90),
+                'start_date': today - timedelta(days=30),
+                'end_date': today + timedelta(days=60)
+            },
+            {
+                'title': 'Wildlife Conservation in Kenya',
+                'year_semester': '2025 Spring',
+                'faculty_leads': 'Dr. Nature Expert, Prof. Wildlife Studies',
+                'description': 'Study wildlife conservation and ecological preservation in Kenya\'s national parks. Work with local conservation experts and research teams.',
+                'application_open_date': today - timedelta(days=160),
+                'application_deadline': today - timedelta(days=100),
+                'start_date': today - timedelta(days=40),
+                'end_date': today + timedelta(days=50)
+            },
+            {
+                'title': 'Film Production in Los Angeles',
+                'year_semester': '2025 Spring',
+                'faculty_leads': 'Prof. Cinema Arts, Dr. Film Studies',
+                'description': 'Learn film production in Hollywood. Work on actual film sets and learn from industry professionals.',
+                'application_open_date': today - timedelta(days=155),
+                'application_deadline': today - timedelta(days=95),
+                'start_date': today - timedelta(days=35),
+                'end_date': today + timedelta(days=55)
+            },
+            {
+                'title': 'Robotics Research in Seoul',
+                'year_semester': '2025 Spring',
+                'faculty_leads': 'Dr. Robotics Expert, Prof. AI Science',
+                'description': 'Study advanced robotics in South Korea\'s tech hub. Work with leading robotics companies and research labs.',
+                'application_open_date': today - timedelta(days=165),
+                'application_deadline': today - timedelta(days=105),
+                'start_date': today - timedelta(days=45),
+                'end_date': today + timedelta(days=45)
+            },
+            
+            # Currently Open for Applications (Summer 2025)
             {
                 'title': 'Marine Biology in Great Barrier Reef',
                 'year_semester': '2025 Summer',
                 'faculty_leads': 'Dr. Rachel Ocean, Prof. James Coral',
                 'description': 'Study marine ecosystems and conservation efforts in the world\'s largest coral reef system. Includes diving certification and hands-on research projects.',
                 'application_open_date': today - timedelta(days=25),
-                'application_deadline': today + timedelta(days=5),
+                'application_deadline': today + timedelta(days=35),
                 'start_date': today + timedelta(days=120),
                 'end_date': today + timedelta(days=150)
             },
@@ -90,7 +130,7 @@ class Command(BaseCommand):
                 'faculty_leads': 'Prof. Isabella Romano, Dr. Robert Art',
                 'description': 'Immerse yourself in Renaissance art and architecture. Study in historic studios and visit world-renowned museums and architectural sites.',
                 'application_open_date': today - timedelta(days=20),
-                'application_deadline': today + timedelta(days=10),
+                'application_deadline': today + timedelta(days=40),
                 'start_date': today + timedelta(days=130),
                 'end_date': today + timedelta(days=160)
             },
@@ -100,37 +140,89 @@ class Command(BaseCommand):
                 'faculty_leads': 'Dr. Samuel Health, Prof. Nomvula Mbeki',
                 'description': 'Study healthcare systems and public health challenges in South Africa. Work with local clinics and healthcare professionals.',
                 'application_open_date': today - timedelta(days=30),
-                'application_deadline': today + timedelta(days=15),
+                'application_deadline': today + timedelta(days=30),
                 'start_date': today + timedelta(days=140),
                 'end_date': today + timedelta(days=170)
             },
             {
-                'title': 'Archaeology in Petra',
-                'year_semester': '2025 Summer',
-                'faculty_leads': 'Dr. Ahmed Hassan, Prof. Lucy Stones',
-                'description': 'Participate in active archaeological digs and study ancient civilizations in Jordan. Learn excavation techniques and artifact preservation.',
-                'application_open_date': today - timedelta(days=22),
-                'application_deadline': today + timedelta(days=8),
-                'start_date': today + timedelta(days=135),
-                'end_date': today + timedelta(days=165)
-            },
-            {
                 'title': 'Culinary Arts in Paris',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Chef Marie Laurent, Prof. John Taste',
-                'description': 'Master French culinary techniques and food culture. Study at prestigious cooking schools and visit local markets and restaurants.',
-                'application_open_date': today - timedelta(days=18),
-                'application_deadline': today + timedelta(days=12),
+                'faculty_leads': 'Chef Marie Laurent, Prof. Gastronomy',
+                'description': 'Master French culinary techniques and food culture. Study at prestigious cooking schools and visit local markets.',
+                'application_open_date': today - timedelta(days=15),
+                'application_deadline': today + timedelta(days=45),
                 'start_date': today + timedelta(days=125),
                 'end_date': today + timedelta(days=155)
             },
-            
-            # Spring 2026 Programs
             {
-                'title': 'Ancient Philosophy in Athens',
+                'title': 'Music Performance in Vienna',
+                'year_semester': '2025 Summer',
+                'faculty_leads': 'Maestro Classical, Dr. Music History',
+                'description': 'Study classical music in the heart of Europe. Perform in historic venues and learn from world-class musicians.',
+                'application_open_date': today - timedelta(days=18),
+                'application_deadline': today + timedelta(days=42),
+                'start_date': today + timedelta(days=128),
+                'end_date': today + timedelta(days=158)
+            },
+            
+            # Currently Open for Applications (Fall 2025)
+            {
+                'title': 'Technology Innovation in Tokyo',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Dr. Sarah Chen, Prof. Hiroshi Tanaka',
+                'description': 'Explore the intersection of traditional culture and cutting-edge technology in Japan\'s bustling capital. Work with leading tech companies and experience Japanese innovation firsthand.',
+                'application_open_date': today - timedelta(days=10),
+                'application_deadline': today + timedelta(days=80),
+                'start_date': today + timedelta(days=180),
+                'end_date': today + timedelta(days=270)
+            },
+            {
+                'title': 'Sustainable Engineering in Stockholm',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Dr. Erik Anderson, Dr. Maria Nilsson',
+                'description': 'Study renewable energy solutions and sustainable urban planning in one of the world\'s greenest cities. Includes visits to leading clean tech companies and research facilities.',
+                'application_open_date': today - timedelta(days=5),
+                'application_deadline': today + timedelta(days=85),
+                'start_date': today + timedelta(days=200),
+                'end_date': today + timedelta(days=290)
+            },
+            {
+                'title': 'Global Business in Singapore',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Prof. Michael Chang, Dr. Lisa Tan',
+                'description': 'Gain insights into Asian business practices and innovation ecosystems. Work directly with startups and established companies in Singapore\'s dynamic business environment.',
+                'application_open_date': today - timedelta(days=15),
+                'application_deadline': today + timedelta(days=75),
+                'start_date': today + timedelta(days=190),
+                'end_date': today + timedelta(days=280)
+            },
+            {
+                'title': 'Psychology Research in Copenhagen',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Dr. Mind Expert, Prof. Behavioral Science',
+                'description': 'Study advanced psychological research methods in Denmark. Work with leading research institutions on cutting-edge studies.',
+                'application_open_date': today - timedelta(days=8),
+                'application_deadline': today + timedelta(days=82),
+                'start_date': today + timedelta(days=185),
+                'end_date': today + timedelta(days=275)
+            },
+            {
+                'title': 'Urban Design in Barcelona',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Prof. Architecture Master, Dr. Urban Planning',
+                'description': 'Study urban design and architecture in one of Europe\'s most innovative cities. Work on real urban development projects.',
+                'application_open_date': today - timedelta(days=12),
+                'application_deadline': today + timedelta(days=78),
+                'start_date': today + timedelta(days=188),
+                'end_date': today + timedelta(days=278)
+            },
+            
+            # Future Programs - Not Yet Open for Applications (Spring 2026)
+            {
+                'title': 'Antarctic Research Expedition',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Prof. Elena Papadopoulos, Dr. Marcus Wisdom',
-                'description': 'Study ancient Greek philosophy where it all began. Visit historical sites and engage with contemporary scholars in philosophical discussions.',
+                'faculty_leads': 'Dr. Ice Expert, Prof. Polar Science',
+                'description': 'Conduct research in Antarctica studying climate change, marine biology, and glaciology. Work alongside international research teams in extreme conditions.',
                 'application_open_date': today + timedelta(days=90),
                 'application_deadline': today + timedelta(days=150),
                 'start_date': today + timedelta(days=400),
@@ -147,16 +239,6 @@ class Command(BaseCommand):
                 'end_date': today + timedelta(days=500)
             },
             {
-                'title': 'Digital Innovation in Berlin',
-                'year_semester': '2026 Spring',
-                'faculty_leads': 'Prof. Hans Schmidt, Dr. Tech Innovation',
-                'description': 'Experience Berlin\'s thriving tech scene and startup ecosystem. Work on projects with local tech companies and attend industry events.',
-                'application_open_date': today + timedelta(days=95),
-                'application_deadline': today + timedelta(days=155),
-                'start_date': today + timedelta(days=420),
-                'end_date': today + timedelta(days=510)
-            },
-            {
                 'title': 'Fashion Design in Milan',
                 'year_semester': '2026 Spring',
                 'faculty_leads': 'Prof. Giulia Fashion, Dr. Style Expert',
@@ -167,50 +249,32 @@ class Command(BaseCommand):
                 'end_date': today + timedelta(days=505)
             },
             {
-                'title': 'Game Development in Seoul',
+                'title': 'Space Science in Houston',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Dr. Gaming Pro, Prof. Virtual Reality',
-                'description': 'Learn game development and esports management in Korea\'s gaming hub. Collaborate with leading gaming companies and attend gaming conventions.',
+                'faculty_leads': 'Dr. Astronomy Expert, Prof. Space Science',
+                'description': 'Study space science and astronomy at NASA\'s Johnson Space Center. Work with space scientists and learn about space exploration.',
                 'application_open_date': today + timedelta(days=92),
                 'application_deadline': today + timedelta(days=152),
+                'start_date': today + timedelta(days=420),
+                'end_date': today + timedelta(days=510)
+            },
+            {
+                'title': 'Game Design in Montreal',
+                'year_semester': '2026 Spring',
+                'faculty_leads': 'Prof. Game Dev, Dr. Interactive Media',
+                'description': 'Study game design and development in one of the world\'s leading gaming hubs. Work with major gaming studios on real projects.',
+                'application_open_date': today + timedelta(days=95),
+                'application_deadline': today + timedelta(days=155),
                 'start_date': today + timedelta(days=425),
                 'end_date': today + timedelta(days=515)
-            },
-            
-            # Past Programs (for testing history)
-            {
-                'title': 'Finance and Economics in London',
-                'year_semester': '2024 Fall',
-                'faculty_leads': 'Dr. William Money, Prof. Elizabeth Banks',
-                'description': 'Study global finance in one of the world\'s leading financial centers. Includes visits to the London Stock Exchange and major financial institutions.',
-                'application_open_date': today - timedelta(days=300),
-                'application_deadline': today - timedelta(days=240),
-                'start_date': today - timedelta(days=150),
-                'end_date': today - timedelta(days=60)
-            },
-            {
-                'title': 'Artificial Intelligence in Montreal',
-                'year_semester': '2024 Fall',
-                'faculty_leads': 'Dr. AI Expert, Prof. Machine Learning',
-                'description': 'Study at one of the world\'s leading AI research hubs. Work on cutting-edge projects and attend industry conferences.',
-                'application_open_date': today - timedelta(days=290),
-                'application_deadline': today - timedelta(days=230),
-                'start_date': today - timedelta(days=140),
-                'end_date': today - timedelta(days=50)
-            },
-            {
-                'title': 'Renewable Energy in Dubai',
-                'year_semester': '2024 Fall',
-                'faculty_leads': 'Dr. Solar Power, Prof. Green Energy',
-                'description': 'Study sustainable energy solutions in a rapidly developing city. Visit solar farms and work on renewable energy projects.',
-                'application_open_date': today - timedelta(days=295),
-                'application_deadline': today - timedelta(days=235),
-                'start_date': today - timedelta(days=145),
-                'end_date': today - timedelta(days=55)
             }
         ]
 
-        # Create each program in the database
+        # Clear existing programs
+        Program.objects.all().delete()
+        self.stdout.write('Cleared existing programs')
+
+        # Create new programs
         for program_data in programs_data:
             program = Program.objects.create(**program_data)
             self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
