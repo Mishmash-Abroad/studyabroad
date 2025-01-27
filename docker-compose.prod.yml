@@ -53,6 +53,28 @@ services:
       timeout: 5s
       retries: 5
 
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt:rw
+    command: renew
+    entrypoint: "sleep infinity"
+
 volumes:
   mysql_data:
   static_volume:
