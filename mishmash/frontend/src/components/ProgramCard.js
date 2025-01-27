@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
-import { Card } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axios';
 
-const StyledProgramCard = styled(Card)(({ theme, expanded }) => ({
+const StyledProgramCard = styled('div')(({ theme, expanded }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius.large,
   overflow: 'hidden',
@@ -77,6 +76,48 @@ const StatusBadge = styled('div')(({ theme, status }) => {
   };
 });
 
+const ApplicationStatusBadge = styled('div')(({ theme, status }) => {
+  const getColors = () => {
+    switch (status?.toLowerCase()) {
+      case 'enrolled':
+      case 'applied':
+        return {
+          bg: theme.palette.status.info.background,
+          color: theme.palette.status.info.main,
+        };
+      case 'withdrawn':
+      case 'canceled':
+        return {
+          bg: theme.palette.status.error.background,
+          color: theme.palette.status.warning.main,
+        };
+      default:
+        return {
+          bg: theme.palette.status.neutral.background,
+          color: theme.palette.status.neutral.main,
+        };
+    }
+  };
+
+  const colors = getColors();
+
+  return {
+    position: 'absolute',
+    top: '45px', 
+    right: '10px',
+    padding: '6px 12px',
+    borderRadius: theme.shape.borderRadius.xl,
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: theme.typography.subtitle2.fontWeight,
+    fontFamily: theme.typography.fontFamily,
+    letterSpacing: theme.typography.caption.letterSpacing,
+    boxShadow: theme.shadows.button,
+    zIndex: 1,
+    backgroundColor: colors.bg,
+    color: colors.color,
+  };
+});
+
 const ApplicationButton = styled('button')(({ theme, variant }) => {
   const getColors = () => {
     switch (variant) {
@@ -121,12 +162,12 @@ const ApplicationButton = styled('button')(({ theme, variant }) => {
 /**
  * Program Card Component
  */
-const ProgramCard = ({ program }) => {
+const ProgramCard = ({ program, isInAppliedSection }) => {
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme(); // for referencing theme in inline styles
+  const theme = useTheme(); 
 
   // Date calculations
   const today = new Date();
@@ -190,6 +231,22 @@ const ProgramCard = ({ program }) => {
         return 'Previously withdrawn - eligible to reapply';
       case 'Canceled':
         return 'Previously canceled - eligible to reapply';
+      default:
+        return null;
+    }
+  };
+
+  // Get the application status badge text
+  const getApplicationStatusText = () => {
+    if (!applicationStatus) return null;
+    
+    switch (applicationStatus.toLowerCase()) {
+      case 'applied':
+        return 'Application Submitted';
+      case 'withdrawn':
+        return 'Application Withdrawn';
+      case 'canceled':
+        return 'Application Canceled';
       default:
         return null;
     }
@@ -311,11 +368,17 @@ const ProgramCard = ({ program }) => {
           zIndex: 0,
         }}
       />
-      {/* Status badge */}
+      {/* Program Status badge */}
       <StatusBadge status={getStatusBadge()}>
         {getStatusBadge()}
       </StatusBadge>
 
+      {/* Application Status badge - only shown for withdrawn/cancelled applications */}
+      {applicationStatus && ['withdrawn', 'canceled'].includes(applicationStatus.toLowerCase()) && (
+        <ApplicationStatusBadge status={applicationStatus}>
+          {getApplicationStatusText()}
+        </ApplicationStatusBadge>
+      )}
       {/* Program title and location */}
       <div
         style={{
@@ -355,7 +418,7 @@ const ProgramCard = ({ program }) => {
             padding: '20px',
             marginTop: '100px',
             backgroundColor: theme.palette.background.paper,
-            borderTop: `1px solid rgba(0,0,0,0.2)`, //very slight darkening mask
+            borderTop: `1px solid rgba(0,0,0,0.2)`, 
             zIndex: 1,
             position: 'relative',
           }}

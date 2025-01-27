@@ -36,6 +36,7 @@ const ContentContainer = styled('div')(({ theme }) => ({
   borderRadius: theme.shape.borderRadius.large,
   boxShadow: theme.shadows.card,
   marginBottom: '24px',
+  elevation: 0,
 }));
 
 const SearchContainer = styled('div')(({ theme }) => ({
@@ -161,7 +162,7 @@ const ProgramBrowser = () => {
         case 'applied':
           return (
             program.applicationStatus &&
-            program.applicationStatus.toLowerCase() === 'applied'
+            ['applied', 'withdrawn', 'canceled'].includes(program.applicationStatus.toLowerCase())
           );
         case 'enrolled':
           return (
@@ -224,7 +225,7 @@ const ProgramBrowser = () => {
               Enrolled
             </FilterButton>
 
-            {/* Show Past Programs toggle */}
+            {/* Show Past Deadline Programs toggle */}
             <button
               onClick={() => setShowPastPrograms(!showPastPrograms)}
               style={{
@@ -255,7 +256,7 @@ const ProgramBrowser = () => {
                     : 'transparent',
                 }}
               />
-              Show Past Programs
+              Show Programs Past Deadline
             </button>
           </div>
         </SearchContainer>
@@ -278,7 +279,11 @@ const ProgramBrowser = () => {
         ) : (
           <ProgramGrid>
             {getFilteredPrograms().map((program) => (
-              <ProgramCard key={program.id} program={program} />
+              <ProgramCard 
+                key={program.id} 
+                program={program} 
+                isInAppliedSection={filter === 'applied'}
+              />
             ))}
           </ProgramGrid>
         )}

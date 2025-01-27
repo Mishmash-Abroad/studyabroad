@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import ProgramBrowser from '../components/ProgramBrowser';
+import MyProgramsTable from '../components/MyProgramsTable';
 
 // -------------------- STYLES (moved from index.js) --------------------
 const DashboardContainer = styled('div')(({ theme }) => ({
@@ -73,6 +74,8 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'programs':
         return <ProgramBrowser />;
+      case 'my-programs':
+        return <MyProgramsTable />;
       case 'overview':
       default:
         return (
@@ -103,6 +106,12 @@ const Dashboard = () => {
             onClick={() => setActiveTab('programs')}
           >
             Browse Programs
+          </TabButton>
+          <TabButton
+            active={activeTab === 'my-programs'}
+            onClick={() => setActiveTab('my-programs')}
+          >
+            My Programs
           </TabButton>
         </TabContainer>
 
