@@ -6,11 +6,12 @@ services:
       context: ./mishmash/frontend
       dockerfile: Dockerfile
     volumes:
-      - /app/node_modules
       - ./mishmash/frontend/build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=http://localhost:8000/api
+      - REACT_APP_API_URL=http://backend:8000/api
+    command: sh -c "npm run build && tail -f /dev/null"
+
     depends_on:
       - backend
 
@@ -39,6 +40,7 @@ services:
       db:
         condition: service_healthy
 
+
   db:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
@@ -53,29 +55,8 @@ services:
       timeout: 5s
       retries: 5
 
-  nginx:
-    image: nginx:1.25-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf:/etc/nginx/conf.d:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - static_volume:/app/static
-      - media_volume:/app/media
-    depends_on:
-      - frontend
-      - backend
-    restart: always
-
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - ./nginx/ssl:/etc/letsencrypt:rw
-    command: renew
-    entrypoint: "sleep infinity"
-
 volumes:
   mysql_data:
   static_volume:
   media_volume:
+  frontend_build:
