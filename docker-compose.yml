@@ -48,7 +48,7 @@ services:
       - "8000:8000"  # Exposed for development debugging
     environment:
       - DEBUG=1
-      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu
+      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
