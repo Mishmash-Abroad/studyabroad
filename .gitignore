@@ -31,3 +31,4 @@ db.sqlite3
 
 # Docker files
 *.pid
+.DS_Store
