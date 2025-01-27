@@ -130,7 +130,7 @@ function TopNavBar({ onLoginClick }) {
             </NavButton>
           </>
         ) : (
-          <NavButton onClick={onLoginClick}>Login</NavButton>
+          <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
         )}
       </NavControls>
     </NavBar>
