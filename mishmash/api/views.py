@@ -54,6 +54,10 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.student == request.user or request.user.is_admin
     
+class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
+    """Custom permission to allow only owners of the application responses or admins to access or modify them."""
+    def has_object_permission(self, request, view, obj):
+        return obj.application.student == request.user or request.user.is_admin
 
 ### ViewSet classes for the API interface ### 
 
@@ -189,7 +193,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     """
     queryset = ApplicationResponse.objects.all()
     serializer_class = ApplicationResponseSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsApplicationResponseOwnerOrAdmin]
 
     def get_queryset(self):
         """Allow users to view only their own responses, unless they are an admin."""
