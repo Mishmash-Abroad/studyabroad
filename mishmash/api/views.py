@@ -31,7 +31,7 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.db.models import Q
@@ -97,6 +97,15 @@ def login_view(request):
         'is_admin': user.is_admin
     })
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """
+    Logout the current user
+    """
+    auth_logout(request)
+    return Response({'detail': 'Successfully logged out'})
+
 class ProgramViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad programs.
@@ -152,7 +161,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
             
         try:
             application = Application.objects.get(
-                student__user=request.user,
+                student=request.user,
                 program=program
             )
             return Response({
