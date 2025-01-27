@@ -101,6 +101,7 @@ const FormError = styled("div")(({ theme }) => ({
 const LoginModal = ({ onClose }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -138,12 +139,18 @@ const LoginModal = ({ onClose }) => {
     setError("");
     setLoading(true);
 
+    if (password !== confirmPassword){
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await axiosInstance.post("/api/signup/", {
         username,
         password,
         email,
-        displayName
+        displayName,
       });
 
       if (response.data.token) {
@@ -215,6 +222,14 @@ const LoginModal = ({ onClose }) => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+
+              <FormInput
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
 
