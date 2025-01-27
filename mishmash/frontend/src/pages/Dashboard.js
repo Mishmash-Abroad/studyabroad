@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { styled } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import ProgramBrowser from '../components/ProgramBrowser';
 import MyProgramsTable from '../components/MyProgramsTable';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 
 // -------------------- STYLES (moved from index.js) --------------------
 const DashboardContainer = styled('div')(({ theme }) => ({
@@ -68,22 +69,35 @@ const TabContent = styled('div')(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const Dashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'programs':
-        return <ProgramBrowser />;
+  // Get current tab from URL path
+  const getCurrentTab = () => {
+    const path = location.pathname.split('/').pop();
+    switch (path) {
+      case 'browse':
+        return 'programs';
       case 'my-programs':
-        return <MyProgramsTable />;
-      case 'overview':
+        return 'my-programs';
       default:
-        return (
-          <div style={{ padding: '20px' }}>
-            <h2>Welcome, {user?.display_name}!</h2>
-            <p>View available study abroad programs or check your existing applications.</p>
-          </div>
-        );
+        return 'overview';
+    }
+  };
+
+  const activeTab = getCurrentTab();
+
+  // Navigate to tab
+  const handleTabChange = (tab) => {
+    switch (tab) {
+      case 'programs':
+        navigate('/dashboard/browse');
+        break;
+      case 'my-programs':
+        navigate('/dashboard/my-programs');
+        break;
+      default:
+        navigate('/dashboard');
     }
   };
 
@@ -97,25 +111,37 @@ const Dashboard = () => {
         <TabContainer>
           <TabButton
             active={activeTab === 'overview'}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabChange('overview')}
           >
             Overview
           </TabButton>
           <TabButton
             active={activeTab === 'programs'}
-            onClick={() => setActiveTab('programs')}
+            onClick={() => handleTabChange('programs')}
           >
             Browse Programs
           </TabButton>
           <TabButton
             active={activeTab === 'my-programs'}
-            onClick={() => setActiveTab('my-programs')}
+            onClick={() => handleTabChange('my-programs')}
           >
             My Programs
           </TabButton>
         </TabContainer>
 
-        <TabContent>{renderTabContent()}</TabContent>
+        <TabContent>
+          <Routes>
+            <Route path="/" element={
+              <div style={{ padding: '20px' }}>
+                <h2>Welcome, {user?.display_name}!</h2>
+                <p>View available study abroad programs or check your existing applications.</p>
+              </div>
+            } />
+            <Route path="browse" element={<ProgramBrowser />} />
+            <Route path="my-programs" element={<MyProgramsTable />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </TabContent>
       </DashboardContent>
     </DashboardContainer>
   );
