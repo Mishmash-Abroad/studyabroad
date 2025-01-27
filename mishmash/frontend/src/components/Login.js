@@ -9,8 +9,6 @@ import {
   Link,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 
 const Login = () => {
   const paperStyle = {
@@ -30,32 +28,34 @@ const Login = () => {
           </Avatar>
           <h2>Sign In</h2>
         </Grid>
-        <TextField
-          label="Username"
-          placeholder="Enter username"
-          fullWidth
-          required
-        />
-        <TextField
-          label="Password"
-          placeholder="Enter password"
-          type="password"
-          fullWidth
-          required
-        />
-        <Button
-          type="submit"
-          color="primary"
-          variant="contained"
-          style={btnstyle}
-          fullWidth
-        >
-          Sign in
-        </Button>
+        <form post="login_user" action="">
+          <TextField
+            label="Username"
+            placeholder="Enter username"
+            fullWidth
+            required
+          />
+          <TextField
+            label="Password"
+            placeholder="Enter password"
+            type="password"
+            fullWidth
+            required
+          />
+          <Button
+            type="submit"
+            color="primary"
+            variant="contained"
+            style={btnstyle}
+            fullWidth
+          >
+            Sign in
+          </Button>
+        </form>
         <Link to="/register">
-        <Typography>
-          <Link href="/register">Forgot password? Want to change it? </Link>
-        </Typography>
+          <Typography>
+            <Link href="/register">Forgot password? Want to change it? </Link>
+          </Typography>
         </Link>
         <Typography>
           {" "}
