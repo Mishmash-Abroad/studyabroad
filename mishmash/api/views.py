@@ -405,3 +405,32 @@ def change_password(request):
         'display_name': user.display_name,
         'is_admin': user.is_admin
     })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_application(request, id):
+    try:
+        application = Application.objects.get(
+            student=request.user,
+            program=request.program
+        )
+        data = {
+            "id": application.id,
+            "student_name": application.student_name,
+            "details": application.details,
+            # Add more fields as needed
+        }
+        
+        return Response({
+            "student": application.student,
+            "program": application.program,
+            "date_of_birth": application.date_of_birth,
+            "gpa": application.gpa,
+            "major": application.major,
+            "status": application.status,
+            "applied_on": application.applied_on
+        })
+        
+    except AttributeError:
+        return Response({"detail": "Application Not Found"}, status=status.HTTP_400_BAD_REQUEST)
