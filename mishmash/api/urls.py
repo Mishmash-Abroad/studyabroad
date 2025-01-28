@@ -63,7 +63,7 @@ Used by:
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProgramViewSet, ApplicationViewSet, ApplicationQuestionViewSet, ApplicationResponseViewSet, UserViewSet, login_view, logout_view, get_current_user
+from .views import ProgramViewSet, ApplicationViewSet, ApplicationQuestionViewSet, ApplicationResponseViewSet, UserViewSet, login_view, logout_view, get_current_user, signup_view, change_password
 
 # Initialize the DefaultRouter for automatic URL generation
 router = DefaultRouter()
@@ -84,6 +84,9 @@ urlpatterns = [
     # Authentication endpoints
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
+    path('signup/', signup_view, name='signup'),
+    
+    path('changepassword/', change_password, name='change password'),
     
     # User profile endpoint
     path('users/me/', get_current_user, name='current-user'),

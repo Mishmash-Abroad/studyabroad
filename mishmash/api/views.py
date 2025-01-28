@@ -37,6 +37,9 @@ from django.utils import timezone
 from django.db.models import Q
 from .models import Program, Application, ApplicationQuestion, ApplicationResponse
 from .serializers import ProgramSerializer, ApplicationSerializer, UserSerializer, ApplicationQuestionSerializer, ApplicationResponseSerializer
+from api.models import User
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import update_session_auth_hash
 
 ### Custom permission classes for API access ###
 
@@ -307,6 +310,94 @@ def login_view(request):
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
     
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signup_view(request):
+    """
+    Sign up a user and provide an access token.
+    
+    Accepts:
+        - username: User's login name
+        - password: User's password
+    
+    Returns:
+        - Authentication token and user details on success
+        - 400 if missing credentials
+        - 401 if invalid credentials
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    display_name = request.data.get('displayName')
+    email = request.data.get('email')
+    
+    
+    # Validate input
+    if not username or not password:
+        return Response({'error': 'Please provide both username and password'}, status=400)
+    
+    # Authenticate user
+    # Create base user account with authentication fields
+    user = User.objects.create(
+        username=username,
+        password=make_password(password),  # All test users have password 'guest'
+        display_name=display_name,
+        email=email,
+        is_admin=False,
+        is_staff=False,
+        is_superuser=False,
+        is_active=True  # Account is active and can log in
+    )
+    
+    if not user:
+        return Response({'error': 'Invalid credentials'}, status=401)
+    
+    
+    
+    
+    # Get or create authentication token
+    token, _ = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Change the current user's password.
+    """
+    confirmPassword = request.data.get('confirmPassword')
+    password = request.data.get('password')
+    
+    # Validate input
+    if password != confirmPassword:
+        return Response({'error': 'Please provide both fields'}, status=400)
+    
+    user = request.user
+    user.set_password(password)
+    user.save()
+
+    # Update the session auth hash to keep the user logged in
+    update_session_auth_hash(request, user)
+    
+    # Generate a new token (optional)
+    token, _ = Token.objects.get_or_create(user=user)
+
     return Response({
         'token': token.key,
         'user_id': user.id,
