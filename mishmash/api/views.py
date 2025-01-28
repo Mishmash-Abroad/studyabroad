@@ -39,6 +39,7 @@ from .models import Program, Application, ApplicationQuestion, ApplicationRespon
 from .serializers import ProgramSerializer, ApplicationSerializer, UserSerializer, ApplicationQuestionSerializer, ApplicationResponseSerializer
 from api.models import User
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth import update_session_auth_hash
 
 ### Custom permission classes for API access ###
 
@@ -365,6 +366,38 @@ def signup_view(request):
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
     
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Change the current user's password.
+    """
+    confirmPassword = request.data.get('confirmPassword')
+    password = request.data.get('password')
+    
+    # Validate input
+    if password != confirmPassword:
+        return Response({'error': 'Please provide both fields'}, status=400)
+    
+    user = request.user
+    user.set_password(password)
+    user.save()
+
+    # Update the session auth hash to keep the user logged in
+    update_session_auth_hash(request, user)
+    
+    # Generate a new token (optional)
+    token, _ = Token.objects.get_or_create(user=user)
+
     return Response({
         'token': token.key,
         'user_id': user.id,
