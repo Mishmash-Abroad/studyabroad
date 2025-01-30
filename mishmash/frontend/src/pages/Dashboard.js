@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import ProgramBrowser from '../components/ProgramBrowser';
 import MyProgramsTable from '../components/MyProgramsTable';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 
-// -------------------- STYLES (moved from index.js) --------------------
 const DashboardContainer = styled('div')(({ theme }) => ({
   paddingTop: '72px',
   minHeight: '100vh',
@@ -44,7 +44,9 @@ const TabContainer = styled('div')(({ theme }) => ({
 const TabButton = styled('button')(({ theme, active }) => ({
   padding: '10px 20px',
   cursor: 'pointer',
-  backgroundColor: active ? theme.palette.background.paper : theme.palette.background.default,
+  backgroundColor: active
+    ? theme.palette.background.paper
+    : theme.palette.background.default,
   border: `1px solid ${theme.palette.border.light}`,
   borderBottom: active ? 'none' : `1px solid ${theme.palette.border.light}`,
   borderRadius: `${theme.shape.borderRadius.small}px ${theme.shape.borderRadius.small}px 0 0`,
@@ -57,7 +59,9 @@ const TabButton = styled('button')(({ theme, active }) => ({
   color: active ? theme.palette.primary.main : theme.palette.text.primary,
   transition: theme.transitions.quick,
   '&:hover': {
-    backgroundColor: active ? theme.palette.background.paper : theme.palette.background.card.hover,
+    backgroundColor: active
+      ? theme.palette.background.paper
+      : theme.palette.background.card.hover,
   },
 }));
 
@@ -72,7 +76,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get current tab from URL path
+  // Track visibility of the "Change Password" modal
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  // Determine which tab is active based on the URL path
   const getCurrentTab = () => {
     const path = location.pathname.split('/').pop();
     switch (path) {
@@ -87,7 +94,7 @@ const Dashboard = () => {
 
   const activeTab = getCurrentTab();
 
-  // Navigate to tab
+  // Navigate to the chosen tab (updates the URL)
   const handleTabChange = (tab) => {
     switch (tab) {
       case 'programs':
@@ -127,16 +134,28 @@ const Dashboard = () => {
           >
             My Programs
           </TabButton>
+          <TabButton onClick={() => setShowChangePasswordModal(true)}>
+            Change Password
+          </TabButton>
         </TabContainer>
 
+        {/* Conditionally render the Change Password Modal */}
+        {showChangePasswordModal && (
+          <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />
+        )}
+
         <TabContent>
+          {/* Route-based content rendering */}
           <Routes>
-            <Route path="/" element={
-              <div style={{ padding: '20px' }}>
-                <h2>Welcome, {user?.display_name}!</h2>
-                <p>View available study abroad programs or check your existing applications.</p>
-              </div>
-            } />
+            <Route
+              path="/"
+              element={
+                <div style={{ padding: '20px' }}>
+                  <h2>Welcome, {user?.display_name}!</h2>
+                  <p>View available study abroad programs or check your existing applications.</p>
+                </div>
+              }
+            />
             <Route path="browse" element={<ProgramBrowser />} />
             <Route path="my-programs" element={<MyProgramsTable />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
