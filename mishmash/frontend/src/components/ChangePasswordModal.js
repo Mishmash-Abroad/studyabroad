@@ -98,66 +98,32 @@ const FormError = styled("div")(({ theme }) => ({
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
-const LoginModal = ({ onClose }) => {
-  const [username, setUsername] = useState("");
+const ChangePasswordModal = ({ onClose }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubmitLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    try {
-      const response = await axiosInstance.post("/api/login/", {
-        username,
-        password,
-      });
-
-      if (response.data.token) {
-        const { token, ...userData } = response.data;
-        login(userData, token);
-        onClose();
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || "Invalid username or password");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmitSignUp = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    if (password !== confirmPassword){
+    if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axiosInstance.post("/api/signup/", {
-        username,
+      const response = await axiosInstance.patch("/api/changepassword/", {
         password,
-        email,
-        displayName,
+        confirmPassword,
       });
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
-        login(userData, token);
         onClose();
-        navigate("/dashboard");
       }
     } catch (err) {
       setError(err.response?.data?.error || "Invalid username or password");
@@ -171,17 +137,9 @@ const LoginModal = ({ onClose }) => {
       <ModalOverlay onClick={onClose}>
         <ModalContainer onClick={(e) => e.stopPropagation()}>
           <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
-          <ModalTitle>Welcome Back</ModalTitle>
+          <ModalTitle>Change Password?</ModalTitle>
 
-          <ModalForm onSubmit={handleSubmitLogin}>
-            <FormInput
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-
+          <ModalForm onSubmit={handleSubmit}>
             <FormInput
               type="password"
               placeholder="Password"
@@ -190,80 +148,24 @@ const LoginModal = ({ onClose }) => {
               required
             />
 
+            <FormInput
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+
             {error && <FormError>{error}</FormError>}
 
             <FormButton type="submit" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </FormButton>
-
-            <FormButton onClick={() => setShowSignUpModal(true)}>
-              Don't have an account? Sign Up!
+              {loading ? "Changing Password..." : "Change Password"}
             </FormButton>
           </ModalForm>
         </ModalContainer>
       </ModalOverlay>
-      {showSignUpModal && (
-        <ModalOverlay onClick={onClose}>
-          <ModalContainer onClick={(e) => e.stopPropagation()}>
-            <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
-            <ModalTitle>Welcome!</ModalTitle>
-
-            <ModalForm onSubmit={handleSubmitSignUp}>
-              <FormInput
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-
-              <FormInput
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-
-              <FormInput
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-
-              <FormInput
-                type="text"
-                placeholder="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-
-              <FormInput
-                type="text"
-                placeholder="display name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                required
-              />
-
-              {error && <FormError>{error}</FormError>}
-
-              <FormButton type="submit" disabled={loading}>
-                {loading ? "Signing up..." : "Sign up"}
-              </FormButton>
-
-              <FormButton onClick={() => setShowSignUpModal(false)}>
-                already have an account? Login!
-              </FormButton>
-            </ModalForm>
-          </ModalContainer>
-        </ModalOverlay>
-      )}
     </>
   );
 };
 
-export default LoginModal;
+export default ChangePasswordModal;
