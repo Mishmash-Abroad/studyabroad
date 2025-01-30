@@ -4,8 +4,6 @@ services:
     build: 
       context: ./mishmash/frontend
       dockerfile: Dockerfile
-    volumes:
-      - ./mishmash/frontend/build:/app/build
     ports:
       - "3000:3000"  # Expose frontend port
     environment:
@@ -59,4 +57,3 @@ volumes:
   mysql_data:
   static_volume:
   media_volume:
-  frontend_build:
