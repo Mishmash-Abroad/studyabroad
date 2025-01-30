@@ -27,14 +27,30 @@ USER node
 COPY --chown=node:node package*.json ./
 RUN npm install --legacy-peer-deps
 
+# Debug: List files before source copy
+RUN echo "=== Before source copy ===" && \
+    ls -la
+
 # Copy source code
 COPY --chown=node:node . .
 
-RUN ls -a
+# Debug: List files after source copy
+RUN echo "=== After source copy ===" && \
+    ls -la && \
+    echo "=== Contents of src ===" && \
+    ls -la src/
+
+# Debug: Show npm scripts
+RUN echo "=== package.json scripts ===" && \
+    cat package.json | grep -A 10 '"scripts":'
+
 # Build the production static files
-RUN npm run build && \
-    # Ensure build files have correct ownership
-    chown -R node:node /app/build
+RUN echo "=== Starting build ===" && \
+    npm run build && \
+    echo "=== After build - contents of /app/build ===" && \
+    ls -la /app/build && \
+    echo "=== Contents of /app/build/static ===" && \
+    ls -la /app/build/static
 
 # Keep container running to maintain volume mount
 CMD ["tail", "-f", "/dev/null"]
