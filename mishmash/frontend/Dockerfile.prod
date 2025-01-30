@@ -30,6 +30,7 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY --chown=node:node . .
 
+RUN ls -a
 # Build the production static files
 RUN npm run build && \
     # Ensure build files have correct ownership
