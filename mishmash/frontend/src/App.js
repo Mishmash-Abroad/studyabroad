@@ -44,7 +44,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/apply/:id" element={<ApplicationPage />} />
+          <Route path="/apply/:user_id/:program_id" element={<ApplicationPage />} />
         </Routes>
         {showLoginModal && (
           <LoginModal onClose={() => setShowLoginModal(false)} />

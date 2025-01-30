@@ -88,8 +88,8 @@ urlpatterns = [
     path('changepassword/', change_password, name='change password'),
     
     
-    path('apply/<int:id>/', get_application, name='get_application'),
-    
+    path('apply/', get_application, name='get_application'),
+    path('submit_application/', submit_application, name='submit_application'),
     
     
     # User profile endpoint
