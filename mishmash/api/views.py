@@ -40,6 +40,7 @@ from .serializers import ProgramSerializer, ApplicationSerializer, UserSerialize
 from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
+from django.db.models import Count, Q
 
 ### Custom permission classes for API access ###
 
@@ -143,6 +144,24 @@ class ProgramViewSet(viewsets.ModelViewSet):
             })
         except Application.DoesNotExist:
             return Response({'status': None})
+    
+    @action(detail=True, methods=['get'])
+    def applicant_counts(self, request, pk=None):
+        """
+        Returns counts of applicants in different statuses for a given program.
+        """
+        program = self.get_object()
+
+        applicant_counts = Application.objects.filter(program=program).aggregate(
+            applied=Count('id', filter=Q(status='Applied')),
+            enrolled=Count('id', filter=Q(status='Enrolled')),
+            withdrawn=Count('id', filter=Q(status='Withdrawn')),
+            canceled=Count('id', filter=Q(status='Canceled'))
+        )
+
+        applicant_counts['total_active'] = applicant_counts['applied'] + applicant_counts['enrolled']
+
+        return Response(applicant_counts)
     
 class ApplicationViewSet(viewsets.ModelViewSet):
     """
