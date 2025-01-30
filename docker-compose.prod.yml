@@ -1,3 +1,4 @@
+version: '3.8'
 
 services:
   frontend:
@@ -8,7 +9,7 @@ services:
       - frontend_build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=/api  # Use relative URL since nginx will handle routing
+      - REACT_APP_API_URL=/api
     depends_on:
       - backend
 
@@ -43,8 +44,8 @@ services:
     volumes:
       - ./nginx/conf:/etc/nginx/conf.d:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      - static_volume:/app/static:ro  # Django static files (including admin)
-      - frontend_build:/app/static/frontend:ro  # Mount frontend under /static/frontend
+      - static_volume:/app/static:ro
+      - frontend_build:/app/build:ro  # Mount frontend build files directly
       - media_volume:/app/media:ro
     depends_on:
       - frontend
@@ -52,7 +53,6 @@ services:
 
   db:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
