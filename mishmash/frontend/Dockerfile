@@ -23,14 +23,10 @@ RUN npm install --legacy-peer-deps
 # Copy source with correct ownership
 COPY --chown=node:node . .
 
+# Build the production static files
+RUN npm run build
+
 EXPOSE 3000
 
-# If NODE_ENV=production, build static files and serve them, otherwise run dev server
-CMD sh -c "if [ \"$NODE_ENV\" = \"production\" ]; then \
-           echo 'Building production static files...' && \
-           npm run build && \
-           echo 'Build complete. Serving files...' && \
-           npx serve -s build -l 3000; \
-           else \
-           npm start; \
-           fi"
+# Serve the static files using serve
+CMD ["npx", "serve", "-s", "build", "-l", "3000"]

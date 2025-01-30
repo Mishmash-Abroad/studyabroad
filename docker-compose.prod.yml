@@ -26,7 +26,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=0
+      - DEBUG=1
       - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
