@@ -25,7 +25,7 @@ services:
       - media_volume:/app/media
     environment:
       - DEBUG=0
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu
+      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
