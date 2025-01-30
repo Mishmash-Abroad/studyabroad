@@ -52,9 +52,25 @@ const AdminProgramsTable = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get('/api/programs/');
-      setPrograms(response.data);
+      const programsData = response.data;
+
+      // Fetch applicant counts for each program
+      const programsWithCounts = await Promise.all(
+        programsData.map(async (program) => {
+          try {
+            const statusResponse = await axiosInstance.get(`/api/programs/${program.id}/applicant_counts/`);
+            return { ...program, applicantCounts: statusResponse.data };
+          } catch (error) {
+            console.error('Error fetching applicant counts:', error);
+            return { ...program, applicantCounts: {} };
+          }
+        })
+      );
+
+      setPrograms(programsWithCounts);
       setError(null);
     } catch (err) {
+      console.error('Error fetching programs:', err);
       setError('Failed to load programs.');
     } finally {
       setLoading(false);
@@ -68,13 +84,17 @@ const AdminProgramsTable = () => {
     setOrderBy(property);
   };
 
-  // Filtered and sorted programs
+  // Sorting logic
   const sortedPrograms = programs
-    .filter((program) => 
+    .filter((program) =>
       program.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       program.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    .sort((a, b) => (order === 'asc' ? a[orderBy] > b[orderBy] : a[orderBy] < b[orderBy]) ? 1 : -1);
+    .sort((a, b) => {
+      const valueA = a[orderBy] || 0;
+      const valueB = b[orderBy] || 0;
+      return order === 'asc' ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
+    });
 
   return (
     <TableWrapper>
@@ -95,7 +115,19 @@ const AdminProgramsTable = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                {['title', 'year_semester', 'faculty_leads', 'application_deadline', 'start_date', 'end_date'].map((column) => (
+                {[
+                  'title', 
+                  'year_semester', 
+                  'faculty_leads', 
+                  'application_deadline', 
+                  'start_date', 
+                  'end_date',
+                  'applied',
+                  'enrolled',
+                  'canceled',
+                  'withdrawn',
+                  'total_active'
+                ].map((column) => (
                   <TableCell key={column}>
                     <TableSortLabel active={orderBy === column} direction={order} onClick={() => handleRequestSort(column)}>
                       {column.replace('_', ' ')}
@@ -113,6 +145,11 @@ const AdminProgramsTable = () => {
                   <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{program.applicantCounts?.applied || 0}</TableCell>
+                  <TableCell>{program.applicantCounts?.enrolled || 0}</TableCell>
+                  <TableCell>{program.applicantCounts?.canceled || 0}</TableCell>
+                  <TableCell>{program.applicantCounts?.withdrawn || 0}</TableCell>
+                  <TableCell>{(program.applicantCounts?.applied || 0) + (program.applicantCounts?.enrolled || 0)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
