@@ -1,0 +1,34 @@
+# Build stage
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Add Python and build tools for node-gyp
+RUN apk add --no-cache python3 make g++
+
+# Create and set permissions for build directory
+RUN mkdir -p /app/build && \
+    chown -R node:node /app && \
+    mkdir -p /home/node/.npm && \
+    chown -R node:node /home/node/.npm
+
+# Switch to non-root user
+USER node
+
+# Copy package files with correct ownership
+COPY --chown=node:node package*.json ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy source with correct ownership
+COPY --chown=node:node . .
+
+# Set API URL for production
+ENV REACT_APP_API_URL=/api
+
+# Build the production static files
+RUN npm run build
+
+# Keep container running to maintain volume mount
+CMD ["tail", "-f", "/dev/null"]

@@ -1,33 +1,28 @@
+version: '3.8'
 
 services:
   frontend:
     build: 
       context: ./mishmash/frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"  # Expose frontend port
+      dockerfile: Dockerfile.prod
+    volumes:
+      - frontend_build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=https://localhost:8000/api
+      - REACT_APP_API_URL=/api  # Use relative URL since nginx will handle routing
     depends_on:
       - backend
 
   backend:
     build: 
       context: ./mishmash
-      dockerfile: Dockerfile
-    command: >
-      sh -c "python manage.py wait_for_db &&
-             python manage.py migrate && 
-             python manage.py runserver 0.0.0.0:8000"
+      dockerfile: Dockerfile.prod
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
-    ports:
-      - "8000:8000"
     environment:
-      - DEBUG=1
-      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu
+      - DEBUG=0
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
@@ -36,7 +31,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate &&
+             gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application"
 
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - static_volume:/app/static:ro  # Django static files (including admin)
+      - frontend_build:/app/static/frontend:ro  # Mount frontend under /static/frontend
+      - media_volume:/app/media:ro
+    depends_on:
+      - frontend
+      - backend
 
   db:
     image: mysql:8.0
@@ -56,3 +69,4 @@ volumes:
   mysql_data:
   static_volume:
   media_volume:
+  frontend_build:
