@@ -14,7 +14,7 @@ WORKDIR /app
 # Add Python and build tools for node-gyp
 RUN apk add --no-cache python3 make g++
 
-# Create and set permissions for build directory
+# Create directories and set permissions
 RUN mkdir -p /app/build && \
     chown -R node:node /app && \
     mkdir -p /home/node/.npm && \
@@ -23,21 +23,17 @@ RUN mkdir -p /app/build && \
 # Switch to non-root user
 USER node
 
-# Copy package files with correct ownership
-COPY --chown=node:node package*.json ./
-
 # Install dependencies
+COPY --chown=node:node package*.json ./
 RUN npm install --legacy-peer-deps
 
-# Copy source with correct ownership
+# Copy source code
 COPY --chown=node:node . .
 
 # Build the production static files
-RUN npm run build
-
-# Create directory for frontend static files
-RUN mkdir -p /app/static/frontend && \
-    mv /app/build/* /app/static/frontend/
+RUN npm run build && \
+    # Ensure build files have correct ownership
+    chown -R node:node /app/build
 
 # Keep container running to maintain volume mount
 CMD ["tail", "-f", "/dev/null"]

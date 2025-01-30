@@ -1,3 +1,4 @@
+version: '3.8'
 
 services:
   frontend:
@@ -8,7 +9,7 @@ services:
         - NODE_ENV=production
         - REACT_APP_API_URL=/api
     volumes:
-      - frontend_build:/app/static/frontend
+      - frontend_build:/app/build
     environment:
       - NODE_ENV=production
       - REACT_APP_API_URL=/api
@@ -47,7 +48,7 @@ services:
       - ./nginx/conf:/etc/nginx/conf.d:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - static_volume:/app/static:ro
-      - frontend_build:/app/static/frontend:ro
+      - frontend_build:/app/build:ro
       - media_volume:/app/media:ro
     depends_on:
       - frontend

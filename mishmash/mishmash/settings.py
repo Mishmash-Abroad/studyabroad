@@ -40,6 +40,15 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Format: comma-separated list (e.g., "localhost,example.com")
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [
+    'https://dev-mishmash.colab.duke.edu',
+    'https://mishmash.colab.duke.edu',
+    'http://localhost',
+    'http://127.0.0.1'
+]
+
 # APPLICATION CONFIGURATION
 # =======================
 # List of all Django apps used in the project
