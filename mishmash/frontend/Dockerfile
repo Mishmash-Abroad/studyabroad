@@ -5,8 +5,11 @@ WORKDIR /app
 # Add Python and build tools for node-gyp
 RUN apk add --no-cache python3 make g++
 
-# Create and set permissions for build directory
-RUN mkdir -p /app/build && chown -R node:node /app
+# Create and set permissions for build directory and npm cache
+RUN mkdir -p /app/build && \
+    chown -R node:node /app && \
+    mkdir -p /home/node/.npm && \
+    chown -R node:node /home/node/.npm
 
 # Switch to non-root user
 USER node
