@@ -409,18 +409,12 @@ def change_password(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_application(request, id):
+def get_application(request):
     try:
         application = Application.objects.get(
             student=request.user,
             program=request.program
         )
-        data = {
-            "id": application.id,
-            "student_name": application.student_name,
-            "details": application.details,
-            # Add more fields as needed
-        }
         
         return Response({
             "student": application.student,
@@ -434,3 +428,44 @@ def get_application(request, id):
         
     except AttributeError:
         return Response({"detail": "Application Not Found"}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_application(request):
+    try:
+
+        # Validate and process input data using a serializer
+        serializer = ApplicationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Ensure the program exists
+        program_id = request.data.get("program")
+        try:
+            program = Program.objects.get(id=program_id)
+        except Program.DoesNotExist:
+            return Response(
+                {"error": "Program does not exist"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Create a new application
+        application = Application.objects.create(
+            student=request.user,  # Assuming the user is a student
+            program=program,
+            date_of_birth=request.data.get("date_of_birth"),
+            gpa=request.data.get("gpa"),
+            major=request.data.get("major"),
+            status="Applied",
+            applied_on=timezone.now()
+        )
+
+        return Response(
+            {"message": "Application submitted successfully", "application_id": application.id},
+            status=status.HTTP_201_CREATED
+        )
+    except Exception as e:
+        return Response(
+            {"error": "An error occurred while submitting the application"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

@@ -258,7 +258,7 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
     const programStatus = getProgramStatus();
 
     // Show status for enrolled/applied users
-    if (['Enrolled', 'Applied'].includes(applicationStatus)) {
+    if (['Enrolled'].includes(applicationStatus)) {
       return (
         <div
           style={{
@@ -282,7 +282,8 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
             <ApplicationButton
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/apply/${program.id}`);
+                {/* TODO fix this to change to application id */}
+                navigate(`/apply/${user.user_id}/${program.id}`);
               }}
               variant="success"
             >
@@ -302,8 +303,36 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
       );
     }
 
+    // Show reapply option for withdrawn/canceled applications
+    if (['Applied'].includes(applicationStatus)) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          {programStatus === 'Open' && (
+            <ApplicationButton
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/apply/${user.user_id}/${program.id}`);
+              }}
+              variant="success"
+            >
+              Edit Application
+            </ApplicationButton>
+          )}
+          <div
+            style={{
+              fontSize: '0.8em',
+              color: theme.palette.grey[700],
+              fontStyle: 'italic',
+            }}
+          >
+            {detailedStatus}
+          </div>
+        </div>
+      );
+    }
+
     // Handle different program statuses
-    switch (programStatus) {
+    switch (programStatus) {        
       case 'Opening Soon':
         return (
           <div
@@ -339,7 +368,7 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
           <ApplicationButton
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/apply/${program.id}`);
+              navigate(`/apply/${user.user_id}/${program.id}`);
             }}
             disabled={user?.is_admin}
             variant={user?.is_admin ? 'disabled' : 'success'}
@@ -347,6 +376,7 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
             Apply Now
           </ApplicationButton>
         );
+    
 
       default:
         return null;

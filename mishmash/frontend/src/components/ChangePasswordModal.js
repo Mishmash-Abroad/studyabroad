@@ -3,9 +3,10 @@ import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
+import theme from "../theme";
 
 // -------------------- STYLES --------------------
-const ModalOverlay = styled("div")(({ theme }) => ({
+const ModalOverlay = styled("div")(() => ({
   position: "fixed",
   top: 0,
   left: 0,
@@ -18,7 +19,7 @@ const ModalOverlay = styled("div")(({ theme }) => ({
   zIndex: 1100,
 }));
 
-const ModalContainer = styled("div")(({ theme }) => ({
+const ModalContainer = styled("div")(() => ({
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius.large,
   padding: "32px",
@@ -28,7 +29,7 @@ const ModalContainer = styled("div")(({ theme }) => ({
   boxShadow: theme.shadows.raised,
 }));
 
-const ModalCloseButton = styled("button")(({ theme }) => ({
+const ModalCloseButton = styled("button")(() => ({
   position: "absolute",
   top: "16px",
   right: "16px",
@@ -43,7 +44,7 @@ const ModalCloseButton = styled("button")(({ theme }) => ({
   },
 }));
 
-const ModalTitle = styled("h2")(({ theme }) => ({
+const ModalTitle = styled("h2")(() => ({
   margin: "0 0 24px",
   color: theme.palette.text.primary,
   fontSize: theme.typography.h3.fontSize,
@@ -57,7 +58,7 @@ const ModalForm = styled("form")({
   gap: "16px",
 });
 
-const FormInput = styled("input")(({ theme }) => ({
+const FormInput = styled("input")(() => ({
   padding: "12px 16px",
   borderRadius: theme.shape.borderRadius.medium,
   border: `1px solid ${theme.palette.border.main}`,
@@ -72,7 +73,7 @@ const FormInput = styled("input")(({ theme }) => ({
   },
 }));
 
-const FormButton = styled("button")(({ theme }) => ({
+const FormButton = styled("button")(() => ({
   padding: "12px",
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
@@ -91,7 +92,7 @@ const FormButton = styled("button")(({ theme }) => ({
   },
 }));
 
-const FormError = styled("div")(({ theme }) => ({
+const FormError = styled("div")(() => ({
   color: theme.palette.status.error.main,
   fontSize: theme.typography.caption.fontSize,
   marginTop: "4px",
