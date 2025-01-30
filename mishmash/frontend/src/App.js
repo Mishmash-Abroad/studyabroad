@@ -27,6 +27,7 @@ import HomePage from "./pages/HomePage";
 import TopNavBar from "./components/TopNavBar";
 import LoginModal from "./components/LoginModal";
 import ApplicationPage from "./pages/ApplicationPage";
+import AdminProgramManagement from "./components/AdminProgramManagement";
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -45,6 +46,7 @@ function App() {
             }
           />
           <Route path="/apply/:id" element={<ApplicationPage />} />
+          <Route path="/admin/manage-programs" element={<AdminProgramManagement />} />
         </Routes>
         {showLoginModal && (
           <LoginModal onClose={() => setShowLoginModal(false)} />
