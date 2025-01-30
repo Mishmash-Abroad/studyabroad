@@ -5,14 +5,20 @@ WORKDIR /app
 # Add Python and build tools for node-gyp
 RUN apk add --no-cache python3 make g++
 
-# Copy package files
-COPY package*.json ./
+# Create and set permissions for build directory
+RUN mkdir -p /app/build && chown -R node:node /app
+
+# Switch to non-root user
+USER node
+
+# Copy package files with correct ownership
+COPY --chown=node:node package*.json ./
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy source for production build
-COPY . .
+# Copy source with correct ownership
+COPY --chown=node:node . .
 
 EXPOSE 3000
 
