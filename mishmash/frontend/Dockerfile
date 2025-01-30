@@ -11,17 +11,10 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy source for production build
+# Copy source code
 COPY . .
 
 EXPOSE 3000
 
-# If NODE_ENV=production, build static files and serve them, otherwise run dev server
-CMD sh -c "if [ \"$NODE_ENV\" = \"production\" ]; then \
-           echo 'Building production static files...' && \
-           npm run build && \
-           echo 'Build complete. Serving files...' && \
-           npx serve -s build -l 3000; \
-           else \
-           npm start; \
-           fi"
+# Run development server
+CMD ["npm", "start"]
