@@ -26,7 +26,7 @@ import Dashboard from "./pages/Dashboard";
 import HomePage from "./pages/HomePage";
 import TopNavBar from "./components/TopNavBar";
 import LoginModal from "./components/LoginModal";
-
+import ApplicationPage from "./pages/ApplicationPage";
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -44,6 +44,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/apply/:id" element={<ApplicationPage />} />
         </Routes>
         {showLoginModal && (
           <LoginModal onClose={() => setShowLoginModal(false)} />
