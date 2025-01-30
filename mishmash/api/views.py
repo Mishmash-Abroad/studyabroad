@@ -61,6 +61,11 @@ class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
     def has_object_permission(self, request, view, obj):
         return obj.application.student == request.user or request.user.is_admin
+    
+class IsAdmin(permissions.BasePermission):
+    """Custom permission to allow only admin to view or edit views"""
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.is_admin
 
 ### ViewSet classes for the API interface ### 
 
