@@ -39,6 +39,7 @@ const ApplicationPage = () => {
   const getApplication = async () => {
     try {
       const response = await axiosInstance.get(`/api/applications/`);
+      console.log(response.data);
       console.log(response.data.filter(application => application.program === program_id));
       return response;
     } catch (err) {
