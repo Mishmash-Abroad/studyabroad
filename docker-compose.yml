@@ -109,7 +109,16 @@ services:
       timeout: 5s
       retries: 5
 
-  
+  # Nginx Service for Development
+  nginx:
+    image: nginx:1.25
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx_dev/dev.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
 
 # Persistent Data Storage
 volumes:
