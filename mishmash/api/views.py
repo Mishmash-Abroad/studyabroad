@@ -460,3 +460,315 @@ def submit_application(request):
             {"error": "An error occurred while submitting the application"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        """Allow users to view only their own applications, unless they are an admin."""
+        if self.request.user.is_admin:
+            return Application.objects.all()
+        return Application.objects.filter(student=self.request.user)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Restrict status updates based on user role."""
+        application = self.get_object()
+        if 'status' in request.data:
+            if not request.user.is_admin:
+                # Users can only cancel their applications
+                if request.data['status'] != 'Canceled':
+                    return Response(
+                        {"detail": "Only admins can change the status to 'Enrolled' or 'Withdrawn'."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+        return super().partial_update(request, *args, **kwargs)
+
+class ApplicationQuestionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing application questions.
+
+    Provides CRUD operations for application questions associated with study abroad programs.
+
+    Permissions:
+    - List/Retrieve: Admin or authenticated users only
+    - Create/Update/Delete: Admin only
+    """
+    queryset = ApplicationQuestion.objects.all()
+    serializer_class = ApplicationQuestionSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+class ApplicationResponseViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing responses to application questions.
+
+    Provides:
+    - Viewing and editing responses to application questions
+
+    Permissions:
+    - List/Retrieve: Authenticated users (only their own responses) and admins
+    - Create/Update/Delete: Authenticated users (only their own responses) and admins
+    """
+    queryset = ApplicationResponse.objects.all()
+    serializer_class = ApplicationResponseSerializer
+    permission_classes = [permissions.IsAuthenticated, IsApplicationResponseOwnerOrAdmin]
+
+    def get_queryset(self):
+        """Allow users to view only their own responses, unless they are an admin."""
+        if self.request.user.is_admin:
+            return ApplicationResponse.objects.all()
+        return ApplicationResponse.objects.filter(application__student=self.request.user)
+
+class UserViewSet(viewsets.ViewSet):
+    """
+    ViewSet for managing user authentication and account details.
+
+    Provides:
+    - Viewing the current authenticated user's details
+    - Logging in to obtain an authentication token
+    - Logging out to invalidate the authentication token
+
+    Permissions:
+    - Login: Anyone
+    - Logout: Authenticated users
+    - Current user details: Authenticated users
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def current_user(self, request):
+        """Get details of the currently authenticated user."""
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def login(self, request):
+        """Custom login endpoint."""
+        username = request.data.get("username")
+        password = request.data.get("password")
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({"token": token.key, "user": UserSerializer(user).data})
+        return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def logout(self, request):
+        """Custom logout endpoint."""
+        try:
+            request.auth.delete()  # Deletes the token
+            return Response({"detail": "Successfully logged out."})
+        except AttributeError:
+            return Response({"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+### Frontend Views ###
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    """
+    Retrieve the currently authenticated user's profile information.
+    
+    Requires:
+        - Valid authentication token in request header
+    
+    Returns:
+        - User ID, username, display name, and admin status
+        - 401 if not authenticated
+    """
+    user = request.user
+    return Response({
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    """
+    Authenticate a user and provide an access token.
+    
+    Accepts:
+        - username: User's login name
+        - password: User's password
+    
+    Returns:
+        - Authentication token and user details on success
+        - 400 if missing credentials
+        - 401 if invalid credentials
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    # Validate input
+    if not username or not password:
+        return Response({'error': 'Please provide both username and password'}, status=400)
+    
+    # Authenticate user
+    user = authenticate(username=username, password=password)
+    if not user:
+        return Response({'error': 'Invalid credentials'}, status=401)
+    
+    # Get or create authentication token
+    token, _ = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signup_view(request):
+    """
+    Sign up a user and provide an access token.
+    
+    Accepts:
+        - username: User's login name
+        - password: User's password
+    
+    Returns:
+        - Authentication token and user details on success
+        - 400 if missing credentials
+        - 401 if invalid credentials
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    display_name = request.data.get('displayName')
+    email = request.data.get('email')
+    
+    
+    # Validate input
+    if not username or not password:
+        return Response({'error': 'Please provide both username and password'}, status=400)
+    
+    # Authenticate user
+    # Create base user account with authentication fields
+    user = User.objects.create(
+        username=username,
+        password=make_password(password),  # All test users have password 'guest'
+        display_name=display_name,
+        email=email,
+        is_admin=False,
+        is_staff=False,
+        is_superuser=False,
+        is_active=True  # Account is active and can log in
+    )
+    
+    if not user:
+        return Response({'error': 'Invalid credentials'}, status=401)
+    
+    
+    
+    
+    # Get or create authentication token
+    token, _ = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Change the current user's password.
+    """
+    confirmPassword = request.data.get('confirmPassword')
+    password = request.data.get('password')
+    
+    # Validate input
+    if password != confirmPassword:
+        return Response({'error': 'Please provide both fields'}, status=400)
+    
+    user = request.user
+    user.set_password(password)
+    user.save()
+
+    # Update the session auth hash to keep the user logged in
+    update_session_auth_hash(request, user)
+    
+    # Generate a new token (optional)
+    token, _ = Token.objects.get_or_create(user=user)
+
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.display_name,
+        'is_admin': user.is_admin
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_application(request):
+    try:
+        application = Application.objects.get(
+            student=request.user,
+            program=request.program
+        )
+        
+        return Response({
+            "student": application.student,
+            "program": application.program,
+            "date_of_birth": application.date_of_birth,
+            "gpa": application.gpa,
+            "major": application.major,
+            "status": application.status,
+            "applied_on": application.applied_on
+        })
+        
+    except AttributeError:
+        return Response({"detail": "Application Not Found"}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_application(request):
+    try:
+
+        # Validate and process input data using a serializer
+        serializer = ApplicationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Ensure the program exists
+        program_id = request.data.get("program")
+        try:
+            program = Program.objects.get(id=program_id)
+        except Program.DoesNotExist:
+            return Response(
+                {"error": "Program does not exist"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Create a new application
+        application = Application.objects.create(
+            student=request.user,  # Assuming the user is a student
+            program=program,
+            date_of_birth=request.data.get("date_of_birth"),
+            gpa=request.data.get("gpa"),
+            major=request.data.get("major"),
+            status="Applied",
+            applied_on=timezone.now()
+        )
+
+        return Response(
+            {"message": "Application submitted successfully", "application_id": application.id},
+            status=status.HTTP_201_CREATED
+        )
+    except Exception as e:
+        return Response(
+            {"error": "An error occurred while submitting the application"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
