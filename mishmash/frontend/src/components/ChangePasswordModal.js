@@ -25,7 +25,7 @@ const ModalContainer = styled("div")(({ theme }) => ({
   width: "100%",
   maxWidth: "400px",
   position: "relative",
-  boxShadow: theme.shadows.raised,
+  boxShadow: theme.customShadows.raised,
 }));
 
 const ModalCloseButton = styled("button")(({ theme }) => ({

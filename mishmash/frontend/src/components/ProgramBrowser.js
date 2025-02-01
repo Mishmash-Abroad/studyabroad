@@ -34,7 +34,7 @@ const ContentContainer = styled('div')(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   padding: '24px',
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   marginBottom: '24px',
   elevation: 0,
 }));

@@ -166,7 +166,7 @@ const theme = createTheme({
   },
 
   // ---------- SHADOWS ----------
-  shadows: {
+  customShadows: {
     card: '0 4px 6px rgba(0,0,0,0.1)',
     raised: '0 6px 12px rgba(0,0,0,0.15)',
     button: '0 2px 4px rgba(0,0,0,0.1)',

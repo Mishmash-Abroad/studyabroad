@@ -14,7 +14,7 @@ const NavBar = styled("div")(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "center",
   color: theme.palette.primary.contrastText,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   position: "fixed",
   top: 0,
   left: 0,

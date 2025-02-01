@@ -18,7 +18,7 @@ const DashboardContent = styled("div")(({ theme }) => ({
   margin: "0 auto",
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   borderRadius: theme.shape.borderRadius.large,
 }));
 
