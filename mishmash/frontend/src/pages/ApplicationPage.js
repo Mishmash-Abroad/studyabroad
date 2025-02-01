@@ -19,7 +19,6 @@ const ContentContainer = styled(Paper)(({ theme }) => ({
   margin: "0 auto",
   padding: "24px",
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows[3],
 }));
 
 const Header = styled("div")({
