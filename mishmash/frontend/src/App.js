@@ -46,7 +46,7 @@ function App() {
             }
           />
           <Route path="/apply/:id" element={<ApplicationPage />} />
-          <Route path="/admin/manage-programs" element={<AdminProgramManagement />} />
+          <Route path="/manage-programs" element={<AdminProgramManagement />} />
         </Routes>
         {showLoginModal && (
           <LoginModal onClose={() => setShowLoginModal(false)} />

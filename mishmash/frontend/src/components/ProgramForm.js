@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Paper, Typography, IconButton, Divider } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, TextField, Button, Paper, Typography, IconButton } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
 
 // Default Questions
@@ -12,138 +13,156 @@ const defaultQuestions = [
   "What unique perspective or contribution will you bring to the group?",
 ];
 
-const ProgramForm = ({ onClose, refreshPrograms }) => {
+const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
+  const navigate = useNavigate(); // 🚀 Use navigate for redirection
+
   const [programData, setProgramData] = useState({
-    title: '', 
-    year_semester: '', 
-    faculty_leads: '', 
-    application_open_date: '', 
-    application_deadline: '', 
-    start_date: '', 
-    end_date: '', 
-    description: ''
+    title: '',
+    year_semester: '',
+    faculty_leads: '',
+    application_open_date: '',
+    application_deadline: '',
+    start_date: '',
+    end_date: '',
+    description: '',
   });
+  const [questions, setQuestions] = useState([]);
+  const [deletedQuestions, setDeletedQuestions] = useState([]); // Track deleted questions
 
-  const [questions, setQuestions] = useState(defaultQuestions.map(text => ({ text })));
+  useEffect(() => {
+    if (editingProgram) {
+      setProgramData({
+        title: editingProgram.title,
+        year_semester: editingProgram.year_semester,
+        faculty_leads: editingProgram.faculty_leads,
+        application_open_date: editingProgram.application_open_date,
+        application_deadline: editingProgram.application_deadline,
+        start_date: editingProgram.start_date,
+        end_date: editingProgram.end_date,
+        description: editingProgram.description,
+      });
 
-  // Handle program input changes
-  const handleInputChange = (e) => {
-    setProgramData({ ...programData, [e.target.name]: e.target.value });
-  };
+      axiosInstance.get(`/api/questions/?program=${editingProgram.id}`).then((response) => {
+        setQuestions(response.data);
+      });
+    } else {
+      setQuestions(defaultQuestions.map((text) => ({ text })));
+    }
+  }, [editingProgram]);
 
-  // Handle question input changes
+  const handleInputChange = (e) => setProgramData({ ...programData, [e.target.name]: e.target.value });
+
   const handleQuestionChange = (index, value) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index].text = value;
     setQuestions(updatedQuestions);
   };
 
-  // Add a new empty question field
-  const addQuestion = () => {
-    setQuestions([...questions, { text: '' }]);
-  };
+  const addQuestion = () => setQuestions([...questions, { text: '' }]);
 
-  // Remove a question by index
   const removeQuestion = (index) => {
+    const questionToRemove = questions[index];
+    if (questionToRemove.id) {
+      setDeletedQuestions([...deletedQuestions, questionToRemove.id]); // Track deleted questions
+    }
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
-  // Submit form
-  const handleCreateProgram = async () => {
+  const handleSubmit = async () => {
     try {
-      // Create program first
-      const programResponse = await axiosInstance.post('/api/programs/', programData);
-
-      // Add questions associated with the program
-      await Promise.all(questions.map(q => axiosInstance.post('/api/questions/', {
-        program: programResponse.data.id, 
-        text: q.text
-      })));
-
+      if (editingProgram) {
+        // **Update existing program**
+        await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
+  
+        // **Handle question deletions**
+        await Promise.all(
+          deletedQuestions.map((questionId) => axiosInstance.delete(`/api/questions/${questionId}/`))
+        );
+  
+        // **Handle question updates & additions**
+        await Promise.all(
+          questions.map((q) =>
+            q.id
+              ? axiosInstance.put(`/api/questions/${q.id}/`, { 
+                  text: q.text, 
+                  program: editingProgram.id // ✅ Ensure program ID is included
+                }) // Update existing question
+              : axiosInstance.post(`/api/questions/`, { 
+                  program: editingProgram.id, 
+                  text: q.text 
+                }) // Add new question
+          )
+        );
+  
+      } else {
+        // **Create new program**
+        const programResponse = await axiosInstance.post('/api/programs/', programData);
+        await Promise.all(
+          questions.map((q) => axiosInstance.post('/api/questions/', { program: programResponse.data.id, text: q.text }))
+        );
+      }
+  
       refreshPrograms();
-      onClose();
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Error creating program:', error);
+      console.error('Error saving program:', error);
+      if (error.response) {
+        console.error('Backend Response:', error.response.data);
+      }
+    }
+  };
+  
+
+  const handleDeleteProgram = async () => {
+    if (!editingProgram) return;
+    if (!window.confirm("Are you sure you want to delete this program? This action cannot be undone.")) return;
+
+    try {
+      await axiosInstance.delete(`/api/programs/${editingProgram.id}/`);
+      refreshPrograms();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error deleting program:', error);
     }
   };
 
   return (
-    <Paper sx={{ padding: '20px', marginTop: '20px' }}>
-      <Typography variant="h5" gutterBottom>
-        Create New Program
-      </Typography>
-
-      {/* Program Details */}
+    <Paper sx={{ padding: '20px' }}>
+      <Typography variant="h5" gutterBottom>{editingProgram ? 'Edit Program' : 'Create New Program'}</Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <TextField label="Program Title" name="title" fullWidth onChange={handleInputChange} />
-        <TextField label="Year & Semester" name="year_semester" fullWidth onChange={handleInputChange} />
-        <TextField label="Faculty Leads" name="faculty_leads" fullWidth onChange={handleInputChange} />
-        
-        <TextField
-          label="Application Open Date (mm/dd/yyyy)"
-          type="date"
-          name="application_open_date"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          onChange={handleInputChange}
-        />
-        <TextField
-          label="Application Deadline (mm/dd/yyyy)"
-          type="date"
-          name="application_deadline"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          onChange={handleInputChange}
-        />
-        <TextField
-          label="Program Start Date (mm/dd/yyyy)"
-          type="date"
-          name="start_date"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          onChange={handleInputChange}
-        />
-        <TextField
-          label="Program End Date (mm/dd/yyyy)"
-          type="date"
-          name="end_date"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          onChange={handleInputChange}
-        />
-        
-        <TextField label="Description" name="description" fullWidth multiline rows={3} onChange={handleInputChange} />
+        <TextField label="Title" name="title" fullWidth value={programData.title} onChange={handleInputChange} />
+        <TextField label="Year & Semester" name="year_semester" fullWidth value={programData.year_semester} onChange={handleInputChange} />
+        <TextField label="Faculty Leads" name="faculty_leads" fullWidth value={programData.faculty_leads} onChange={handleInputChange} />
+        <TextField label="Application Open Date" type="date" InputLabelProps={{ shrink: true }} name="application_open_date" fullWidth value={programData.application_open_date} onChange={handleInputChange} />
+        <TextField label="Application Deadline" type="date" InputLabelProps={{ shrink: true }} name="application_deadline" fullWidth value={programData.application_deadline} onChange={handleInputChange} />
+        <TextField label="Program Start Date" type="date" InputLabelProps={{ shrink: true }} name="start_date" fullWidth value={programData.start_date} onChange={handleInputChange} />
+        <TextField label="Program End Date" type="date" InputLabelProps={{ shrink: true }} name="end_date" fullWidth value={programData.end_date} onChange={handleInputChange} />
+        <TextField label="Description" name="description" multiline rows={3} fullWidth value={programData.description} onChange={handleInputChange} />
+
+        <Typography variant="h6">Application Questions</Typography>
+        {questions.map((q, index) => (
+          <Box key={index} display="flex" sx={{ mb: 2 }}>
+            <TextField fullWidth label={`Question ${index + 1}`} value={q.text} onChange={(e) => handleQuestionChange(index, e.target.value)} />
+            <IconButton onClick={() => removeQuestion(index)}><DeleteIcon /></IconButton>
+          </Box>
+        ))}
+        <Button onClick={addQuestion}>Add Question</Button>
       </Box>
 
-      <Divider sx={{ marginY: '20px' }} />
-
-      {/* Application Questions */}
-      <Typography variant="h6" gutterBottom>
-        Application Questions
-      </Typography>
-
-      {questions.map((q, index) => (
-        <Box key={index} display="flex" alignItems="center" gap="8px" sx={{ marginBottom: '16px' }}>
-          <TextField
-            fullWidth
-            label={`Question ${index + 1}`}
-            value={q.text}
-            onChange={(e) => handleQuestionChange(index, e.target.value)}
-          />
-          <IconButton onClick={() => removeQuestion(index)} disabled={questions.length <= 1}>
-            <DeleteIcon />
-          </IconButton>
+      <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
+        <Box>
+          {editingProgram && (
+            <Button variant="outlined" color="error" onClick={handleDeleteProgram}>
+              Delete Program
+            </Button>
+          )}
         </Box>
-      ))}
-
-      <Button onClick={addQuestion} sx={{ marginTop: '10px' }}>Add Question</Button>
-
-      {/* Actions */}
-      <Box sx={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        <Button variant="contained" color="primary" onClick={handleCreateProgram}>
-          Create Program
-        </Button>
-        <Button onClick={onClose}>Cancel</Button>
+        <Box>
+          <Button variant="contained" color="primary" onClick={handleSubmit}>
+            {editingProgram ? 'Update Program' : 'Create Program'}
+          </Button>
+          <Button onClick={() => navigate('/dashboard')} sx={{ ml: 2 }}>Cancel</Button>
+        </Box>
       </Box>
     </Paper>
   );
