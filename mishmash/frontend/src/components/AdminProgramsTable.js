@@ -43,34 +43,20 @@ const AdminProgramsTable = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [timeFilter, setTimeFilter] = useState('current_future');
   const [isCreatingProgram, setIsCreatingProgram] = useState(false);
+  const [isEditingProgram, setIsEditingProgram] = useState(false);
+  const [editingProgramData, setEditingProgramData] = useState(null);
 
   useEffect(() => {
-    if (!isCreatingProgram) fetchPrograms();
-  }, [timeFilter, isCreatingProgram]);
+    if (!isCreatingProgram && !isEditingProgram) fetchPrograms();
+  }, [timeFilter, isCreatingProgram, isEditingProgram]);
 
   const fetchPrograms = async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get('/api/programs/');
-      const programsData = response.data;
-
-      // Fetch applicant counts for each program
-      const programsWithCounts = await Promise.all(
-        programsData.map(async (program) => {
-          try {
-            const statusResponse = await axiosInstance.get(`/api/programs/${program.id}/applicant_counts/`);
-            return { ...program, applicantCounts: statusResponse.data };
-          } catch (error) {
-            console.error('Error fetching applicant counts:', error);
-            return { ...program, applicantCounts: {} };
-          }
-        })
-      );
-
-      setPrograms(programsWithCounts);
+      setPrograms(response.data);
       setError(null);
     } catch (err) {
-      console.error('Error fetching programs:', err);
       setError('Failed to load programs.');
     } finally {
       setLoading(false);
@@ -84,21 +70,30 @@ const AdminProgramsTable = () => {
     setOrderBy(property);
   };
 
-  // Sorting logic
+  // Open the form for editing a program
+  const handleEditProgram = async (program) => {
+    try {
+      const questionsResponse = await axiosInstance.get(`/api/programs/${program.id}/questions/`);
+      const questions = questionsResponse.data.map((q) => ({ id: q.id, text: q.text }));
+
+      setEditingProgramData({ ...program, questions });
+      setIsEditingProgram(true);
+    } catch (error) {
+      console.error('Error fetching program questions:', error);
+    }
+  };
+
+  // Filtered and sorted programs
   const sortedPrograms = programs
     .filter((program) =>
       program.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       program.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    .sort((a, b) => {
-      const valueA = a[orderBy] || 0;
-      const valueB = b[orderBy] || 0;
-      return order === 'asc' ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
-    });
+    .sort((a, b) => (order === 'asc' ? a[orderBy] > b[orderBy] : a[orderBy] < b[orderBy]) ? 1 : -1);
 
   return (
     <TableWrapper>
-      {!isCreatingProgram ? (
+      {!isCreatingProgram && !isEditingProgram ? (
         <>
           <FilterContainer>
             <TextField label="Search" variant="outlined" size="small" fullWidth onChange={(e) => setSearchQuery(e.target.value)} />
@@ -115,19 +110,7 @@ const AdminProgramsTable = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                {[
-                  'title', 
-                  'year_semester', 
-                  'faculty_leads', 
-                  'application_deadline', 
-                  'start_date', 
-                  'end_date',
-                  'applied',
-                  'enrolled',
-                  'canceled',
-                  'withdrawn',
-                  'total_active'
-                ].map((column) => (
+                {['title', 'year_semester', 'faculty_leads', 'application_deadline', 'start_date', 'end_date'].map((column) => (
                   <TableCell key={column}>
                     <TableSortLabel active={orderBy === column} direction={order} onClick={() => handleRequestSort(column)}>
                       {column.replace('_', ' ')}
@@ -139,24 +122,29 @@ const AdminProgramsTable = () => {
             <TableBody>
               {sortedPrograms.map((program) => (
                 <TableRow key={program.id}>
-                  <TableCell>{program.title}</TableCell>
+                  <TableCell onClick={() => handleEditProgram(program)} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
+                    {program.title}
+                  </TableCell>
                   <TableCell>{program.year_semester}</TableCell>
                   <TableCell>{program.faculty_leads}</TableCell>
                   <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
-                  <TableCell>{program.applicantCounts?.applied || 0}</TableCell>
-                  <TableCell>{program.applicantCounts?.enrolled || 0}</TableCell>
-                  <TableCell>{program.applicantCounts?.canceled || 0}</TableCell>
-                  <TableCell>{program.applicantCounts?.withdrawn || 0}</TableCell>
-                  <TableCell>{(program.applicantCounts?.applied || 0) + (program.applicantCounts?.enrolled || 0)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </>
       ) : (
-        <ProgramForm onClose={() => setIsCreatingProgram(false)} refreshPrograms={fetchPrograms} />
+        <ProgramForm
+          onClose={() => {
+            setIsCreatingProgram(false);
+            setIsEditingProgram(false);
+            setEditingProgramData(null);
+          }}
+          refreshPrograms={fetchPrograms}
+          editingProgram={editingProgramData}
+        />
       )}
     </TableWrapper>
   );

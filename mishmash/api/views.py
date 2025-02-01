@@ -163,6 +163,16 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         return Response(applicant_counts)
     
+    @action(detail=True, methods=['get'])
+    def questions(self, request, pk=None):
+        """
+        Returns all application questions for a program.
+        """
+        program = self.get_object()
+        questions = ApplicationQuestion.objects.filter(program=program)
+        serializer = ApplicationQuestionSerializer(questions, many=True)
+        return Response(serializer.data)
+    
 class ApplicationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad applications.

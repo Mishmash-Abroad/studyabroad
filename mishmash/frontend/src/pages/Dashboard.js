@@ -3,6 +3,7 @@ import { styled } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
+import AdminProgramsTable from "../components/AdminProgramsTable";
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import Button from "@mui/material/Button"; // Import Button from MUI
 
@@ -14,7 +15,7 @@ const DashboardContainer = styled("div")(({ theme }) => ({
 }));
 
 const DashboardContent = styled("div")(({ theme }) => ({
-  maxWidth: "1200px",
+  maxWidth: "1500px",
   margin: "0 auto",
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
@@ -82,7 +83,7 @@ const Dashboard = () => {
       case "programs":
         return <ProgramBrowser />;
       case "my-programs":
-        return <MyProgramsTable />;
+        return <AdminProgramsTable  />;
       case "overview":
       default:
         return (
