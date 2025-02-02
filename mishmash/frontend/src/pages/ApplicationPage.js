@@ -43,10 +43,12 @@ const ApplicationPage = () => {
   // Form fields
   const [studentName, setStudentName] = useState("");
   const [program, setProgram] = useState("");
+  const [applicationId, setApplicationId] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gpa, setGpa] = useState("");
   const [major, setMajor] = useState("");
-  const [details, setDetails] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [questionResponses, setQuestionResponses] = useState([]);
 
   // State for loading and error
   const [error, setError] = useState("");
@@ -62,6 +64,7 @@ const ApplicationPage = () => {
         );
 
         if (application) {
+          setApplicationId(application.id);
           setStudentName(application.student);
           setDateOfBirth(application.date_of_birth);
           setGpa(application.gpa);
@@ -80,9 +83,44 @@ const ApplicationPage = () => {
       }
     };
 
+    const getQuestions = async () => {
+      const response = await axiosInstance.get(`/api/questions/`);
+      const newQuestions = response.data.filter(
+        (question) => question.program == program_id
+      );
+      console.log(newQuestions);
+      setQuestions(newQuestions);
+      const newQuestionResponses = new Array(response.data.length);
+
+      setQuestionResponses(newQuestionResponses);
+    };
+
+    const getQuestionResponses = async () => {
+      try {
+        const response = await axiosInstance.get(`/api/responses/`);
+        const newQuestionResponses = response.data.filter(
+          (questionResponse) => questionResponse.program == program_id
+        );
+        
+        console.log(newQuestionResponses);
+        if (newQuestionResponses) {
+          setQuestionResponses(newQuestionResponses);
+        }
+      } catch (err) {
+        // Handle errors
+        const errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.error ||
+          err.message ||
+          "An error occurred while getting the application.";
+        setError(errorMessage);
+      } finally {
+        setLoading(false); // Reset loading state
+      }
+    };
+
     const getProgram = async () => {
       const response = await axiosInstance.get(`/api/programs/`);
-
       const current_program = response.data.find(
         (program) => program.id == program_id
       );
@@ -91,6 +129,8 @@ const ApplicationPage = () => {
 
     getApplication();
     getProgram();
+    getQuestions();
+    getQuestionResponses();
   }, []);
 
   const handleTabChange = (event, newValue) => {
@@ -108,7 +148,7 @@ const ApplicationPage = () => {
         throw new Error("Please fill out all required fields.");
       }
 
-      const response = await axiosInstance.post(
+      const application_response = await axiosInstance.post(
         `/api/applications/create_or_edit/`,
         {
           student: user_id,
@@ -124,6 +164,22 @@ const ApplicationPage = () => {
         }
       );
 
+      questionResponses.map(async (questionResponse, index) => {
+        const questions_response = await axiosInstance.post(
+          `/api/responses/`,
+          {
+            application: applicationId,
+            question: questions[index],
+            response: questionResponse
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );  
+      })
+      
       // Check for successful response
       if (response.status === 201 || response.status === 200) {
         navigate(`/dashboard`); // Redirect to dashboard after successful submission
@@ -188,18 +244,25 @@ const ApplicationPage = () => {
             required
           />
         </Box>
-        <Box mb={3}>
-          <TextField
-            fullWidth
-            label="Application Details"
-            variant="outlined"
-            multiline
-            rows={4}
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-            required
-          />
-        </Box>
+        {questions.map((question, index) => (
+          <Box key={index} mb={3}>
+            <TextField
+              fullWidth
+              label={question.text} // Assuming question has a 'text' property
+              variant="outlined"
+              multiline
+              rows={4}
+              value={questionResponses[index] || ""}
+              onChange={(e) => {
+                const newQuestionResponses = [...questionResponses];
+                newQuestionResponses[index] = e.target.value;
+                setQuestionResponses(newQuestionResponses);
+              }}
+              required
+            />
+          </Box>
+        ))}
+
         {error && (
           <Typography color="error" mb={2}>
             {error}
