@@ -3,9 +3,11 @@ import { styled } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import ProgramBrowser from '../components/ProgramBrowser';
 import MyProgramsTable from '../components/MyProgramsTable';
-import ChangePasswordModal from '../components/ChangePasswordModal';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import TopNavBar from '../components/TopNavBar';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 
+// -------------------- STYLES --------------------
 const DashboardContainer = styled('div')(({ theme }) => ({
   paddingTop: '72px',
   minHeight: '100vh',
@@ -72,31 +74,52 @@ const TabContent = styled('div')(({ theme }) => ({
 
 // -------------------- COMPONENT LOGIC --------------------
 const Dashboard = () => {
+  // Get user from auth context - user.is_admin determines which dashboard view to show
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Track visibility of the "Change Password" modal
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
-  // Determine which tab is active based on the URL path
+  // Get current tab from URL path
   const getCurrentTab = () => {
     const path = location.pathname.split('/').pop();
-    switch (path) {
-      case 'browse':
-        return 'programs';
-      case 'my-programs':
-        return 'my-programs';
-      default:
-        return 'overview';
+    // Admin tabs: admin-overview, admin-programs, admin-users
+    if (user?.is_admin) {
+      switch (path) {
+        case 'admin-programs':
+          return 'admin-programs';
+        case 'admin-users':
+          return 'admin-users';
+        default:
+          return 'admin-overview';
+      }
+    } 
+    // Student tabs: overview, browse (programs), my-programs
+    else {
+      switch (path) {
+        case 'browse':
+          return 'programs';
+        case 'my-programs':
+          return 'my-programs';
+        default:
+          return 'overview';
+      }
     }
   };
 
   const activeTab = getCurrentTab();
 
-  // Navigate to the chosen tab (updates the URL)
+  // Navigate to tab - different paths for admin and student views
   const handleTabChange = (tab) => {
     switch (tab) {
+      // Admin navigation paths
+      case 'admin-programs':
+        navigate('/dashboard/admin-programs');
+        break;
+      case 'admin-users':
+        navigate('/dashboard/admin-users');
+        break;
+      // Student navigation paths
       case 'programs':
         navigate('/dashboard/browse');
         break;
@@ -108,56 +131,125 @@ const Dashboard = () => {
     }
   };
 
+  // Render different tab buttons based on user role
+  const renderTabs = () => {
+    // Admin sees: Admin Overview, Program Management, User Management
+    if (user?.is_admin) {
+      return (
+        <>
+          <TabButton
+            active={activeTab === 'admin-overview'}
+            onClick={() => handleTabChange('admin-overview')}
+          >
+            Admin Overview
+          </TabButton>
+          <TabButton
+            active={activeTab === 'admin-programs'}
+            onClick={() => handleTabChange('admin-programs')}
+          >
+            Program Management
+          </TabButton>
+          <TabButton
+            active={activeTab === 'admin-users'}
+            onClick={() => handleTabChange('admin-users')}
+          >
+            User Management
+          </TabButton>
+        </>
+      );
+    }
+
+    // Students see: Overview, Browse Programs, My Programs
+    return (
+      <>
+        <TabButton
+          active={activeTab === 'overview'}
+          onClick={() => handleTabChange('overview')}
+        >
+          Overview
+        </TabButton>
+        <TabButton
+          active={activeTab === 'programs'}
+          onClick={() => handleTabChange('programs')}
+        >
+          Browse Programs
+        </TabButton>
+        <TabButton
+          active={activeTab === 'my-programs'}
+          onClick={() => handleTabChange('my-programs')}
+        >
+          My Programs
+        </TabButton>
+      </>
+    );
+  };
+
   return (
     <DashboardContainer>
+      <TopNavBar onChangePasswordClick={() => setShowChangePasswordModal(true)} />
       <DashboardContent>
+        {/* Title changes based on user role */}
         <DashboardHeader>
-          <DashboardTitle>Student Dashboard</DashboardTitle>
+          <DashboardTitle>
+            {user?.is_admin ? 'Admin Dashboard' : 'Student Dashboard'}
+          </DashboardTitle>
         </DashboardHeader>
 
+        {/* Tab buttons render differently for admin vs student */}
         <TabContainer>
-          <TabButton
-            active={activeTab === 'overview'}
-            onClick={() => handleTabChange('overview')}
-          >
-            Overview
-          </TabButton>
-          <TabButton
-            active={activeTab === 'programs'}
-            onClick={() => handleTabChange('programs')}
-          >
-            Browse Programs
-          </TabButton>
-          <TabButton
-            active={activeTab === 'my-programs'}
-            onClick={() => handleTabChange('my-programs')}
-          >
-            My Programs
-          </TabButton>
-          <TabButton onClick={() => setShowChangePasswordModal(true)}>
-            Change Password
-          </TabButton>
+          {renderTabs()}
         </TabContainer>
 
-        {/* Conditionally render the Change Password Modal */}
+        {/* Change Password Modal - available to both admin and student */}
         {showChangePasswordModal && (
           <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />
         )}
 
+        {/* Route-based content rendering - different routes for admin vs student */}
         <TabContent>
-          {/* Route-based content rendering */}
           <Routes>
-            <Route
-              path="/"
-              element={
-                <div style={{ padding: '20px' }}>
-                  <h2>Welcome, {user?.display_name}!</h2>
-                  <p>View available study abroad programs or check your existing applications.</p>
-                </div>
-              }
-            />
-            <Route path="browse" element={<ProgramBrowser />} />
-            <Route path="my-programs" element={<MyProgramsTable />} />
+            {/* Admin Routes */}
+            {user?.is_admin ? (
+              <>
+                {/* Admin Overview Route */}
+                <Route path="/" element={
+                  <div style={{ padding: '20px' }}>
+                    <h2>Welcome, Administrator!</h2>
+                    <p>Use the tabs above to manage programs and users.</p>
+                  </div>
+                } />
+                {/* Program Management Route */}
+                <Route path="admin-programs" element={
+                  <div style={{ padding: '20px' }}>
+                    <h2>Program Management</h2>
+                    <p>Program management interface coming soon.</p>
+                  </div>
+                } />
+                {/* User Management Route */}
+                <Route path="admin-users" element={
+                  <div style={{ padding: '20px' }}>
+                    <h2>User Management</h2>
+                    <p>User management interface coming soon.</p>
+                  </div>
+                } />
+              </>
+            ) : (
+              /* Student Routes */
+              <>
+                {/* Student Overview Route */}
+                <Route path="/" element={
+                  <div style={{ padding: '20px' }}>
+                    <h2>Welcome, {user?.display_name}!</h2>
+                    <p>View available study abroad programs or check your existing applications.</p>
+                  </div>
+                } />
+                {/* Browse Programs Route */}
+                <Route path="browse" element={<ProgramBrowser />} />
+                {/* My Programs Route */}
+                <Route path="my-programs" element={<MyProgramsTable />} />
+              </>
+            )}
+            {/* Fallback route - redirects to dashboard root for invalid paths */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </TabContent>
