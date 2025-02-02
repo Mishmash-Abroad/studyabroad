@@ -30,7 +30,7 @@ const NavLogo = styled("div")({
 });
 
 const NavLogoImage = styled("img")({
-  height: "40px",
+  height: "50px",
   width: "auto",
 });
 
@@ -83,9 +83,10 @@ const NavButton = styled("button")(({ theme, variant = "default" }) => {
 });
 
 const WelcomeText = styled("span")(({ theme }) => ({
-  color: theme.palette.overlay.nearWhite,
-  fontSize: theme.typography.body1.fontSize,
-  fontFamily: theme.typography.fontFamily,
+  color: theme.palette.primary.contrastText,
+  fontSize: theme.typography.subtitle2.fontSize,
+  opacity: 0.9,
+  transition: 'all 0.2s ease',
 }));
 
 const UserSection = styled('div')({
@@ -93,13 +94,55 @@ const UserSection = styled('div')({
   alignItems: 'center',
   gap: '8px',
   cursor: 'pointer',
+  padding: '6px 12px',
+  borderRadius: '20px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    '& .MuiSvgIcon-root': {
+      transform: 'scale(1.1)',
+    },
+    '& .user-name': {
+      fontWeight: 600,
+      opacity: 1,
+    },
+  },
 });
 
 const UserIcon = styled(PersonIcon)(({ theme }) => ({
   color: theme.palette.primary.contrastText,
+  transition: 'transform 0.2s ease',
+}));
+
+const StyledMenu = styled(Menu)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: theme.shape.borderRadius.large,
+    marginTop: '8px',
+    minWidth: 180,
+    boxShadow: theme.customShadows.raised,
+    '& .MuiMenu-list': {
+      padding: '8px',
+    },
+    '& .MuiMenuItem-root': {
+      borderRadius: theme.shape.borderRadius.medium,
+      fontSize: theme.typography.body2.fontSize,
+      fontWeight: theme.typography.subtitle2.fontWeight,
+      padding: '10px 16px',
+      margin: '2px 0',
+      transition: theme.transitions.quick,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.main + '10',
+      },
+      '&:active': {
+        backgroundColor: theme.palette.primary.main + '20',
+      },
+    },
+  },
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
+const LOGO_PATH = "/images/logo.png";
+
 function TopNavBar({onChangePasswordClick,  onLoginClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -136,7 +179,7 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
   return (
     <NavBar>
       <NavLogo onClick={() => navigate("/")}>
-        <NavLogoImage src="/logo.png" alt="HCC Logo" />
+        <NavLogoImage src={LOGO_PATH} alt="HCC Logo" />
         <NavTitle>HCC Study Abroad</NavTitle>
       </NavLogo>
 
@@ -148,9 +191,9 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
             </NavButton>
             <UserSection onClick={handleUserMenuClick}>
               <UserIcon />
-              <WelcomeText>{user.display_name}</WelcomeText>
+              <WelcomeText className="user-name">{user.display_name}</WelcomeText>
             </UserSection>
-            <Menu
+            <StyledMenu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleUserMenuClose}
@@ -162,10 +205,11 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
                 vertical: 'top',
                 horizontal: 'right',
               }}
+              elevation={0}
             >
               <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
+            </StyledMenu>
           </>
         ) : (
           <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
