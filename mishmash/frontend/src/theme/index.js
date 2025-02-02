@@ -177,6 +177,7 @@ const theme = createTheme({
     quick: 'all 0.2s ease',
     medium: 'all 0.3s ease',
     slow: 'all 0.5s ease',
+    slower: 'all 0.7s ease',
   },
 
   // ---------- CUSTOM TEXT SHADOWS ----------
