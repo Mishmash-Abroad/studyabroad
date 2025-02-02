@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
-import { TextField, Button, Typography, Box } from "@mui/material";
+import { TextField, Button, Typography, Box, MenuItem } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Paper from "@mui/material/Paper";
-import axios from "axios";
+import axiosInstance from "../utils/axios";
+import { useAuth } from "../context/AuthContext";
 
 // -------------------- STYLES --------------------
 const PageContainer = styled("div")(({ theme }) => ({
@@ -33,19 +34,74 @@ const StyledTabContainer = styled(Box)(({ theme }) => ({
 
 // -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
-  const { id } = useParams();
+  const { user_id, program_id } = useParams();
   const navigate = useNavigate();
 
   // Tab management
   const [activeTab, setActiveTab] = useState(0);
 
+  const [application, setApplication] = useState(null);
+
   // Form fields
   const [studentName, setStudentName] = useState("");
+  const [program, setProgram] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gpa, setGpa] = useState("");
+  const [major, setMajor] = useState("");
   const [details, setDetails] = useState("");
+
+  if (application) {
+    setStudentName(application.student);
+    setDateOfBirth(application.date_of_birth);
+    setGpa(application.gpa);
+    setMajor(application.major);
+  }
 
   // State for loading and error
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Fetch user's applications
+  useEffect(() => {
+    const getApplication = async () => {
+      try {
+        const response = await axiosInstance.get(`/api/applications/`);
+        console.log(response.data);
+        console.log(
+          response.data.filter(
+            (application) => application.program === program_id
+          )
+        );
+        setApplication(
+          response.data.filter(
+            (application) => application.program === program_id
+          )[0]
+        );
+      } catch (err) {
+        // Handle errors
+        const errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.error ||
+          err.message ||
+          "An error occurred while getting the application.";
+        setError(errorMessage);
+        setApplication(null);
+      } finally {
+        setLoading(false); // Reset loading state
+      }
+    };
+
+    const getProgram = async () => {
+      const response = await axiosInstance.get(`/api/programs/`);
+      console.log(response.data);
+      const current_program = response.data.find((program) => program.id == program_id);
+      setProgram(current_program);
+      console.log(current_program);
+    };
+
+    getApplication();
+    getProgram();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -57,73 +113,122 @@ const ApplicationPage = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`http://localhost:8000/apply/${id}/submit/`, {
-        studentName,
-        details,
-      });
+      // Ensure all required fields are provided
+      if (!dateOfBirth || !gpa || !major) {
+        throw new Error("Please fill out all required fields.");
+      }
 
+      console.log([user_id, parseInt(program_id), dateOfBirth, gpa, major]);
+
+      const response = await axiosInstance.post(
+        `/api/applications/create_or_edit/`,
+        {
+          student: user_id,
+          program: program_id,
+          dateOfBirth,
+          gpa,
+          major,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log([response]);
+      // Check for successful response
       if (response.status === 201) {
-        navigate(`/dashboard`);
+        navigate(`/dashboard`); // Redirect to dashboard after successful submission
       }
     } catch (err) {
-      setError(err.response?.data?.error || "An error occurred while submitting.");
+      // Handle errors
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        err.message ||
+        "An error occurred while submitting the application.";
+      setError(errorMessage);
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading state
     }
   };
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 0: // Application Form
-        return (
-          <form onSubmit={handleSubmitApplication}>
-            <Box mb={3}>
-              <TextField
-                fullWidth
-                label="Student Name"
-                variant="outlined"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                required
-              />
-            </Box>
-            <Box mb={3}>
-              <TextField
-                fullWidth
-                label="Application Details"
-                variant="outlined"
-                multiline
-                rows={4}
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                required
-              />
-            </Box>
-            {error && (
-              <Typography color="error" mb={2}>
-                {error}
-              </Typography>
-            )}
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading}
-              fullWidth
-            >
-              {loading ? "Submitting..." : "Submit Application"}
-            </Button>
-          </form>
-        );
-      case 1: // Application History
-        return (
-          <Typography>
-            No application history is available at the moment. Check back later.
+    return (
+      <form onSubmit={handleSubmitApplication}>
+        <Box mb={3}>
+          <TextField
+            fullWidth
+            label="Student Name"
+            variant="outlined"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            required
+          />
+        </Box>
+        <Box mb={3}>
+          <TextField
+            fullWidth
+            type="date"
+            label="Date of Birth"
+            variant="outlined"
+            InputLabelProps={{ shrink: true }}
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            required
+          />
+        </Box>
+        <Box mb={3}>
+          <TextField
+            fullWidth
+            label="GPA"
+            variant="outlined"
+            type="number"
+            inputProps={{ step: "0.01", min: "0", max: "4.0" }}
+            value={gpa}
+            onChange={(e) => setGpa(e.target.value)}
+            required
+          />
+        </Box>
+        <Box mb={3}>
+          <TextField
+            fullWidth
+            label="Major"
+            variant="outlined"
+            value={major}
+            onChange={(e) => setMajor(e.target.value)}
+            required
+          />
+        </Box>
+        <Box mb={3}>
+          <TextField
+            fullWidth
+            label="Application Details"
+            variant="outlined"
+            multiline
+            rows={4}
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            required
+          />
+        </Box>
+        {error && (
+          <Typography color="error" mb={2}>
+            {error}
           </Typography>
-        );
-      default:
-        return null;
-    }
+        )}
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={loading}
+          fullWidth
+        >
+          {loading ? "Submitting..." : "Submit Application"}
+        </Button>
+      </form>
+    );
   };
 
   return (
@@ -131,22 +236,16 @@ const ApplicationPage = () => {
       <ContentContainer>
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application #{id}
-          </Typography>
-          <Typography variant="subtitle1" color="textSecondary">
-            Fill out the form or check your application history.
+            Application #{user_id}
           </Typography>
         </Header>
 
-        {/* Tabs for switching views */}
         <StyledTabContainer>
           <Tabs value={activeTab} onChange={handleTabChange} centered>
             <Tab label="Application Form" />
-            <Tab label="History" />
           </Tabs>
         </StyledTabContainer>
 
-        {/* Render content based on the active tab */}
         {renderTabContent()}
       </ContentContainer>
     </PageContainer>
