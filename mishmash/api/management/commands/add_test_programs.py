@@ -17,8 +17,18 @@ Program States:
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from api.models import Program
+from api.models import Program, ApplicationQuestion
 from datetime import timedelta
+
+DEFAULT_QUESTIONS = [
+    "Why do you want to participate in this study abroad program?",
+    "How does this program align with your academic or career goals?",
+    "What challenges do you anticipate during this experience, and how will you address them?",
+    "Describe a time you adapted to a new or unfamiliar environment.",
+    "What unique perspective or contribution will you bring to the group?",
+]
+
+EXTRA_QUESTION = "How proficient are you with the french language?"
 
 class Command(BaseCommand):
     help = 'Creates test programs with various scenarios'
@@ -278,3 +288,11 @@ class Command(BaseCommand):
         for program_data in programs_data:
             program = Program.objects.create(**program_data)
             self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
+
+            for q in DEFAULT_QUESTIONS:
+                question = ApplicationQuestion.objects.create(text=q, program=program)
+                self.stdout.write(f'Created question for {program.title}: {question.text}')
+
+            if program.title == "Culinary Arts in Paris":
+                question = ApplicationQuestion.objects.create(text=EXTRA_QUESTION, program=program)
+                self.stdout.write(f'Created question for {program.title}: {question.text}')
