@@ -288,34 +288,35 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
         Create or edit the current user's responses for a specific program.
         """
 
-        students_application = ApplicationResponse.objects.filter(
-            student=student, program=program
+        application = Application.objects.get(
+            id=request.data.get("response").get("application")
+        )
+        
+        question = ApplicationQuestion.objects.get(
+            id=request.data.get("response").get("question_id")
+        )
+
+        questionResponse = ApplicationResponse.objects.filter(
+            application=application,
+            question=question,
         ).first()
 
-        if not students_application:
-            new_application = Application.objects.create(
-                student=student,
-                program=program,
-                date_of_birth=request.data.get("dateOfBirth"),
-                gpa=request.data.get("gpa"),
-                major=request.data.get("major"),
-                status="Applied",
-                applied_on=datetime.now(),
+        if not questionResponse:
+            newQuestionResponse = ApplicationResponse.objects.create(
+                application=application,
+                question=question,
+                response=request.data.get("response").get("response_text"),
             )
             return Response(
-                {"message": "Application created", "id": new_application.id},
-                status=status.HTTP_201_CREATED,
+                {"message": "Responses created", "id": newQuestionResponse.id},
+                status=status.HTTP_200_OK,
             )
 
-        students_application.date_of_birth = request.data.get("dateOfBirth")
-        students_application.gpa = request.data.get("gpa")
-        students_application.major = request.data.get("major")
-        students_application.status = "Applied"
-        students_application.applied_on = datetime.now()
-        students_application.save()
+        questionResponse.response = request.data.get("response").get("response_text")
+        questionResponse.save()
 
         return Response(
-            {"message": "Application updated", "id": students_application.id},
+            {"message": "Responses updated", "id": questionResponse.id},
             status=status.HTTP_200_OK,
         )
 
