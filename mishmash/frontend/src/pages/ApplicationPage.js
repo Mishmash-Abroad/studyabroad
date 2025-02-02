@@ -43,7 +43,7 @@ const ApplicationPage = () => {
   // Form fields
   const [studentName, setStudentName] = useState("");
   const [program, setProgram] = useState("");
-  const [applicationId, setApplicationId] = useState("");
+  const [applicationId, setApplicationId] = useState(0);
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gpa, setGpa] = useState("");
   const [major, setMajor] = useState("");
@@ -64,47 +64,65 @@ const ApplicationPage = () => {
         );
 
         if (application) {
+          console.log("bruh");
+          console.log(application.id);
           setApplicationId(application.id);
           setStudentName(application.student);
           setDateOfBirth(application.date_of_birth);
           setGpa(application.gpa);
           setMajor(application.major);
         }
-      } catch (err) {
-        // Handle errors
-        const errorMessage =
-          err.response?.data?.detail ||
-          err.response?.data?.error ||
-          err.message ||
-          "An error occurred while getting the application.";
-        setError(errorMessage);
-      } finally {
-        setLoading(false); // Reset loading state
-      }
-    };
 
-    const getQuestions = async () => {
-      const response = await axiosInstance.get(`/api/questions/`);
-      const newQuestions = response.data.filter(
-        (question) => question.program == program_id
-      );
-      console.log(newQuestions);
-      setQuestions(newQuestions);
-      const newQuestionResponses = new Array(response.data.length);
+        const program_response = await axiosInstance.get(`/api/programs/`);
+        const current_program = program_response.data.find(
+          (program) => program.id == program_id
+        );
+        setProgram(current_program);
 
-      setQuestionResponses(newQuestionResponses);
-    };
+        const questions_response = await axiosInstance.get(`/api/questions/`);
+        const newQuestions = questions_response.data.filter(
+          (question) => question.program == program_id
+        );
+        console.log(newQuestions);
+        setQuestions(newQuestions);
 
-    const getQuestionResponses = async () => {
-      try {
-        const response = await axiosInstance.get(`/api/responses/`);
-        const newQuestionResponses = response.data.filter(
+        const blank_questions_responses = newQuestions.map(
+          (question, index) => {
+            return {
+              application: application.id,
+              question_id: question.id,
+              question_text: question.text,
+              response_text: "",
+            };
+          }
+        );
+
+        console.log("request nuevo");
+        console.log(blank_questions_responses);
+        setQuestionResponses(blank_questions_responses);
+        const questions_responses_response = await axiosInstance.get(
+          `/api/responses/`
+        );
+        const newQuestionResponses = questions_responses_response.data.filter(
           (questionResponse) => questionResponse.program == program_id
         );
-        
-        console.log(newQuestionResponses);
-        if (newQuestionResponses) {
-          setQuestionResponses(newQuestionResponses);
+
+        if (newQuestionResponses.length != 0) {
+          for (let i = 0; i < newQuestionResponses.length; i++) {
+            for (let i = 0; i < blank_questions_responses.length; i++) {
+              if (
+                newQuestionResponses[i].question.text ==
+                blank_questions_responses[i].question_text
+              ) {
+                blank_questions_responses[i].response_text =
+                  newQuestionResponses[i].response_text;
+              }
+            }
+          }
+
+          console.log("request viego");
+          console.log(blank_questions_responses);
+          setQuestionResponses(blank_questions_responses);
         }
       } catch (err) {
         // Handle errors
@@ -119,18 +137,7 @@ const ApplicationPage = () => {
       }
     };
 
-    const getProgram = async () => {
-      const response = await axiosInstance.get(`/api/programs/`);
-      const current_program = response.data.find(
-        (program) => program.id == program_id
-      );
-      setProgram(current_program);
-    };
-
     getApplication();
-    getProgram();
-    getQuestions();
-    getQuestionResponses();
   }, []);
 
   const handleTabChange = (event, newValue) => {
@@ -164,24 +171,37 @@ const ApplicationPage = () => {
         }
       );
 
-      questionResponses.map(async (questionResponse, index) => {
-        const questions_response = await axiosInstance.post(
-          `/api/responses/`,
-          {
-            application: applicationId,
-            question: questions[index],
-            response: questionResponse
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
+      for (const questionResponse of questionResponses) {
+        try {
+          const questions_response = await axiosInstance.post(
+            `/api/responses/create_or_edit/`,
+            {
+              response: questionResponse,
             },
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (
+            questions_response.status !== 201 &&
+            questions_response.status !== 200
+          ) {
+            throw new Error("Issue with updating question responses");
           }
-        );  
-      })
-      
+        } catch (error) {
+          console.error(error);
+          throw new Error("Issue with updating question responses");
+        }
+      }
+
       // Check for successful response
-      if (response.status === 201 || response.status === 200) {
+      if (
+        application_response.status === 201 ||
+        application_response.status === 200
+      ) {
         navigate(`/dashboard`); // Redirect to dashboard after successful submission
       }
     } catch (err) {
@@ -252,10 +272,11 @@ const ApplicationPage = () => {
               variant="outlined"
               multiline
               rows={4}
-              value={questionResponses[index] || ""}
+              value={questionResponses[index].response_text || ""}
               onChange={(e) => {
                 const newQuestionResponses = [...questionResponses];
-                newQuestionResponses[index] = e.target.value;
+                console.log(questionResponses);
+                newQuestionResponses[index].response_text = e.target.value;
                 setQuestionResponses(newQuestionResponses);
               }}
               required
