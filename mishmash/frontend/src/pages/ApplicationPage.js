@@ -40,8 +40,6 @@ const ApplicationPage = () => {
   // Tab management
   const [activeTab, setActiveTab] = useState(0);
 
-  const [application, setApplication] = useState(null);
-
   // Form fields
   const [studentName, setStudentName] = useState("");
   const [program, setProgram] = useState("");
@@ -49,13 +47,6 @@ const ApplicationPage = () => {
   const [gpa, setGpa] = useState("");
   const [major, setMajor] = useState("");
   const [details, setDetails] = useState("");
-
-  if (application) {
-    setStudentName(application.student);
-    setDateOfBirth(application.date_of_birth);
-    setGpa(application.gpa);
-    setMajor(application.major);
-  }
 
   // State for loading and error
   const [error, setError] = useState("");
@@ -66,17 +57,16 @@ const ApplicationPage = () => {
     const getApplication = async () => {
       try {
         const response = await axiosInstance.get(`/api/applications/`);
-        console.log(response.data);
-        console.log(
-          response.data.filter(
-            (application) => application.program === program_id
-          )
+        const application = response.data.find(
+          (application) => application.program == program_id
         );
-        setApplication(
-          response.data.filter(
-            (application) => application.program === program_id
-          )[0]
-        );
+
+        if (application) {
+          setStudentName(application.student);
+          setDateOfBirth(application.date_of_birth);
+          setGpa(application.gpa);
+          setMajor(application.major);
+        }
       } catch (err) {
         // Handle errors
         const errorMessage =
@@ -85,7 +75,6 @@ const ApplicationPage = () => {
           err.message ||
           "An error occurred while getting the application.";
         setError(errorMessage);
-        setApplication(null);
       } finally {
         setLoading(false); // Reset loading state
       }
@@ -93,10 +82,11 @@ const ApplicationPage = () => {
 
     const getProgram = async () => {
       const response = await axiosInstance.get(`/api/programs/`);
-      console.log(response.data);
-      const current_program = response.data.find((program) => program.id == program_id);
+
+      const current_program = response.data.find(
+        (program) => program.id == program_id
+      );
       setProgram(current_program);
-      console.log(current_program);
     };
 
     getApplication();
@@ -118,8 +108,6 @@ const ApplicationPage = () => {
         throw new Error("Please fill out all required fields.");
       }
 
-      console.log([user_id, parseInt(program_id), dateOfBirth, gpa, major]);
-
       const response = await axiosInstance.post(
         `/api/applications/create_or_edit/`,
         {
@@ -136,9 +124,8 @@ const ApplicationPage = () => {
         }
       );
 
-      console.log([response]);
       // Check for successful response
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         navigate(`/dashboard`); // Redirect to dashboard after successful submission
       }
     } catch (err) {
@@ -236,7 +223,7 @@ const ApplicationPage = () => {
       <ContentContainer>
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application #{user_id}
+            Application for {program.title}
           </Typography>
         </Header>
 
