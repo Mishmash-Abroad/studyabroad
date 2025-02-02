@@ -206,8 +206,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         # Get the program instance from the database
         program_id = request.data.get("program")
         program = Program.objects.get(id=program_id)
-        
-        students_application = Application.objects.filter(student=student, program=program).first()
+
+        students_application = Application.objects.filter(
+            student=student, program=program
+        ).first()
 
         if not students_application:
             new_application = Application.objects.create(
@@ -219,7 +221,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 status="Applied",
                 applied_on=datetime.now(),
             )
-            return Response({"message": "Application created", "id": new_application.id}, status=status.HTTP_201_CREATED)
+            return Response(
+                {"message": "Application created", "id": new_application.id},
+                status=status.HTTP_201_CREATED,
+            )
 
         students_application.date_of_birth = request.data.get("dateOfBirth")
         students_application.gpa = request.data.get("gpa")
@@ -228,7 +233,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         students_application.applied_on = datetime.now()
         students_application.save()
 
-        return Response({"message": "Application updated", "id": students_application.id}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Application updated", "id": students_application.id},
+            status=status.HTTP_200_OK,
+        )
 
 
 class ApplicationQuestionViewSet(viewsets.ModelViewSet):
@@ -272,6 +280,43 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             return ApplicationResponse.objects.all()
         return ApplicationResponse.objects.filter(
             application__student=self.request.user
+        )
+
+    @action(detail=False, methods=["post"])
+    def create_or_edit(self, request):
+        """
+        Create or edit the current user's responses for a specific program.
+        """
+
+        students_application = ApplicationResponse.objects.filter(
+            student=student, program=program
+        ).first()
+
+        if not students_application:
+            new_application = Application.objects.create(
+                student=student,
+                program=program,
+                date_of_birth=request.data.get("dateOfBirth"),
+                gpa=request.data.get("gpa"),
+                major=request.data.get("major"),
+                status="Applied",
+                applied_on=datetime.now(),
+            )
+            return Response(
+                {"message": "Application created", "id": new_application.id},
+                status=status.HTTP_201_CREATED,
+            )
+
+        students_application.date_of_birth = request.data.get("dateOfBirth")
+        students_application.gpa = request.data.get("gpa")
+        students_application.major = request.data.get("major")
+        students_application.status = "Applied"
+        students_application.applied_on = datetime.now()
+        students_application.save()
+
+        return Response(
+            {"message": "Application updated", "id": students_application.id},
+            status=status.HTTP_200_OK,
         )
 
 
