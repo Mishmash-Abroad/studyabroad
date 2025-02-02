@@ -164,6 +164,7 @@ const ApplicationButton = styled('button')(({ theme, variant }) => {
  */
 const ProgramCard = ({ program, isInAppliedSection }) => {
   const [applicationStatus, setApplicationStatus] = useState(null);
+  const [applicationID, setApplicationID] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -179,6 +180,8 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
       try {
         const response = await axiosInstance.get(`/api/programs/${program.id}/application_status/`);
         setApplicationStatus(response.data.status);
+        setApplicationID(response.data.application_id);
+
       } catch (error) {
         console.error('Error fetching application status:', error);
       }
@@ -282,7 +285,7 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
             <ApplicationButton
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/apply/${program.id}`);
+                navigate(`/apply/${user.user_id}/${program.id}`);
               }}
               variant="success"
             >
@@ -339,7 +342,7 @@ const ProgramCard = ({ program, isInAppliedSection }) => {
           <ApplicationButton
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/apply/${program.id}`);
+              navigate(`/apply/${user.user_id}/${program.id}`);
             }}
             disabled={user?.is_admin}
             variant={user?.is_admin ? 'disabled' : 'success'}
