@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import { useState } from "react";
-
+import { Menu, MenuItem, IconButton } from "@mui/material";
+import PersonIcon from '@mui/icons-material/Person';
 
 // -------------------- STYLES --------------------
 const NavBar = styled("div")(({ theme }) => ({
@@ -49,14 +49,6 @@ const NavControls = styled("div")({
 const NavButton = styled("button")(({ theme, variant = "default" }) => {
   const getStyles = () => {
     switch (variant) {
-      // case 'transparent':
-      //   return {
-      //     backgroundColor: 'transparent',
-      //     border: `1px solid ${theme.palette.overlay.subtle}`,
-      //     '&:hover': {
-      //       backgroundColor: theme.palette.overlay.faint,
-      //     },
-      //   };
       case "light":
         return {
           backgroundColor: theme.palette.overlay.faint,
@@ -96,10 +88,22 @@ const WelcomeText = styled("span")(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
 }));
 
+const UserSection = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  cursor: 'pointer',
+});
+
+const UserIcon = styled(PersonIcon)(({ theme }) => ({
+  color: theme.palette.primary.contrastText,
+}));
+
 // -------------------- COMPONENT LOGIC --------------------
 function TopNavBar({onChangePasswordClick,  onLoginClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleLogout = async () => {
     try {
@@ -113,6 +117,22 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
     }
   };
 
+  const handleUserMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleChangePassword = () => {
+    handleUserMenuClose();
+    // added a small delay to ensure menu is closed before modal opens to avoid a change focus issue
+    setTimeout(() => {
+      onChangePasswordClick();
+    }, 100);
+  };
+
   return (
     <NavBar>
       <NavLogo onClick={() => navigate("/")}>
@@ -123,13 +143,29 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
       <NavControls>
         {user ? (
           <>
-            <WelcomeText>Welcome, {user.display_name}!</WelcomeText>
             <NavButton variant="light" onClick={() => navigate("/dashboard")}>
               Dashboard
             </NavButton>
-            <NavButton variant="light" onClick={handleLogout}>
-              Logout
-            </NavButton>
+            <UserSection onClick={handleUserMenuClick}>
+              <UserIcon />
+              <WelcomeText>{user.display_name}</WelcomeText>
+            </UserSection>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleUserMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
+              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            </Menu>
           </>
         ) : (
           <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
