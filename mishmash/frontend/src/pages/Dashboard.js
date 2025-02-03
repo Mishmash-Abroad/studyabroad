@@ -1,36 +1,39 @@
-import React, { useState } from 'react';
-import { styled } from '@mui/material/styles';
-import { useAuth } from '../context/AuthContext';
-import ProgramBrowser from '../components/ProgramBrowser';
-import MyProgramsTable from '../components/MyProgramsTable';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import TopNavBar from '../components/TopNavBar';
-import ChangePasswordModal from '../components/ChangePasswordModal';
+import React from "react";
+import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { styled } from "@mui/material/styles";
+import TopNavBar from "../components/TopNavBar";
+import AdminProgramsTable from "../components/AdminProgramsTable";
+import ProgramBrowser from "../components/ProgramBrowser";
+import MyProgramsTable from "../components/MyProgramsTable";
+import ChangePasswordModal from "../components/ChangePasswordModal";
 
 // -------------------- STYLES --------------------
-const DashboardContainer = styled('div')(({ theme }) => ({
-  paddingTop: '72px',
-  minHeight: '100vh',
+const DashboardContainer = styled("div")(({ theme }) => ({
+  paddingTop: "72px",
+  minHeight: "100vh",
   backgroundColor: theme.palette.background.default,
+  overflowY: "auto",
 }));
 
-const DashboardContent = styled('div')(({ theme }) => ({
-  maxWidth: '1200px',
-  margin: '0 auto',
-  padding: '20px',
+const DashboardContent = styled("div")(({ theme }) => ({
+  maxWidth: "1500px",
+  margin: "0 auto",
+  padding: "20px",
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.shadows.card,
   borderRadius: theme.shape.borderRadius.large,
+  minHeight: "500px",
 }));
 
-const DashboardHeader = styled('div')({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '20px',
+const DashboardHeader = styled("div")({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "20px",
 });
 
-const DashboardTitle = styled('h1')(({ theme }) => ({
+const DashboardTitle = styled("h1")(({ theme }) => ({
   margin: 0,
   color: theme.palette.primary.main,
   fontSize: theme.typography.h3.fontSize,
@@ -38,220 +41,154 @@ const DashboardTitle = styled('h1')(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
 }));
 
-const TabContainer = styled('div')(({ theme }) => ({
-  marginBottom: '20px',
+const TabContainer = styled("div")(({ theme }) => ({
+  marginBottom: "20px",
   borderBottom: `1px solid ${theme.palette.border.light}`,
 }));
 
-const TabButton = styled('button')(({ theme, active }) => ({
-  padding: '10px 20px',
-  cursor: 'pointer',
+const TabButton = styled("button")(({ theme, active }) => ({
+  padding: "10px 20px",
+  cursor: "pointer",
   backgroundColor: active
     ? theme.palette.background.paper
     : theme.palette.background.default,
   border: `1px solid ${theme.palette.border.light}`,
-  borderBottom: active ? 'none' : `1px solid ${theme.palette.border.light}`,
+  borderBottom: active ? "none" : `1px solid ${theme.palette.border.light}`,
   borderRadius: `${theme.shape.borderRadius.small}px ${theme.shape.borderRadius.small}px 0 0`,
-  marginRight: '5px',
-  position: 'relative',
-  top: '1px',
-  fontWeight: active ? theme.typography.button.fontWeight : 'normal',
+  marginRight: "5px",
+  position: "relative",
+  top: "1px",
+  fontWeight: active ? theme.typography.button.fontWeight : "normal",
   fontFamily: theme.typography.fontFamily,
   fontSize: theme.typography.button.fontSize,
   color: active ? theme.palette.primary.main : theme.palette.text.primary,
   transition: theme.transitions.quick,
-  '&:hover': {
+  "&:hover": {
     backgroundColor: active
       ? theme.palette.background.paper
       : theme.palette.background.card.hover,
   },
 }));
 
-const TabContent = styled('div')(({ theme }) => ({
+const TabContent = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  minHeight: '400px',
+  minHeight: "400px",
+  overflowY: "auto",
 }));
 
-// -------------------- COMPONENT LOGIC --------------------
+// -------------------- COMPONENT --------------------
 const Dashboard = () => {
-  // Get user from auth context - user.is_admin determines which dashboard view to show
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
-  // Get current tab from URL path
   const getCurrentTab = () => {
-    const path = location.pathname.split('/').pop();
-    // Admin tabs: admin-overview, admin-programs, admin-users
+    const path = location.pathname.split("/").pop();
     if (user?.is_admin) {
       switch (path) {
-        case 'admin-programs':
-          return 'admin-programs';
-        case 'admin-users':
-          return 'admin-users';
+        case "admin-programs":
+        case "new-program":
+        case "admin-users":
+          return path;
         default:
-          return 'admin-overview';
+          return "admin-overview";
       }
-    } 
-    // Student tabs: overview, browse (programs), my-programs
-    else {
+    } else {
       switch (path) {
-        case 'browse':
-          return 'programs';
-        case 'my-programs':
-          return 'my-programs';
+        case "browse":
+          return "programs";
+        case "my-programs":
+          return "my-programs";
         default:
-          return 'overview';
+          return "overview";
       }
     }
   };
 
   const activeTab = getCurrentTab();
 
-  // Navigate to tab - different paths for admin and student views
   const handleTabChange = (tab) => {
-    switch (tab) {
-      // Admin navigation paths
-      case 'admin-programs':
-        navigate('/dashboard/admin-programs');
-        break;
-      case 'admin-users':
-        navigate('/dashboard/admin-users');
-        break;
-      // Student navigation paths
-      case 'programs':
-        navigate('/dashboard/browse');
-        break;
-      case 'my-programs':
-        navigate('/dashboard/my-programs');
-        break;
-      default:
-        navigate('/dashboard');
-    }
-  };
-
-  // Render different tab buttons based on user role
-  const renderTabs = () => {
-    // Admin sees: Admin Overview, Program Management, User Management
-    if (user?.is_admin) {
-      return (
-        <>
-          <TabButton
-            active={activeTab === 'admin-overview'}
-            onClick={() => handleTabChange('admin-overview')}
-          >
-            Admin Overview
-          </TabButton>
-          <TabButton
-            active={activeTab === 'admin-programs'}
-            onClick={() => handleTabChange('admin-programs')}
-          >
-            Program Management
-          </TabButton>
-          <TabButton
-            active={activeTab === 'admin-users'}
-            onClick={() => handleTabChange('admin-users')}
-          >
-            User Management
-          </TabButton>
-        </>
-      );
-    }
-
-    // Students see: Overview, Browse Programs, My Programs
-    return (
-      <>
-        <TabButton
-          active={activeTab === 'overview'}
-          onClick={() => handleTabChange('overview')}
-        >
-          Overview
-        </TabButton>
-        <TabButton
-          active={activeTab === 'programs'}
-          onClick={() => handleTabChange('programs')}
-        >
-          Browse Programs
-        </TabButton>
-        <TabButton
-          active={activeTab === 'my-programs'}
-          onClick={() => handleTabChange('my-programs')}
-        >
-          My Programs
-        </TabButton>
-      </>
-    );
+    navigate(`/dashboard/${tab}`);
   };
 
   return (
     <DashboardContainer>
-      <TopNavBar onChangePasswordClick={() => setShowChangePasswordModal(true)} />
+      <TopNavBar />
       <DashboardContent>
-        {/* Title changes based on user role */}
         <DashboardHeader>
           <DashboardTitle>
-            {user?.is_admin ? 'Admin Dashboard' : 'Student Dashboard'}
+            {user?.is_admin ? "Admin Dashboard" : "Student Dashboard"}
           </DashboardTitle>
         </DashboardHeader>
 
-        {/* Tab buttons render differently for admin vs student */}
+        {/* Tabs for Navigation */}
         <TabContainer>
-          {renderTabs()}
+          {user?.is_admin ? (
+            <>
+              <TabButton
+                active={activeTab === "admin-overview"}
+                onClick={() => handleTabChange("admin-overview")}
+              >
+                Admin Overview
+              </TabButton>
+              <TabButton
+                active={activeTab === "admin-programs" || activeTab === "new-program"}
+                onClick={() => handleTabChange("admin-programs")}
+              >
+                Program Management
+              </TabButton>
+              <TabButton
+                active={activeTab === "admin-users"}
+                onClick={() => handleTabChange("admin-users")}
+              >
+                User Management
+              </TabButton>
+            </>
+          ) : (
+            <>
+              <TabButton
+                active={activeTab === "overview"}
+                onClick={() => handleTabChange("overview")}
+              >
+                Overview
+              </TabButton>
+              <TabButton
+                active={activeTab === "programs"}
+                onClick={() => handleTabChange("browse")}
+              >
+                Browse Programs
+              </TabButton>
+              <TabButton
+                active={activeTab === "my-programs"}
+                onClick={() => handleTabChange("my-programs")}
+              >
+                My Programs
+              </TabButton>
+            </>
+          )}
         </TabContainer>
 
-        {/* Change Password Modal - available to both admin and student */}
-        {showChangePasswordModal && (
-          <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />
-        )}
-
-        {/* Route-based content rendering - different routes for admin vs student */}
+        {/* Route-based Content - Inside Dashboard Layout */}
         <TabContent>
-          <Routes>
-            {/* Admin Routes */}
-            {user?.is_admin ? (
-              <>
-                {/* Admin Overview Route */}
-                <Route path="/" element={
-                  <div style={{ padding: '20px' }}>
-                    <h2>Welcome, Administrator!</h2>
-                    <p>Use the tabs above to manage programs and users.</p>
-                  </div>
-                } />
-                {/* Program Management Route */}
-                <Route path="admin-programs" element={
-                  <div style={{ padding: '20px' }}>
-                    <h2>Program Management</h2>
-                    <p>Program management interface coming soon.</p>
-                  </div>
-                } />
-                {/* User Management Route */}
-                <Route path="admin-users" element={
-                  <div style={{ padding: '20px' }}>
-                    <h2>User Management</h2>
-                    <p>User management interface coming soon.</p>
-                  </div>
-                } />
-              </>
-            ) : (
-              /* Student Routes */
-              <>
-                {/* Student Overview Route */}
-                <Route path="/" element={
-                  <div style={{ padding: '20px' }}>
-                    <h2>Welcome, {user?.display_name}!</h2>
-                    <p>View available study abroad programs or check your existing applications.</p>
-                  </div>
-                } />
-                {/* Browse Programs Route */}
-                <Route path="browse" element={<ProgramBrowser />} />
-                {/* My Programs Route */}
-                <Route path="my-programs" element={<MyProgramsTable />} />
-              </>
-            )}
-            {/* Fallback route - redirects to dashboard root for invalid paths */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+        <Routes>
+          {user?.is_admin ? (
+            <>
+              <Route path="admin-overview" element={<div>Admin Overview</div>} />
+              <Route path="admin-programs" element={<AdminProgramsTable />} />
+              <Route path="new-program" element={<AdminProgramsTable />} />
+              <Route path=":programTitle" element={<AdminProgramsTable />} />
+              <Route path="admin-users" element={<div>User Management</div>} />
+              <Route path="*" element={<Navigate to="/dashboard/admin-overview" />} />
+            </>
+          ) : (
+            <>
+              <Route path="overview" element={<div>Student Overview</div>} />
+              <Route path="browse" element={<ProgramBrowser />} />
+              <Route path="my-programs" element={<MyProgramsTable />} />
+              <Route path="*" element={<Navigate to="/dashboard/overview" />} />
+            </>
+          )}
+        </Routes>
         </TabContent>
       </DashboardContent>
     </DashboardContainer>
