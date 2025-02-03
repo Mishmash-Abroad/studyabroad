@@ -1,17 +1,19 @@
-import React, { useState } from "react";
-import { styled } from "@mui/material/styles";
+import React from "react";
+import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { styled } from "@mui/material/styles";
+import TopNavBar from "../components/TopNavBar";
+import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
-import AdminProgramsTable from "../components/AdminProgramsTable";
-import ChangePasswordModal from '../components/ChangePasswordModal';
-import Button from "@mui/material/Button"; // Import Button from MUI
+import ChangePasswordModal from "../components/ChangePasswordModal";
 
-// -------------------- STYLES (moved from index.js) --------------------
+// -------------------- STYLES --------------------
 const DashboardContainer = styled("div")(({ theme }) => ({
   paddingTop: "72px",
   minHeight: "100vh",
   backgroundColor: theme.palette.background.default,
+  overflowY: "auto",
 }));
 
 const DashboardContent = styled("div")(({ theme }) => ({
@@ -21,6 +23,7 @@ const DashboardContent = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.shadows.card,
   borderRadius: theme.shape.borderRadius.large,
+  minHeight: "500px",
 }));
 
 const DashboardHeader = styled("div")({
@@ -70,74 +73,123 @@ const TabButton = styled("button")(({ theme, active }) => ({
 const TabContent = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   minHeight: "400px",
+  overflowY: "auto",
 }));
 
-// -------------------- COMPONENT LOGIC --------------------
+// -------------------- COMPONENT --------------------
 const Dashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "programs":
-        return <ProgramBrowser />;
-      case "my-programs":
-        return <AdminProgramsTable  />;
-      case "overview":
-      default:
-        return (
-          <div style={{ padding: "20px" }}>
-            <h2>Welcome, {user?.display_name}!</h2>
-            <p>
-              View available study abroad programs or check your existing
-              applications.
-            </p>
-          </div>
-        );
+  const getCurrentTab = () => {
+    const path = location.pathname.split("/").pop();
+    if (user?.is_admin) {
+      switch (path) {
+        case "admin-programs":
+        case "new-program":
+        case "admin-users":
+          return path;
+        default:
+          return "admin-overview";
+      }
+    } else {
+      switch (path) {
+        case "browse":
+          return "programs";
+        case "my-programs":
+          return "my-programs";
+        default:
+          return "overview";
+      }
     }
+  };
+
+  const activeTab = getCurrentTab();
+
+  const handleTabChange = (tab) => {
+    navigate(`/dashboard/${tab}`);
   };
 
   return (
     <DashboardContainer>
+      <TopNavBar />
       <DashboardContent>
         <DashboardHeader>
-          <DashboardTitle>Student Dashboard</DashboardTitle>
+          <DashboardTitle>
+            {user?.is_admin ? "Admin Dashboard" : "Student Dashboard"}
+          </DashboardTitle>
         </DashboardHeader>
 
+        {/* Tabs for Navigation */}
         <TabContainer>
-          <TabButton
-            active={activeTab === "overview"}
-            onClick={() => setActiveTab("overview")}
-          >
-            Overview
-          </TabButton>
-          <TabButton
-            active={activeTab === "programs"}
-            onClick={() => setActiveTab("programs")}
-          >
-            Browse Programs
-          </TabButton>
-          <TabButton
-            active={activeTab === "my-programs"}
-            onClick={() => setActiveTab("my-programs")}
-          >
-            My Programs
-          </TabButton>
-          <TabButton
-            onClick={() => setShowChangePasswordModal(true)}
-          >
-            Change Password
-          </TabButton>
+          {user?.is_admin ? (
+            <>
+              <TabButton
+                active={activeTab === "admin-overview"}
+                onClick={() => handleTabChange("admin-overview")}
+              >
+                Admin Overview
+              </TabButton>
+              <TabButton
+                active={activeTab === "admin-programs" || activeTab === "new-program"}
+                onClick={() => handleTabChange("admin-programs")}
+              >
+                Program Management
+              </TabButton>
+              <TabButton
+                active={activeTab === "admin-users"}
+                onClick={() => handleTabChange("admin-users")}
+              >
+                User Management
+              </TabButton>
+            </>
+          ) : (
+            <>
+              <TabButton
+                active={activeTab === "overview"}
+                onClick={() => handleTabChange("overview")}
+              >
+                Overview
+              </TabButton>
+              <TabButton
+                active={activeTab === "programs"}
+                onClick={() => handleTabChange("browse")}
+              >
+                Browse Programs
+              </TabButton>
+              <TabButton
+                active={activeTab === "my-programs"}
+                onClick={() => handleTabChange("my-programs")}
+              >
+                My Programs
+              </TabButton>
+            </>
+          )}
         </TabContainer>
 
-        {showChangePasswordModal && (
-          <ChangePasswordModal
-            onClose={() => setShowChangePasswordModal(false)}
-          />
-        )}
-
-        <TabContent>{renderTabContent()}</TabContent>
+        {/* Route-based Content - Inside Dashboard Layout */}
+        <TabContent>
+        <Routes>
+          {user?.is_admin ? (
+            <>
+              <Route path="admin-overview" element={<div>Admin Overview</div>} />
+              <Route path="admin-programs" element={<AdminProgramsTable />} />
+              <Route path="new-program" element={<AdminProgramsTable />} />
+              <Route path=":programTitle" element={<AdminProgramsTable />} />
+              <Route path="admin-users" element={<div>User Management</div>} />
+              <Route path="*" element={<Navigate to="/dashboard/admin-overview" />} />
+            </>
+          ) : (
+            <>
+              <Route path="overview" element={<div>Student Overview</div>} />
+              <Route path="browse" element={<ProgramBrowser />} />
+              <Route path="my-programs" element={<MyProgramsTable />} />
+              <Route path="*" element={<Navigate to="/dashboard/overview" />} />
+            </>
+          )}
+        </Routes>
+        </TabContent>
       </DashboardContent>
     </DashboardContainer>
   );

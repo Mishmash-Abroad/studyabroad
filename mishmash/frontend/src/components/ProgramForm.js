@@ -103,7 +103,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       }
   
       refreshPrograms();
-      navigate('/dashboard');
+      navigate('/dashboard/admin-programs');
     } catch (error) {
       console.error('Error saving program:', error);
       if (error.response) {
@@ -120,7 +120,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     try {
       await axiosInstance.delete(`/api/programs/${editingProgram.id}/`);
       refreshPrograms();
-      navigate('/dashboard');
+      navigate('/dashboard/admin-programs');
     } catch (error) {
       console.error('Error deleting program:', error);
     }
@@ -161,7 +161,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           <Button variant="contained" color="primary" onClick={handleSubmit}>
             {editingProgram ? 'Update Program' : 'Create Program'}
           </Button>
-          <Button onClick={() => navigate('/dashboard')} sx={{ ml: 2 }}>Cancel</Button>
+          <Button onClick={() => navigate('/dashboard/admin-programs')} sx={{ ml: 2 }}>Cancel</Button>
         </Box>
       </Box>
     </Paper>

@@ -1,25 +1,6 @@
-/**
- * Study Abroad Program - Main Application Component
- * =============================================
- * 
- * This is the root component of the Study Abroad Program application.
- * It handles the application's routing structure, authentication state,
- * and main layout components.
- * 
- * Features:
- * - Authentication state management via AuthProvider
- * - Protected route handling
- * - Main navigation structure
- * - Login form and homepage content
- * 
- * Routes:
- * - /: Public homepage with login
- * - /dashboard: Protected dashboard for authenticated users
- */
-
 import "./App.css";
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -27,7 +8,7 @@ import HomePage from "./pages/HomePage";
 import TopNavBar from "./components/TopNavBar";
 import LoginModal from "./components/LoginModal";
 import ApplicationPage from "./pages/ApplicationPage";
-import AdminProgramManagement from "./components/AdminProgramManagement";
+
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -36,21 +17,26 @@ function App() {
       <AuthProvider>
         <TopNavBar onLoginClick={() => setShowLoginModal(true)} />
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/apply/:id" element={<ApplicationPage />} />
+
+          {/* Protected Dashboard Route */}
           <Route
-            path="/dashboard"
+            path="/dashboard/*"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
             }
           />
-          <Route path="/apply/:id" element={<ApplicationPage />} />
-          <Route path="/manage-programs" element={<AdminProgramManagement />} />
+
+          {/* Redirect any other path to Dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
-        {showLoginModal && (
-          <LoginModal onClose={() => setShowLoginModal(false)} />
-        )}
+
+        {/* Login Modal */}
+        {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       </AuthProvider>
     </Router>
   );
