@@ -40,6 +40,15 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Format: comma-separated list (e.g., "localhost,example.com")
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [
+    'https://dev-mishmash.colab.duke.edu',
+    'https://mishmash.colab.duke.edu',
+    'http://localhost',
+    'http://127.0.0.1'
+]
+
 # APPLICATION CONFIGURATION
 # =======================
 # List of all Django apps used in the project
@@ -102,9 +111,9 @@ WSGI_APPLICATION = "mishmash.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD'),
+        'NAME': config('DATABASE_NAME', default='mishmash'),
+        'USER': config('DATABASE_USER', default='root'),
+        'PASSWORD': config('DATABASE_PASSWORD', default='root'),
         'HOST': config('DATABASE_HOST', default='127.0.0.1'),
         'PORT': config('DATABASE_PORT', default='3306'),
     }
@@ -139,7 +148,10 @@ USE_TZ = True
 
 # STATIC FILES
 # ============
-STATIC_URL = "static/"
+STATIC_URL = "/django-static/"
+STATIC_ROOT = BASE_DIR / "static"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # AUTHENTICATION AND SECURITY
 # =========================
