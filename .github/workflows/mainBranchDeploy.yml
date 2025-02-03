@@ -10,6 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Dev Server
     steps:
       - name: Set deployment timestamp
         run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
