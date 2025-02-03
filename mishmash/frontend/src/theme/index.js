@@ -166,7 +166,34 @@ const theme = createTheme({
   },
 
   // ---------- SHADOWS ----------
-  shadows: {
+  shadows: [
+    'none',
+    '0 2px 4px rgba(0,0,0,0.05)',
+    '0 4px 6px rgba(0,0,0,0.07)',
+    '0 6px 8px rgba(0,0,0,0.09)',
+    '0 8px 10px rgba(0,0,0,0.11)',
+    '0 10px 12px rgba(0,0,0,0.13)',
+    '0 12px 14px rgba(0,0,0,0.15)',
+    '0 14px 16px rgba(0,0,0,0.17)',
+    '0 16px 18px rgba(0,0,0,0.19)',
+    '0 18px 20px rgba(0,0,0,0.21)',
+    '0 20px 22px rgba(0,0,0,0.23)',
+    '0 22px 24px rgba(0,0,0,0.25)',
+    '0 24px 26px rgba(0,0,0,0.27)',
+    '0 26px 28px rgba(0,0,0,0.29)',
+    '0 28px 30px rgba(0,0,0,0.31)',
+    '0 30px 32px rgba(0,0,0,0.33)',
+    '0 32px 34px rgba(0,0,0,0.35)',
+    '0 34px 36px rgba(0,0,0,0.37)',
+    '0 36px 38px rgba(0,0,0,0.39)',
+    '0 38px 40px rgba(0,0,0,0.41)',
+    '0 40px 42px rgba(0,0,0,0.43)',
+    '0 42px 44px rgba(0,0,0,0.45)',
+    '0 44px 46px rgba(0,0,0,0.47)',
+    '0 46px 48px rgba(0,0,0,0.49)',
+    '0 48px 50px rgba(0,0,0,0.51)',
+  ],
+  customShadows: {
     card: '0 4px 6px rgba(0,0,0,0.1)',
     raised: '0 6px 12px rgba(0,0,0,0.15)',
     button: '0 2px 4px rgba(0,0,0,0.1)',
@@ -177,6 +204,7 @@ const theme = createTheme({
     quick: 'all 0.2s ease',
     medium: 'all 0.3s ease',
     slow: 'all 0.5s ease',
+    slower: 'all 0.7s ease',
   },
 
   // ---------- CUSTOM TEXT SHADOWS ----------

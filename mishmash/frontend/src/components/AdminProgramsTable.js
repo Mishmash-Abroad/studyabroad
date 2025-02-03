@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { styled } from '@mui/material/styles';
+import React, { useState, useEffect } from "react";
+import { styled } from "@mui/material/styles";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -12,25 +13,27 @@ import {
   TextField,
   MenuItem,
   Button,
-} from '@mui/material';
-import axiosInstance from '../utils/axios';
-import ProgramForm from './ProgramForm';
+} from "@mui/material";
+import axiosInstance from "../utils/axios";
+import ProgramForm from "./ProgramForm";
 
 // -------------------- STYLES --------------------
-const TableWrapper = styled('div')(({ theme }) => ({
+const TableWrapper = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius.large,
   boxShadow: theme.shadows.card,
-  margin: '20px 0',
-  maxHeight: 'calc(100vh - 300px)',
-  overflow: 'auto',
+  margin: "20px 0",
+  maxHeight: "calc(100vh - 300px)",
+  overflow: "auto",
 }));
 
 const FilterContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  gap: '10px',
-  paddingBottom: '10px',
-  paddingTop: '10px',
+  display: "flex",
+  gap: "10px",
+  paddingBottom: "10px",
+  paddingTop: "10px",
+  "& button": { minWidth: "150px" },
+  "& .MuiTextField-root": { minWidth: "200px" },
 }));
 
 // -------------------- COMPONENT --------------------
@@ -38,114 +41,179 @@ const AdminProgramsTable = () => {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [orderBy, setOrderBy] = useState('application_deadline');
-  const [order, setOrder] = useState('desc');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [timeFilter, setTimeFilter] = useState('current_future');
-  const [isCreatingProgram, setIsCreatingProgram] = useState(false);
-  const [isEditingProgram, setIsEditingProgram] = useState(false);
-  const [editingProgramData, setEditingProgramData] = useState(null);
+  const [orderBy, setOrderBy] = useState("application_deadline");
+  const [order, setOrder] = useState("desc");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState("current_future");
+  const [editingProgram, setEditingProgram] = useState(null); // ✅ Store selected program
+  const navigate = useNavigate();
+  const { programTitle } = useParams();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!isCreatingProgram && !isEditingProgram) fetchPrograms();
-  }, [timeFilter, isCreatingProgram, isEditingProgram]);
+    fetchPrograms();
+  }, [timeFilter]);
 
   const fetchPrograms = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('/api/programs/');
+      const response = await axiosInstance.get("/api/programs/");
       setPrograms(response.data);
       setError(null);
     } catch (err) {
-      setError('Failed to load programs.');
+      setError("Failed to load programs.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Sorting function
+  // ✅ Load program data when clicking a title
+  useEffect(() => {
+    if (programTitle && programTitle !== "new-program") {
+      const selectedProgram = programs.find((p) => 
+        encodeURIComponent(p.title.replace(/\s+/g, "-")) === programTitle
+      );
+      setEditingProgram(selectedProgram || null);
+    } else {
+      setEditingProgram(null); // Reset for "New Program"
+    }
+  }, [programTitle, programs]);
+
+  const today = new Date();
+  const filteredPrograms = programs
+    .filter((p) => {
+      if (!p || !p.start_date || !p.end_date || !p.application_deadline || !p.application_open_date) {
+        return false;
+      }
+
+      const endDate = new Date(p.end_date);
+      const startDate = new Date(p.start_date);
+      const applicationDeadline = new Date(p.application_deadline);
+      const applicationOpenDate = new Date(p.application_open_date);
+
+      switch (timeFilter) {
+        case "current_future":
+          return today <= endDate;
+        case "open_for_applications":
+          return applicationOpenDate <= today && today <= applicationDeadline;
+        case "in_review":
+          return applicationDeadline <= today && today <= startDate;
+        case "running_now":
+          return startDate <= today && today <= endDate;
+        case "all":
+        default:
+          return true;
+      }
+    })
+    .filter((p) =>
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase()) 
+    );
+
+  // ✅ Fix Sorting Logic
+  const sortedPrograms = [...filteredPrograms].sort((a, b) => {
+    if (!a[orderBy] || !b[orderBy]) return 0;
+    return order === "asc" ? (a[orderBy] > b[orderBy] ? 1 : -1) : (a[orderBy] < b[orderBy] ? 1 : -1);
+  });
+
   const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
 
-  // Open the form for editing a program
-  const handleEditProgram = async (program) => {
-    try {
-      const questionsResponse = await axiosInstance.get(`/api/programs/${program.id}/questions/`);
-      const questions = questionsResponse.data.map((q) => ({ id: q.id, text: q.text }));
-
-      setEditingProgramData({ ...program, questions });
-      setIsEditingProgram(true);
-    } catch (error) {
-      console.error('Error fetching program questions:', error);
-    }
+  const handleEditProgram = (program) => {
+    navigate(`/dashboard/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
   };
 
-  // Filtered and sorted programs
-  const sortedPrograms = programs
-    .filter((program) =>
-      program.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      program.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => (order === 'asc' ? a[orderBy] > b[orderBy] : a[orderBy] < b[orderBy]) ? 1 : -1);
+  const handleNewProgram = () => {
+    navigate("/dashboard/new-program");
+  };
+
+  // ✅ Ensure the form appears when clicking a title or "New Program"
+  const isCreatingNewProgram = location.pathname.endsWith("/new-program");
+
+  if (programTitle || isCreatingNewProgram) {
+    console.log("Editing Program:", editingProgram);
+    console.log("Is Creating New:", isCreatingNewProgram);
+
+    return (
+      <ProgramForm
+        onClose={() => navigate("/dashboard/admin-programs")}
+        refreshPrograms={fetchPrograms}
+        editingProgram={isCreatingNewProgram ? null : editingProgram} // ✅ Pass program data if editing
+      />
+    );
+  }
 
   return (
     <TableWrapper>
-      {!isCreatingProgram && !isEditingProgram ? (
-        <>
-          <FilterContainer>
-            <TextField label="Search" variant="outlined" size="small" fullWidth onChange={(e) => setSearchQuery(e.target.value)} />
-            <TextField select label="Filter by Time" value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} variant="outlined" size="small">
-              <MenuItem value="current_future">Current & Future</MenuItem>
-              <MenuItem value="open_for_applications">Open for Applications</MenuItem>
-              <MenuItem value="in_review">In Review</MenuItem>
-              <MenuItem value="running_now">Running Now</MenuItem>
-              <MenuItem value="all">All Programs</MenuItem>
-            </TextField>
-            <Button variant="contained" color="primary" onClick={() => setIsCreatingProgram(true)}>New Program</Button>
-          </FilterContainer>
+      <>
+        <FilterContainer>
+          <TextField
+            label="Search"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <TextField
+            select
+            label="Filter by Time"
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+            variant="outlined"
+            size="small"
+          >
+            <MenuItem value="current_future">Current & Future</MenuItem>
+            <MenuItem value="open_for_applications">Open for Applications</MenuItem>
+            <MenuItem value="in_review">In Review</MenuItem>
+            <MenuItem value="running_now">Running Now</MenuItem>
+            <MenuItem value="all">All Programs</MenuItem>
+          </TextField>
+          <Button variant="contained" color="primary" onClick={handleNewProgram}>
+            New Program
+          </Button>
+        </FilterContainer>
 
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                {['title', 'year_semester', 'faculty_leads', 'application_deadline', 'start_date', 'end_date'].map((column) => (
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              {["title", "year_semester", "faculty_leads", "application_deadline", "start_date", "end_date"].map(
+                (column) => (
                   <TableCell key={column}>
-                    <TableSortLabel active={orderBy === column} direction={order} onClick={() => handleRequestSort(column)}>
-                      {column.replace('_', ' ')}
+                    <TableSortLabel
+                      active={orderBy === column}
+                      direction={order}
+                      onClick={() => handleRequestSort(column)}
+                    >
+                      {column.replace("_", " ")}
                     </TableSortLabel>
                   </TableCell>
-                ))}
+                )
+              )}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedPrograms.map((program) => (
+              <TableRow key={program.id}>
+                <TableCell 
+                  onClick={() => handleEditProgram(program)} 
+                  style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
+                >
+                  {program.title}
+                </TableCell>
+                <TableCell>{program.year_semester}</TableCell>
+                <TableCell>{program.faculty_leads}</TableCell>
+                <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedPrograms.map((program) => (
-                <TableRow key={program.id}>
-                  <TableCell onClick={() => handleEditProgram(program)} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
-                    {program.title}
-                  </TableCell>
-                  <TableCell>{program.year_semester}</TableCell>
-                  <TableCell>{program.faculty_leads}</TableCell>
-                  <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </>
-      ) : (
-        <ProgramForm
-          onClose={() => {
-            setIsCreatingProgram(false);
-            setIsEditingProgram(false);
-            setEditingProgramData(null);
-          }}
-          refreshPrograms={fetchPrograms}
-          editingProgram={editingProgramData}
-        />
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </>
     </TableWrapper>
   );
 };
