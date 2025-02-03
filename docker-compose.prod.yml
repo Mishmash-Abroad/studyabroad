@@ -1,10 +1,9 @@
-version: '3.8'
 
 services:
   frontend:
     build: 
       context: ./mishmash/frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     volumes:
       - /app/node_modules
       - ./mishmash/frontend/build:/app/build
