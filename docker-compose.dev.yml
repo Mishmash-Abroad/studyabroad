@@ -4,29 +4,25 @@ services:
   frontend:
     build: 
       context: ./mishmash/frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
+      args:
+        - NODE_ENV=production
+        - REACT_APP_API_URL=/api
     volumes:
-      - /app/node_modules
-      - ./mishmash/frontend/build:/app/build
+      - frontend_build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=http://localhost:8000/api
+      - REACT_APP_API_URL=/api
     depends_on:
       - backend
 
   backend:
     build: 
       context: ./mishmash
-      dockerfile: Dockerfile
-    command: >
-      sh -c "python manage.py wait_for_db &&
-             python manage.py migrate && 
-             python manage.py runserver 0.0.0.0:8000"
+      dockerfile: Dockerfile.prod
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
-    ports:
-      - "8000:8000"
     environment:
       - DEBUG=0
       - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
@@ -49,7 +45,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf/default.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/conf/default.dev.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - static_volume:/app/static:ro
       - frontend_build:/app/build:ro
@@ -59,10 +55,8 @@ services:
       - frontend
       - backend
 
-
   db:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
@@ -78,3 +72,5 @@ volumes:
   mysql_data:
   static_volume:
   media_volume:
+  frontend_build:
+  nginx_logs:
