@@ -14,7 +14,7 @@ jobs:
       - name: Set deployment timestamp
         run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
 
-        
+
       - name: Connect to server and deploy
         uses: appleboy/ssh-action@master
         with:
@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /studyabroad
+            cd /home/vcm/studyabroad
             git pull origin main
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d --build
