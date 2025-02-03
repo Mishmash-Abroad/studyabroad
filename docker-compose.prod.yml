@@ -29,7 +29,7 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=0
-      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver
+      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
