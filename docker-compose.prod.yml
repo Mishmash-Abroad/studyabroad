@@ -4,28 +4,32 @@ services:
   frontend:
     build: 
       context: ./mishmash/frontend
-      dockerfile: Dockerfile.prod
-      args:
-        - NODE_ENV=production
-        - REACT_APP_API_URL=/api
+      dockerfile: Dockerfile
     volumes:
-      - frontend_build:/app/build
+      - /app/node_modules
+      - ./mishmash/frontend/build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=/api
+      - REACT_APP_API_URL=http://localhost:8000/api
     depends_on:
       - backend
 
   backend:
     build: 
       context: ./mishmash
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate && 
+             python manage.py runserver 0.0.0.0:8000"
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
+    ports:
+      - "8000:8000"
     environment:
       - DEBUG=0
-      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
+      - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
@@ -55,8 +59,10 @@ services:
       - frontend
       - backend
 
+
   db:
     image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
@@ -72,5 +78,3 @@ volumes:
   mysql_data:
   static_volume:
   media_volume:
-  frontend_build:
-  nginx_logs:
