@@ -13,8 +13,10 @@ jobs:
     steps:
       - name: Set deployment timestamp
         run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
+
+        
       - name: Connect to server and deploy
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST_DEV }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -44,5 +46,3 @@ jobs:
           title: "Deployment Failed"
           description: "Container startup failed at ${{ env.DEPLOYMENT_TIME }}"
           color: 0xff0000  # Red color
-
-
