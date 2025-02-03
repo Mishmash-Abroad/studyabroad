@@ -1,0 +1,51 @@
+name: Testing - Testing Server Mishmash Deployment
+
+on:
+  push:
+    branches: [test-server]
+
+  workflow_dispatch:
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: Testing Server
+      url: https://${{ secrets.SSH_HOST }}
+    steps:
+      - name: Set deployment timestamp
+        run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
+
+
+      - name: Connect to server and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/vcm/studyabroad
+            git pull origin test-server
+            docker compose -f docker-compose.test.yml down
+            docker compose -f docker-compose.test.yml up -d --build
+            echo "🔄 Checking container status..."
+            docker compose ps
+
+      - name: Discord success notification
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Testing Server - Deployment Successful"
+          description: "Containers started successfully at ${{ env.DEPLOYMENT_TIME }}"
+          color: 0x00ff00  # Green color
+
+      - name: Discord failure notification
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "Testing Server - Deployment Failed"
+          description: "Container startup failed at ${{ env.DEPLOYMENT_TIME }}"
+          color: 0xff0000  # Red color
