@@ -4,7 +4,6 @@ import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
 
-// Default Questions
 const defaultQuestions = [
   "Why do you want to participate in this study abroad program?",
   "How does this program align with your academic or career goals?",
@@ -14,7 +13,7 @@ const defaultQuestions = [
 ];
 
 const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
-  const navigate = useNavigate(); // 🚀 Use navigate for redirection
+  const navigate = useNavigate();
 
   const [programData, setProgramData] = useState({
     title: '',
@@ -27,7 +26,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     description: '',
   });
   const [questions, setQuestions] = useState([]);
-  const [deletedQuestions, setDeletedQuestions] = useState([]); // Track deleted questions
+  const [deletedQuestions, setDeletedQuestions] = useState([]);
 
   useEffect(() => {
     if (editingProgram) {
@@ -41,8 +40,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         end_date: editingProgram.end_date,
         description: editingProgram.description,
       });
-
-      axiosInstance.get(`/api/questions/?program=${editingProgram.id}`).then((response) => {
+      axiosInstance.get(`/api/programs/${editingProgram.id}/questions/`).then((response) => {
         setQuestions(response.data);
       });
     } else {
@@ -63,7 +61,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const removeQuestion = (index) => {
     const questionToRemove = questions[index];
     if (questionToRemove.id) {
-      setDeletedQuestions([...deletedQuestions, questionToRemove.id]); // Track deleted questions
+      setDeletedQuestions([...deletedQuestions, questionToRemove.id]);
     }
     setQuestions(questions.filter((_, i) => i !== index));
   };
@@ -71,31 +69,27 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const handleSubmit = async () => {
     try {
       if (editingProgram) {
-        // **Update existing program**
         await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
   
-        // **Handle question deletions**
         await Promise.all(
           deletedQuestions.map((questionId) => axiosInstance.delete(`/api/questions/${questionId}/`))
         );
   
-        // **Handle question updates & additions**
         await Promise.all(
           questions.map((q) =>
             q.id
               ? axiosInstance.put(`/api/questions/${q.id}/`, { 
                   text: q.text, 
-                  program: editingProgram.id // ✅ Ensure program ID is included
-                }) // Update existing question
+                  program: editingProgram.id 
+                }) 
               : axiosInstance.post(`/api/questions/`, { 
                   program: editingProgram.id, 
                   text: q.text 
-                }) // Add new question
+                }) 
           )
         );
   
       } else {
-        // **Create new program**
         const programResponse = await axiosInstance.post('/api/programs/', programData);
         await Promise.all(
           questions.map((q) => axiosInstance.post('/api/questions/', { program: programResponse.data.id, text: q.text }))

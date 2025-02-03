@@ -39,13 +39,14 @@ const FilterContainer = styled(Box)(({ theme }) => ({
 // -------------------- COMPONENT --------------------
 const AdminProgramsTable = () => {
   const [programs, setPrograms] = useState([]);
+  const [applicantCounts, setApplicantCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orderBy, setOrderBy] = useState("application_deadline");
   const [order, setOrder] = useState("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [timeFilter, setTimeFilter] = useState("current_future");
-  const [editingProgram, setEditingProgram] = useState(null); // ✅ Store selected program
+  const [editingProgram, setEditingProgram] = useState(null);
   const navigate = useNavigate();
   const { programTitle } = useParams();
   const location = useLocation();
@@ -60,6 +61,20 @@ const AdminProgramsTable = () => {
       const response = await axiosInstance.get("/api/programs/");
       setPrograms(response.data);
       setError(null);
+
+      const counts = {};
+      await Promise.all(
+        response.data.map(async (program) => {
+          try {
+            const countResponse = await axiosInstance.get(`/api/programs/${program.id}/applicant_counts/`);
+            counts[program.id] = countResponse.data;
+          } catch (err) {
+            console.error(`Error fetching applicant counts for program ${program.id}:`, err);
+          }
+        })
+      );
+
+      setApplicantCounts(counts);
     } catch (err) {
       setError("Failed to load programs.");
     } finally {
@@ -67,15 +82,14 @@ const AdminProgramsTable = () => {
     }
   };
 
-  // ✅ Load program data when clicking a title
   useEffect(() => {
     if (programTitle && programTitle !== "new-program") {
-      const selectedProgram = programs.find((p) => 
+      const selectedProgram = programs.find((p) =>
         encodeURIComponent(p.title.replace(/\s+/g, "-")) === programTitle
       );
       setEditingProgram(selectedProgram || null);
     } else {
-      setEditingProgram(null); // Reset for "New Program"
+      setEditingProgram(null);
     }
   }, [programTitle, programs]);
 
@@ -107,14 +121,23 @@ const AdminProgramsTable = () => {
     })
     .filter((p) =>
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase()) 
+      p.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  // ✅ Fix Sorting Logic
-  const sortedPrograms = [...filteredPrograms].sort((a, b) => {
-    if (!a[orderBy] || !b[orderBy]) return 0;
-    return order === "asc" ? (a[orderBy] > b[orderBy] ? 1 : -1) : (a[orderBy] < b[orderBy] ? 1 : -1);
-  });
+    const sortedPrograms = [...filteredPrograms].sort((a, b) => {
+      let aValue, bValue;
+    
+      if (["applied", "enrolled", "withdrawn", "canceled", "total_active"].includes(orderBy)) {
+        aValue = applicantCounts[a.id]?.[orderBy] || 0;
+        bValue = applicantCounts[b.id]?.[orderBy] || 0;
+      } else {
+        aValue = a[orderBy] || "";
+        bValue = b[orderBy] || "";
+      }
+    
+      return order === "asc" ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+    });
+    
 
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -130,18 +153,14 @@ const AdminProgramsTable = () => {
     navigate("/dashboard/new-program");
   };
 
-  // ✅ Ensure the form appears when clicking a title or "New Program"
   const isCreatingNewProgram = location.pathname.endsWith("/new-program");
 
   if (programTitle || isCreatingNewProgram) {
-    console.log("Editing Program:", editingProgram);
-    console.log("Is Creating New:", isCreatingNewProgram);
-
     return (
       <ProgramForm
         onClose={() => navigate("/dashboard/admin-programs")}
         refreshPrograms={fetchPrograms}
-        editingProgram={isCreatingNewProgram ? null : editingProgram} // ✅ Pass program data if editing
+        editingProgram={isCreatingNewProgram ? null : editingProgram}
       />
     );
   }
@@ -180,28 +199,27 @@ const AdminProgramsTable = () => {
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              {["title", "year_semester", "faculty_leads", "application_deadline", "start_date", "end_date"].map(
-                (column) => (
-                  <TableCell key={column}>
-                    <TableSortLabel
-                      active={orderBy === column}
-                      direction={order}
-                      onClick={() => handleRequestSort(column)}
-                    >
-                      {column.replace("_", " ")}
-                    </TableSortLabel>
-                  </TableCell>
-                )
-              )}
+              {["title", "year_semester", "faculty_leads", "application_deadline", "start_date", "end_date",
+                "applied", "enrolled", "withdrawn", "canceled", "total_active"].map((column) => (
+                <TableCell key={column}>
+                  <TableSortLabel
+                    active={orderBy === column}
+                    direction={order}
+                    onClick={() => handleRequestSort(column)}
+                  >
+                    {column
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (char) => char.toUpperCase())
+                    }
+                  </TableSortLabel>
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {sortedPrograms.map((program) => (
               <TableRow key={program.id}>
-                <TableCell 
-                  onClick={() => handleEditProgram(program)} 
-                  style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
-                >
+                <TableCell onClick={() => handleEditProgram(program)} style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}>
                   {program.title}
                 </TableCell>
                 <TableCell>{program.year_semester}</TableCell>
@@ -209,6 +227,9 @@ const AdminProgramsTable = () => {
                 <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
+                {["applied", "enrolled", "withdrawn", "canceled", "total_active"].map((key) => (
+                  <TableCell key={key}>{applicantCounts[program.id]?.[key] || 0}</TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
