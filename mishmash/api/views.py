@@ -222,9 +222,17 @@ class ApplicationQuestionViewSet(viewsets.ModelViewSet):
     - List/Retrieve: Admin or authenticated users only
     - Create/Update/Delete: Admin only
     """
-    queryset = ApplicationQuestion.objects.all()
     serializer_class = ApplicationQuestionSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = ApplicationQuestion.objects.all()
+        program_id = self.request.query_params.get('program', None)
+        
+        if program_id is not None:
+            queryset = queryset.filter(program_id=program_id)
+        
+        return queryset
 
 class ApplicationResponseViewSet(viewsets.ModelViewSet):
     """
