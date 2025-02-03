@@ -1,30 +1,38 @@
-name: Main Branch Mishmash Deployment
+name: PROD - WARNING - Manual Deployment with Commit Selection
 
 on:
-  push:
-    branches: [main]
-
   workflow_dispatch:
-
+    inputs:
+      commit_sha:
+        description: "Commit SHA to deploy"
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: Dev Server
+    environment:
+      name: Production
+      url: https://${{ secrets.SSH_HOST }}
     steps:
       - name: Set deployment timestamp
         run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
 
+      - name: Checkout repository at specified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit_sha }}
 
       - name: Connect to server and deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST_DEV }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/vcm/studyabroad
-            git pull origin main
+            git fetch --all
+            git checkout ${{ github.event.inputs.commit_sha }}
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d --build
             echo "🔄 Checking container status..."
@@ -35,8 +43,8 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "Deployment Successful"
-          description: "Containers started successfully at ${{ env.DEPLOYMENT_TIME }}"
+          title: "PROD - Deployment Successful"
+          description: "Deployed commit ${{ github.event.inputs.commit_sha }} at ${{ env.DEPLOYMENT_TIME }}"
           color: 0x00ff00  # Green color
 
       - name: Discord failure notification
@@ -44,6 +52,6 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "Deployment Failed"
-          description: "Container startup failed at ${{ env.DEPLOYMENT_TIME }}"
+          title: "PROD - Deployment Failed"
+          description: "Failed to deploy commit ${{ github.event.inputs.commit_sha }} at ${{ env.DEPLOYMENT_TIME }}"
           color: 0xff0000  # Red color
