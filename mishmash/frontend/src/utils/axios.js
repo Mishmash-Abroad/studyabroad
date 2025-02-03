@@ -24,7 +24,7 @@ import axios from 'axios';
 
 // Create a custom axios instance with default configuration
 const instance = axios.create({
-    baseURL: 'http://localhost:8000',  // Base URL for all API requests
+    baseURL: 'http://localhost',  // Base URL for all API requests
     headers: {
         'Content-Type': 'application/json',  // Default content type for requests
     },
