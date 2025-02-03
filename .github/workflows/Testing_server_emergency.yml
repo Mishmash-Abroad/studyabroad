@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Testing Server
-      url: https://${{ secrets.SSH_HOST }}
+      url: https://test-mishmash.colab.duke.edu
     steps:
       - name: Set deployment timestamp
         run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
