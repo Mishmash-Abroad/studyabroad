@@ -98,7 +98,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'faculty_leads']
     ordering_fields = ['application_deadline']
-    ordering = ['application_deadline']  # Default ordering
+    ordering = ['application_deadline']
 
     def get_queryset(self):
         """
@@ -119,6 +119,28 @@ class ProgramViewSet(viewsets.ModelViewSet):
             )
         
         return queryset
+    
+    def create(self, request, *args, **kwargs):
+        """
+        When an admin creates a new program, automatically add default questions.
+        """
+        response = super().create(request, *args, **kwargs)
+        program_id = response.data.get("id")
+        program_instance = Program.objects.get(id=program_id)
+
+        # Default application questions
+        default_questions = [
+            "Why do you want to participate in this study abroad program?",
+            "How does this program align with your academic or career goals?",
+            "What challenges do you anticipate during this experience, and how will you address them?",
+            "Describe a time you adapted to a new or unfamiliar environment.",
+            "What unique perspective or contribution will you bring to the group?",
+        ]
+
+        for question_text in default_questions:
+            ApplicationQuestion.objects.create(program=program_instance, text=question_text)
+
+        return response
 
     @action(detail=True, methods=['get'])
     def application_status(self, request, pk=None):
