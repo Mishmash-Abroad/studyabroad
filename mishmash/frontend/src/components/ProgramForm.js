@@ -56,7 +56,9 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleDeleteProgram = async () => {
     if (!editingProgram) return;
-    if (!window.confirm("Are you sure you want to delete this program? This action cannot be undone.")) return;
+    const countResponse = await axiosInstance.get(`/api/programs/${editingProgram.id}/applicant_counts/`);
+    console.log(countResponse);
+    if (!window.confirm(`Are you sure you want to delete this program? This action cannot be undone, and will affect the ${countResponse.data["applied"]} applicants, and ${countResponse.data["enrolled"]} enrolled students.`)) return;
 
     try {
       await axiosInstance.delete(`/api/programs/${editingProgram.id}/`);
@@ -70,7 +72,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   return (
     <Paper sx={{ padding: '20px' }}>
       <Typography variant="h5" gutterBottom>
-        {editingProgram ? 'Edit Program' : 'Create New Program'}
+        {editingProgram ? 'Program Detail' : 'Create New Program'}
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
