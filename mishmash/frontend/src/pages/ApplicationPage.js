@@ -42,6 +42,14 @@ const ApplicationPage = () => {
 
   // Form fields
   const [studentName, setStudentName] = useState("");
+  const [applicationData, setApplicationData] = useState({
+    id: 0,
+    program: 0,
+    student: 0,
+    dateOfBirth: "",
+    gpa: "",
+    major: ""
+  })
   const [program, setProgram] = useState("");
   const [applicationId, setApplicationId] = useState(0);
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -54,6 +62,8 @@ const ApplicationPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleInputChange = (e) => setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
+  
   // Fetch user's applications
   useEffect(() => {
     const getApplication = async () => {
@@ -64,44 +74,33 @@ const ApplicationPage = () => {
         );
 
         if (application) {
-          console.log("bruh");
-          console.log(application.id);
-          setApplicationId(application.id);
-          setStudentName(application.student);
-          setDateOfBirth(application.date_of_birth);
-          setGpa(application.gpa);
-          setMajor(application.major);
-        }
+          setApplicationData({
+            id: application.id,
+            program: application.program,
+            student: application.student,
+            dateOfBirth: application.dateOfBirth,
+            gpa: application.gpa,
+            major: application.major
+          })
+        }        
 
-        const program_response = await axiosInstance.get(`/api/programs/`);
-        const current_program = program_response.data.find(
-          (program) => program.id == program_id
-        );
-        setProgram(current_program);
-
-        const questions_response = await axiosInstance.get(`/api/questions/`);
-        const newQuestions = questions_response.data.filter(
-          (question) => question.program == program_id
-        );
-        console.log(newQuestions);
+        const questions = await axiosInstance.get(`/api/questions/${application.program}/`);
         setQuestions(newQuestions);
 
         const blank_questions_responses = newQuestions.map(
-          (question, index) => {
+          (question) => {
             return {
-              application: application.id,
               question_id: question.id,
               question_text: question.text,
+              response_id: 0,
               response_text: "",
             };
           }
         );
 
-        console.log("request nuevo");
-        console.log(blank_questions_responses);
         setQuestionResponses(blank_questions_responses);
         const questions_responses_response = await axiosInstance.get(
-          `/api/responses/`
+          `/api/responses/${application.program}`
         );
         const newQuestionResponses = questions_responses_response.data.filter(
           (questionResponse) => questionResponse.program == program_id
@@ -275,7 +274,6 @@ const ApplicationPage = () => {
               value={questionResponses[index].response_text || ""}
               onChange={(e) => {
                 const newQuestionResponses = [...questionResponses];
-                console.log(questionResponses);
                 newQuestionResponses[index].response_text = e.target.value;
                 setQuestionResponses(newQuestionResponses);
               }}
