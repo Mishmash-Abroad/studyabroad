@@ -212,7 +212,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
         return super().partial_update(request, *args, **kwargs)
 
-class ApplicationQuestionViewSet(viewsets.ModelViewSet):
+class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for managing application questions.
 
@@ -223,7 +223,7 @@ class ApplicationQuestionViewSet(viewsets.ModelViewSet):
     - Create/Update/Delete: Admin only
     """
     serializer_class = ApplicationQuestionSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         queryset = ApplicationQuestion.objects.all()
