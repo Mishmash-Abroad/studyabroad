@@ -1,37 +1,64 @@
 from django.contrib import admin
-from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'display_name', 'email', 'is_admin')  # Display `is_admin`
-    list_filter = ('is_admin',)  # Filter by admin status
-    search_fields = ('username', 'email', 'display_name')  # Allow searching users
-    readonly_fields = ('password',)  # Ensure password is not editable in admin
+class UserAdmin(BaseUserAdmin):
+    list_display = ('email', 'display_name', 'is_admin', 'is_active')
+    list_filter = ('is_admin', 'is_active')
+    search_fields = ('email', 'display_name')
+    ordering = ('email',)
+    
+    fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Personal info', {'fields': ('display_name',)}),
+        ('Permissions', {'fields': ('is_admin', 'is_active', 'is_staff', 'is_superuser')}),
+    )
+    
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'display_name', 'password1', 'password2'),
+        }),
+    )
 
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'year_semester', 'application_open_date', 'application_deadline')
-    list_filter = ('year_semester',)
-    search_fields = ('title', 'faculty_leads')
-
-
-@admin.register(ApplicationQuestion)
-class ApplicationQuestionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'program', 'text', 'is_required')
-    list_filter = ('program', 'is_required')
-    search_fields = ('text',)
+    list_display = ('title', 'location', 'start_date', 'end_date', 'capacity')
+    list_filter = ('location', 'start_date')
+    search_fields = ('title', 'description', 'location')
+    ordering = ('start_date',)
 
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'program', 'status', 'applied_on')
-    list_filter = ('status', 'program')
-    search_fields = ('student__username', 'program__title')
+    list_display = ('user', 'program', 'status', 'created_at', 'updated_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__email', 'program__title')
+    raw_id_fields = ('user', 'program')
+
+
+@admin.register(ApplicationQuestion)
+class ApplicationQuestionAdmin(admin.ModelAdmin):
+    list_display = ('program', 'text', 'order', 'required')
+    list_filter = ('program', 'required')
+    search_fields = ('text', 'program__title')
+    ordering = ('program', 'order')
 
 
 @admin.register(ApplicationResponse)
 class ApplicationResponseAdmin(admin.ModelAdmin):
-    list_display = ('id', 'application', 'question', 'response')
-    search_fields = ('application__id', 'question__text')
+    list_display = ('application', 'question', 'response')
+    search_fields = ('application__user__email', 'question__text', 'response')
+    raw_id_fields = ('application', 'question')
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ('title', 'importance', 'is_active', 'created_at', 'created_by')
+    list_filter = ('importance', 'is_active', 'created_at')
+    search_fields = ('title', 'content')
+    ordering = ('-created_at',)
+    raw_id_fields = ('created_by',)

@@ -38,7 +38,9 @@ const MenuBar = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.default,
 }));
 
-const StyledIconButton = styled(IconButton)(({ theme, active }) => ({
+const StyledIconButton = styled(IconButton, {
+  shouldForwardProp: (prop) => prop !== 'active'
+})(({ theme, active }) => ({
   color: active ? theme.palette.primary.main : theme.palette.text.secondary,
   '&:hover': {
     backgroundColor: theme.palette.action.hover,

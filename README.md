@@ -591,3 +591,16 @@ test if env var is set
 django user creation 
 
 docker compose exec backend python manage.py createsuperuser
+```
+
+### 8. Populating the Database
+```bash
+# 1. Flush the database
+docker compose exec backend python manage.py flush --no-input
+
+# 2. Load test data
+docker compose exec backend python manage.py add_test_programs
+docker compose exec backend python manage.py add_test_users
+docker compose exec backend python manage.py add_test_applications
+docker compose exec backend python manage.py add_test_announcements
+```
