@@ -32,7 +32,7 @@ import axiosInstance from '../utils/axios';
 const TableWrapper = styled('div')(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   margin: '20px 0',
   maxHeight: 'calc(100vh - 300px)',
   overflow: 'auto',
