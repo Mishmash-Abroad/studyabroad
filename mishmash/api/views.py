@@ -35,13 +35,14 @@ from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.db.models import Q
-from .models import Program, Application, ApplicationQuestion, ApplicationResponse
+from .models import Program, Application, ApplicationQuestion, ApplicationResponse, Announcement
 from .serializers import (
     ProgramSerializer,
     ApplicationSerializer,
     UserSerializer,
     ApplicationQuestionSerializer,
     ApplicationResponseSerializer,
+    AnnouncementSerializer,
 )
 from api.models import User
 from django.contrib.auth.hashers import make_password
@@ -399,6 +400,34 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             {"message": "Responses updated", "id": questionResponse.id},
             status=status.HTTP_200_OK,
         )
+
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing announcements.
+    
+    Provides:
+    - List all announcements (GET)
+    - Create new announcement (POST, admin only)
+    - Retrieve specific announcement (GET)
+    - Update announcement (PUT/PATCH, admin only)
+    - Delete announcement (DELETE, admin only)
+    """
+    serializer_class = AnnouncementSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'importance']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        """
+        Get the list of announcements.
+        Non-admin users only see active announcements.
+        """
+        queryset = Announcement.objects.all()
+        if not self.request.user.is_admin:
+            queryset = queryset.filter(is_active=True)
+        return queryset
 
 
 class UserViewSet(viewsets.ModelViewSet):

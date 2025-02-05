@@ -7,6 +7,9 @@ import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
 import ChangePasswordModal from "../components/ChangePasswordModal";
+import AnnouncementsManager from "../components/AnnouncementsManager";
+import AnnouncementsViewer from "../components/AnnouncementsViewer";
+import Typography from '@mui/material/Typography';
 
 // -------------------- STYLES --------------------
 const DashboardContainer = styled("div")(({ theme }) => ({
@@ -76,6 +79,14 @@ const TabContent = styled("div")(({ theme }) => ({
   overflowY: "auto",
 }));
 
+const WelcomeSection = styled("div")(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+}));
+
+const AnnouncementsSection = styled("div")(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+}));
+
 // -------------------- COMPONENT --------------------
 const Dashboard = () => {
   const { user } = useAuth();
@@ -110,6 +121,43 @@ const Dashboard = () => {
   const handleTabChange = (tab) => {
     navigate(`/dashboard/${tab}`);
   };
+
+  // Admin Overview Component
+  const AdminOverview = () => (
+    <>
+      <WelcomeSection>
+        <Typography variant="h6" gutterBottom>
+          Welcome to the Admin Dashboard
+        </Typography>
+        <Typography variant="body1" color="textSecondary">
+          Manage announcements, programs, and users from this central location.
+        </Typography>
+      </WelcomeSection>
+      <AnnouncementsSection>
+        <AnnouncementsManager />
+      </AnnouncementsSection>
+    </>
+  );
+
+  // Student Overview Component
+  const StudentOverview = () => (
+    <>
+      <WelcomeSection>
+        <Typography variant="h6" gutterBottom>
+          Welcome to Your Dashboard
+        </Typography>
+        <Typography variant="body1" color="textSecondary">
+          Stay updated with the latest announcements and manage your program applications.
+        </Typography>
+      </WelcomeSection>
+      <AnnouncementsSection>
+        <Typography variant="h6" gutterBottom>
+          Recent Announcements
+        </Typography>
+        <AnnouncementsViewer />
+      </AnnouncementsSection>
+    </>
+  );
 
   return (
     <DashboardContainer>
@@ -173,7 +221,7 @@ const Dashboard = () => {
         <Routes>
           {user?.is_admin ? (
             <>
-              <Route path="admin-overview" element={<div>Admin Overview</div>} />
+              <Route path="admin-overview" element={<AdminOverview />} />
               <Route path="admin-programs" element={<AdminProgramsTable />} />
               <Route path="new-program" element={<AdminProgramsTable />} />
               <Route path=":programTitle" element={<AdminProgramsTable />} />
@@ -182,7 +230,7 @@ const Dashboard = () => {
             </>
           ) : (
             <>
-              <Route path="overview" element={<div>Student Overview</div>} />
+              <Route path="overview" element={<StudentOverview />} />
               <Route path="browse" element={<ProgramBrowser />} />
               <Route path="my-programs" element={<MyProgramsTable />} />
               <Route path="*" element={<Navigate to="/dashboard/overview" />} />
