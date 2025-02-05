@@ -35,9 +35,6 @@ class ApplicationResponseSerializer(serializers.ModelSerializer):
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Announcements with rich text content stored as JSON
-    """
     created_by_name = serializers.CharField(source='created_by.display_name', read_only=True)
 
     class Meta:
