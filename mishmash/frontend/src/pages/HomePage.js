@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { styled } from '@mui/material/styles';
 import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
+import Typography from '@mui/material/Typography';
+import AnnouncementsViewer from '../components/AnnouncementsViewer';
 
 // -------------------- STYLES (moved from index.js) --------------------
 const HomeContainer = styled('div')(({ theme }) => ({
@@ -92,6 +94,18 @@ const FeaturesContainer = styled('div')(({ theme }) => ({
   padding: '50px 20px',
   maxWidth: '1200px',
   margin: '0 auto',
+}));
+
+const AnnouncementsSection = styled('div')(({ theme }) => ({
+  maxWidth: '1200px',
+  margin: '0 auto 50px auto',
+  padding: '0 20px',
+}));
+
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  color: theme.palette.primary.main,
+  fontWeight: theme.typography.h4.fontWeight,
 }));
 
 const FeatureCard = styled('div')(({ theme }) => ({
@@ -203,6 +217,13 @@ const HomePage = () => {
           )}
         </HeroContent>
       </Hero>
+
+      <AnnouncementsSection>
+        <SectionTitle variant="h4">
+          Important Announcements
+        </SectionTitle>
+        <AnnouncementsViewer />
+      </AnnouncementsSection>
 
       <FeaturesContainer>
         {features.map((feature, index) => (

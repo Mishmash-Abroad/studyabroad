@@ -72,3 +72,47 @@ class ApplicationResponse(models.Model):
 
     def __str__(self):
         return f"Response to {self.question.text[:30]}..."
+
+class Announcement(models.Model):
+    """
+    Model for storing announcements that can be displayed on the homepage and dashboard.
+    Uses a JSON field to store rich text content to avoid security issues with raw HTML.
+    """
+    IMPORTANCE_LEVELS = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+
+    title = models.CharField(max_length=200)
+    content = models.JSONField(
+        help_text="JSON representation of rich text content (compatible with Tiptap/ProseMirror)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    importance = models.CharField(
+        max_length=10,
+        choices=IMPORTANCE_LEVELS,
+        default='medium'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="If false, announcement won't be displayed"
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='announcements'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['importance', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_importance_display()})"
