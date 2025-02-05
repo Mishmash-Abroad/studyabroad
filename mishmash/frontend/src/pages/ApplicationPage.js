@@ -35,6 +35,7 @@ const StyledTabContainer = styled(Box)(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
   const { user_id, program_id } = useParams();
+  const [ programTitle, setProgramTitle ] = useState("");
   const navigate = useNavigate();
 
   // Tab management
@@ -43,8 +44,9 @@ const ApplicationPage = () => {
   // Form fields
   const [applicationData, setApplicationData] = useState({
     id: 0,
-    program: 0,
-    student: 0,
+    program: program_id,
+
+    student: user_id,
     date_of_birth: "",
     gpa: "",
     major: "",
@@ -66,10 +68,18 @@ const ApplicationPage = () => {
         const response = await axiosInstance.get(
           `/api/applications/?student=${user_id}`
         );
+
+        const program_response = await axiosInstance.get(
+          `/api/programs/${program_id}`
+        );
+
+        setProgramTitle(program_response.data.title);
+
+        console.log(program_response.data);
         const application = response.data.find(
           (application) => application.program == program_id
         );
-
+        console.log(application);
         if (application) {
           setApplicationData({
             id: application.id,
@@ -82,10 +92,10 @@ const ApplicationPage = () => {
         }
 
         let newQuestions = await axiosInstance.get(
-          `/api/questions/?program=${application.program}/`
+          `/api/questions/?program=${program_id}`
         );
         newQuestions = newQuestions.data.filter(
-          (question) => question.program == application.program
+          (question) => question.program == program_id
         );
 
         setQuestions(newQuestions);
@@ -101,7 +111,7 @@ const ApplicationPage = () => {
         setQuestionResponses(blank_questions_responses);
 
         const questions_responses_response = await axiosInstance.get(
-          `/api/responses/?application=${application.program}`
+          `/api/responses/?application=${program_id}`
         );
 
         // Ensure newQuestionResponses is populated
@@ -152,7 +162,7 @@ const ApplicationPage = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-//todo : maybe need to change this
+
     try {
       // Ensure all required fields are provided
       if (
@@ -300,7 +310,7 @@ const ApplicationPage = () => {
       <ContentContainer>
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application for {applicationData.program.title}
+            Application for {programTitle}
           </Typography>
         </Header>
 
