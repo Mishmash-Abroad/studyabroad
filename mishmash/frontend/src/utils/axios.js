@@ -24,7 +24,7 @@ import axios from 'axios';
 
 // Create a custom axios instance with default configuration
 const instance = axios.create({
-    baseURL: 'http://localhost',  // Base URL for all API requests
+    baseURL: process.env.REACT_APP_API_URL || "dev-mishmash.colab.duke.edu/api/", 
     headers: {
         'Content-Type': 'application/json',  // Default content type for requests
     },
