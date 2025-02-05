@@ -102,12 +102,16 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql    # Persistent database storage
     environment:
-      - MYSQL_DATABASE=mishmash
       - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=mishmash
+    ports:
+      - "3306:3306"  # Exposed for development debugging
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # Ensure database is accepting connections
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 5
 
   # Nginx Reverse Proxy Service
   # Handles routing and serves static/media files

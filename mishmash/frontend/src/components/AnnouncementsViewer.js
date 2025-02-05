@@ -1,217 +1,260 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import {
   Paper,
   Typography,
-  IconButton,
+  Pagination,
   Box,
   Chip,
-  useTheme,
-  Pagination,
+  IconButton,
   CircularProgress,
 } from '@mui/material';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import axiosInstance from '../utils/axios';
 
 const ViewerContainer = styled(Paper)(({ theme }) => ({
+  position: 'relative',
   padding: theme.spacing(3),
+  minHeight: '300px',
   borderRadius: theme.shape.borderRadius.large,
   boxShadow: theme.customShadows.card,
-  position: 'relative',
-  minHeight: '300px',
+  overflow: 'hidden',
+}));
+
+const NavigationOverlay = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  width: '40px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  transition: 'background-color 0.2s',
+  '&:hover': {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+  },
+}));
+
+const LeftNavigation = styled(NavigationOverlay)({
+  left: 0,
+});
+
+const RightNavigation = styled(NavigationOverlay)({
+  right: 0,
+});
+
+const ContentContainer = styled('div')(({ theme }) => ({
+  margin: '0 40px',
+  minHeight: '200px',
   display: 'flex',
   flexDirection: 'column',
+  height: '100%',
 }));
 
-const AnnouncementHeader = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: theme.spacing(2),
-}));
-
-const ImportanceChip = styled(Chip)(({ theme, importance }) => {
-  const getColor = () => {
+const ImportanceBadge = styled(Chip)(({ theme, importance }) => {
+  const getColors = () => {
     switch (importance) {
       case 'urgent':
-        return theme.palette.error;
+        return {
+          bg: theme.palette.status.error.background,
+          color: theme.palette.status.error.main,
+        };
       case 'high':
-        return theme.palette.warning;
+        return {
+          bg: theme.palette.status.warning.background,
+          color: theme.palette.status.warning.main,
+        };
       case 'medium':
-        return theme.palette.info;
+        return {
+          bg: theme.palette.status.info.background,
+          color: theme.palette.status.info.main,
+        };
+      case 'low':
+        return {
+          bg: theme.palette.status.success.background,
+          color: theme.palette.status.success.main,
+        };
       default:
-        return theme.palette.success;
+        return {
+          bg: theme.palette.grey[100],
+          color: theme.palette.grey[700],
+        };
     }
   };
 
-  const color = getColor();
-
+  const colors = getColors();
   return {
-    backgroundColor: color.light,
-    color: color.main,
+    backgroundColor: colors.bg,
+    color: colors.color,
     fontWeight: 500,
+    '& .MuiChip-label': {
+      padding: '0 12px',
+    },
   };
 });
 
-const NavigationButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.customShadows.button,
-  '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-  },
-  '&.Mui-disabled': {
-    backgroundColor: theme.palette.action.disabledBackground,
-  },
+const AnnouncementHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(1.5),
 }));
 
-const ContentContainer = styled(Box)({
+const TitleSection = styled('div')(({ theme }) => ({
   flex: 1,
-  overflow: 'auto',
-});
+}));
 
-const StyledEditorContent = styled(EditorContent)(({ theme }) => ({
-  '& .ProseMirror': {
-    '& p': {
-      margin: '0.5em 0',
-    },
-    '& h1': {
-      fontSize: '1.5em',
-      fontWeight: 'bold',
-      margin: '1em 0 0.5em',
-    },
-    '& ul, & ol': {
-      padding: '0 1rem',
-    },
-  },
+const TitleRow = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: theme.spacing(2),
+  marginBottom: 0,
 }));
 
 const DateText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
+  whiteSpace: 'nowrap',
+}));
+
+const BadgeSection = styled('div')({
+  marginLeft: 'auto',
+});
+
+const MetaSection = styled('div')(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end',
+  gap: theme.spacing(1),
+}));
+
+const PageIndicator = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  bottom: theme.spacing(2),
+  left: '50%',
+  transform: 'translateX(-50%)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  color: theme.palette.text.secondary,
   fontSize: '0.875rem',
+  backgroundColor: theme.palette.background.paper,
+  padding: theme.spacing(0.5, 1.5),
+  borderRadius: theme.shape.borderRadius.medium,
+  boxShadow: theme.customShadows.card,
 }));
 
 const AnnouncementsViewer = () => {
   const [announcements, setAnnouncements] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const theme = useTheme();
 
   const editor = useEditor({
     extensions: [StarterKit],
     editable: false,
   });
 
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await axiosInstance.get('/api/announcements/');
+      setAnnouncements(response.data.filter(a => a.is_active));
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAnnouncements();
   }, []);
 
   useEffect(() => {
-    if (editor && announcements[currentIndex]) {
-      editor.commands.setContent(announcements[currentIndex].content);
+    if (editor && announcements.length > 0) {
+      const currentAnnouncement = announcements[currentPage - 1];
+      editor.commands.setContent(currentAnnouncement.content);
     }
-  }, [currentIndex, announcements, editor]);
+  }, [currentPage, announcements, editor]);
 
-  const fetchAnnouncements = async () => {
-    try {
-      const response = await axiosInstance.get('/api/announcements/');
-      setAnnouncements(response.data.filter(a => a.is_active));
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching announcements:', error);
-      setLoading(false);
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => Math.min(prev + 1, announcements.length - 1));
-  };
-
-  const handlePrevious = () => {
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  };
-
-  const handlePageChange = (event, page) => {
-    setCurrentIndex(page - 1);
+    if (currentPage < announcements.length) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   if (loading) {
     return (
-      <ViewerContainer sx={{ justifyContent: 'center', alignItems: 'center' }}>
-        <CircularProgress />
+      <ViewerContainer>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+          <CircularProgress />
+        </Box>
       </ViewerContainer>
     );
   }
 
   if (!announcements.length) {
     return (
-      <ViewerContainer sx={{ justifyContent: 'center', alignItems: 'center' }}>
-        <Typography variant="body1" color="textSecondary">
-          No announcements available
-        </Typography>
+      <ViewerContainer>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+          <Typography variant="body1" color="textSecondary">
+            No announcements available
+          </Typography>
+        </Box>
       </ViewerContainer>
     );
   }
 
-  const currentAnnouncement = announcements[currentIndex];
+  const currentAnnouncement = announcements[currentPage - 1];
 
   return (
     <ViewerContainer>
-      <AnnouncementHeader>
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
-            {currentAnnouncement.title}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <ImportanceChip
-              label={currentAnnouncement.importance.toUpperCase()}
-              importance={currentAnnouncement.importance}
-              size="small"
-            />
-            <DateText>
-              {new Date(currentAnnouncement.created_at).toLocaleDateString()}
-            </DateText>
-          </Box>
-        </Box>
-      </AnnouncementHeader>
+      <LeftNavigation onClick={handlePrevious} style={{ opacity: currentPage > 1 ? 1 : 0.3 }}>
+        <ChevronLeftIcon />
+      </LeftNavigation>
+      
+      <RightNavigation onClick={handleNext} style={{ opacity: currentPage < announcements.length ? 1 : 0.3 }}>
+        <ChevronRightIcon />
+      </RightNavigation>
 
       <ContentContainer>
-        <StyledEditorContent editor={editor} />
-      </ContentContainer>
-
-      {announcements.length > 1 && (
-        <>
-          <NavigationButton
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            sx={{ left: theme.spacing(1) }}
-          >
-            <NavigateBeforeIcon />
-          </NavigationButton>
-
-          <NavigationButton
-            onClick={handleNext}
-            disabled={currentIndex === announcements.length - 1}
-            sx={{ right: theme.spacing(1) }}
-          >
-            <NavigateNextIcon />
-          </NavigationButton>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Pagination
-              count={announcements.length}
-              page={currentIndex + 1}
-              onChange={handlePageChange}
-              color="primary"
+        <AnnouncementHeader>
+          <TitleSection>
+            <TitleRow>
+              <Typography variant="h5" component="h2">
+                {currentAnnouncement.title}
+              </Typography>
+              <DateText variant="body2">
+                {new Date(currentAnnouncement.created_at).toLocaleDateString()}
+              </DateText>
+            </TitleRow>
+          </TitleSection>
+          <BadgeSection>
+            <ImportanceBadge
+              label={currentAnnouncement.importance.charAt(0).toUpperCase() + currentAnnouncement.importance.slice(1)}
+              importance={currentAnnouncement.importance}
             />
-          </Box>
-        </>
-      )}
+          </BadgeSection>
+        </AnnouncementHeader>
+
+        <EditorContent editor={editor} />
+
+        <PageIndicator>
+          {currentPage} / {announcements.length}
+        </PageIndicator>
+      </ContentContainer>
     </ViewerContainer>
   );
 };
