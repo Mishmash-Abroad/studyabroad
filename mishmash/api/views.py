@@ -14,7 +14,7 @@ Key Components:
 2. Programs
    - List/search available programs
    - Program details and management
-   - Application status checking
+   - Application status checking for authenticated users
 
 3. Applications
    - Submit and track applications
@@ -35,13 +35,14 @@ from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.db.models import Q
-from .models import Program, Application, ApplicationQuestion, ApplicationResponse
+from .models import Program, Application, ApplicationQuestion, ApplicationResponse, Announcement
 from .serializers import (
     ProgramSerializer,
     ApplicationSerializer,
     UserSerializer,
     ApplicationQuestionSerializer,
     ApplicationResponseSerializer,
+    AnnouncementSerializer,
 )
 from api.models import User
 from django.contrib.auth.hashers import make_password
@@ -399,6 +400,48 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             {"message": "Responses updated", "id": questionResponse.id},
             status=status.HTTP_200_OK,
         )
+
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing announcements.
+    
+    Provides:
+    - List all announcements (GET, public access)
+    - Create new announcement (POST, admin only)
+    - Retrieve specific announcement (GET, public access)
+    - Update announcement (PUT/PATCH, admin only)
+    - Delete announcement (DELETE, admin only)
+    """
+    serializer_class = AnnouncementSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'importance']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        """
+        Instantiate and return the list of permissions that this view requires.
+        - GET methods are publicly accessible
+        - All other methods require admin permissions
+        """
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated, IsAdmin]
+        return [permission() for permission in permission_classes]
+
+    def get_queryset(self):
+        """
+        Get the list of announcements.
+        Non-admin users and anonymous users only see active announcements.
+        """
+        queryset = Announcement.objects.all()
+        
+        # Check if user is authenticated and admin
+        if not self.request.user.is_authenticated or not self.request.user.is_admin:
+            queryset = queryset.filter(is_active=True)
+            
+        return queryset
 
 
 class UserViewSet(viewsets.ModelViewSet):
