@@ -215,7 +215,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             new_application = Application.objects.create(
                 student=student,
                 program=program,
-                date_of_birth=request.data.get("dateOfBirth"),
+                date_of_birth=request.data.get("date_of_birth"),
                 gpa=request.data.get("gpa"),
                 major=request.data.get("major"),
                 status="Applied",
@@ -226,7 +226,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
 
-        students_application.date_of_birth = request.data.get("dateOfBirth")
+        students_application.date_of_birth = request.data.get("date_of_birth")
         students_application.gpa = request.data.get("gpa")
         students_application.major = request.data.get("major")
         students_application.status = "Applied"
@@ -289,11 +289,11 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
         """
 
         application = Application.objects.get(
-            id=request.data.get("response").get("application")
+            id=request.data.get("application")
         )
         
         question = ApplicationQuestion.objects.get(
-            id=request.data.get("response").get("question_id")
+            id=request.data.get("question_id")
         )
 
         questionResponse = ApplicationResponse.objects.filter(
@@ -305,14 +305,14 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             newQuestionResponse = ApplicationResponse.objects.create(
                 application=application,
                 question=question,
-                response=request.data.get("response").get("response_text"),
+                response=request.data.get("response_text"),
             )
             return Response(
                 {"message": "Responses created", "id": newQuestionResponse.id},
                 status=status.HTTP_200_OK,
             )
 
-        questionResponse.response = request.data.get("response").get("response_text")
+        questionResponse.response = request.data.get("response_text")
         questionResponse.save()
 
         return Response(

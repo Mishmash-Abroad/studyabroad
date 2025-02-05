@@ -41,20 +41,14 @@ const ApplicationPage = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   // Form fields
-  const [studentName, setStudentName] = useState("");
   const [applicationData, setApplicationData] = useState({
     id: 0,
     program: 0,
     student: 0,
-    dateOfBirth: "",
+    date_of_birth: "",
     gpa: "",
-    major: ""
-  })
-  const [program, setProgram] = useState("");
-  const [applicationId, setApplicationId] = useState(0);
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [gpa, setGpa] = useState("");
-  const [major, setMajor] = useState("");
+    major: "",
+  });
   const [questions, setQuestions] = useState([]);
   const [questionResponses, setQuestionResponses] = useState([]);
 
@@ -62,66 +56,78 @@ const ApplicationPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e) => setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
-  
+  const handleInputChange = (e) =>
+    setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
+
   // Fetch user's applications
   useEffect(() => {
     const getApplication = async () => {
       try {
-        const response = await axiosInstance.get(`/api/applications/`);
+        const response = await axiosInstance.get(
+          `/api/applications/?student=${user_id}`
+        );
         const application = response.data.find(
           (application) => application.program == program_id
         );
 
         if (application) {
+          console.log(application);
           setApplicationData({
             id: application.id,
             program: application.program,
             student: application.student,
-            dateOfBirth: application.dateOfBirth,
+            date_of_birth: application.date_of_birth,
             gpa: application.gpa,
-            major: application.major
-          })
-        }        
+            major: application.major,
+          });
+        }
 
-        const questions = await axiosInstance.get(`/api/questions/${application.program}/`);
+        let newQuestions = await axiosInstance.get(
+          `/api/questions/?program=${application.program}/`
+        );
+        newQuestions = newQuestions.data.filter(
+          (question) => question.program == application.program
+        );
+
         setQuestions(newQuestions);
 
-        const blank_questions_responses = newQuestions.map(
-          (question) => {
-            return {
-              question_id: question.id,
-              question_text: question.text,
-              response_id: 0,
-              response_text: "",
-            };
-          }
-        );
+        const blank_questions_responses = newQuestions.map((question) => ({
+          application: application.id,
+          question_id: question.id,
+          question_text: question.text,
+          response_id: 0,
+          response_text: "",
+        }));
 
         setQuestionResponses(blank_questions_responses);
+
         const questions_responses_response = await axiosInstance.get(
-          `/api/responses/${application.program}`
-        );
-        const newQuestionResponses = questions_responses_response.data.filter(
-          (questionResponse) => questionResponse.program == program_id
+          `/api/responses/?application=${application.program}`
         );
 
-        if (newQuestionResponses.length != 0) {
-          for (let i = 0; i < newQuestionResponses.length; i++) {
-            for (let i = 0; i < blank_questions_responses.length; i++) {
-              if (
-                newQuestionResponses[i].question.text ==
-                blank_questions_responses[i].question_text
-              ) {
-                blank_questions_responses[i].response_text =
-                  newQuestionResponses[i].response_text;
-              }
+        // Ensure newQuestionResponses is populated
+        const newQuestionResponses = questions_responses_response.data || [];
+
+        if (newQuestionResponses.length > 0) {
+          // Create a map for quick lookup
+          
+          const responseMap = new Map(
+            newQuestionResponses.map((questions_response) => [
+              questions_response.question,
+              questions_response.response,
+            ])
+          );
+          
+          // Update blank_questions_responses in a single loop
+          blank_questions_responses.forEach((questions_response) => {
+            if (responseMap.has(questions_response.question_id)) {
+              questions_response.response_text = responseMap.get(
+                questions_response.question_id
+              );
             }
-          }
+          });
 
-          console.log("request viego");
-          console.log(blank_questions_responses);
-          setQuestionResponses(blank_questions_responses);
+          setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
         }
       } catch (err) {
         // Handle errors
@@ -150,38 +156,24 @@ const ApplicationPage = () => {
 
     try {
       // Ensure all required fields are provided
-      if (!dateOfBirth || !gpa || !major) {
+      if (
+        !applicationData.date_of_birth ||
+        !applicationData.gpa ||
+        !applicationData.major
+      ) {
         throw new Error("Please fill out all required fields.");
       }
 
       const application_response = await axiosInstance.post(
         `/api/applications/create_or_edit/`,
-        {
-          student: user_id,
-          program: program_id,
-          dateOfBirth,
-          gpa,
-          major,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        applicationData
       );
 
       for (const questionResponse of questionResponses) {
         try {
           const questions_response = await axiosInstance.post(
             `/api/responses/create_or_edit/`,
-            {
-              response: questionResponse,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
+            questionResponse
           );
 
           if (
@@ -222,22 +214,13 @@ const ApplicationPage = () => {
         <Box mb={3}>
           <TextField
             fullWidth
-            label="Student Name"
-            variant="outlined"
-            value={studentName}
-            onChange={(e) => setStudentName(e.target.value)}
-            required
-          />
-        </Box>
-        <Box mb={3}>
-          <TextField
-            fullWidth
             type="date"
             label="Date of Birth"
+            name="date_of_birth"
             variant="outlined"
             InputLabelProps={{ shrink: true }}
-            value={dateOfBirth}
-            onChange={(e) => setDateOfBirth(e.target.value)}
+            value={applicationData.date_of_birth}
+            onChange={handleInputChange}
             required
           />
         </Box>
@@ -246,10 +229,11 @@ const ApplicationPage = () => {
             fullWidth
             label="GPA"
             variant="outlined"
+            name="gpa"
             type="number"
             inputProps={{ step: "0.01", min: "0", max: "4.0" }}
-            value={gpa}
-            onChange={(e) => setGpa(e.target.value)}
+            value={applicationData.gpa}
+            onChange={handleInputChange}
             required
           />
         </Box>
@@ -257,30 +241,42 @@ const ApplicationPage = () => {
           <TextField
             fullWidth
             label="Major"
+            name="major"
             variant="outlined"
-            value={major}
-            onChange={(e) => setMajor(e.target.value)}
+            value={applicationData.major}
+            onChange={handleInputChange}
             required
           />
         </Box>
-        {questions.map((question, index) => (
-          <Box key={index} mb={3}>
-            <TextField
-              fullWidth
-              label={question.text} // Assuming question has a 'text' property
-              variant="outlined"
-              multiline
-              rows={4}
-              value={questionResponses[index].response_text || ""}
-              onChange={(e) => {
-                const newQuestionResponses = [...questionResponses];
-                newQuestionResponses[index].response_text = e.target.value;
-                setQuestionResponses(newQuestionResponses);
-              }}
-              required
-            />
-          </Box>
-        ))}
+        {questions.map((question, index) => {
+          const responseObj = questionResponses?.find(
+            (questionResponse) => questionResponse.question_id == question.id
+          );
+
+          return (
+            <Box key={index} mb={3}>
+              <TextField
+                fullWidth
+                label={question.text} // Assuming question has a 'text' property
+                variant="outlined"
+                multiline
+                rows={4}
+                value={responseObj?.response_text || ""} // Fixed value retrieval
+                onChange={(e) => {
+                  setQuestionResponses((prevResponses) => {
+                    // Ensure state exists
+                    return prevResponses.map((qr) =>
+                      qr.question_id == question.id
+                        ? { ...qr, response_text: e.target.value } // Update response_text
+                        : qr
+                    );
+                  });
+                }}
+                required
+              />
+            </Box>
+          );
+        })}
 
         {error && (
           <Typography color="error" mb={2}>
@@ -305,7 +301,7 @@ const ApplicationPage = () => {
       <ContentContainer>
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application for {program.title}
+            Application for {applicationData.program.title}
           </Typography>
         </Header>
 
