@@ -77,11 +77,11 @@ const HeroButton = styled('button')(({ theme }) => ({
   borderRadius: theme.shape.borderRadius.xl,
   cursor: 'pointer',
   transition: theme.transitions.medium,
-  boxShadow: theme.shadows.button,
+  boxShadow: theme.customShadows.button,
   '&:hover': {
     transform: 'translateY(-2px)',
     backgroundColor: theme.palette.background.default,
-    boxShadow: theme.shadows.raised,
+    boxShadow: theme.customShadows.raised,
   },
 }));
 
@@ -98,12 +98,12 @@ const FeatureCard = styled('div')(({ theme }) => ({
   padding: '30px',
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   textAlign: 'center',
   transition: theme.transitions.quick,
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: theme.shadows.raised,
+    boxShadow: theme.customShadows.raised,
   },
 }));
 
@@ -140,11 +140,11 @@ const GalleryItem = styled('div')(({ theme }) => ({
   paddingBottom: '66.67%',
   overflow: 'hidden',
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   transition: theme.transitions.medium,
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: theme.shadows.raised,
+    boxShadow: theme.customShadows.raised,
   },
 }));
 
