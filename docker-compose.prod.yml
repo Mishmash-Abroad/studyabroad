@@ -6,12 +6,12 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NODE_ENV=production
-        - REACT_APP_API_URL=/api
+        - REACT_APP_API_URL=https://mishmash.colab.duke.edu
     volumes:
       - frontend_build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=/api
+      - REACT_APP_API_URL=https://mishmash.colab.duke.edu
     depends_on:
       - backend
 
