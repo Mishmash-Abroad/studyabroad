@@ -28,6 +28,7 @@ jobs:
             cd /home/vcm/studyabroad
             git pull origin main
             docker compose -f docker-compose.dev.yml down
+            docker volume rm $(docker volume ls -q)
             docker compose -f docker-compose.dev.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps
