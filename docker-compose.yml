@@ -39,7 +39,11 @@ services:
             - "**/.venv"
     command: >
       sh -c "python manage.py wait_for_db &&
-             python manage.py migrate && 
+             rm -f api/migrations/0*.py &&
+             python manage.py makemigrations api --noinput &&
+             python manage.py makemigrations --noinput &&
+             python manage.py migrate api --noinput &&
+             python manage.py migrate --noinput && 
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - static_volume:/app/static    # Persistent storage for static files
@@ -98,16 +102,12 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql    # Persistent database storage
     environment:
-      - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=mishmash
-    ports:
-      - "3306:3306"  # Exposed for development debugging
+      - MYSQL_ROOT_PASSWORD=root
     healthcheck:
-      # Ensure database is accepting connections
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
-      interval: 5s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
-      retries: 5
+      retries: 10
 
   # Nginx Reverse Proxy Service
   # Handles routing and serves static/media files
