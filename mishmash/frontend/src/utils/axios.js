@@ -22,6 +22,9 @@
 
 import axios from 'axios';
 
+// Log the API base URL for debugging
+console.log("API Base URL:", process.env.REACT_APP_API_URL);
+
 // Create a custom axios instance with default configuration
 const instance = axios.create({
     baseURL: process.env.REACT_APP_API_URL || "https://dev-mishmash.colab.duke.edu/", 
