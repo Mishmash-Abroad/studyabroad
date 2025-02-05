@@ -170,9 +170,12 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration for frontend communication
-CORS_ALLOW_ALL_ORIGINS = True  # TODO: Restrict in production
+CORS_ALLOW_ALL_ORIGINS = False  # TODO: Restrict in production
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
+    "https://dev-mishmash.colab.duke.edu",
+    "https://mishmash.colab.duke.edu",
+    "https://test-mishmash.colab.duke.edu",
     "http://localhost",
     "http://localhost:3000",
 ]
