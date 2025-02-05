@@ -39,7 +39,6 @@ services:
             - "**/.venv"
     command: >
       sh -c "python manage.py wait_for_db &&
-             rm -f api/migrations/0*.py &&
              python manage.py makemigrations api --noinput &&
              python manage.py makemigrations --noinput &&
              python manage.py migrate api --noinput &&
