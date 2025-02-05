@@ -17,30 +17,32 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 // -------------------- STYLES --------------------
-const ViewerContainer = styled('div')({
+const ViewerContainer = styled('div')(({ expanded }) => ({
   position: 'relative',
   width: '100%',
+  height: expanded ? 'auto' : '350px',
   backgroundColor: '#fff',
   borderRadius: '8px',
   boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
   overflow: 'hidden',
-});
+}));
 
 const ContentContainer = styled('div')(({ theme }) => ({
   margin: '0 40px',
   padding: theme.spacing(3),
-  minHeight: '200px',
+  height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',
-  position: 'relative',
 }));
 
 const AnnouncementContent = styled('div')(({ theme, expanded, needsExpansion }) => ({
   position: 'relative',
-  maxHeight: expanded ? 'none' : '300px',
-  overflow: 'hidden',
+  flex: 1,
+  maxHeight: expanded ? 'none' : '200px',
+  minHeight: '100px',
+  overflow: 'auto',
   transition: 'max-height 0.3s ease-out',
+  marginBottom: theme.spacing(2),
   '&::after': (!expanded && needsExpansion) ? {
     content: '""',
     position: 'absolute',
@@ -55,21 +57,26 @@ const AnnouncementContent = styled('div')(({ theme, expanded, needsExpansion }) 
 
 const BottomControls = styled('div')(({ theme }) => ({
   display: 'flex',
-  justifyContent: 'space-between',
+  justifyContent: 'center',
   alignItems: 'center',
-  marginTop: theme.spacing(2),
+  marginTop: 'auto',
   position: 'relative',
-  bottom: 0,
   width: '100%',
+  minHeight: '36px',
 }));
 
 const PageIndicator = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
   ...(theme.typography.body2),
+  position: 'absolute',
+  left: '50%',
+  transform: 'translateX(-50%)',
 }));
 
 const ShowMoreButton = styled(Button)(({ theme }) => ({
   minWidth: 'auto',
+  position: 'absolute',
+  right: 0,
 }));
 
 const LeftNavigation = styled('div')({
@@ -276,7 +283,7 @@ const AnnouncementsViewer = () => {
   const currentAnnouncement = announcements[currentPage - 1];
 
   return (
-    <ViewerContainer>
+    <ViewerContainer expanded={expanded}>
       <LeftNavigation onClick={handlePrevious} disabled={currentPage === 1}>
         <ChevronLeftIcon />
       </LeftNavigation>
@@ -303,29 +310,26 @@ const AnnouncementsViewer = () => {
           ref={contentRef} 
           expanded={expanded} 
           needsExpansion={needsExpansion}
+          sx={expanded ? {
+            position: 'static',
+            maxHeight: 'none',
+            height: 'auto',
+          } : {}}
         >
           <EditorContent editor={editor} />
         </AnnouncementContent>
 
         <BottomControls>
-          {needsExpansion ? (
-            <>
-              <PageIndicator>
-                {currentPage} of {announcements.length}
-              </PageIndicator>
-              <ShowMoreButton
-                onClick={() => setExpanded(!expanded)}
-                endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              >
-                Show {expanded ? 'Less' : 'More'}
-              </ShowMoreButton>
-            </>
-          ) : (
-            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <PageIndicator>
-                {currentPage} of {announcements.length}
-              </PageIndicator>
-            </Box>
+          <PageIndicator>
+            {currentPage} of {announcements.length}
+          </PageIndicator>
+          {needsExpansion && (
+            <ShowMoreButton
+              onClick={() => setExpanded(!expanded)}
+              endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            >
+              Show {expanded ? 'Less' : 'More'}
+            </ShowMoreButton>
           )}
         </BottomControls>
       </ContentContainer>
