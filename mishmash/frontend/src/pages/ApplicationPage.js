@@ -71,7 +71,6 @@ const ApplicationPage = () => {
         );
 
         if (application) {
-          console.log(application);
           setApplicationData({
             id: application.id,
             program: application.program,
@@ -110,14 +109,14 @@ const ApplicationPage = () => {
 
         if (newQuestionResponses.length > 0) {
           // Create a map for quick lookup
-          
+
           const responseMap = new Map(
             newQuestionResponses.map((questions_response) => [
               questions_response.question,
               questions_response.response,
             ])
           );
-          
+
           // Update blank_questions_responses in a single loop
           blank_questions_responses.forEach((questions_response) => {
             if (responseMap.has(questions_response.question_id)) {
