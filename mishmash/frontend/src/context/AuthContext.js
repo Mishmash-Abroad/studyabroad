@@ -20,7 +20,7 @@
  */
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axiosInstance from '../utils/api';
+import axiosInstance from '../utils/axios';
 
 // Create context for authentication state
 const AuthContext = createContext(null);
