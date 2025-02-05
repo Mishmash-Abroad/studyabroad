@@ -1,22 +1,21 @@
-
 services:
   frontend:
-    build: 
+    build:
       context: ./mishmash/frontend
       dockerfile: Dockerfile.prod
       args:
         - NODE_ENV=production
-        - REACT_APP_API_URL=dev-mishmash.colab.duke.edu
+        - REACT_APP_API_URL=https://dev-mishmash.colab.duke.edu
     volumes:
       - frontend_build:/app/build
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=dev-mishmash.colab.duke.edu
+      - REACT_APP_API_URL=https://dev-mishmash.colab.duke.edu
     depends_on:
       - backend
 
   backend:
-    build: 
+    build:
       context: ./mishmash
       dockerfile: Dockerfile.prod
     volumes:
