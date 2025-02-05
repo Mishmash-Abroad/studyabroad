@@ -38,7 +38,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Allowed hosts are read from environment variable
 # Format: comma-separated list (e.g., "localhost,example.com")
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,dev-mishmash.colab.duke.edu,test-mishmash.colab.duke.edu,mishmash.colab.duke.edu').split(',')
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='testserver,dev-mishmash.colab.duke.edu,test-mishmash.colab.duke.edu,mishmash.colab.duke.edu').split(',')
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
