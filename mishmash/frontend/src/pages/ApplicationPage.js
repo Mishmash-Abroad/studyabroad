@@ -35,7 +35,16 @@ const StyledTabContainer = styled(Box)(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
   const { user_id, program_id } = useParams();
-  const [ programTitle, setProgramTitle ] = useState("");
+  const [ program, setProgram ] = useState({
+    application_deadline: "",
+    application_open_date: "",
+    description: "",
+    end_date: "",
+    faculty_leads: "",
+    start_date: "",
+    title: "",
+    year_semester: "",
+  });
   const navigate = useNavigate();
 
   // Tab management
@@ -72,10 +81,11 @@ const ApplicationPage = () => {
         const program_response = await axiosInstance.get(
           `/api/programs/${program_id}`
         );
-
-        setProgramTitle(program_response.data.title);
-
         console.log(program_response.data);
+
+        setProgram(program_response.data);
+
+        
         const application = response.data.find(
           (application) => application.program == program_id
         );
@@ -310,7 +320,22 @@ const ApplicationPage = () => {
       <ContentContainer>
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application for {programTitle}
+            Application for {program.title} {program.year_semester} 
+          </Typography>
+          <Typography variant="h6" color="primary" gutterBottom>
+          {program.description}
+          </Typography>
+
+          <Typography variant="p" color="primary" gutterBottom>
+          From {program.start_date} to {program.end_date}
+
+          <br/>
+
+          Submit application by {program.application_deadline}
+
+          <br/>
+
+          Faculty Leads: {program.faculty_leads}
           </Typography>
         </Header>
 
