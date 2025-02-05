@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import axiosInstance from "../utils/axios";
+import axiosInstance from "../utils/api";
 
 // -------------------- STYLES --------------------
 const ModalOverlay = styled("div")(({ theme }) => ({
