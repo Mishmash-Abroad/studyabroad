@@ -35,7 +35,11 @@ services:
         condition: service_healthy
     command: >
       sh -c "python manage.py wait_for_db &&
-             python manage.py migrate &&
+             rm -f api/migrations/0*.py &&
+             python manage.py makemigrations api --noinput &&
+             python manage.py makemigrations --noinput &&
+             python manage.py migrate api --noinput &&
+             python manage.py migrate --noinput && 
              gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application"
 
   nginx:
