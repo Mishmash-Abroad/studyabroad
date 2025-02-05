@@ -19,7 +19,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/apply/:id" element={<ApplicationPage />} />
+          <Route path="/apply/:user_id/:program_id" element={<ApplicationPage />} />
 
           {/* Protected Dashboard Route */}
           <Route
@@ -30,7 +30,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/apply/:user_id/:program_id" element={<ApplicationPage />} />
+          
 
           {/* Redirect any other path to Dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
