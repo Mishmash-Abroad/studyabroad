@@ -153,7 +153,7 @@ const ApplicationPage = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+//todo : maybe need to change this
     try {
       // Ensure all required fields are provided
       if (

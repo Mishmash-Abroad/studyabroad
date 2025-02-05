@@ -1,0 +1,57 @@
+name: TESTING - Manual Deployment with Commit Selection
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Commit SHA to deploy"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: Testing Server
+      url: https://test-mishmash.colab.duke.edu
+    steps:
+      - name: Set deployment timestamp
+        run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
+
+      - name: Checkout repository at specified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit_sha }}
+
+      - name: Connect to server and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/vcm/studyabroad
+            git fetch --all
+            git checkout ${{ github.event.inputs.commit_sha }}
+            docker compose -f docker-compose.test.yml down
+            docker compose -f docker-compose.test.yml up -d --build
+            echo "🔄 Checking container status..."
+            docker compose ps
+
+      - name: Discord success notification
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "TESTING - Deployment Successful"
+          description: "Deployed commit ${{ github.event.inputs.commit_sha }} at ${{ env.DEPLOYMENT_TIME }}"
+          color: 0x00ff00  # Green color
+
+      - name: Discord failure notification
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "TESTING - Deployment Failed"
+          description: "Failed to deploy commit ${{ github.event.inputs.commit_sha }} at ${{ env.DEPLOYMENT_TIME }}"
+          color: 0xff0000  # Red color
