@@ -170,7 +170,7 @@ const HomePage = () => {
     {
       title: 'Global Destinations',
       description: 'Choose from a wide range of locations across Europe, Asia, South America, and beyond.',
-      icon: '🌎',
+      icon: '🌏',
     },
     {
       title: 'Academic Excellence',

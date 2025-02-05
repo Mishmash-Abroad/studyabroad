@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import { useState } from "react";
-
+import { Menu, MenuItem, IconButton } from "@mui/material";
+import PersonIcon from '@mui/icons-material/Person';
 
 // -------------------- STYLES --------------------
 const NavBar = styled("div")(({ theme }) => ({
@@ -30,7 +30,7 @@ const NavLogo = styled("div")({
 });
 
 const NavLogoImage = styled("img")({
-  height: "40px",
+  height: "50px",
   width: "auto",
 });
 
@@ -49,14 +49,6 @@ const NavControls = styled("div")({
 const NavButton = styled("button")(({ theme, variant = "default" }) => {
   const getStyles = () => {
     switch (variant) {
-      // case 'transparent':
-      //   return {
-      //     backgroundColor: 'transparent',
-      //     border: `1px solid ${theme.palette.overlay.subtle}`,
-      //     '&:hover': {
-      //       backgroundColor: theme.palette.overlay.faint,
-      //     },
-      //   };
       case "light":
         return {
           backgroundColor: theme.palette.overlay.faint,
@@ -91,15 +83,70 @@ const NavButton = styled("button")(({ theme, variant = "default" }) => {
 });
 
 const WelcomeText = styled("span")(({ theme }) => ({
-  color: theme.palette.overlay.nearWhite,
-  fontSize: theme.typography.body1.fontSize,
-  fontFamily: theme.typography.fontFamily,
+  color: theme.palette.primary.contrastText,
+  fontSize: theme.typography.subtitle2.fontSize,
+  opacity: 0.9,
+  transition: 'all 0.2s ease',
+}));
+
+const UserSection = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  cursor: 'pointer',
+  padding: '6px 12px',
+  borderRadius: '20px',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    '& .MuiSvgIcon-root': {
+      transform: 'scale(1.1)',
+    },
+    '& .user-name': {
+      fontWeight: 600,
+      opacity: 1,
+    },
+  },
+});
+
+const UserIcon = styled(PersonIcon)(({ theme }) => ({
+  color: theme.palette.primary.contrastText,
+  transition: 'transform 0.2s ease',
+}));
+
+const StyledMenu = styled(Menu)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: theme.shape.borderRadius.large,
+    marginTop: '8px',
+    minWidth: 180,
+    boxShadow: theme.customShadows.raised,
+    '& .MuiMenu-list': {
+      padding: '8px',
+    },
+    '& .MuiMenuItem-root': {
+      borderRadius: theme.shape.borderRadius.medium,
+      fontSize: theme.typography.body2.fontSize,
+      fontWeight: theme.typography.subtitle2.fontWeight,
+      padding: '10px 16px',
+      margin: '2px 0',
+      transition: theme.transitions.quick,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.main + '10',
+      },
+      '&:active': {
+        backgroundColor: theme.palette.primary.main + '20',
+      },
+    },
+  },
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
+const LOGO_PATH = "/images/logo.png";
+
 function TopNavBar({onChangePasswordClick,  onLoginClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleLogout = async () => {
     try {
@@ -113,23 +160,56 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
     }
   };
 
+  const handleUserMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleChangePassword = () => {
+    handleUserMenuClose();
+    // added a small delay to ensure menu is closed before modal opens to avoid a change focus issue
+    setTimeout(() => {
+      onChangePasswordClick();
+    }, 100);
+  };
+
   return (
     <NavBar>
       <NavLogo onClick={() => navigate("/")}>
-        <NavLogoImage src="/logo.png" alt="HCC Logo" />
+        <NavLogoImage src={LOGO_PATH} alt="HCC Logo" />
         <NavTitle>HCC Study Abroad</NavTitle>
       </NavLogo>
 
       <NavControls>
         {user ? (
           <>
-            <WelcomeText>Welcome, {user.display_name}!</WelcomeText>
             <NavButton variant="light" onClick={() => navigate("/dashboard")}>
               Dashboard
             </NavButton>
-            <NavButton variant="light" onClick={handleLogout}>
-              Logout
-            </NavButton>
+            <UserSection onClick={handleUserMenuClick}>
+              <UserIcon />
+              <WelcomeText className="user-name">{user.display_name}</WelcomeText>
+            </UserSection>
+            <StyledMenu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleUserMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              elevation={0}
+            >
+              <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
+              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            </StyledMenu>
           </>
         ) : (
           <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>

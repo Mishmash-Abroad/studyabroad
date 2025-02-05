@@ -87,6 +87,11 @@ const ProgramGrid = styled('div')(({ theme }) => ({
   padding: '20px 0',
   maxWidth: '1200px',
   margin: '0 auto',
+  '& .expanded-card': {
+    gridColumn: '1 / -1', // Span all columns
+  },
+  '& .program-card': {
+  }
 }));
 
 // -------------------- COMPONENT --------------------
@@ -283,6 +288,10 @@ const ProgramBrowser = () => {
                 key={program.id} 
                 program={program} 
                 isInAppliedSection={filter === 'applied'}
+                onExpand={(expanded) => {
+                  // Force a re-render to handle grid layout changes
+                  setPrograms(prev => [...prev]);
+                }}
               />
             ))}
           </ProgramGrid>
