@@ -56,9 +56,9 @@ const ApplicationPage = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+//todo : maybe need to change this
     try {
-      const response = await axios.post(`http://localhost:8000/apply/${id}/submit/`, {
+      const response = await axios.post(`/apply/${id}/submit/`, {
         studentName,
         details,
       });
