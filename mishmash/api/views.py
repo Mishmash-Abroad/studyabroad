@@ -41,6 +41,7 @@ from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 
 ### Custom permission classes for API access ###
 
@@ -57,6 +58,13 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return obj.student == request.user or request.user.is_admin
+    
+class IsAdminOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while admins can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_admin or obj.id == request.user.id
+
     
 class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
@@ -98,7 +106,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'faculty_leads']
     ordering_fields = ['application_deadline']
-    ordering = ['application_deadline']  # Default ordering
+    ordering = ['application_deadline']
 
     def get_queryset(self):
         """
@@ -119,6 +127,28 @@ class ProgramViewSet(viewsets.ModelViewSet):
             )
         
         return queryset
+    
+    def create(self, request, *args, **kwargs):
+        """
+        When an admin creates a new program, automatically add default questions.
+        """
+        response = super().create(request, *args, **kwargs)
+        program_id = response.data.get("id")
+        program_instance = Program.objects.get(id=program_id)
+
+        # Default application questions
+        default_questions = [
+            "Why do you want to participate in this study abroad program?",
+            "How does this program align with your academic or career goals?",
+            "What challenges do you anticipate during this experience, and how will you address them?",
+            "Describe a time you adapted to a new or unfamiliar environment.",
+            "What unique perspective or contribution will you bring to the group?",
+        ]
+
+        for question_text in default_questions:
+            ApplicationQuestion.objects.create(program=program_instance, text=question_text)
+
+        return response
 
     @action(detail=True, methods=['get'])
     def application_status(self, request, pk=None):
@@ -177,27 +207,33 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad applications.
 
-    Provides:
-    - Listing and retrieving applications for the current user
-    - Submitting new applications
-    - Updating application details (e.g., canceling an application)
-
-    Permissions:
-    - List/Retrieve: Authenticated users (only their own applications) and admins
-    - Create: Authenticated users
-    - Update/Delete: Authenticated users (only their own applications) and admins
-    - Admin-only actions:
-        - Change application status to 'Enrolled' or 'Withdrawn'
+    Features:
+    - List all applications (admin-only)
+    - Retrieve specific application
+    - Filter applications by applicant (GET `/api/applications/?student=<user_id>`)
+    - Filter applications by program (GET `/api/applications/?program=<program_id>`)
     """
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
     def get_queryset(self):
-        """Allow users to view only their own applications, unless they are an admin."""
-        if self.request.user.is_admin:
-            return Application.objects.all()
-        return Application.objects.filter(student=self.request.user)
+        """
+        Admins can view all applications. 
+        Students can only view their own applications.
+        Supports filtering by student ID and program ID.
+        """
+        queryset = Application.objects.all()
+
+        student_id = self.request.query_params.get('student', None)
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+
+        program_id = self.request.query_params.get('program', None)
+        if program_id:
+            queryset = queryset.filter(program_id=program_id)
+
+        return queryset
 
     def partial_update(self, request, *args, **kwargs):
         """Restrict status updates based on user role."""
@@ -212,7 +248,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
         return super().partial_update(request, *args, **kwargs)
 
-class ApplicationQuestionViewSet(viewsets.ModelViewSet):
+class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for managing application questions.
 
@@ -223,7 +259,7 @@ class ApplicationQuestionViewSet(viewsets.ModelViewSet):
     - Create/Update/Delete: Admin only
     """
     serializer_class = ApplicationQuestionSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         queryset = ApplicationQuestion.objects.all()
@@ -255,9 +291,9 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             return ApplicationResponse.objects.all()
         return ApplicationResponse.objects.filter(application__student=self.request.user)
 
-class UserViewSet(viewsets.ViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing user authentication and account details.
+    ViewSet for managing users. Admins can view all users, while regular users can only view their own data.
 
     Provides:
     - Viewing the current authenticated user's details
@@ -269,7 +305,9 @@ class UserViewSet(viewsets.ViewSet):
     - Logout: Authenticated users
     - Current user details: Authenticated users
     """
-    permission_classes = [permissions.AllowAny]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrSelf]
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
@@ -293,7 +331,7 @@ class UserViewSet(viewsets.ViewSet):
     def logout(self, request):
         """Custom logout endpoint."""
         try:
-            request.auth.delete()  # Deletes the token
+            request.auth.delete()
             return Response({"detail": "Successfully logged out."})
         except AttributeError:
             return Response({"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST)
