@@ -378,7 +378,7 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
           <ApplicationButton
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/apply/${program.id}`);
+              navigate(`/apply/${user.user_id}/${program.id}`);
             }}
             disabled={user?.is_admin}
             variant={user?.is_admin ? "disabled" : "success"}
