@@ -35,7 +35,7 @@ const StyledTabContainer = styled(Box)(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
   const { user_id, program_id } = useParams();
-  const [ program, setProgram ] = useState({
+  const [program, setProgram] = useState({
     application_deadline: "",
     application_open_date: "",
     description: "",
@@ -85,7 +85,6 @@ const ApplicationPage = () => {
 
         setProgram(program_response.data);
 
-        
         const application = response.data.find(
           (application) => application.program == program_id
         );
@@ -188,6 +187,13 @@ const ApplicationPage = () => {
       const application_response = await axiosInstance.post(
         `/api/applications/create_or_edit/`,
         applicationData
+      );
+
+      setQuestionResponses((prevResponses) =>
+        prevResponses.map((prevResponse) => ({
+          ...prevResponse,
+          application: application_response.data.id,
+        }))
       );
 
       for (const questionResponse of questionResponses) {
@@ -322,22 +328,18 @@ const ApplicationPage = () => {
       <ContentContainer>
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application for {program.title} {program.year_semester} 
+            Application for {program.title} {program.year_semester}
           </Typography>
           <Typography variant="h6" color="primary" gutterBottom>
-          {program.description}
+            {program.description}
           </Typography>
 
           <Typography variant="p" color="primary" gutterBottom>
-          From {program.start_date} to {program.end_date}
-
-          <br/>
-
-          Submit application by {program.application_deadline}
-
-          <br/>
-
-          Faculty Leads: {program.faculty_leads}
+            From {program.start_date} to {program.end_date}
+            <br />
+            Submit application by {program.application_deadline}
+            <br />
+            Faculty Leads: {program.faculty_leads}
           </Typography>
         </Header>
 
