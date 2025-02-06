@@ -78,31 +78,13 @@ const ApplicationPage = () => {
     const handleWithdraw = async () => {
       try {
         setLoading(true);
-        await axiosInstance.patch(
-          `/api/applications/${applicationData.id}/`,
-          {
-            status: "Withdrawn",
-          }
-        );
+        await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
+          status: "Withdrawn",
+        });
 
         setApplicationData({ ...applicationData, status: "Withdrawn" });
       } catch (err) {
         setError(`${err} Failed to withdraw application.`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const handleReapply = async () => {
-      try {
-        setLoading(true);
-        await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
-          status: "Applied",
-        });
-
-        setApplicationData({ ...applicationData, status: "Applied" });
-      } catch (err) {
-        setError("Failed to reapply application.");
       } finally {
         setLoading(false);
       }
@@ -137,7 +119,6 @@ const ApplicationPage = () => {
         );
 
         setProgram(program_response.data);
-
 
         const application = response.data.find(
           (application) => application.program == program_id
@@ -180,9 +161,6 @@ const ApplicationPage = () => {
             `/api/responses/?application=${application.id}`
           );
 
-          // Ensure newQuestionResponses is populated
-          const newQuestionResponses = questions_responses_response.data || [];
-          // Ensure newQuestionResponses is populated
           const newQuestionResponses = questions_responses_response.data || [];
 
           if (newQuestionResponses.length > 0) {
@@ -193,34 +171,34 @@ const ApplicationPage = () => {
                 questions_response.response,
               ])
             );
-          if (newQuestionResponses.length > 0) {
-            // Create a map for quick lookup
-            const responseMap = new Map(
-              newQuestionResponses.map((questions_response) => [
-                questions_response.question,
-                questions_response.response,
-              ])
-            );
+            if (newQuestionResponses.length > 0) {
+              // Create a map for quick lookup
+              const responseMap = new Map(
+                newQuestionResponses.map((questions_response) => [
+                  questions_response.question,
+                  questions_response.response,
+                ])
+              );
 
-            // Update blank_questions_responses in a single loop
-            blank_questions_responses.forEach((questions_response) => {
-              if (responseMap.has(questions_response.question_id)) {
-                questions_response.response_text = responseMap.get(
-                  questions_response.question_id
-                );
-              }
-            });
-            // Update blank_questions_responses in a single loop
-            blank_questions_responses.forEach((questions_response) => {
-              if (responseMap.has(questions_response.question_id)) {
-                questions_response.response_text = responseMap.get(
-                  questions_response.question_id
-                );
-              }
-            });
+              // Update blank_questions_responses in a single loop
+              blank_questions_responses.forEach((questions_response) => {
+                if (responseMap.has(questions_response.question_id)) {
+                  questions_response.response_text = responseMap.get(
+                    questions_response.question_id
+                  );
+                }
+              });
+              // Update blank_questions_responses in a single loop
+              blank_questions_responses.forEach((questions_response) => {
+                if (responseMap.has(questions_response.question_id)) {
+                  questions_response.response_text = responseMap.get(
+                    questions_response.question_id
+                  );
+                }
+              });
 
-            setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
-          }
+              setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
+            }
             setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
           }
         }
@@ -391,15 +369,28 @@ const ApplicationPage = () => {
             {error}
           </Typography>
         )}
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          fullWidth
-        >
-          {loading ? "Submitting..." : "Submit Application"}
-        </Button>
+
+        {applicationData.status != "Applied" ? (
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            fullWidth
+          >
+            {loading ? "Submitting..." : "Submit Application"}
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            fullWidth
+          >
+            {loading ? "Updating..." : "Update Application"}
+          </Button>
+        )}
       </form>
     );
   };

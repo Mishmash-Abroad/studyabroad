@@ -252,11 +252,11 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         application = self.get_object()
         if "status" in request.data:
             if not request.user.is_admin:
-                # Users can only cancel their applications
-                if request.data["status"] != "Canceled":
+                # Users can only withdraw or apply their applications
+                if request.data["status"] != "Withdrawn" and request.data["status"] != "Applied":
                     return Response(
                         {
-                            "detail": "Only admins can change the status to 'Enrolled' or 'Withdrawn'."
+                            "detail": "Only admins can change the status to 'Enrolled' or 'Cancelled'."
                         },
                         status=status.HTTP_403_FORBIDDEN,
                     )
