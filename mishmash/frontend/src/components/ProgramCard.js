@@ -241,7 +241,9 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
     if (!applicationStatus) return null;
     switch (applicationStatus.toLowerCase()) {
       case "applied":
-        return "Edit Application";
+        return today < applicationDeadline
+          ? "Edit Application"
+          : "View Application";
       case "withdrawn":
         return "Application Withdrawn";
       case "canceled":
@@ -289,16 +291,15 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
               onClick={handleEditApplication}
               variant="success"
             >
-              Edit Application
+              {today < applicationDeadline
+                ? "Edit Application"
+                : "View Application"}
             </ApplicationButton>
           );
         case "withdrawn":
         case "canceled":
           return (
-            <ApplicationButton
-              onClick={handleReapply}
-              variant="success"
-            >
+            <ApplicationButton onClick={handleReapply} variant="success">
               Apply Again
             </ApplicationButton>
           );
