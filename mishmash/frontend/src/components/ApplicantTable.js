@@ -154,7 +154,7 @@ const ApplicantTable = ({ programId }) => {
                       variant="contained"
                       color="primary"
                       size="small"
-                      onClick={() => navigate(`/apply/${applicant.student}/${programId}`)}
+                      onClick={() => navigate(`/apply/${programId}`)}
                     >
                       View
                     </Button>

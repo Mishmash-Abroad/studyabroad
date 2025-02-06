@@ -253,17 +253,17 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
 
   const handleApply = (e) => {
     e.stopPropagation();
-    navigate(`/apply/${user.user_id}/${program.id}`);
+    navigate(`/apply/${program.id}`);
   };
 
   const handleEditApplication = (e) => {
     e.stopPropagation();
-    navigate(`/apply/${user.user_id}/${program.id}`);
+    navigate(`/apply/${program.id}`);
   };
 
   const handleReapply = (e) => {
     e.stopPropagation();
-    navigate(`/apply/${user.user_id}/${program.id}`);
+    navigate(`/apply/${program.id}`);
   };
 
   const getApplicationButton = () => {
