@@ -30,6 +30,9 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
+      - DJANGO_SUPERUSER_USERNAME=admin_django
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - DJANGO_SUPERUSER_PASSWORD=mishmash
     depends_on:
       db:
         condition: service_healthy
@@ -39,10 +42,11 @@ services:
              python manage.py makemigrations --noinput &&
              python manage.py migrate api --noinput &&
              python manage.py migrate --noinput && 
+             python manage.py add_test_users -prod &&
              python manage.py add_test_programs &&
-             python manage.py add_test_users &&
              python manage.py add_test_applications &&
              python manage.py add_test_announcements &&
+             python manage.py createsuperuser --noinput || true &&
              gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application"
 
   nginx:

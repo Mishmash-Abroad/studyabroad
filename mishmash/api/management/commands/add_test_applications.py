@@ -1,45 +1,28 @@
 """
 Study Abroad Program - Test Applications Creation Command
-===============================================
-To run this use docker compose exec backend python manage.py add_test_applications
+=========================================================
+To run this use:
+    docker compose exec backend python manage.py add_test_applications
 
 This Django management command creates test program applications to simulate
-various application scenarios and statuses. It creates a realistic distribution
-of applications across different programs and students.
+various application scenarios and statuses.
 
 Features:
 - Creates applications with different statuses (Enrolled, Applied, Withdrawn, Canceled)
 - Simulates multiple applications per student
-- Creates applications across different programs
-- Handles error cases for missing users or programs
-
-Application States:
-- Enrolled: Student accepted and confirmed for the program
-- Applied: Application submitted, pending review
-- Withdrawn: Student withdrew their application
-- Canceled: Application canceled by admin/system
+- Assigns random responses to application questions
 
 Usage:
     python manage.py add_test_applications
 
-Note: This command creates temporary test applications for development.
-      The actual application process and database structure may change
-      in future versions.
-
 Dependencies:
 - Requires add_test_users and add_test_programs to be run first
-- All referenced users and programs must exist in database
-
-Related Models:
-- User: For student lookup
-- Program: For program lookup
-- Application: Stores application status and relationships
 """
 
 from django.core.management.base import BaseCommand
 from api.models import User, Program, Application, ApplicationQuestion, ApplicationResponse
-from django.utils import timezone
 from datetime import datetime
+import random
 
 class Command(BaseCommand):
     help = 'Creates test applications with various statuses, matching the updated database schema.'
@@ -106,18 +89,53 @@ class Command(BaseCommand):
             ('SarahJ', 'Urban Design in Barcelona', 'Canceled', '2003-02-10', 3.5, 'Architecture'),
         ]
 
-        # Clear existing applications and questions
+        possible_responses = {
+            "Why do you want to participate in this study abroad program?": [
+                "I want to explore new cultures and broaden my horizons.",
+                "This program aligns with my career aspirations in international relations.",
+                "I have always wanted to study in this country and learn from experts in the field.",
+                "It’s a great opportunity to gain hands-on experience in my field.",
+                "I want to step out of my comfort zone and challenge myself academically."
+            ],
+            "How does this program align with your academic or career goals?": [
+                "It provides specialized courses that fit my major.",
+                "The internship opportunities will give me practical experience.",
+                "Networking with professionals in this field is invaluable.",
+                "The program's curriculum is exactly what I need to advance in my career.",
+                "I will gain cultural and professional exposure relevant to my ambitions."
+            ],
+            "What challenges do you anticipate during this experience, and how will you address them?": [
+                "Adapting to a new culture, but I plan to be open-minded and engage with locals.",
+                "Managing finances abroad, which I will tackle with careful budgeting.",
+                "Language barriers, but I will take preparatory language courses.",
+                "Homesickness, but I will stay connected with family and make new friends.",
+                "Academic rigor, but I am ready to work hard and seek help when needed."
+            ],
+            "Describe a time you adapted to a new or unfamiliar environment.": [
+                "When I transferred to a new school, I quickly adjusted by joining clubs.",
+                "During my first internship, I had to learn new skills on the job.",
+                "Studying in a different state taught me independence and adaptability.",
+                "Working in a multicultural team required me to embrace diverse perspectives.",
+                "Moving to a new city for college forced me to become more self-reliant."
+            ],
+            "What unique perspective or contribution will you bring to the group?": [
+                "My diverse background allows me to bring fresh perspectives.",
+                "I have strong leadership skills and love working in a team setting.",
+                "I am passionate about learning and sharing knowledge with peers.",
+                "My problem-solving skills will help us overcome challenges together.",
+                "I bring a creative approach to problem-solving and innovation."
+            ]
+        }
+
         Application.objects.all().delete()
-        ApplicationQuestion.objects.all().delete()
-        self.stdout.write('Cleared existing applications and questions')
+        ApplicationResponse.objects.all().delete()
+        self.stdout.write('Cleared existing applications and responses')
 
         for username, program_title, status, dob, gpa, major in applications_data:
             try:
-                # Lookup user and program objects
                 user = User.objects.get(username=username)
                 program = Program.objects.get(title=program_title)
 
-                # Create application with required fields
                 application = Application.objects.create(
                     student=user,
                     program=program,
@@ -129,62 +147,17 @@ class Command(BaseCommand):
                 
                 self.stdout.write(f'Created application: {username} -> {program_title} ({status})')
 
-                # Add program-specific questions and responses
-                if program_title == 'Antarctic Research Expedition':
-                    question = ApplicationQuestion.objects.create(
-                        program=program,
-                        text="Why do you want to participate in this research expedition? What relevant experience do you have?",
-                        is_required=True
-                    )
+                questions = ApplicationQuestion.objects.filter(program=program)
+
+                for question in questions:
+                    response_text = random.choice(possible_responses.get(question.text, ["No response provided"]))
                     ApplicationResponse.objects.create(
                         application=application,
                         question=question,
-                        response="I am passionate about studying polar ecosystems and their impact on global climate. I have previous research experience in climate science and field work in extreme environments."
+                        response=response_text
                     )
-                elif program_title == 'Technology Innovation in Tokyo':
-                    question = ApplicationQuestion.objects.create(
-                        program=program,
-                        text="What specific areas of Japanese technology innovation interest you most?",
-                        is_required=True
-                    )
-                    ApplicationResponse.objects.create(
-                        application=application,
-                        question=question,
-                        response="I am particularly interested in Japan's advancements in robotics and artificial intelligence. I want to learn how cultural factors influence technological innovation."
-                    )
-                elif program_title == 'Global Health in Cape Town':
-                    question = ApplicationQuestion.objects.create(
-                        program=program,
-                        text="How do you plan to apply your public health experience from this program in your future career?",
-                        is_required=True
-                    )
-                    ApplicationResponse.objects.create(
-                        application=application,
-                        question=question,
-                        response="I plan to work in international healthcare policy, focusing on improving healthcare access in developing regions. This program will provide valuable firsthand experience."
-                    )
-                elif program_title == 'Space Science in Houston':
-                    question = ApplicationQuestion.objects.create(
-                        program=program,
-                        text="What aspects of space science most interest you, and how will this program help your career goals?",
-                        is_required=True
-                    )
-                    ApplicationResponse.objects.create(
-                        application=application,
-                        question=question,
-                        response="I am fascinated by space exploration and want to work on future Mars missions. This program will give me hands-on experience with NASA's technologies and methodologies."
-                    )
-                elif program_title == 'Game Design in Montreal':
-                    question = ApplicationQuestion.objects.create(
-                        program=program,
-                        text="What type of games do you want to create, and what experience do you have in game development?",
-                        is_required=True
-                    )
-                    ApplicationResponse.objects.create(
-                        application=application,
-                        question=question,
-                        response="I am interested in creating educational games that make learning fun and accessible. I have experience with Unity and have developed several small indie games."
-                    )
+
+                self.stdout.write(f'Added response to question: "{question.text}"')
 
             except (User.DoesNotExist, Program.DoesNotExist) as e:
                 self.stdout.write(self.style.ERROR(f'Error creating application: {str(e)}'))

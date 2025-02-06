@@ -65,15 +65,6 @@ const ApplicantTable = ({ programId }) => {
     setOrderBy(property);
   };
 
-  const handleStatusChange = async (applicantId, newStatus) => {
-    try {
-      await axiosInstance.patch(`/api/applications/${applicantId}/`, { status: newStatus });
-      fetchApplicants();
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
-
   const sortedApplicants = applicants
     .filter(applicant => (statusFilter ? applicant.status === statusFilter : true))
     .sort((a, b) => {
@@ -162,8 +153,8 @@ const ApplicantTable = ({ programId }) => {
                       select
                       size="small"
                       value={applicant.status}
-                      onChange={(e) => handleStatusChange(applicant.id, e.target.value)}
-                      sx={{ marginLeft: '10px', minWidth: '150px' }} // 🔹 Ensures all dropdowns are same width
+                      onClick={() => navigate(`/applications/${applicant.id}`)}
+                      sx={{ marginLeft: '10px', minWidth: '150px' }}
                     >
                       {applicant.status === 'Withdrawn' && (
                         <MenuItem value="Withdrawn">Withdrawn</MenuItem>

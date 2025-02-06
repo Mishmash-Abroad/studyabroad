@@ -39,12 +39,13 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleSubmit = async () => {
     try {
+  
       if (editingProgram) {
         await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
       } else {
         await axiosInstance.post('/api/programs/', programData);
       }
-
+  
       refreshPrograms();
       navigate('/dashboard/admin-programs');
     } catch (error) {
@@ -82,6 +83,46 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         <TextField label="Year & Semester" name="year_semester" fullWidth value={programData.year_semester} onChange={handleInputChange} />
         <TextField label="Faculty Leads" name="faculty_leads" fullWidth value={programData.faculty_leads} onChange={handleInputChange} />
         <TextField label="Description" name="description" multiline rows={3} fullWidth value={programData.description} onChange={handleInputChange} />
+        {/* Date Fields */}
+        <TextField
+          label="Application Open Date"
+          type="date"
+          name="application_open_date"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          value={programData.application_open_date}
+          onChange={handleInputChange}
+        />
+        
+        <TextField
+          label="Application Deadline"
+          type="date"
+          name="application_deadline"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          value={programData.application_deadline}
+          onChange={handleInputChange}
+        />
+
+        <TextField
+          label="Start Date"
+          type="date"
+          name="start_date"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          value={programData.start_date}
+          onChange={handleInputChange}
+        />
+
+        <TextField
+          label="End Date"
+          type="date"
+          name="end_date"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          value={programData.end_date}
+          onChange={handleInputChange}
+        />
       </Box>
 
       {editingProgram && <ApplicantTable programId={editingProgram.id} />}
