@@ -3,8 +3,9 @@ import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import { Menu, MenuItem, IconButton } from "@mui/material";
+import { Menu, MenuItem, IconButton, Button } from "@mui/material";
 import PersonIcon from '@mui/icons-material/Person';
+import ChangePasswordModal from './ChangePasswordModal';
 
 // -------------------- STYLES --------------------
 const NavBar = styled("div")(({ theme }) => ({
@@ -89,29 +90,18 @@ const WelcomeText = styled("span")(({ theme }) => ({
   transition: 'all 0.2s ease',
 }));
 
-const UserSection = styled('div')({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  cursor: 'pointer',
+const UserButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.primary.contrastText,
+  textTransform: 'none',
   padding: '6px 12px',
   borderRadius: '20px',
-  transition: 'all 0.2s ease',
   '&:hover': {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    '& .MuiSvgIcon-root': {
-      transform: 'scale(1.1)',
-    },
-    '& .user-name': {
-      fontWeight: 600,
-      opacity: 1,
-    },
   },
-});
+}));
 
 const UserIcon = styled(PersonIcon)(({ theme }) => ({
   color: theme.palette.primary.contrastText,
-  transition: 'transform 0.2s ease',
 }));
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
@@ -143,10 +133,11 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const LOGO_PATH = "/images/logo.png";
 
-function TopNavBar({onChangePasswordClick,  onLoginClick }) {
+function TopNavBar({ onLoginClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -170,52 +161,58 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
 
   const handleChangePassword = () => {
     handleUserMenuClose();
-    // added a small delay to ensure menu is closed before modal opens to avoid a change focus issue
-    setTimeout(() => {
-      onChangePasswordClick();
-    }, 100);
+    setIsChangePasswordOpen(true);
   };
 
-  return (
-    <NavBar>
-      <NavLogo onClick={() => navigate("/")}>
-        <NavLogoImage src={LOGO_PATH} alt="HCC Logo" />
-        <NavTitle>HCC Study Abroad</NavTitle>
-      </NavLogo>
+  const open = Boolean(anchorEl);
 
-      <NavControls>
-        {user ? (
-          <>
-            <NavButton variant="light" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </NavButton>
-            <UserSection onClick={handleUserMenuClick}>
-              <UserIcon />
-              <WelcomeText className="user-name">{user.display_name}</WelcomeText>
-            </UserSection>
-            <StyledMenu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleUserMenuClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              elevation={0}
-            >
-              <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </StyledMenu>
-          </>
-        ) : (
-          <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
-        )}
-      </NavControls>
-    </NavBar>
+  return (
+    <>
+      <NavBar>
+        <NavLogo onClick={() => navigate("/")}>
+          <NavLogoImage src={LOGO_PATH} alt="HCC Logo" />
+          <NavTitle>HCC Study Abroad</NavTitle>
+        </NavLogo>
+
+        <NavControls>
+          {user ? (
+            <>
+              <NavButton variant="light" onClick={() => navigate("/dashboard")}>
+                Dashboard
+              </NavButton>
+              <UserButton
+                id="user-menu-button"
+                aria-controls={open ? 'user-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                onClick={handleUserMenuClick}
+                startIcon={<UserIcon />}
+              >
+                {user.display_name}
+              </UserButton>
+              <StyledMenu
+                id="user-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleUserMenuClose}
+                MenuListProps={{
+                  'aria-labelledby': 'user-menu-button',
+                }}
+              >
+                <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </StyledMenu>
+            </>
+          ) : (
+            <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
+          )}
+        </NavControls>
+      </NavBar>
+
+      {isChangePasswordOpen && (
+        <ChangePasswordModal onClose={() => setIsChangePasswordOpen(false)} />
+      )}
+    </>
   );
 }
 
