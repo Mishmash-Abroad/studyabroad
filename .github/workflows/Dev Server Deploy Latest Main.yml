@@ -25,7 +25,9 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/vcm/studyabroad
+            git fetch origin
+            git checkout main  # Switch to main branch
+            git reset --hard origin/main  # Force sync to remote main branch
             git pull origin main
             docker compose -f docker-compose.dev.yml down
             docker volume rm $(docker volume ls -q)

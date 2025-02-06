@@ -26,6 +26,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/vcm/studyabroad
+            git fetch origin
+            git checkout test-server  # Switch to test-server
+            git reset --hard origin/test-server  # Force sync to remote test-server branch
             git pull origin test-server
             docker compose -f docker-compose.test.yml down
             docker volume rm $(docker volume ls -q)
