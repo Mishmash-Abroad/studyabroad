@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import TopNavBar from "./components/TopNavBar";
 import LoginModal from "./components/LoginModal";
 import ApplicationPage from "./pages/ApplicationPage";
+import AdminAppView from "./components/AdminAppView";
 
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -20,6 +21,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/apply/:id" element={<ApplicationPage />} />
+          <Route path="/applications/:id" element={<AdminAppView />} />
 
           {/* Protected Dashboard Route */}
           <Route
