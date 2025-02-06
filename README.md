@@ -604,3 +604,4 @@ docker compose exec backend python manage.py add_test_users
 docker compose exec backend python manage.py add_test_applications
 docker compose exec backend python manage.py add_test_announcements
 ```
+

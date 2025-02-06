@@ -18,11 +18,4 @@ COPY . .
 EXPOSE 3000
 
 # If NODE_ENV=production, build static files, otherwise run dev server
-CMD sh -c "if [ \"$NODE_ENV\" = \"production\" ]; then \
-           echo 'Building production static files...' && \
-           npm run build && \
-           echo 'Build complete. Static files are in /app/build' && \
-           tail -f /dev/null; \
-           else \
-           npm start; \
-           fi"
+CMD sh -c "npm start"
