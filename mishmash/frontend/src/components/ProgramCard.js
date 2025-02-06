@@ -251,139 +251,92 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
     }
   };
 
+  const handleApply = (e) => {
+    e.stopPropagation();
+    navigate(`/apply/${user.user_id}/${program.id}`);
+  };
+
+  const handleEditApplication = (e) => {
+    e.stopPropagation();
+    navigate(`/apply/${user.user_id}/${program.id}`);
+  };
+
+  const handleReapply = (e) => {
+    e.stopPropagation();
+    navigate(`/apply/${user.user_id}/${program.id}`);
+  };
+
   const getApplicationButton = () => {
     const detailedStatus = getDetailedStatus();
     const programStatus = getProgramStatus();
-    const status = applicationStatus?.toLowerCase();
 
-    // Enrolled/Applied
-    if (status && ["enrolled"].includes(status)) {
-      return (
-        <div
-          style={{
-            padding: "8px 16px",
-            borderRadius: "4px",
-            backgroundColor: theme.palette.status.info.background,
-            color: theme.palette.status.info.main,
-            display: "inline-block",
-          }}
-        >
-          {detailedStatus}
-        </div>
-      );
-    }
-
-    // Show status for enrolled/applied users
-    if (["applied"].includes(status)) {
-      return (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: "8px",
-          }}
-        >
-          {programStatus === "Open" && (
+    // If the user has already applied and has a status
+    if (applicationStatus) {
+      switch (applicationStatus.toLowerCase()) {
+        case "enrolled":
+          return (
             <ApplicationButton
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/apply/${user.user_id}/${program.id}`);
-              }}
+              onClick={(e) => e.stopPropagation()}
+              variant="success"
+              disabled
+            >
+              Enrolled
+            </ApplicationButton>
+          );
+        case "applied":
+          return (
+            <ApplicationButton
+              onClick={handleEditApplication}
               variant="success"
             >
               Edit Application
             </ApplicationButton>
-          )}
-          <div
-            style={{
-              fontSize: "0.8em",
-              color: theme.palette.grey[700],
-              fontStyle: "italic",
-            }}
-          >
-            {detailedStatus}
-          </div>
-        </div>
-      );
-    }
-
-    // Withdrawn/Canceled
-    if (status && ["withdrawn", "canceled"].includes(status)) {
-      return (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: "8px",
-          }}
-        >
-          {programStatus === "Open" && (
+          );
+        case "withdrawn":
+        case "canceled":
+          return (
             <ApplicationButton
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/apply/${user.user_id}/${program.id}`);
-              }}
+              onClick={handleReapply}
               variant="success"
             >
               Apply Again
             </ApplicationButton>
-          )}
-          <div
-            style={{
-              fontSize: "0.8em",
-              color: theme.palette.grey[700],
-              fontStyle: "italic",
-            }}
-          >
-            {detailedStatus}
-          </div>
-        </div>
-      );
+          );
+        default:
+          return null;
+      }
     }
 
-    // Opening Soon / Closed / Open
+    // If user hasn't applied yet
     switch (programStatus) {
       case "Opening Soon":
         return (
-          <div
-            className="not-open-badge"
-            style={{
-              padding: "8px 16px",
-              borderRadius: "4px",
-              backgroundColor: theme.palette.status.warning.background,
-              color: theme.palette.status.warning.main,
-            }}
+          <ApplicationButton
+            onClick={(e) => e.stopPropagation()}
+            disabled
+            variant="disabled"
           >
-            Applications open on {program.application_open_date}
-          </div>
-        );
-      case "Closed":
-        return (
-          <div
-            className="deadline-passed-badge"
-            style={{
-              padding: "8px 16px",
-              borderRadius: "4px",
-              backgroundColor: theme.palette.status.error.background,
-              color: theme.palette.status.error.main,
-            }}
-          >
-            Application Deadline Passed
-          </div>
+            Opening Soon
+          </ApplicationButton>
         );
       case "Open":
         return (
           <ApplicationButton
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/apply/${user.user_id}/${program.id}`);
-            }}
+            onClick={handleApply}
             disabled={user?.is_admin}
             variant={user?.is_admin ? "disabled" : "success"}
           >
             Apply Now
+          </ApplicationButton>
+        );
+      case "Closed":
+        return (
+          <ApplicationButton
+            onClick={(e) => e.stopPropagation()}
+            disabled
+            variant="disabled"
+          >
+            Applications Closed
           </ApplicationButton>
         );
       default:

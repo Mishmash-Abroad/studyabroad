@@ -146,11 +146,11 @@ const AdminProgramsTable = () => {
   };
 
   const handleEditProgram = (program) => {
-    navigate(`/dashboard/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
+    navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
   };
 
   const handleNewProgram = () => {
-    navigate("/dashboard/new-program");
+    navigate("/dashboard/admin-programs/new-program");
   };
 
   const isCreatingNewProgram = location.pathname.endsWith("/new-program");
