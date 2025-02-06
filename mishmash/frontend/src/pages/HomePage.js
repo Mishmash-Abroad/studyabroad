@@ -239,7 +239,7 @@ const HomePage = () => {
         {[1, 2, 3].map((index) => (
           <GalleryItem key={index}>
             <GalleryImage
-              src={`/study-abroad-${index}.jpg`}
+              src={`images//study-abroad-${index}.jpg`}
               alt={`Study abroad experience ${index}`}
             />
           </GalleryItem>
