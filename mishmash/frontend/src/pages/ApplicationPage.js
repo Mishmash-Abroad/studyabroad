@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { TextField, Button, Typography, Box, MenuItem } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
@@ -45,7 +45,6 @@ const ApplicationPage = () => {
     title: "",
     year_semester: "",
   });
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   // Tab management
@@ -162,7 +161,6 @@ const ApplicationPage = () => {
 
         if (application) {
           const questions_responses_response = await axiosInstance.get(
-            // `/api/responses/?application=${program_id}`
             `/api/responses/?application=${application.id}`
           );
 
@@ -284,7 +282,7 @@ const ApplicationPage = () => {
         application_response.status === 201 ||
         application_response.status === 200
       ) {
-        navigate(`/dashboard`); // Redirect to dashboard after successful submission
+        window.location.reload();
       }
     } catch (err) {
       // Handle errors
