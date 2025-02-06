@@ -39,7 +39,14 @@ services:
             - "**/.venv"
     command: >
       sh -c "python manage.py wait_for_db &&
-             python manage.py migrate && 
+             python manage.py makemigrations api --noinput &&
+             python manage.py makemigrations --noinput &&
+             python manage.py migrate api --noinput &&
+             python manage.py migrate --noinput && 
+             python manage.py add_test_programs &&
+             python manage.py add_test_users &&
+             python manage.py add_test_applications &&
+             python manage.py add_test_announcements &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - static_volume:/app/static    # Persistent storage for static files
@@ -83,7 +90,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:8000/api
+      - REACT_APP_API_URL=http://localhost:8000/
       - WATCHPACK_POLLING=true        # Enable file watching on Windows
       - CHOKIDAR_USEPOLLING=true     # Enable polling for hot reload
     command: npm start

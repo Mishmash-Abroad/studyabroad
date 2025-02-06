@@ -54,6 +54,14 @@ Available Endpoints:
 - /users/me/:
     - GET: Get the current authenticated user's profile
 
+- /announcements/:
+    - GET: List all announcements (available to all users)
+    - POST: Create a new announcement (admin only)
+    - /<id>/:
+        - GET: Retrieve a specific announcement
+        - PUT/PATCH: Update a specific announcement (admin only)
+        - DELETE: Delete a specific announcement (admin only)
+
 Used by:
 --------
 - Frontend React components for API communication
@@ -75,6 +83,7 @@ router.register(r'applications', ApplicationViewSet, basename='application')
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'questions', ApplicationQuestionViewSet, basename='question')
 router.register(r'responses', ApplicationResponseViewSet, basename='response')
+router.register(r'announcements', AnnouncementViewSet, basename='announcement')
 
 # Define URL patterns, including both router-generated and custom endpoints
 urlpatterns = [
@@ -88,8 +97,8 @@ urlpatterns = [
     path('changepassword/', change_password, name='change password'),
     
     
-    path('apply/<int:id>/', get_application, name='get_application'),
-    
+    # path('apply/<int:id>/', get_application, name='get_application'),
+
     
     
     # User profile endpoint

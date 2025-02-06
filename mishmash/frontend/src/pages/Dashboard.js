@@ -1,12 +1,26 @@
 import React from "react";
-import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { styled } from "@mui/material/styles";
 import TopNavBar from "../components/TopNavBar";
 import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
-import ChangePasswordModal from "../components/ChangePasswordModal";
+import AnnouncementsManager from "../components/AnnouncementsManager";
+import AnnouncementsViewer from "../components/AnnouncementsViewer";
+import Typography from '@mui/material/Typography';
+
+// -------------------- ROUTE CONFIGURATIONS --------------------
+const ADMIN_ROUTES = [
+  { path: 'admin-overview', label: 'Admin Overview' },
+  { path: 'admin-programs', label: 'Program Management' },
+];
+
+const STUDENT_ROUTES = [
+  { path: 'overview', label: 'Overview' },
+  { path: 'browse', label: 'Browse Programs' },
+  { path: 'my-programs', label: 'My Programs' },
+];
 
 // -------------------- STYLES --------------------
 const DashboardContainer = styled("div")(({ theme }) => ({
@@ -21,7 +35,7 @@ const DashboardContent = styled("div")(({ theme }) => ({
   margin: "0 auto",
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   borderRadius: theme.shape.borderRadius.large,
   minHeight: "500px",
 }));
@@ -76,39 +90,70 @@ const TabContent = styled("div")(({ theme }) => ({
   overflowY: "auto",
 }));
 
-// -------------------- COMPONENT --------------------
+const WelcomeSection = styled("div")(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+}));
+
+const AnnouncementsSection = styled("div")(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+}));
+
+// -------------------- COMPONENTS --------------------
+const AdminOverview = () => (
+  <>
+    <WelcomeSection>
+      <Typography variant="h6" gutterBottom>
+        Welcome to the Admin Dashboard
+      </Typography>
+      <Typography variant="body1" color="textSecondary">
+        Manage announcements, programs, and users from this central location.
+      </Typography>
+    </WelcomeSection>
+    <AnnouncementsSection>
+      <AnnouncementsManager />
+    </AnnouncementsSection>
+  </>
+);
+
+const StudentOverview = () => (
+  <>
+    <WelcomeSection>
+      <Typography variant="h6" gutterBottom>
+        Welcome to Your Dashboard
+      </Typography>
+      <Typography variant="body1" color="textSecondary">
+        Stay updated with the latest announcements and manage your program applications.
+      </Typography>
+    </WelcomeSection>
+    <AnnouncementsSection>
+      <Typography variant="h6" gutterBottom>
+        Recent Announcements
+      </Typography>
+      <AnnouncementsViewer />
+    </AnnouncementsSection>
+  </>
+);
+
+// -------------------- MAIN COMPONENT --------------------
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const routes = user?.is_admin ? ADMIN_ROUTES : STUDENT_ROUTES;
 
-  const getCurrentTab = () => {
-    const path = location.pathname.split("/").pop();
-    if (user?.is_admin) {
-      switch (path) {
-        case "admin-programs":
-        case "new-program":
-        case "admin-users":
-          return path;
-        default:
-          return "admin-overview";
-      }
-    } else {
-      switch (path) {
-        case "browse":
-          return "programs";
-        case "my-programs":
-          return "my-programs";
-        default:
-          return "overview";
-      }
+  // Handle default route
+  React.useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      const defaultPath = user?.is_admin ? 'admin-overview' : 'overview';
+      navigate(defaultPath, { replace: true });
     }
-  };
+  }, [location.pathname, user?.is_admin, navigate]);
 
-  const activeTab = getCurrentTab();
+  // Get current active tab from path
+  const activeTab = location.pathname.split('/').pop();
 
-  const handleTabChange = (tab) => {
-    navigate(`/dashboard/${tab}`);
+  const handleTabChange = (path) => {
+    navigate(path);
   };
 
   return (
@@ -121,74 +166,43 @@ const Dashboard = () => {
           </DashboardTitle>
         </DashboardHeader>
 
-        {/* Tabs for Navigation */}
+        {/* Navigation Tabs */}
         <TabContainer>
-          {user?.is_admin ? (
-            <>
-              <TabButton
-                active={activeTab === "admin-overview"}
-                onClick={() => handleTabChange("admin-overview")}
-              >
-                Admin Overview
-              </TabButton>
-              <TabButton
-                active={activeTab === "admin-programs" || activeTab === "new-program"}
-                onClick={() => handleTabChange("admin-programs")}
-              >
-                Program Management
-              </TabButton>
-              <TabButton
-                active={activeTab === "admin-users"}
-                onClick={() => handleTabChange("admin-users")}
-              >
-                User Management
-              </TabButton>
-            </>
-          ) : (
-            <>
-              <TabButton
-                active={activeTab === "overview"}
-                onClick={() => handleTabChange("overview")}
-              >
-                Overview
-              </TabButton>
-              <TabButton
-                active={activeTab === "programs"}
-                onClick={() => handleTabChange("browse")}
-              >
-                Browse Programs
-              </TabButton>
-              <TabButton
-                active={activeTab === "my-programs"}
-                onClick={() => handleTabChange("my-programs")}
-              >
-                My Programs
-              </TabButton>
-            </>
-          )}
+          {routes.map(({ path, label }) => (
+            <TabButton
+              key={path}
+              active={activeTab === path}
+              onClick={() => handleTabChange(path)}
+            >
+              {label}
+            </TabButton>
+          ))}
         </TabContainer>
 
-        {/* Route-based Content - Inside Dashboard Layout */}
+        {/* Routes */}
         <TabContent>
-        <Routes>
-          {user?.is_admin ? (
-            <>
-              <Route path="admin-overview" element={<div>Admin Overview</div>} />
-              <Route path="admin-programs" element={<AdminProgramsTable />} />
-              <Route path="new-program" element={<AdminProgramsTable />} />
-              <Route path=":programTitle" element={<AdminProgramsTable />} />
-              <Route path="admin-users" element={<div>User Management</div>} />
-              <Route path="*" element={<Navigate to="/dashboard/admin-overview" />} />
-            </>
-          ) : (
-            <>
-              <Route path="overview" element={<div>Student Overview</div>} />
-              <Route path="browse" element={<ProgramBrowser />} />
-              <Route path="my-programs" element={<MyProgramsTable />} />
-              <Route path="*" element={<Navigate to="/dashboard/overview" />} />
-            </>
-          )}
-        </Routes>
+          <Routes>
+            {/* Admin Routes */}
+            {user?.is_admin && (
+              <>
+                <Route path="admin-programs" element={<AdminProgramsTable />} />
+                <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
+                <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
+              </>
+            )}
+
+            {/* Student Routes */}
+            {!user?.is_admin && (
+              <>
+                <Route path="browse" element={<ProgramBrowser />} />
+                <Route path="browse/:programTitle" element={<ProgramBrowser />} />
+                <Route path="my-programs" element={<MyProgramsTable />} />
+              </>
+            )}
+
+            {/* Common Routes */}
+            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-programs" : "browse"} />} />
+          </Routes>
         </TabContent>
       </DashboardContent>
     </DashboardContainer>
