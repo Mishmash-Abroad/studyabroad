@@ -34,7 +34,7 @@ const StyledTabContainer = styled(Box)(({ theme }) => ({
 
 // -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
-  const { user_id, program_id } = useParams();
+  const { program_id } = useParams();
   const [program, setProgram] = useState({
     application_deadline: "",
     application_open_date: "",
@@ -46,16 +46,16 @@ const ApplicationPage = () => {
     year_semester: "",
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Tab management
   const [activeTab, setActiveTab] = useState(0);
-
   // Form fields
   const [applicationData, setApplicationData] = useState({
     id: 0,
     program: program_id,
-
-    student: user_id,
+    status: "",
+    student: user.user_id,
     date_of_birth: "",
     gpa: "",
     major: "",
@@ -70,28 +70,68 @@ const ApplicationPage = () => {
   const handleInputChange = (e) =>
     setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
 
+  const renderWithdrawReapply = () => {
+    if (!applicationData.id) {
+      return null; // No application exists, so no buttons needed
+    }
+
+    const handleWithdraw = async () => {
+      const userConfirmed = window.confirm(
+        "Are you sure you want to withdraw your application?"
+      );
+      if (!userConfirmed) return;
+
+      try {
+        setLoading(true);
+        await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
+          status: "Withdrawn",
+        });
+
+        setApplicationData({ ...applicationData, status: "Withdrawn" });
+      } catch (err) {
+        setError(`${err} Failed to withdraw application.`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (applicationData.status === "Applied") {
+      return (
+        <Box mt={3} display="flex" justifyContent="space-between">
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleWithdraw}
+            disabled={loading}
+          >
+            Withdraw Application
+          </Button>
+        </Box>
+      );
+    }
+  };
+
   // Fetch user's applications
   useEffect(() => {
     const getApplication = async () => {
       try {
         const response = await axiosInstance.get(
-          `/api/applications/?student=${user_id}`
+          `/api/applications/?student=${user.user_id}`
         );
 
         const program_response = await axiosInstance.get(
           `/api/programs/${program_id}`
         );
-        console.log(program_response.data);
 
         setProgram(program_response.data);
 
         const application = response.data.find(
           (application) => application.program == program_id
         );
-        console.log(application);
         if (application) {
           setApplicationData({
             id: application.id,
+            status: application.status,
             program: application.program,
             student: application.student,
             date_of_birth: application.date_of_birth,
@@ -111,6 +151,7 @@ const ApplicationPage = () => {
 
         const blank_questions_responses = newQuestions.map((question) => ({
           application: application?.id || null,
+          application: application?.id || null,
           question_id: question.id,
           question_text: question.text,
           response_id: 0,
@@ -121,11 +162,10 @@ const ApplicationPage = () => {
 
         if (application) {
           const questions_responses_response = await axiosInstance.get(
-          // `/api/responses/?application=${program_id}`
+            // `/api/responses/?application=${program_id}`
             `/api/responses/?application=${application.id}`
           );
 
-          // Ensure newQuestionResponses is populated
           const newQuestionResponses = questions_responses_response.data || [];
 
           if (newQuestionResponses.length > 0) {
@@ -136,16 +176,34 @@ const ApplicationPage = () => {
                 questions_response.response,
               ])
             );
+            if (newQuestionResponses.length > 0) {
+              // Create a map for quick lookup
+              const responseMap = new Map(
+                newQuestionResponses.map((questions_response) => [
+                  questions_response.question,
+                  questions_response.response,
+                ])
+              );
 
-            // Update blank_questions_responses in a single loop
-            blank_questions_responses.forEach((questions_response) => {
-              if (responseMap.has(questions_response.question_id)) {
-                questions_response.response_text = responseMap.get(
-                  questions_response.question_id
-                );
-              }
-            });
+              // Update blank_questions_responses in a single loop
+              blank_questions_responses.forEach((questions_response) => {
+                if (responseMap.has(questions_response.question_id)) {
+                  questions_response.response_text = responseMap.get(
+                    questions_response.question_id
+                  );
+                }
+              });
+              // Update blank_questions_responses in a single loop
+              blank_questions_responses.forEach((questions_response) => {
+                if (responseMap.has(questions_response.question_id)) {
+                  questions_response.response_text = responseMap.get(
+                    questions_response.question_id
+                  );
+                }
+              });
 
+              setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
+            }
             setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
           }
         }
@@ -196,6 +254,13 @@ const ApplicationPage = () => {
         }))
       );
 
+      setQuestionResponses((prevResponses) =>
+        prevResponses.map((prevResponse) => ({
+          ...prevResponse,
+          application: application_response.data.id,
+        }))
+      );
+
       for (const questionResponse of questionResponses) {
         try {
           const questions_response = await axiosInstance.post(
@@ -210,7 +275,6 @@ const ApplicationPage = () => {
             throw new Error("Issue with updating question responses");
           }
         } catch (error) {
-          console.error(error);
           throw new Error("Issue with updating question responses");
         }
       }
@@ -310,15 +374,28 @@ const ApplicationPage = () => {
             {error}
           </Typography>
         )}
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          fullWidth
-        >
-          {loading ? "Submitting..." : "Submit Application"}
-        </Button>
+
+        {applicationData.status != "Applied" ? (
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            fullWidth
+          >
+            {loading ? "Submitting..." : "Submit Application"}
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            fullWidth
+          >
+            {loading ? "Updating..." : "Update Application"}
+          </Button>
+        )}
       </form>
     );
   };
@@ -329,12 +406,19 @@ const ApplicationPage = () => {
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
             Application for {program.title} {program.year_semester}
+            Application for {program.title} {program.year_semester}
           </Typography>
           <Typography variant="h6" color="primary" gutterBottom>
+            {program.description}
             {program.description}
           </Typography>
 
           <Typography variant="p" color="primary" gutterBottom>
+            From {program.start_date} to {program.end_date}
+            <br />
+            Submit application by {program.application_deadline}
+            <br />
+            Faculty Leads: {program.faculty_leads}
             From {program.start_date} to {program.end_date}
             <br />
             Submit application by {program.application_deadline}
@@ -350,6 +434,8 @@ const ApplicationPage = () => {
         </StyledTabContainer>
 
         {renderTabContent()}
+
+        {renderWithdrawReapply()}
       </ContentContainer>
     </PageContainer>
   );
