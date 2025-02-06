@@ -166,15 +166,9 @@ const AdminProgramsTable = () => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
-  
-    return (
-      String(estDate.getMonth() + 1).padStart(2, "0") +
-      "/" + String(estDate.getDate()).padStart(2, "0") +
-      "/" + estDate.getFullYear()
-    );
+    if (!dateString) return ""; // Handle empty values
+    const [year, month, day] = dateString.split("-"); // Split "YYYY-MM-DD"
+    return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY
   };
 
   return (

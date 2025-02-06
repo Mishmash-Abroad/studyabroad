@@ -20,22 +20,14 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
-      const formatDateForInput = (dateString) => {
-        if (!dateString) return ""; 
-        const date = new Date(dateString);
-        const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
-        return estDate.getFullYear() +
-          "-" + String(estDate.getMonth() + 1).padStart(2, "0") +
-          "-" + String(estDate.getDate()).padStart(2, "0");
-      };
       setProgramData({
         title: editingProgram.title,
         year_semester: editingProgram.year_semester,
         faculty_leads: editingProgram.faculty_leads,
-        application_open_date: formatDateForInput(editingProgram.application_open_date),
-        application_deadline: formatDateForInput(editingProgram.application_deadline),
-        start_date: formatDateForInput(editingProgram.start_date),
-        end_date: formatDateForInput(editingProgram.end_date),
+        application_open_date: editingProgram.application_open_date,
+        application_deadline: editingProgram.application_deadline,
+        start_date: editingProgram.start_date,
+        end_date: editingProgram.end_date,
         description: editingProgram.description,
       });
     }
@@ -47,32 +39,19 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleSubmit = async () => {
     try {
-      const formatDateForSubmission = (dateString) => {
-        if (!dateString) return "";
-        const [month, day, year] = dateString.split("/");
-        return `${year}-${month}-${day}`; // Convert MM/DD/YYYY -> YYYY-MM-DD
-      };
-  
-      const formattedData = {
-        ...programData,
-        application_open_date: formatDateForSubmission(programData.application_open_date),
-        application_deadline: formatDateForSubmission(programData.application_deadline),
-        start_date: formatDateForSubmission(programData.start_date),
-        end_date: formatDateForSubmission(programData.end_date),
-      };
   
       if (editingProgram) {
-        await axiosInstance.put(`/api/programs/${editingProgram.id}/`, formattedData);
+        await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
       } else {
-        await axiosInstance.post("/api/programs/", formattedData);
+        await axiosInstance.post('/api/programs/', programData);
       }
   
       refreshPrograms();
-      navigate("/dashboard/admin-programs");
+      navigate('/dashboard/admin-programs');
     } catch (error) {
-      console.error("Error saving program:", error);
+      console.error('Error saving program:', error);
       if (error.response) {
-        console.error("Backend Response:", error.response.data);
+        console.error('Backend Response:', error.response.data);
       }
     }
   };
