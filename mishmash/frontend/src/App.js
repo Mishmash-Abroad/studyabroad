@@ -19,7 +19,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/apply/:user_id/:program_id" element={<ApplicationPage />} />
+          <Route path="/apply/:program_id" element={<ApplicationPage />} />
 
           {/* Protected Dashboard Route */}
           <Route
