@@ -168,7 +168,13 @@ const AdminProgramsTable = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`; // MM/DD/YYYY format
+    const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  
+    return (
+      String(estDate.getMonth() + 1).padStart(2, "0") +
+      "/" + String(estDate.getDate()).padStart(2, "0") +
+      "/" + estDate.getFullYear()
+    );
   };
 
   return (
@@ -205,7 +211,7 @@ const AdminProgramsTable = () => {
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              {["title", "year_semester", "faculty_leads", "application_deadline", "start_date", "end_date",
+              {["title", "year_semester", "faculty_leads", "application_open_date", "application_deadline", "start_date", "end_date",
                 "applied", "enrolled", "withdrawn", "canceled", "total_active"].map((column) => (
                 <TableCell key={column}>
                   <TableSortLabel
@@ -230,6 +236,7 @@ const AdminProgramsTable = () => {
                 </TableCell>
                 <TableCell>{program.year_semester}</TableCell>
                 <TableCell>{program.faculty_leads}</TableCell>
+                <TableCell>{formatDate(program.application_open_date)}</TableCell>
                 <TableCell>{formatDate(program.application_deadline)}</TableCell>
                 <TableCell>{formatDate(program.start_date)}</TableCell>
                 <TableCell>{formatDate(program.end_date)}</TableCell>
