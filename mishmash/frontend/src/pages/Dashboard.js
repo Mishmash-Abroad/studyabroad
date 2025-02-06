@@ -185,6 +185,7 @@ const Dashboard = () => {
             {/* Admin Routes */}
             {user?.is_admin && (
               <>
+                <Route path="admin-overview" element={<AdminOverview />} />
                 <Route path="admin-programs" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
@@ -194,6 +195,7 @@ const Dashboard = () => {
             {/* Student Routes */}
             {!user?.is_admin && (
               <>
+                <Route path="overview" element={<StudentOverview />} />
                 <Route path="browse" element={<ProgramBrowser />} />
                 <Route path="browse/:programTitle" element={<ProgramBrowser />} />
                 <Route path="my-programs" element={<MyProgramsTable />} />
