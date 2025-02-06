@@ -76,6 +76,11 @@ const ApplicationPage = () => {
     }
 
     const handleWithdraw = async () => {
+      const userConfirmed = window.confirm(
+        "Are you sure you want to withdraw your application?"
+      );
+      if (!userConfirmed) return;
+
       try {
         setLoading(true);
         await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
