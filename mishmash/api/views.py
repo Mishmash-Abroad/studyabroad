@@ -276,6 +276,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 
     Provides:
     - Viewing and editing responses to application questions
+    - Filtering by question ID and student ID
 
     Permissions:
     - List/Retrieve: Authenticated users (only their own responses) and admins
@@ -286,10 +287,26 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsApplicationResponseOwnerOrAdmin]
 
     def get_queryset(self):
-        """Allow users to view only their own responses, unless they are an admin."""
-        if self.request.user.is_admin:
-            return ApplicationResponse.objects.all()
-        return ApplicationResponse.objects.filter(application__student=self.request.user)
+        """
+        Admins can view all responses and filter by question or student.
+        Students can only view their own responses.
+        """
+        queryset = ApplicationResponse.objects.all()
+
+        question_id = self.request.query_params.get("question", None)
+        application_id = self.request.query_params.get("application", None)
+
+        if question_id:
+            queryset = queryset.filter(question_id=question_id)
+
+        if application_id:
+            queryset = queryset.filter(application_id=application_id)
+
+        if not self.request.user.is_admin:
+            queryset = queryset.filter(application__student=self.request.user)
+
+        return queryset
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
