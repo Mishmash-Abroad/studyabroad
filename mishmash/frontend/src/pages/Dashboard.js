@@ -12,8 +12,9 @@ import Typography from '@mui/material/Typography';
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
-  { path: 'admin-overview', label: 'Admin Overview' },
+  { path: 'admin-overview', label: 'Overview' },
   { path: 'admin-programs', label: 'Program Management' },
+  { path: 'browse', label: 'Browse Programs' },
 ];
 
 const STUDENT_ROUTES = [
@@ -196,14 +197,14 @@ const Dashboard = () => {
             {!user?.is_admin && (
               <>
                 <Route path="overview" element={<StudentOverview />} />
-                <Route path="browse" element={<ProgramBrowser />} />
-                <Route path="browse/:programTitle" element={<ProgramBrowser />} />
                 <Route path="my-programs" element={<MyProgramsTable />} />
               </>
             )}
 
             {/* Common Routes */}
-            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-programs" : "browse"} />} />
+            <Route path="browse" element={<ProgramBrowser />} />
+            <Route path="browse/:programTitle" element={<ProgramBrowser />} />
+            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-overview" : "overview"} />} />
           </Routes>
         </TabContent>
       </DashboardContent>
