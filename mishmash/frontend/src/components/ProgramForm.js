@@ -24,10 +24,10 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         title: editingProgram.title,
         year_semester: editingProgram.year_semester,
         faculty_leads: editingProgram.faculty_leads,
-        application_open_date: editingProgram.application_open_date,
-        application_deadline: editingProgram.application_deadline,
-        start_date: editingProgram.start_date,
-        end_date: editingProgram.end_date,
+        application_open_date: editingProgram.application_open_date ? new Date(editingProgram.application_open_date).toLocaleDateString("en-US") : "",
+        application_deadline: editingProgram.application_deadline ? new Date(editingProgram.application_deadline).toLocaleDateString("en-US") : "",
+        start_date: editingProgram.start_date ? new Date(editingProgram.start_date).toLocaleDateString("en-US") : "",
+        end_date: editingProgram.end_date ? new Date(editingProgram.end_date).toLocaleDateString("en-US") : "",
         description: editingProgram.description,
       });
     }
@@ -39,18 +39,32 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleSubmit = async () => {
     try {
+      const formatDateForSubmission = (dateString) => {
+        if (!dateString) return "";
+        const [month, day, year] = dateString.split("/");
+        return `${year}-${month}-${day}`; // Convert MM/DD/YYYY -> YYYY-MM-DD
+      };
+  
+      const formattedData = {
+        ...programData,
+        application_open_date: formatDateForSubmission(programData.application_open_date),
+        application_deadline: formatDateForSubmission(programData.application_deadline),
+        start_date: formatDateForSubmission(programData.start_date),
+        end_date: formatDateForSubmission(programData.end_date),
+      };
+  
       if (editingProgram) {
-        await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
+        await axiosInstance.put(`/api/programs/${editingProgram.id}/`, formattedData);
       } else {
-        await axiosInstance.post('/api/programs/', programData);
+        await axiosInstance.post("/api/programs/", formattedData);
       }
-
+  
       refreshPrograms();
-      navigate('/dashboard/admin-programs');
+      navigate("/dashboard/admin-programs");
     } catch (error) {
-      console.error('Error saving program:', error);
+      console.error("Error saving program:", error);
       if (error.response) {
-        console.error('Backend Response:', error.response.data);
+        console.error("Backend Response:", error.response.data);
       }
     }
   };

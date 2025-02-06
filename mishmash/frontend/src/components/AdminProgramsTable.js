@@ -165,6 +165,12 @@ const AdminProgramsTable = () => {
     );
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`; // MM/DD/YYYY format
+  };
+
   return (
     <TableWrapper>
       <>
@@ -224,9 +230,9 @@ const AdminProgramsTable = () => {
                 </TableCell>
                 <TableCell>{program.year_semester}</TableCell>
                 <TableCell>{program.faculty_leads}</TableCell>
-                <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
+                <TableCell>{formatDate(program.application_deadline)}</TableCell>
+                <TableCell>{formatDate(program.start_date)}</TableCell>
+                <TableCell>{formatDate(program.end_date)}</TableCell>
                 {["applied", "enrolled", "withdrawn", "canceled", "total_active"].map((key) => (
                   <TableCell key={key}>{applicantCounts[program.id]?.[key] || 0}</TableCell>
                 ))}
