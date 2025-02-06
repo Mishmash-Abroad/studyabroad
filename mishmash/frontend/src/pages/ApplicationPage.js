@@ -111,7 +111,7 @@ const ApplicationPage = () => {
         setQuestions(newQuestions);
 
         const blank_questions_responses = newQuestions.map((question) => ({
-          application: application.id,
+          application: application?.id || null,
           question_id: question.id,
           question_text: question.text,
           response_id: 0,
@@ -120,33 +120,35 @@ const ApplicationPage = () => {
 
         setQuestionResponses(blank_questions_responses);
 
-        const questions_responses_response = await axiosInstance.get(
-          `/api/responses/?application=${program_id}`
-        );
-
-        // Ensure newQuestionResponses is populated
-        const newQuestionResponses = questions_responses_response.data || [];
-
-        if (newQuestionResponses.length > 0) {
-          // Create a map for quick lookup
-
-          const responseMap = new Map(
-            newQuestionResponses.map((questions_response) => [
-              questions_response.question,
-              questions_response.response,
-            ])
+        if (application) {
+          const questions_responses_response = await axiosInstance.get(
+          // `/api/responses/?application=${program_id}`
+            `/api/responses/?application=${application.id}`
           );
 
-          // Update blank_questions_responses in a single loop
-          blank_questions_responses.forEach((questions_response) => {
-            if (responseMap.has(questions_response.question_id)) {
-              questions_response.response_text = responseMap.get(
-                questions_response.question_id
-              );
-            }
-          });
+          // Ensure newQuestionResponses is populated
+          const newQuestionResponses = questions_responses_response.data || [];
 
-          setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
+          if (newQuestionResponses.length > 0) {
+            // Create a map for quick lookup
+            const responseMap = new Map(
+              newQuestionResponses.map((questions_response) => [
+                questions_response.question,
+                questions_response.response,
+              ])
+            );
+
+            // Update blank_questions_responses in a single loop
+            blank_questions_responses.forEach((questions_response) => {
+              if (responseMap.has(questions_response.question_id)) {
+                questions_response.response_text = responseMap.get(
+                  questions_response.question_id
+                );
+              }
+            });
+
+            setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
+          }
         }
       } catch (err) {
         // Handle errors

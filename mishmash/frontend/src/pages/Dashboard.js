@@ -6,7 +6,6 @@ import TopNavBar from "../components/TopNavBar";
 import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
-import ChangePasswordModal from "../components/ChangePasswordModal";
 import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsViewer from "../components/AnnouncementsViewer";
 import Typography from '@mui/material/Typography';
@@ -15,7 +14,6 @@ import Typography from '@mui/material/Typography';
 const ADMIN_ROUTES = [
   { path: 'admin-overview', label: 'Admin Overview' },
   { path: 'admin-programs', label: 'Program Management' },
-  { path: 'admin-users', label: 'User Management' },
 ];
 
 const STUDENT_ROUTES = [
@@ -184,21 +182,26 @@ const Dashboard = () => {
         {/* Routes */}
         <TabContent>
           <Routes>
-            {user?.is_admin ? (
+            {/* Admin Routes */}
+            {user?.is_admin && (
               <>
-                <Route path="admin-overview" element={<AdminOverview />} />
-                <Route path="admin-programs/*" element={<AdminProgramsTable />} />
-                <Route path="admin-users" element={<div>User Management</div>} />
-                <Route path="*" element={<Navigate to="admin-overview" replace />} />
-              </>
-            ) : (
-              <>
-                <Route path="overview" element={<StudentOverview />} />
-                <Route path="browse" element={<ProgramBrowser />} />
-                <Route path="my-programs" element={<MyProgramsTable />} />
-                <Route path="*" element={<Navigate to="overview" replace />} />
+                <Route path="admin-programs" element={<AdminProgramsTable />} />
+                <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
+                <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
               </>
             )}
+
+            {/* Student Routes */}
+            {!user?.is_admin && (
+              <>
+                <Route path="browse" element={<ProgramBrowser />} />
+                <Route path="browse/:programTitle" element={<ProgramBrowser />} />
+                <Route path="my-programs" element={<MyProgramsTable />} />
+              </>
+            )}
+
+            {/* Common Routes */}
+            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-programs" : "browse"} />} />
           </Routes>
         </TabContent>
       </DashboardContent>
