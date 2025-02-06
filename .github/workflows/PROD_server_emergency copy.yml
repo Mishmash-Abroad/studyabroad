@@ -34,6 +34,7 @@ jobs:
             git fetch --all
             git checkout ${{ github.event.inputs.commit_sha }}
             docker compose -f docker-compose.prod.yml down
+            docker volume rm $(docker volume ls -q)
             docker compose -f docker-compose.prod.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps

@@ -68,8 +68,3 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-Adding test data to the database can be done using the following commands(this is test data for development purposes):\
-`docker compose exec backend python manage.py add_test_programs`\
-`docker compose exec backend python manage.py add_test_applications`\
-`docker compose exec backend python manage.py add_test_users`
