@@ -20,14 +20,22 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
+      const formatDateForInput = (dateString) => {
+        if (!dateString) return ""; 
+        const date = new Date(dateString);
+        const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
+        return estDate.getFullYear() +
+          "-" + String(estDate.getMonth() + 1).padStart(2, "0") +
+          "-" + String(estDate.getDate()).padStart(2, "0");
+      };
       setProgramData({
         title: editingProgram.title,
         year_semester: editingProgram.year_semester,
         faculty_leads: editingProgram.faculty_leads,
-        application_open_date: editingProgram.application_open_date ? new Date(editingProgram.application_open_date).toLocaleDateString("en-US") : "",
-        application_deadline: editingProgram.application_deadline ? new Date(editingProgram.application_deadline).toLocaleDateString("en-US") : "",
-        start_date: editingProgram.start_date ? new Date(editingProgram.start_date).toLocaleDateString("en-US") : "",
-        end_date: editingProgram.end_date ? new Date(editingProgram.end_date).toLocaleDateString("en-US") : "",
+        application_open_date: formatDateForInput(editingProgram.application_open_date),
+        application_deadline: formatDateForInput(editingProgram.application_deadline),
+        start_date: formatDateForInput(editingProgram.start_date),
+        end_date: formatDateForInput(editingProgram.end_date),
         description: editingProgram.description,
       });
     }
