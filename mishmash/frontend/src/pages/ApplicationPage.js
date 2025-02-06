@@ -308,11 +308,19 @@ const ApplicationPage = () => {
             name="date_of_birth"
             variant="outlined"
             InputLabelProps={{ shrink: true }}
+            inputProps={{
+              max: new Date(
+                new Date().setFullYear(new Date().getFullYear() - 10)
+              )
+                .toISOString()
+                .split("T")[0], // Restricts to 10 years ago
+            }}
             value={applicationData.date_of_birth}
             onChange={handleInputChange}
             required
           />
         </Box>
+
         <Box mb={3}>
           <TextField
             fullWidth
