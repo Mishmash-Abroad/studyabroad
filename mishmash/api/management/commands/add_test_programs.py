@@ -28,16 +28,12 @@ DEFAULT_QUESTIONS = [
     "What unique perspective or contribution will you bring to the group?",
 ]
 
-EXTRA_QUESTION = "How proficient are you with the french language?"
-
 class Command(BaseCommand):
     help = 'Creates test programs with various scenarios'
 
     def handle(self, *args, **options):
-        # Use current date as reference point for all program dates
         today = timezone.now().date()
         
-        # Define program data with various scenarios and timelines
         programs_data = [
             # Past Programs (Fall 2024)
             {
@@ -280,11 +276,10 @@ class Command(BaseCommand):
             }
         ]
 
-        # Clear existing programs
         Program.objects.all().delete()
-        self.stdout.write('Cleared existing programs')
+        ApplicationQuestion.objects.all().delete()
+        self.stdout.write('Cleared existing programs and questions')
 
-        # Create new programs
         for program_data in programs_data:
             program = Program.objects.create(**program_data)
             self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
@@ -293,6 +288,3 @@ class Command(BaseCommand):
                 question = ApplicationQuestion.objects.create(text=q, program=program)
                 self.stdout.write(f'Created question for {program.title}: {question.text}')
 
-            if program.title == "Culinary Arts in Paris":
-                question = ApplicationQuestion.objects.create(text=EXTRA_QUESTION, program=program)
-                self.stdout.write(f'Created question for {program.title}: {question.text}')
