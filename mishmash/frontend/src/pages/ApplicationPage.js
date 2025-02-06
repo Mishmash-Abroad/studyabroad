@@ -35,6 +35,7 @@ const StyledTabContainer = styled(Box)(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
   const { program_id } = useParams();
+  const [isApplicationReadOnly, setIsApplicationReadOnly] = useState(false);
   const [program, setProgram] = useState({
     application_deadline: "",
     application_open_date: "",
@@ -123,6 +124,9 @@ const ApplicationPage = () => {
         );
 
         setProgram(program_response.data);
+        setIsApplicationReadOnly(
+          new Date() > new Date(program_response.data.application_deadline)
+        );
 
         const application = response.data.find(
           (application) => application.program == program_id
@@ -263,7 +267,7 @@ const ApplicationPage = () => {
         try {
           const questions_response = await axiosInstance.post(
             `/api/responses/create_or_edit/`,
-            questionResponse
+            { ...questionResponse, application: application_response.data.id }
           );
 
           if (
@@ -297,7 +301,36 @@ const ApplicationPage = () => {
     }
   };
 
+  const renderSubmitButtons = () => {
+    if (isApplicationReadOnly) {
+      return null;
+    }
+
+    return applicationData.status != "Applied" ? (
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        fullWidth
+      >
+        {loading ? "Submitting..." : "Submit Application"}
+      </Button>
+    ) : (
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        fullWidth
+      >
+        {loading ? "Updating..." : "Update Application"}
+      </Button>
+    );
+  };
+
   const renderTabContent = () => {
+    console.log(isApplicationReadOnly);
     return (
       <form onSubmit={handleSubmitApplication}>
         <Box mb={3}>
@@ -314,6 +347,7 @@ const ApplicationPage = () => {
               )
                 .toISOString()
                 .split("T")[0], // Restricts to 10 years ago
+              readOnly: isApplicationReadOnly, // Dynamically set readOnly based on state
             }}
             value={applicationData.date_of_birth}
             onChange={handleInputChange}
@@ -328,7 +362,12 @@ const ApplicationPage = () => {
             variant="outlined"
             name="gpa"
             type="number"
-            inputProps={{ step: "0.01", min: "0", max: "4.0" }}
+            inputProps={{
+              step: "0.01",
+              min: "0",
+              max: "4.0",
+              readOnly: isApplicationReadOnly,
+            }}
             value={applicationData.gpa}
             onChange={handleInputChange}
             required
@@ -338,6 +377,9 @@ const ApplicationPage = () => {
           <TextField
             fullWidth
             label="Major"
+            inputProps={{
+              readOnly: isApplicationReadOnly, // Dynamically set readOnly based on state
+            }}
             name="major"
             variant="outlined"
             value={applicationData.major}
@@ -357,6 +399,9 @@ const ApplicationPage = () => {
                 label={question.text} // Assuming question has a 'text' property
                 variant="outlined"
                 multiline
+                inputProps={{
+                  readOnly: isApplicationReadOnly, // Dynamically set readOnly based on state
+                }}
                 rows={4}
                 value={responseObj?.response_text || ""} // Fixed value retrieval
                 onChange={(e) => {
@@ -381,27 +426,7 @@ const ApplicationPage = () => {
           </Typography>
         )}
 
-        {applicationData.status != "Applied" ? (
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={loading}
-            fullWidth
-          >
-            {loading ? "Submitting..." : "Submit Application"}
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={loading}
-            fullWidth
-          >
-            {loading ? "Updating..." : "Update Application"}
-          </Button>
-        )}
+        {renderSubmitButtons()}
       </form>
     );
   };
@@ -441,7 +466,7 @@ const ApplicationPage = () => {
 
         {renderTabContent()}
 
-        {renderWithdrawReapply()}
+        {!isApplicationReadOnly && renderWithdrawReapply()}
       </ContentContainer>
     </PageContainer>
   );
