@@ -29,7 +29,15 @@ from api.models import User
 class Command(BaseCommand):
     help = 'Creates test users including admin and students'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-prod',
+            action='store_true',
+            help='Run in production mode, setting is_superuser=False for admin'
+        )
+
     def handle(self, *args, **options):
+        prod_mode = options['prod']
         students_data = [
             ('Emma Wilson', 'EmmaW', 'emma.wilson@hcc.edu'),
             ('James Chen', 'JamesC', 'james.chen@hcc.edu'),
@@ -43,21 +51,19 @@ class Command(BaseCommand):
             ('Tom Anderson', 'TomA', 'tom.anderson@hcc.edu')
         ]
 
-        # Clear existing programs
         User.objects.all().delete()
         self.stdout.write('Cleared existing users')
 
-        # Create admin user with full system access
         admin = User.objects.create(
             username='admin',
             password=make_password('hcc_admin'),
             display_name='System Administrator',
             is_admin=True,
             is_staff=True,  # Allows access to Django admin interface
-            is_superuser=True,  # Grants all system permissions
+            is_superuser=not prod_mode,  # Denies system access to admin in prod mode
             is_active=True
         )
-        self.stdout.write(f'Created admin user: {admin.username}')
+        self.stdout.write(f'Created admin user: {admin.username} (Superuser: {admin.is_superuser})')
 
         for display_name, username, email in students_data:
             user = User.objects.create(
