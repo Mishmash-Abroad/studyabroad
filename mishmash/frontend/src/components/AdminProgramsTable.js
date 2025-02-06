@@ -165,6 +165,12 @@ const AdminProgramsTable = () => {
     );
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return ""; // Handle empty values
+    const [year, month, day] = dateString.split("-"); // Split "YYYY-MM-DD"
+    return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY
+  };
+
   return (
     <TableWrapper>
       <>
@@ -199,7 +205,7 @@ const AdminProgramsTable = () => {
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              {["title", "year_semester", "faculty_leads", "application_deadline", "start_date", "end_date",
+              {["title", "year_semester", "faculty_leads", "application_open_date", "application_deadline", "start_date", "end_date",
                 "applied", "enrolled", "withdrawn", "canceled", "total_active"].map((column) => (
                 <TableCell key={column}>
                   <TableSortLabel
@@ -224,9 +230,10 @@ const AdminProgramsTable = () => {
                 </TableCell>
                 <TableCell>{program.year_semester}</TableCell>
                 <TableCell>{program.faculty_leads}</TableCell>
-                <TableCell>{new Date(program.application_deadline).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(program.start_date).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(program.end_date).toLocaleDateString()}</TableCell>
+                <TableCell>{formatDate(program.application_open_date)}</TableCell>
+                <TableCell>{formatDate(program.application_deadline)}</TableCell>
+                <TableCell>{formatDate(program.start_date)}</TableCell>
+                <TableCell>{formatDate(program.end_date)}</TableCell>
                 {["applied", "enrolled", "withdrawn", "canceled", "total_active"].map((key) => (
                   <TableCell key={key}>{applicantCounts[program.id]?.[key] || 0}</TableCell>
                 ))}

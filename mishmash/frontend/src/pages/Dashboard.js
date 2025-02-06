@@ -12,8 +12,9 @@ import Typography from '@mui/material/Typography';
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
-  { path: 'admin-overview', label: 'Admin Overview' },
+  { path: 'admin-overview', label: 'Overview' },
   { path: 'admin-programs', label: 'Program Management' },
+  { path: 'browse', label: 'Browse Programs' },
 ];
 
 const STUDENT_ROUTES = [
@@ -185,6 +186,7 @@ const Dashboard = () => {
             {/* Admin Routes */}
             {user?.is_admin && (
               <>
+                <Route path="admin-overview" element={<AdminOverview />} />
                 <Route path="admin-programs" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
@@ -194,14 +196,15 @@ const Dashboard = () => {
             {/* Student Routes */}
             {!user?.is_admin && (
               <>
-                <Route path="browse" element={<ProgramBrowser />} />
-                <Route path="browse/:programTitle" element={<ProgramBrowser />} />
+                <Route path="overview" element={<StudentOverview />} />
                 <Route path="my-programs" element={<MyProgramsTable />} />
               </>
             )}
 
             {/* Common Routes */}
-            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-programs" : "browse"} />} />
+            <Route path="browse" element={<ProgramBrowser />} />
+            <Route path="browse/:programTitle" element={<ProgramBrowser />} />
+            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-overview" : "overview"} />} />
           </Routes>
         </TabContent>
       </DashboardContent>
