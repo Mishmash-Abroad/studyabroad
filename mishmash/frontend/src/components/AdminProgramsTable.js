@@ -36,6 +36,14 @@ const FilterContainer = styled(Box)(({ theme }) => ({
   "& .MuiTextField-root": { minWidth: "200px" },
 }));
 
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  cursor: "pointer",
+  transition: "transform 0.2s ease, background-color 0.2s ease",
+  "&:hover": {
+    backgroundColor: theme.palette.action.hover
+  },
+}));
+
 // -------------------- COMPONENT --------------------
 const AdminProgramsTable = () => {
   const [programs, setPrograms] = useState([]);
@@ -224,8 +232,12 @@ const AdminProgramsTable = () => {
           </TableHead>
           <TableBody>
             {sortedPrograms.map((program) => (
-              <TableRow key={program.id}>
-                <TableCell onClick={() => handleEditProgram(program)} style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}>
+              <StyledTableRow 
+                key={program.id} 
+                onClick={() => handleEditProgram(program)}
+                hover
+              >
+                <TableCell>
                   {program.title}
                 </TableCell>
                 <TableCell>{program.year_semester}</TableCell>
@@ -237,7 +249,7 @@ const AdminProgramsTable = () => {
                 {["applied", "enrolled", "withdrawn", "canceled", "total_active"].map((key) => (
                   <TableCell key={key}>{applicantCounts[program.id]?.[key] || 0}</TableCell>
                 ))}
-              </TableRow>
+              </StyledTableRow>
             ))}
           </TableBody>
         </Table>
