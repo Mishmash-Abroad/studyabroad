@@ -234,6 +234,16 @@ const ApplicationPage = () => {
     setError("");
     setLoading(true);
 
+    if (applicationData.status == "Withdrawn") {
+      const userConfirmed = window.confirm(
+        "Are you sure you want to resubmit your application?"
+      );
+      if (!userConfirmed) {
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       // Ensure all required fields are provided
       if (
@@ -304,6 +314,20 @@ const ApplicationPage = () => {
   const renderSubmitButtons = () => {
     if (isApplicationReadOnly) {
       return null;
+    }
+
+    if (applicationData.status == "Withdrawn") {
+      return (
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={loading}
+          fullWidth
+        >
+          {loading ? "Resubmitting..." : "Resubmit Application"}
+        </Button>
+      );
     }
 
     return applicationData.status != "Applied" ? (
@@ -439,9 +463,13 @@ const ApplicationPage = () => {
             Application for {program.title} {program.year_semester}
             Application for {program.title} {program.year_semester}
           </Typography>
-          <Typography variant="h6" color="primary" gutterBottom>
+          <Typography variant="h4" color="primary" gutterBottom>
+            <b>Current Application Status: {applicationData.status}</b>
+          </Typography>
+          <Typography variant="p" color="primary" gutterBottom>
+            <br />
             {program.description}
-            {program.description}
+            <br />
           </Typography>
 
           <Typography variant="p" color="primary" gutterBottom>
@@ -450,6 +478,7 @@ const ApplicationPage = () => {
             Submit application by {program.application_deadline}
             <br />
             Faculty Leads: {program.faculty_leads}
+            <br />
             From {program.start_date} to {program.end_date}
             <br />
             Submit application by {program.application_deadline}
