@@ -27,9 +27,10 @@ jobs:
           script: |
             cd /home/vcm/studyabroad
             git fetch origin
-            git checkout prod  # Switch to main branch
+            git checkout prod  # Switch to prod branch
             git reset --hard origin/prod  # Force sync to remote prod branch
             git pull origin prod
+            docker compose -f docker-compose.prod.yml down
             docker volume rm $(docker volume ls -q)
             docker compose -f docker-compose.prod.yml up -d --build
             echo "🔄 Checking container status..."
