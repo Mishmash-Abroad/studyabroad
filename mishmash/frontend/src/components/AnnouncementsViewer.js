@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { styled } from '@mui/material/styles';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import axiosInstance from '../utils/axios';
 import {
   Typography,
@@ -196,7 +204,23 @@ const AnnouncementsViewer = () => {
   const contentRef = useRef(null);
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: true, // Make links clickable in viewer
+      }),
+      Image,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+    ],
     editable: false,
     content: '',
     onUpdate: () => {
