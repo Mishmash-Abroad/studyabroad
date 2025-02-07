@@ -356,7 +356,6 @@ const ApplicationPage = () => {
   };
 
   const renderTabContent = () => {
-    console.log(isApplicationReadOnly);
     return (
       <form onSubmit={handleSubmitApplication}>
         <Box mb={3}>

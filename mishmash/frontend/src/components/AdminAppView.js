@@ -53,12 +53,10 @@ const AdminAppView = () => {
       // Fetch questions for the questions
       const questionsResponse = await axiosInstance.get(`/api/questions/?program=${appResponse.data.program}`);
       setQuestions(questionsResponse.data);
-      console.log(questionsResponse);
 
       // Fetch responses, filtering by application ID and only relevant questions
       const responsesResponse = await axiosInstance.get(`/api/responses/?application=${id}`);
       setResponses(responsesResponse.data);
-      console.log(responsesResponse);
 
       setError(null);
     } catch (err) {
