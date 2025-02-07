@@ -76,6 +76,23 @@ const ApplicantTable = ({ programId }) => {
       return valueA > valueB ? -1 : 1;
     });
 
+  const handleStatusChange = async (e, applicantId, currentStatus) => {
+    e.stopPropagation(); // Prevent row click event
+    const newStatus = e.target.value;
+    if (newStatus === currentStatus) return;
+    
+    try {
+      await axiosInstance.patch(`/api/applications/${applicantId}/`, {
+        status: newStatus
+      });
+      // Refresh the applicants list
+      fetchApplicants();
+    } catch (err) {
+      console.error('Error updating status:', err);
+      setError('Failed to update status.');
+    }
+  };
+
   return (
     <Paper sx={{ padding: '20px', marginTop: '20px' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -141,28 +158,36 @@ const ApplicantTable = ({ programId }) => {
                   <TableCell>{applicant.status}</TableCell>
                   <TableCell>{new Date(applicant.applied_on).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => navigate(`/applications/${applicant.id}`)}
-                    >
-                      View
-                    </Button>
-                    <TextField
-                      select
-                      size="small"
-                      value={applicant.status}
-                      onClick={() => navigate(`/applications/${applicant.id}`)}
-                      sx={{ marginLeft: '10px', minWidth: '150px' }}
-                    >
-                      {applicant.status === 'Withdrawn' && (
-                        <MenuItem value="Withdrawn">Withdrawn</MenuItem>
-                      )}
-                      <MenuItem value="Applied">Applied</MenuItem>
-                      <MenuItem value="Enrolled">Enrolled</MenuItem>
-                      <MenuItem value="Canceled">Canceled</MenuItem>
-                    </TextField>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      gap: 1,
+                      '& .MuiButton-root': { width: '150px' },
+                      '& .MuiTextField-root': { width: '150px' }
+                    }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => navigate(`/applications/${applicant.id}`)}
+                      >
+                        View
+                      </Button>
+                      <TextField
+                        select
+                        size="small"
+                        value={applicant.status}
+                        onChange={(e) => handleStatusChange(e, applicant.id, applicant.status)}
+                        onClick={(e) => e.stopPropagation()} // Prevent row click
+                      >
+                        {applicant.status === 'Withdrawn' && (
+                          <MenuItem value="Withdrawn">Withdrawn</MenuItem>
+                        )}
+                        <MenuItem value="Applied">Applied</MenuItem>
+                        <MenuItem value="Enrolled">Enrolled</MenuItem>
+                        <MenuItem value="Canceled">Canceled</MenuItem>
+                      </TextField>
+                    </Box>
                   </TableCell>
                 </TableRow>
               );
