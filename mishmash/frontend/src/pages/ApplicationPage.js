@@ -123,14 +123,16 @@ const ApplicationPage = () => {
           `/api/programs/${program_id}`
         );
 
-        setProgram(program_response.data);
-        setIsApplicationReadOnly(
-          new Date() > new Date(program_response.data.application_deadline)
-        );
-
         const application = response.data.find(
           (application) => application.program == program_id
         );
+
+        setProgram(program_response.data);
+        setIsApplicationReadOnly(
+          new Date() > new Date(program_response.data.application_deadline) ||
+          application?.status?.toLowerCase() === "enrolled"
+        );
+
         if (application) {
           setApplicationData({
             id: application.id,
@@ -461,7 +463,6 @@ const ApplicationPage = () => {
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
             Application for {program.title} {program.year_semester}
-            Application for {program.title} {program.year_semester}
           </Typography>
           <Typography variant="h4" color="primary" gutterBottom>
             <b>Current Application Status: {applicationData.status}</b>
@@ -473,12 +474,6 @@ const ApplicationPage = () => {
           </Typography>
 
           <Typography variant="p" color="primary" gutterBottom>
-            From {program.start_date} to {program.end_date}
-            <br />
-            Submit application by {program.application_deadline}
-            <br />
-            Faculty Leads: {program.faculty_leads}
-            <br />
             From {program.start_date} to {program.end_date}
             <br />
             Submit application by {program.application_deadline}
