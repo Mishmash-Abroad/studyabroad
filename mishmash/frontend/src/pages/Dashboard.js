@@ -145,10 +145,13 @@ const Dashboard = () => {
   // Handle default route
   React.useEffect(() => {
     if (location.pathname === '/dashboard') {
-      const defaultPath = user?.is_admin ? 'admin-overview' : 'overview';
-      navigate(defaultPath, { replace: true });
+      const defaultPath = `/dashboard/${user?.is_admin ? 'admin-overview' : 'overview'}`;
+      // Replace the current history entry instead of adding a new one
+      window.history.replaceState(null, '', defaultPath);
+      // Force a re-render to show the correct content
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
-  }, [location.pathname, user?.is_admin, navigate]);
+  }, [location.pathname, user?.is_admin]);
 
   // Get current active tab from path
   const activeTab = location.pathname.split('/').pop();
@@ -204,7 +207,7 @@ const Dashboard = () => {
             {/* Common Routes */}
             <Route path="browse" element={<ProgramBrowser />} />
             <Route path="browse/:programTitle" element={<ProgramBrowser />} />
-            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-overview" : "overview"} />} />
+            <Route path="*" element={<Navigate to={user?.is_admin ? "admin-overview" : "overview"} replace />} />
           </Routes>
         </TabContent>
       </DashboardContent>

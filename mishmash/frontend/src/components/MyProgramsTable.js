@@ -407,9 +407,7 @@ const MyProgramsTable = () => {
                         <ApplicationButton
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(
-                              `/apply/${user.user_id}/${application.program.id}`
-                            );
+                            navigate(`/apply/${application.program.id}`);
                           }}
                         >
                           View Application Details
@@ -422,9 +420,7 @@ const MyProgramsTable = () => {
                               variant="success"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(
-                                  `/apply/${user.user_id}/${application.program.id}`
-                                );
+                                navigate(`/apply/${application.program.id}`);
                               }}
                             >
                               Re-apply Now

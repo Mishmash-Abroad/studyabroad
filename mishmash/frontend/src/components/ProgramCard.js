@@ -278,11 +278,10 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
         case "enrolled":
           return (
             <ApplicationButton
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleEditApplication}
               variant="success"
-              disabled
             >
-              Enrolled
+              View Application
             </ApplicationButton>
           );
         case "applied":
@@ -531,8 +530,10 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "flex-end",
+                  justifyContent: "flex-end",
                   gap: theme.spacing(1),
                   minWidth: "200px",
+                  height: "100%",
                 }}
               >
                 {renderDeadlineIndicator()}
