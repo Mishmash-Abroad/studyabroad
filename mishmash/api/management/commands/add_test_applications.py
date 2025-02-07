@@ -27,7 +27,15 @@ import random
 class Command(BaseCommand):
     help = 'Creates test applications with various statuses, matching the updated database schema.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-prod',
+            action='store_true',
+            help='Run in production mode, populates db with production data'
+        )
+
     def handle(self, *args, **options):
+        prod_mode = options['prod']
         applications_data = [
             # Past Programs (Fall 2024)
             ('EmmaW', 'Ancient Philosophy in Athens', 'Enrolled', '2002-05-10', 3.8, 'Philosophy'),
@@ -89,6 +97,20 @@ class Command(BaseCommand):
             ('SarahJ', 'Urban Design in Barcelona', 'Canceled', '2003-02-10', 3.5, 'Architecture'),
         ]
 
+        prod_applications_data = [
+            ('tylerharris352', 'Science in Spain', 'Applied', '2014-03-22', 2.31, 'Biology'),
+            ('tylerharris352', 'Medicine in Canada', 'Enrolled', '2014-03-22', 2.31, 'Biology'),
+            ('davidclark074', 'Science in Spain', 'Canceled', '1998-09-10', 3.89, 'Psychology'),
+            ('elizabethjohnson303', 'History in Canada', 'Enrolled', '2012-06-09', 3.4, 'Psychology'),
+            ('jamestaylor121', 'Science in Spain', 'Applied', '2005-02-17', 3.49, 'Psychology'),
+            ('emilyharris658', 'Science in Spain', 'Withdrawn', '2000-03-13', 2.03, 'Biology'),
+            ('elizabethlewis588', 'Art in Italy', 'Enrolled', '2006-04-15', 3.47, 'Psychology'),
+            ('jessicasmith684', 'Art in Italy', 'Withdrawn', '2005-11-26', 2.05, 'Engineering'),
+            ('jessicasmith684', 'History in Canada', 'Canceled', '2005-11-26', 2.05, 'Engineering'),
+            ('jessicasmith610', 'History in Canada', 'Applied', '2004-10-25', 3.46, 'Computer Science'),
+        ]
+
+
         possible_responses = {
             "Why do you want to participate in this study abroad program?": [
                 "I want to explore new cultures and broaden my horizons.",
@@ -131,33 +153,65 @@ class Command(BaseCommand):
         ApplicationResponse.objects.all().delete()
         self.stdout.write('Cleared existing applications and responses')
 
-        for username, program_title, status, dob, gpa, major in applications_data:
-            try:
-                user = User.objects.get(username=username)
-                program = Program.objects.get(title=program_title)
+        if prod_mode:
+            for username, program_title, status, dob, gpa, major in prod_applications_data:
+                try:
+                    user = User.objects.get(username=username)
+                    program = Program.objects.get(title=program_title)
 
-                application = Application.objects.create(
-                    student=user,
-                    program=program,
-                    date_of_birth=datetime.strptime(dob, '%Y-%m-%d').date(),
-                    gpa=gpa,
-                    major=major,
-                    status=status
-                )
-                
-                self.stdout.write(f'Created application: {username} -> {program_title} ({status})')
-
-                questions = ApplicationQuestion.objects.filter(program=program)
-
-                for question in questions:
-                    response_text = random.choice(possible_responses.get(question.text, ["No response provided"]))
-                    ApplicationResponse.objects.create(
-                        application=application,
-                        question=question,
-                        response=response_text
+                    application = Application.objects.create(
+                        student=user,
+                        program=program,
+                        date_of_birth=datetime.strptime(dob, '%Y-%m-%d').date(),
+                        gpa=gpa,
+                        major=major,
+                        status=status
                     )
+                    
+                    self.stdout.write(f'Created application: {username} -> {program_title} ({status})')
 
-                self.stdout.write(f'Added response to question: "{question.text}"')
+                    questions = ApplicationQuestion.objects.filter(program=program)
 
-            except (User.DoesNotExist, Program.DoesNotExist) as e:
-                self.stdout.write(self.style.ERROR(f'Error creating application: {str(e)}'))
+                    for question in questions:
+                        response_text = random.choice(possible_responses.get(question.text, ["No response provided"]))
+                        ApplicationResponse.objects.create(
+                            application=application,
+                            question=question,
+                            response=response_text
+                        )
+
+                    self.stdout.write(f'Added response to question: "{question.text}"')
+
+                except (User.DoesNotExist, Program.DoesNotExist) as e:
+                    self.stdout.write(self.style.ERROR(f'Error creating application: {str(e)}'))
+        else:
+            for username, program_title, status, dob, gpa, major in applications_data:
+                try:
+                    user = User.objects.get(username=username)
+                    program = Program.objects.get(title=program_title)
+
+                    application = Application.objects.create(
+                        student=user,
+                        program=program,
+                        date_of_birth=datetime.strptime(dob, '%Y-%m-%d').date(),
+                        gpa=gpa,
+                        major=major,
+                        status=status
+                    )
+                    
+                    self.stdout.write(f'Created application: {username} -> {program_title} ({status})')
+
+                    questions = ApplicationQuestion.objects.filter(program=program)
+
+                    for question in questions:
+                        response_text = random.choice(possible_responses.get(question.text, ["No response provided"]))
+                        ApplicationResponse.objects.create(
+                            application=application,
+                            question=question,
+                            response=response_text
+                        )
+
+                    self.stdout.write(f'Added response to question: "{question.text}"')
+
+                except (User.DoesNotExist, Program.DoesNotExist) as e:
+                    self.stdout.write(self.style.ERROR(f'Error creating application: {str(e)}'))
