@@ -34,8 +34,10 @@ RUN pip install gunicorn
 COPY . .
 
 # Create static and media directories
-RUN mkdir -p /app/static /app/media && \
-    chown -R www-data:www-data /app/static /app/media
+# Create necessary directories with correct permissions
+RUN mkdir -p /app/static /app/media /app/api/migrations && \
+    chown -R www-data:www-data /app/static /app/media /app/api/migrations && \
+    chmod -R 755 /app/static /app/media /app/api/migrations
 
 # Collect static files
 RUN python manage.py collectstatic --noinput

@@ -3,6 +3,7 @@ import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
+import { Paper } from "@mui/material";
 
 // -------------------- STYLES --------------------
 const ModalOverlay = styled("div")(({ theme }) => ({
@@ -18,14 +19,14 @@ const ModalOverlay = styled("div")(({ theme }) => ({
   zIndex: 1100,
 }));
 
-const ModalContainer = styled("div")(({ theme }) => ({
+const ModalContainer = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius.large,
   padding: "32px",
   width: "100%",
   maxWidth: "400px",
   position: "relative",
-  boxShadow: theme.shadows.raised,
+  boxShadow: theme.customShadows.raised,
 }));
 
 const ModalCloseButton = styled("button")(({ theme }) => ({
@@ -135,7 +136,7 @@ const ChangePasswordModal = ({ onClose }) => {
   return (
     <>
       <ModalOverlay onClick={onClose}>
-        <ModalContainer onClick={(e) => e.stopPropagation()}>
+        <ModalContainer onClick={(e) => e.stopPropagation()} elevation={3}>
           <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
           <ModalTitle>Change Password?</ModalTitle>
 

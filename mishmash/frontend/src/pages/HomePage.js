@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { styled } from '@mui/material/styles';
 import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
+import Typography from '@mui/material/Typography';
+import AnnouncementsViewer from '../components/AnnouncementsViewer';
 
 // -------------------- STYLES (moved from index.js) --------------------
 const HomeContainer = styled('div')(({ theme }) => ({
@@ -77,11 +79,11 @@ const HeroButton = styled('button')(({ theme }) => ({
   borderRadius: theme.shape.borderRadius.xl,
   cursor: 'pointer',
   transition: theme.transitions.medium,
-  boxShadow: theme.shadows.button,
+  boxShadow: theme.customShadows.button,
   '&:hover': {
     transform: 'translateY(-2px)',
     backgroundColor: theme.palette.background.default,
-    boxShadow: theme.shadows.raised,
+    boxShadow: theme.customShadows.raised,
   },
 }));
 
@@ -94,16 +96,28 @@ const FeaturesContainer = styled('div')(({ theme }) => ({
   margin: '0 auto',
 }));
 
+const AnnouncementsSection = styled('div')(({ theme }) => ({
+  maxWidth: '1200px',
+  margin: '0 auto 50px auto',
+  padding: '0 20px',
+}));
+
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  color: theme.palette.primary.main,
+  fontWeight: theme.typography.h4.fontWeight,
+}));
+
 const FeatureCard = styled('div')(({ theme }) => ({
   padding: '30px',
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   textAlign: 'center',
   transition: theme.transitions.quick,
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: theme.shadows.raised,
+    boxShadow: theme.customShadows.raised,
   },
 }));
 
@@ -140,11 +154,11 @@ const GalleryItem = styled('div')(({ theme }) => ({
   paddingBottom: '66.67%',
   overflow: 'hidden',
   borderRadius: theme.shape.borderRadius.large,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   transition: theme.transitions.medium,
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: theme.shadows.raised,
+    boxShadow: theme.customShadows.raised,
   },
 }));
 
@@ -170,7 +184,7 @@ const HomePage = () => {
     {
       title: 'Global Destinations',
       description: 'Choose from a wide range of locations across Europe, Asia, South America, and beyond.',
-      icon: '🌎',
+      icon: '🌏',
     },
     {
       title: 'Academic Excellence',
@@ -204,6 +218,13 @@ const HomePage = () => {
         </HeroContent>
       </Hero>
 
+      <AnnouncementsSection>
+        <SectionTitle variant="h4">
+          Important Announcements
+        </SectionTitle>
+        <AnnouncementsViewer />
+      </AnnouncementsSection>
+
       <FeaturesContainer>
         {features.map((feature, index) => (
           <FeatureCard key={index}>
@@ -218,7 +239,7 @@ const HomePage = () => {
         {[1, 2, 3].map((index) => (
           <GalleryItem key={index}>
             <GalleryImage
-              src={`/study-abroad-${index}.jpg`}
+              src={`images//study-abroad-${index}.jpg`}
               alt={`Study abroad experience ${index}`}
             />
           </GalleryItem>

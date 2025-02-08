@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import { useState } from "react";
-
+import { Menu, MenuItem, IconButton, Button } from "@mui/material";
+import PersonIcon from '@mui/icons-material/Person';
+import ChangePasswordModal from './ChangePasswordModal';
 
 // -------------------- STYLES --------------------
 const NavBar = styled("div")(({ theme }) => ({
@@ -14,7 +15,7 @@ const NavBar = styled("div")(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "center",
   color: theme.palette.primary.contrastText,
-  boxShadow: theme.shadows.card,
+  boxShadow: theme.customShadows.card,
   position: "fixed",
   top: 0,
   left: 0,
@@ -30,7 +31,7 @@ const NavLogo = styled("div")({
 });
 
 const NavLogoImage = styled("img")({
-  height: "40px",
+  height: "50px",
   width: "auto",
 });
 
@@ -49,14 +50,6 @@ const NavControls = styled("div")({
 const NavButton = styled("button")(({ theme, variant = "default" }) => {
   const getStyles = () => {
     switch (variant) {
-      // case 'transparent':
-      //   return {
-      //     backgroundColor: 'transparent',
-      //     border: `1px solid ${theme.palette.overlay.subtle}`,
-      //     '&:hover': {
-      //       backgroundColor: theme.palette.overlay.faint,
-      //     },
-      //   };
       case "light":
         return {
           backgroundColor: theme.palette.overlay.faint,
@@ -91,15 +84,60 @@ const NavButton = styled("button")(({ theme, variant = "default" }) => {
 });
 
 const WelcomeText = styled("span")(({ theme }) => ({
-  color: theme.palette.overlay.nearWhite,
-  fontSize: theme.typography.body1.fontSize,
-  fontFamily: theme.typography.fontFamily,
+  color: theme.palette.primary.contrastText,
+  fontSize: theme.typography.subtitle2.fontSize,
+  opacity: 0.9,
+  transition: 'all 0.2s ease',
+}));
+
+const UserButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.primary.contrastText,
+  textTransform: 'none',
+  padding: '6px 12px',
+  borderRadius: '20px',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+}));
+
+const UserIcon = styled(PersonIcon)(({ theme }) => ({
+  color: theme.palette.primary.contrastText,
+}));
+
+const StyledMenu = styled(Menu)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: theme.shape.borderRadius.large,
+    marginTop: '8px',
+    minWidth: 180,
+    boxShadow: theme.customShadows.raised,
+    '& .MuiMenu-list': {
+      padding: '8px',
+    },
+    '& .MuiMenuItem-root': {
+      borderRadius: theme.shape.borderRadius.medium,
+      fontSize: theme.typography.body2.fontSize,
+      fontWeight: theme.typography.subtitle2.fontWeight,
+      padding: '10px 16px',
+      margin: '2px 0',
+      transition: theme.transitions.quick,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.main + '10',
+      },
+      '&:active': {
+        backgroundColor: theme.palette.primary.main + '20',
+      },
+    },
+  },
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
-function TopNavBar({onChangePasswordClick,  onLoginClick }) {
+const LOGO_PATH = "/images/logo.png";
+
+function TopNavBar({ onLoginClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -113,29 +151,68 @@ function TopNavBar({onChangePasswordClick,  onLoginClick }) {
     }
   };
 
-  return (
-    <NavBar>
-      <NavLogo onClick={() => navigate("/")}>
-        <NavLogoImage src="/logo.png" alt="HCC Logo" />
-        <NavTitle>HCC Study Abroad</NavTitle>
-      </NavLogo>
+  const handleUserMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-      <NavControls>
-        {user ? (
-          <>
-            <WelcomeText>Welcome, {user.display_name}!</WelcomeText>
-            <NavButton variant="light" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </NavButton>
-            <NavButton variant="light" onClick={handleLogout}>
-              Logout
-            </NavButton>
-          </>
-        ) : (
-          <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
-        )}
-      </NavControls>
-    </NavBar>
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleChangePassword = () => {
+    handleUserMenuClose();
+    setIsChangePasswordOpen(true);
+  };
+
+  const open = Boolean(anchorEl);
+
+  return (
+    <>
+      <NavBar>
+        <NavLogo onClick={() => navigate("/")}>
+          <NavLogoImage src={LOGO_PATH} alt="HCC Logo" />
+          <NavTitle>HCC Study Abroad</NavTitle>
+        </NavLogo>
+
+        <NavControls>
+          {user ? (
+            <>
+              <NavButton variant="light" onClick={() => navigate("/dashboard")}>
+                Dashboard
+              </NavButton>
+              <UserButton
+                id="user-menu-button"
+                aria-controls={open ? 'user-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                onClick={handleUserMenuClick}
+                startIcon={<UserIcon />}
+              >
+                {user.display_name}
+              </UserButton>
+              <StyledMenu
+                id="user-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleUserMenuClose}
+                MenuListProps={{
+                  'aria-labelledby': 'user-menu-button',
+                }}
+              >
+                <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </StyledMenu>
+            </>
+          ) : (
+            <NavButton onClick={onLoginClick}>Login / Sign Up</NavButton>
+          )}
+        </NavControls>
+      </NavBar>
+
+      {isChangePasswordOpen && (
+        <ChangePasswordModal onClose={() => setIsChangePasswordOpen(false)} />
+      )}
+    </>
   );
 }
 

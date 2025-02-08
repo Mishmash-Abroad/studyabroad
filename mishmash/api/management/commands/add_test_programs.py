@@ -17,17 +17,31 @@ Program States:
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from api.models import Program
-from datetime import timedelta
+from api.models import Program, ApplicationQuestion
+from datetime import timedelta, datetime
+
+DEFAULT_QUESTIONS = [
+    "Why do you want to participate in this study abroad program?",
+    "How does this program align with your academic or career goals?",
+    "What challenges do you anticipate during this experience, and how will you address them?",
+    "Describe a time you adapted to a new or unfamiliar environment.",
+    "What unique perspective or contribution will you bring to the group?",
+]
 
 class Command(BaseCommand):
     help = 'Creates test programs with various scenarios'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-prod',
+            action='store_true',
+            help='Run in production mode, populates db with production data'
+        )
+
     def handle(self, *args, **options):
-        # Use current date as reference point for all program dates
+        prod_mode = options['prod']
         today = timezone.now().date()
         
-        # Define program data with various scenarios and timelines
         programs_data = [
             # Past Programs (Fall 2024)
             {
@@ -270,11 +284,139 @@ class Command(BaseCommand):
             }
         ]
 
-        # Clear existing programs
-        Program.objects.all().delete()
-        self.stdout.write('Cleared existing programs')
+        prod_programs_data = [
+            {
+                'title': 'Science in Spain',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Dr. Alice Lee',
+                'description': 'Science in Spain: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2024, 12, 1),
+                'application_deadline': datetime(2025, 2, 28),
+                'start_date': datetime(2025, 8, 18),
+                'end_date': datetime(2025, 12, 28)
+            },
+            {
+                'title': 'History in Canada',
+                'year_semester': '2025 Fall',
+                'faculty_leads': 'Dr. Alice Garcia',
+                'description': 'History in Canada: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2024, 12, 1),
+                'application_deadline': datetime(2025, 2, 28),
+                'start_date': datetime(2025, 8, 18),
+                'end_date': datetime(2025, 12, 28)
+            },
+            {
+                'title': 'Art in Italy',
+                'year_semester': '2024 Fall',
+                'faculty_leads': 'Ms. Alice Johnson',
+                'description': 'Art in Italy: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2023, 12, 1),
+                'application_deadline': datetime(2024, 2, 28),
+                'start_date': datetime(2024, 8, 19),
+                'end_date': datetime(2024, 12, 29)
+            },
+            {
+                'title': 'Medicine in India',
+                'year_semester': '2028 Fall',
+                'faculty_leads': 'Mr. Daniel Garcia',
+                'description': 'Medicine in India: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2027, 12, 1),
+                'application_deadline': datetime(2028, 2, 29),
+                'start_date': datetime(2028, 8, 14),
+                'end_date': datetime(2028, 12, 31)
+            },
+            {
+                'title': 'Language in Japan',
+                'year_semester': '2029 Fall',
+                'faculty_leads': 'Mr. Daniel Lee',
+                'description': 'Language in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2028, 12, 1),
+                'application_deadline': datetime(2029, 2, 28),
+                'start_date': datetime(2029, 8, 20),
+                'end_date': datetime(2029, 12, 30)
+            },
+            {
+                'title': 'Technology in Japan',
+                'year_semester': '2030 Fall',
+                'faculty_leads': 'Ms. Emily Garcia',
+                'description': 'Technology in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2029, 12, 1),
+                'application_deadline': datetime(2030, 2, 28),
+                'start_date': datetime(2030, 8, 19),
+                'end_date': datetime(2030, 12, 29)
+            },
+            {
+                'title': 'Medicine in Canada',
+                'year_semester': '2025 Spring',
+                'faculty_leads': 'Ms. Alice Brown',
+                'description': 'Medicine in Canada: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2024, 9, 1),
+                'application_deadline': datetime(2024, 11, 30),
+                'start_date': datetime(2025, 1, 6),
+                'end_date': datetime(2025, 5, 4)
+            },
+            {
+                'title': 'Technology in Australia',
+                'year_semester': '2027 Spring',
+                'faculty_leads': 'Ms. Catherine Taylor',
+                'description': 'Technology in Australia: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2026, 9, 1),
+                'application_deadline': datetime(2026, 11, 30),
+                'start_date': datetime(2027, 1, 4),
+                'end_date': datetime(2027, 5, 2)
+            },
+            {
+                'title': 'Art in Australia',
+                'year_semester': '2028 Spring',
+                'faculty_leads': 'Ms. Alice Smith',
+                'description': 'Art in Australia: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2027, 9, 1),
+                'application_deadline': datetime(2027, 11, 30),
+                'start_date': datetime(2028, 1, 3),
+                'end_date': datetime(2028, 5, 7)
+            },
+            {
+                'title': 'Art in Japan',
+                'year_semester': '2029 Spring',
+                'faculty_leads': 'Ms. Emily Smith',
+                'description': 'Art in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2028, 9, 1),
+                'application_deadline': datetime(2028, 11, 30),
+                'start_date': datetime(2029, 1, 8),
+                'end_date': datetime(2029, 5, 6)
+            },
+            {
+                'title': 'Art in France',
+                'year_semester': '2025 Summer',
+                'faculty_leads': 'Mr. Frank Taylor',
+                'description': 'Art in France: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
+                'application_open_date': datetime(2024, 9, 1),
+                'application_deadline': datetime(2024, 11, 30),
+                'start_date': datetime(2025, 5, 19),
+                'end_date': datetime(2025, 8, 17)
+            },
+        ]
 
-        # Create new programs
-        for program_data in programs_data:
-            program = Program.objects.create(**program_data)
-            self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
+
+
+        Program.objects.all().delete()
+        ApplicationQuestion.objects.all().delete()
+        self.stdout.write('Cleared existing programs and questions')
+
+        if prod_mode:
+            for program_data in prod_programs_data:
+                program = Program.objects.create(**program_data)
+                self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
+
+                for q in DEFAULT_QUESTIONS:
+                    question = ApplicationQuestion.objects.create(text=q, program=program)
+                    self.stdout.write(f'Created question for {program.title}: {question.text}')
+        else:
+            for program_data in programs_data:
+                program = Program.objects.create(**program_data)
+                self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
+
+                for q in DEFAULT_QUESTIONS:
+                    question = ApplicationQuestion.objects.create(text=q, program=program)
+                    self.stdout.write(f'Created question for {program.title}: {question.text}')
+
