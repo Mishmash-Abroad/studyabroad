@@ -564,7 +564,7 @@ def login_view(request):
     # Authenticate user
     user = authenticate(username=username, password=password)
     if not user:
-        return Response({"error": "Invalid credentials"}, status=401)
+        return Response({"error": "Invalid credentials"})
 
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
