@@ -464,7 +464,7 @@ const ApplicationPage = () => {
             Application for {program.title} {program.year_semester}
           </Typography>
           <Typography variant="h4" color="primary" gutterBottom>
-            <b>Current Application Status: {applicationData.status}</b>
+            <b>Current Application Status: {applicationData.status || "Not Submitted"}</b>
           </Typography>
           <Typography variant="p" color="primary" gutterBottom>
             <br />
