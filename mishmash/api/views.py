@@ -50,6 +50,7 @@ from django.contrib.auth import update_session_auth_hash
 from datetime import datetime
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 ### Custom permission classes for API access ###
 
@@ -146,7 +147,32 @@ class ProgramViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """
         When an admin creates a new program, automatically add default questions.
+        Also, enforce validation for application and program dates.
         """
+
+        # Extract date fields from request data
+        application_open_date = request.data.get("application_open_date")
+        application_deadline = request.data.get("application_deadline")
+        start_date = request.data.get("start_date")
+        end_date = request.data.get("end_date")
+
+        # Convert date strings to datetime.date objects
+        try:
+            application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date()
+            application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date()
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
+
+        # Validate date logic
+        if application_open_date > application_deadline:
+            raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
+
+        if start_date > end_date:
+            raise ValidationError({"detail": "Start date cannot be after the end date."})
+
+        # Proceed with program creation
         response = super().create(request, *args, **kwargs)
         program_id = response.data.get("id")
         program_instance = Program.objects.get(id=program_id)
@@ -164,6 +190,38 @@ class ProgramViewSet(viewsets.ModelViewSet):
             ApplicationQuestion.objects.create(program=program_instance, text=question_text)
 
         return response
+    
+    def update(self, request, *args, **kwargs):
+        """
+        Ensure validation for application and program dates during updates.
+        """
+        program_instance = self.get_object()
+
+        # Extract date fields from request data (if provided)
+        application_open_date = request.data.get("application_open_date", program_instance.application_open_date)
+        application_deadline = request.data.get("application_deadline", program_instance.application_deadline)
+        start_date = request.data.get("start_date", program_instance.start_date)
+        end_date = request.data.get("end_date", program_instance.end_date)
+
+        # Convert date strings to datetime.date objects
+        try:
+            application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date() if isinstance(application_open_date, str) else application_open_date
+            application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date() if isinstance(application_deadline, str) else application_deadline
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if isinstance(start_date, str) else start_date
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if isinstance(end_date, str) else end_date
+        except (TypeError, ValueError):
+            raise ValidationError({"error": "Invalid date format. Use YYYY-MM-DD."})
+
+        # Validate date logic
+        if application_open_date > application_deadline:
+            raise ValidationError({"error": "Application open date cannot be after the application deadline."})
+
+        if start_date > end_date:
+            raise ValidationError({"error": "Start date cannot be after the end date."})
+
+        # Proceed with update
+        return super().update(request, *args, **kwargs)
+
 
     @action(detail=True, methods=["get"])
     def application_status(self, request, pk=None):

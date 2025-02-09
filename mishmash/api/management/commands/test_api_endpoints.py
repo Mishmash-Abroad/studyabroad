@@ -102,8 +102,8 @@ class Command(BaseCommand):
         if response.status_code >= 400:
             try:
                 error_data = response.json()
-                if "error" not in error_data or not isinstance(error_data.get("error"), str):
-                    print(f"WARNING: Expected an 'error' key in the response, but it was missing or not a string.")
+                if "detail" not in error_data or not isinstance(error_data.get("detail"), str):
+                    print(f"WARNING: Expected an 'detail' key in the response, but it was missing or not a string.")
                     warnings[0] += 1
             except Exception:
                 print(f"WARNING: Expected JSON error response, but got non-JSON response (likely an HTML error page).")
@@ -299,7 +299,7 @@ class Command(BaseCommand):
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
         # Attempt to update program as an admin
-        response = client.put(f"/api/programs/{program_id}/", {"description": "Updated description"})
+        response = client.patch(f"/api/programs/{program_id}/", {"description": "Updated description"})
         Command.check_response(response, 200, success_message="Program updated successfully by admin.",
                             error_message="Program update failed for admin.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
