@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -139,7 +139,13 @@ function TopNavBar({ onLoginClick }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
+  // Reset anchorEl when user changes
+  useEffect(() => {
+    setAnchorEl(null);
+  }, [user]);
+
   const handleLogout = async () => {
+    handleUserMenuClose(); // Close the menu first
     try {
       await axiosInstance.post("/api/logout/");
       logout();
