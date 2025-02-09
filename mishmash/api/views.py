@@ -47,7 +47,7 @@ from .serializers import (
 from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -319,7 +319,24 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_403_FORBIDDEN,
                     )
         return super().partial_update(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Custom create method to enforce age validation.
+        """
+        date_of_birth_str = request.data.get("date_of_birth")
 
+        # Validate the date of birth format and check if the applicant is at least 10 years old
+        try:
+            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
+        if date_of_birth > min_birth_date:
+            return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().create(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"])
     def create_or_edit(self, request):
@@ -329,22 +346,33 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         Returns:
         - Application ID if an application exists or creates a new one
         """
-        # Get the authenticated user (student)
         student = request.user  # Ensure request.user is authenticated
-
-        # Get the program instance from the database
         program_id = request.data.get("program")
-        program = Program.objects.get(id=program_id)
+        date_of_birth_str = request.data.get("date_of_birth")
 
-        students_application = Application.objects.filter(
-            student=student, program=program
-        ).first()
+        # Validate if the program exists
+        try:
+            program = Program.objects.get(id=program_id)
+        except Program.DoesNotExist:
+            return Response({"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate the date of birth format and check if the applicant is at least 10 years old
+        try:
+            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
+        if date_of_birth > min_birth_date:
+            return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+
+        students_application = Application.objects.filter(student=student, program=program).first()
 
         if not students_application:
             new_application = Application.objects.create(
                 student=student,
                 program=program,
-                date_of_birth=request.data.get("date_of_birth"),
+                date_of_birth=date_of_birth,
                 gpa=request.data.get("gpa"),
                 major=request.data.get("major"),
                 status="Applied",
@@ -355,7 +383,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
 
-        students_application.date_of_birth = request.data.get("date_of_birth")
+        # Update existing application
+        students_application.date_of_birth = date_of_birth
         students_application.gpa = request.data.get("gpa")
         students_application.major = request.data.get("major")
         students_application.status = "Applied"
