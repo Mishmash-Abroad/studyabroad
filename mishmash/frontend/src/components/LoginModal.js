@@ -147,6 +147,13 @@ const LoginModal = ({ onClose }) => {
       return;
     }
 
+    var testEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$/i;
+    if(!testEmail.test(email)){
+      setError("invalid email address");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await axiosInstance.post("/api/signup/", {
         username,
