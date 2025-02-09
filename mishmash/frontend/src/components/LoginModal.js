@@ -126,6 +126,8 @@ const LoginModal = ({ onClose }) => {
         login(userData, token);
         onClose();
         navigate("/dashboard");
+      } else{
+        throw new Error("Invalid Credentials");
       }
     } catch (err) {
       setError(err.response?.data?.error || "Invalid username or password");
