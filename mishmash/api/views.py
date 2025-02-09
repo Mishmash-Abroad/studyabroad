@@ -82,7 +82,11 @@ class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
 
     def has_object_permission(self, request, view, obj):
-        return obj.application.student == request.user or request.user.is_admin
+        if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+
+        return obj.application.student == request.user
+
     
 class IsAdmin(permissions.BasePermission):
     """Custom permission to allow only admin to view or edit views"""
@@ -463,6 +467,47 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(application__student=self.request.user)
 
         return queryset
+    
+    def get_object(self):
+        """
+        Ensures that the object-level permissions check is applied for every action.
+        Also ensures that students can only access responses tied to their applications.
+        """
+        obj = super().get_object()
+
+        if not self.request.user.is_admin and obj.application.student != self.request.user:
+            raise PermissionDenied(detail="You do not have permission to access this response.")
+
+        self.check_object_permissions(self.request, obj)  # ✅ Enforces permission class checks
+        return obj
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Prevent unauthorized users from deleting another student's response.
+        """
+        response = self.get_object()
+
+        if response.application.student != request.user and not request.user.is_admin:
+            return Response(
+                {"detail": "You do not have permission to delete this response."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return super().destroy(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Prevent unauthorized users from updating another student's response.
+        """
+        response = self.get_object()
+
+        if response.application.student != request.user and not request.user.is_admin:
+            return Response(
+                {"detail": "You do not have permission to modify this response."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return super().update(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"])
     def create_or_edit(self, request):
