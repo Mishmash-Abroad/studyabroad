@@ -126,9 +126,11 @@ const LoginModal = ({ onClose }) => {
         login(userData, token);
         onClose();
         navigate("/dashboard");
+      } else{
+        throw new Error("Invalid Credentials");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Invalid username or password");
+      setError(err.response?.data?.detail || "Invalid username or password");
     } finally {
       setLoading(false);
     }
@@ -141,6 +143,13 @@ const LoginModal = ({ onClose }) => {
 
     if (password !== confirmPassword){
       setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    var testEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$/i;
+    if(!testEmail.test(email)){
+      setError("invalid email address");
       setLoading(false);
       return;
     }
@@ -160,7 +169,7 @@ const LoginModal = ({ onClose }) => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Invalid username or password");
+      setError(err.response?.data?.detail || "Invalid username or password");
     } finally {
       setLoading(false);
     }

@@ -47,9 +47,10 @@ from .serializers import (
 from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 ### Custom permission classes for API access ###
 
@@ -81,7 +82,11 @@ class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
 
     def has_object_permission(self, request, view, obj):
-        return obj.application.student == request.user or request.user.is_admin
+        if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+
+        return obj.application.student == request.user
+
     
 class IsAdmin(permissions.BasePermission):
     """Custom permission to allow only admin to view or edit views"""
@@ -146,7 +151,32 @@ class ProgramViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """
         When an admin creates a new program, automatically add default questions.
+        Also, enforce validation for application and program dates.
         """
+
+        # Extract date fields from request data
+        application_open_date = request.data.get("application_open_date")
+        application_deadline = request.data.get("application_deadline")
+        start_date = request.data.get("start_date")
+        end_date = request.data.get("end_date")
+
+        # Convert date strings to datetime.date objects
+        try:
+            application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date()
+            application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date()
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
+
+        # Validate date logic
+        if application_open_date > application_deadline:
+            raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
+
+        if start_date > end_date:
+            raise ValidationError({"detail": "Start date cannot be after the end date."})
+
+        # Proceed with program creation
         response = super().create(request, *args, **kwargs)
         program_id = response.data.get("id")
         program_instance = Program.objects.get(id=program_id)
@@ -164,6 +194,38 @@ class ProgramViewSet(viewsets.ModelViewSet):
             ApplicationQuestion.objects.create(program=program_instance, text=question_text)
 
         return response
+    
+    def update(self, request, *args, **kwargs):
+        """
+        Ensure validation for application and program dates during updates.
+        """
+        program_instance = self.get_object()
+
+        # Extract date fields from request data (if provided)
+        application_open_date = request.data.get("application_open_date", program_instance.application_open_date)
+        application_deadline = request.data.get("application_deadline", program_instance.application_deadline)
+        start_date = request.data.get("start_date", program_instance.start_date)
+        end_date = request.data.get("end_date", program_instance.end_date)
+
+        # Convert date strings to datetime.date objects
+        try:
+            application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date() if isinstance(application_open_date, str) else application_open_date
+            application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date() if isinstance(application_deadline, str) else application_deadline
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if isinstance(start_date, str) else start_date
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if isinstance(end_date, str) else end_date
+        except (TypeError, ValueError):
+            raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
+
+        # Validate date logic
+        if application_open_date > application_deadline:
+            raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
+
+        if start_date > end_date:
+            raise ValidationError({"detail": "Start date cannot be after the end date."})
+
+        # Proceed with update
+        return super().update(request, *args, **kwargs)
+
 
     @action(detail=True, methods=["get"])
     def application_status(self, request, pk=None):
@@ -261,7 +323,24 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_403_FORBIDDEN,
                     )
         return super().partial_update(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Custom create method to enforce age validation.
+        """
+        date_of_birth_str = request.data.get("date_of_birth")
 
+        # Validate the date of birth format and check if the applicant is at least 10 years old
+        try:
+            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
+        if date_of_birth > min_birth_date:
+            return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().create(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"])
     def create_or_edit(self, request):
@@ -271,22 +350,33 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         Returns:
         - Application ID if an application exists or creates a new one
         """
-        # Get the authenticated user (student)
         student = request.user  # Ensure request.user is authenticated
-
-        # Get the program instance from the database
         program_id = request.data.get("program")
-        program = Program.objects.get(id=program_id)
+        date_of_birth_str = request.data.get("date_of_birth")
 
-        students_application = Application.objects.filter(
-            student=student, program=program
-        ).first()
+        # Validate if the program exists
+        try:
+            program = Program.objects.get(id=program_id)
+        except Program.DoesNotExist:
+            return Response({"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate the date of birth format and check if the applicant is at least 10 years old
+        try:
+            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
+        if date_of_birth > min_birth_date:
+            return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+
+        students_application = Application.objects.filter(student=student, program=program).first()
 
         if not students_application:
             new_application = Application.objects.create(
                 student=student,
                 program=program,
-                date_of_birth=request.data.get("date_of_birth"),
+                date_of_birth=date_of_birth,
                 gpa=request.data.get("gpa"),
                 major=request.data.get("major"),
                 status="Applied",
@@ -297,7 +387,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
 
-        students_application.date_of_birth = request.data.get("date_of_birth")
+        # Update existing application
+        students_application.date_of_birth = date_of_birth
         students_application.gpa = request.data.get("gpa")
         students_application.major = request.data.get("major")
         students_application.status = "Applied"
@@ -376,6 +467,47 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(application__student=self.request.user)
 
         return queryset
+    
+    def get_object(self):
+        """
+        Ensures that the object-level permissions check is applied for every action.
+        Also ensures that students can only access responses tied to their applications.
+        """
+        obj = super().get_object()
+
+        if not self.request.user.is_admin and obj.application.student != self.request.user:
+            raise PermissionDenied(detail="You do not have permission to access this response.")
+
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Prevent unauthorized users from deleting another student's response.
+        """
+        response = self.get_object()
+
+        if response.application.student != request.user and not request.user.is_admin:
+            return Response(
+                {"detail": "You do not have permission to delete this response."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return super().destroy(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Prevent unauthorized users from updating another student's response.
+        """
+        response = self.get_object()
+
+        if response.application.student != request.user and not request.user.is_admin:
+            return Response(
+                {"detail": "You do not have permission to modify this response."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return super().update(request, *args, **kwargs)
 
     @action(detail=False, methods=["post"])
     def create_or_edit(self, request):
@@ -558,13 +690,13 @@ def login_view(request):
     # Validate input
     if not username or not password:
         return Response(
-            {"error": "Please provide both username and password"}, status=400
+            {"detail": "Please provide both username and password"}, status=400
         )
 
     # Authenticate user
     user = authenticate(username=username, password=password)
     if not user:
-        return Response({"error": "Invalid credentials"}, status=401)
+        return Response({"detail": "Invalid credentials"}, status=401)
 
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
@@ -603,7 +735,7 @@ def signup_view(request):
     # Validate input
     if not username or not password:
         return Response(
-            {"error": "Please provide both username and password"}, status=400
+            {"detail": "Please provide both username and password"}, status=400
         )
 
     # Authenticate user
@@ -620,7 +752,7 @@ def signup_view(request):
     )
 
     if not user:
-        return Response({"error": "Invalid credentials"}, status=401)
+        return Response({"detail": "Invalid credentials"}, status=401)
 
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
@@ -647,7 +779,7 @@ def change_password(request):
 
     # Validate input
     if password != confirmPassword:
-        return Response({"error": "Please provide both fields"}, status=400)
+        return Response({"detail": "Please provide both fields"}, status=400)
 
     user = request.user
     user.set_password(password)
