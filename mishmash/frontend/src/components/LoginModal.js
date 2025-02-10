@@ -130,7 +130,7 @@ const LoginModal = ({ onClose }) => {
         throw new Error("Invalid Credentials");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Invalid username or password");
+      setError(err.response?.data?.detail || "Invalid username or password");
     } finally {
       setLoading(false);
     }
@@ -169,7 +169,7 @@ const LoginModal = ({ onClose }) => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Invalid username or password");
+      setError(err.response?.data?.detail || "Invalid username or password");
     } finally {
       setLoading(false);
     }
