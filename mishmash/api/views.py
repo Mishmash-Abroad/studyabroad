@@ -214,14 +214,14 @@ class ProgramViewSet(viewsets.ModelViewSet):
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if isinstance(start_date, str) else start_date
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if isinstance(end_date, str) else end_date
         except (TypeError, ValueError):
-            raise ValidationError({"error": "Invalid date format. Use YYYY-MM-DD."})
+            raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
         # Validate date logic
         if application_open_date > application_deadline:
-            raise ValidationError({"error": "Application open date cannot be after the application deadline."})
+            raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
 
         if start_date > end_date:
-            raise ValidationError({"error": "Start date cannot be after the end date."})
+            raise ValidationError({"detail": "Start date cannot be after the end date."})
 
         # Proceed with update
         return super().update(request, *args, **kwargs)
@@ -478,7 +478,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_admin and obj.application.student != self.request.user:
             raise PermissionDenied(detail="You do not have permission to access this response.")
 
-        self.check_object_permissions(self.request, obj)  # ✅ Enforces permission class checks
+        self.check_object_permissions(self.request, obj)
         return obj
     
     def destroy(self, request, *args, **kwargs):
@@ -690,13 +690,13 @@ def login_view(request):
     # Validate input
     if not username or not password:
         return Response(
-            {"error": "Please provide both username and password"}, status=400
+            {"detail": "Please provide both username and password"}, status=400
         )
 
     # Authenticate user
     user = authenticate(username=username, password=password)
     if not user:
-        return Response({"error": "Invalid credentials"}, status=401)
+        return Response({"detail": "Invalid credentials"}, status=401)
 
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
@@ -735,7 +735,7 @@ def signup_view(request):
     # Validate input
     if not username or not password:
         return Response(
-            {"error": "Please provide both username and password"}, status=400
+            {"detail": "Please provide both username and password"}, status=400
         )
 
     # Authenticate user
@@ -752,7 +752,7 @@ def signup_view(request):
     )
 
     if not user:
-        return Response({"error": "Invalid credentials"}, status=401)
+        return Response({"detail": "Invalid credentials"}, status=401)
 
     # Get or create authentication token
     token, _ = Token.objects.get_or_create(user=user)
@@ -779,7 +779,7 @@ def change_password(request):
 
     # Validate input
     if password != confirmPassword:
-        return Response({"error": "Please provide both fields"}, status=400)
+        return Response({"detail": "Please provide both fields"}, status=400)
 
     user = request.user
     user.set_password(password)
