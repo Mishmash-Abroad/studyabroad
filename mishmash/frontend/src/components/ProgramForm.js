@@ -18,6 +18,8 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     description: '',
   });
 
+  const [errorMessage, setErrorMessage] = useState(null);
+
   useEffect(() => {
     if (editingProgram) {
       setProgramData({
@@ -50,9 +52,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       navigate('/dashboard/admin-programs');
     } catch (error) {
       console.error('Error saving program:', error);
-      if (error.response) {
-        console.error('Backend Response:', error.response.data);
-      }
+      setErrorMessage(error.response?.data?.detail || 'Failed to save program. Please check your input.');
     }
   };
 
@@ -69,6 +69,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       navigate('/dashboard/admin-programs');
     } catch (error) {
       console.error('Error deleting program:', error);
+      setErrorMessage(error.response?.data?.detail || 'Failed to delete program.');
     }
   };
 
@@ -132,6 +133,11 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         <Button variant="contained" color="primary" onClick={handleSubmit}>{editingProgram ? 'Update Program' : 'Create Program'}</Button>
         <Button onClick={() => navigate('/dashboard/admin-programs')}>Cancel</Button>
       </Box>
+      {errorMessage && (
+        <Typography color="error" sx={{ marginTop: 2, fontWeight: "bold" }}>
+          {errorMessage}
+        </Typography>
+      )}
     </Paper>
   );
 };
