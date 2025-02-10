@@ -94,6 +94,22 @@ const ProgramGrid = styled('div')(({ theme }) => ({
   }
 }));
 
+const NoResults = styled('div')(({ theme }) => ({
+  textAlign: 'center',
+  padding: '40px',
+  color: theme.palette.text.secondary,
+  backgroundColor: theme.palette.background.default,
+  borderRadius: theme.shape.borderRadius.large,
+  margin: '20px 0',
+  '& h3': {
+    color: theme.palette.text.primary,
+    marginBottom: theme.spacing(1),
+  },
+  '& p': {
+    fontSize: theme.typography.body1.fontSize,
+  }
+}));
+
 // -------------------- COMPONENT --------------------
 const ProgramBrowser = () => {
   const [programs, setPrograms] = useState([]);
@@ -283,17 +299,30 @@ const ProgramBrowser = () => {
           </div>
         ) : (
           <ProgramGrid>
-            {getFilteredPrograms().map((program) => (
-              <ProgramCard 
-                key={program.id} 
-                program={program} 
-                isInAppliedSection={filter === 'applied'}
-                onExpand={(expanded) => {
-                  // Force a re-render to handle grid layout changes
-                  setPrograms(prev => [...prev]);
-                }}
-              />
-            ))}
+            {getFilteredPrograms().length > 0 ? (
+              getFilteredPrograms().map((program) => (
+                <ProgramCard 
+                  key={program.id} 
+                  program={program} 
+                  isInAppliedSection={filter === 'applied'}
+                  onExpand={(expanded) => {
+                    // Force a re-render to handle grid layout changes
+                    setPrograms(prev => [...prev]);
+                  }}
+                />
+              ))
+            ) : (
+              <NoResults style={{ gridColumn: '1 / -1' }}>
+                <h3>No Programs Found</h3>
+                <p>
+                  {searchTerm 
+                    ? `No programs match your search "${searchTerm}". Try adjusting your search terms.`
+                    : filter !== 'all'
+                    ? `No programs found with the current filter "${filter}". Try changing the filter.`
+                    : 'No programs available at this time.'}
+                </p>
+              </NoResults>
+            )}
           </ProgramGrid>
         )}
       </ContentContainer>
