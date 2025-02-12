@@ -364,11 +364,23 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad applications.
 
-    Features:
-    - List all applications (admin-only)
-    - Retrieve specific application
-    - Filter applications by applicant (GET `/api/applications/?student=<user_id>`)
-    - Filter applications by program (GET `/api/applications/?program=<program_id>`)
+    ## Features:
+    - Admins can view all applications.
+    - Students can only view their own applications.
+    - Supports filtering by student ID (`GET /api/applications/?student=<id>`)
+    - Supports filtering by program ID (`GET /api/applications/?program=<id>`).
+    - Ensures applicants must be at least 10 years old.
+
+    ## Permissions:
+    - **Admin:** Can view, create, update, and delete any application.
+    - **Students:** Can only create, update, and view their own applications.
+
+    ## Routes:
+    - `GET /api/applications/` → List applications (filtered by student/program)
+    - `GET /api/applications/{id}/` → Retrieve application details
+    - `POST /api/applications/` → Submit a new application (age validation enforced)
+    - `PATCH /api/applications/{id}/` → Modify an application (restricted updates)
+    - `DELETE /api/applications/{id}/` → Delete an application (admin-only)
     """
 
     queryset = Application.objects.all()
@@ -377,9 +389,18 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Admins can view all applications. 
-        Students can only view their own applications.
-        Supports filtering by student ID and program ID.
+        Retrieve applications, filtered by student or program.
+
+        ## Permissions:
+        - **Admin:** Can view all applications.
+        - **Students:** Can only view their own applications.
+
+        ## Query Parameters:
+        - `student=<id>` → Filters by student ID (admin only).
+        - `program=<id>` → Filters by program ID.
+
+        ## Returns:
+        - List of applications matching the filters.
         """
         queryset = Application.objects.all()
 
@@ -392,29 +413,35 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(program_id=program_id)
 
         return queryset
-
-    def partial_update(self, request, *args, **kwargs):
-        """Restrict status updates based on user role."""
-        application = self.get_object()
-        if "status" in request.data:
-            if not request.user.is_admin:
-                # Users can only withdraw or apply their applications
-                if request.data["status"] != "Withdrawn" and request.data["status"] != "Applied":
-                    return Response(
-                        {
-                            "detail": "Only admins can change the status to 'Enrolled' or 'Cancelled'."
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-        return super().partial_update(request, *args, **kwargs)
     
     def create(self, request, *args, **kwargs):
         """
-        Custom create method to enforce age validation.
+        Submit a new application.
+
+        ## Permissions:
+        - **Students:** Can apply for a program.
+        - **Admin:** Can create applications on behalf of students.
+
+        ## Expected Input (JSON):
+        ```json
+        {
+            "program": 1,
+            "date_of_birth": "2008-05-20",
+            "gpa": 3.8,
+            "major": "Computer Science"
+        }
+        ```
+
+        ## Validation:
+        - `date_of_birth` must be at least 10 years ago.
+        - `program` must exist.
+
+        ## Returns:
+        - `201 Created` with `{"message": "Application created", "id": <id>}`
+        - `400 Bad Request` if invalid data is provided.
         """
         date_of_birth_str = request.data.get("date_of_birth")
 
-        # Validate the date of birth format and check if the applicant is at least 10 years old
         try:
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
         except ValueError:
@@ -426,63 +453,71 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
-    @action(detail=False, methods=["post"])
-    def create_or_edit(self, request):
+    def update(self, request, *args, **kwargs):
         """
-        Create or edit the current user's application for a specific program.
+        Update an existing application.
 
-        Returns:
-        - Application ID if an application exists or creates a new one
+        ## Permissions:
+        - **Students:** Can update their own applications.
+        - **Admin:** Can update any application.
+
+        ## Expected Input (JSON):
+        ```json
+        {
+            "gpa": 3.9,
+            "major": "Data Science",
+            "status": "Withdrawn"
+        }
+        ```
+
+        ## Restrictions:
+        - If `date_of_birth` is updated, the applicant must still be at least 10 years old.
+        - **Students** may only change `status` to **"Applied" or "Withdrawn"**.
+        - **Admins** may change `status` to **"Enrolled" or "Cancelled"**.
+        - Students **cannot** change the program they applied to.
+
+        ## Returns:
+        - `200 OK` if the update succeeds.
+        - `400 Bad Request` if validation fails.
+        - `403 Forbidden` if unauthorized changes are attempted.
         """
-        student = request.user  # Ensure request.user is authenticated
-        program_id = request.data.get("program")
-        date_of_birth_str = request.data.get("date_of_birth")
 
-        # Validate if the program exists
-        try:
-            program = Program.objects.get(id=program_id)
-        except Program.DoesNotExist:
-            return Response({"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND)
+        application = self.get_object()
+        user = request.user
+        data = request.data.copy()
 
-        # Validate the date of birth format and check if the applicant is at least 10 years old
-        try:
-            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
-        except ValueError:
-            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+        if "date_of_birth" in data:
+            try:
+                new_dob = datetime.strptime(data["date_of_birth"], "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
-        min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
-        if date_of_birth > min_birth_date:
-            return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+            min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
+            if new_dob > min_birth_date:
+                return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
 
-        students_application = Application.objects.filter(student=student, program=program).first()
+        if "status" in data:
+            new_status = data["status"]
 
-        if not students_application:
-            new_application = Application.objects.create(
-                student=student,
-                program=program,
-                date_of_birth=date_of_birth,
-                gpa=request.data.get("gpa"),
-                major=request.data.get("major"),
-                status="Applied",
-                applied_on=datetime.now(),
-            )
-            return Response(
-                {"message": "Application created", "id": new_application.id},
-                status=status.HTTP_201_CREATED,
-            )
+            if not user.is_admin:
+                if new_status not in ["Applied", "Withdrawn"]:
+                    return Response(
+                        {"detail": "Students can only change their application status to 'Applied' or 'Withdrawn'."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
 
-        # Update existing application
-        students_application.date_of_birth = date_of_birth
-        students_application.gpa = request.data.get("gpa")
-        students_application.major = request.data.get("major")
-        students_application.status = "Applied"
-        students_application.applied_on = datetime.now()
-        students_application.save()
+            else:
+                if new_status not in ["Applied", "Enrolled", "Cancelled"]:
+                    return Response(
+                        {"detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Cancelled'."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
-        return Response(
-            {"message": "Application updated", "id": students_application.id},
-            status=status.HTTP_200_OK,
-        )
+        if "program" in data and data["program"] != application.program.id:
+            return Response({"detail": "You cannot change the program after applying."}, status=status.HTTP_403_FORBIDDEN)
+
+        return super().update(request, *args, **kwargs)
+
 
 
 class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
