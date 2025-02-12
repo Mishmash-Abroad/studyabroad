@@ -694,39 +694,39 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 class AnnouncementViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing announcements.
-    
-    Provides:
-    - List all announcements (GET, public access)
-    - Create new announcement (POST, admin only)
-    - Retrieve specific announcement (GET, public access)
-    - Update announcement (PUT/PATCH, admin only)
-    - Delete announcement (DELETE, admin only)
+
+    ## Features:
+    - **Public users & students** can:
+      - View active announcements.
+    - **Admins** can:
+      - Create, update, and delete announcements.
+      - View all announcements (including inactive ones).
+
+    ## Served Endpoints:
+    - `GET /api/announcements/` → List active announcements (Public & Students)
+    - `POST /api/announcements/` → Create an announcement (Admins only)
+    - `GET /api/announcements/{id}/` → Retrieve a specific announcement (Public & Students)
+    - `PATCH /api/announcements/{id}/` → Update an announcement (Admins only)
+    - `DELETE /api/announcements/{id}/` → Delete an announcement (Admins only)
+
+    ## Permissions:
+    - **Public & Students:** Can only view active announcements.
+    - **Admins:** Can view, create, edit, and delete announcements.
     """
     serializer_class = AnnouncementSerializer
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created_at', 'importance']
     ordering = ['-created_at']
 
-    def get_permissions(self):
-        """
-        Instantiate and return the list of permissions that this view requires.
-        - GET methods are publicly accessible
-        - All other methods require admin permissions
-        """
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsAuthenticated, IsAdmin]
-        return [permission() for permission in permission_classes]
-
     def get_queryset(self):
         """
-        Get the list of announcements.
-        Non-admin users and anonymous users only see active announcements.
+        Returns the list of announcements:
+        - **Admins see all announcements**.
+        - **Public users & students see only active announcements**.
         """
         queryset = Announcement.objects.all()
         
-        # Check if user is authenticated and admin
         if not self.request.user.is_authenticated or not self.request.user.is_admin:
             queryset = queryset.filter(is_active=True)
             
