@@ -522,13 +522,23 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
 class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for managing application questions.
+    ViewSet for retrieving application questions associated with study abroad programs.
 
-    Provides CRUD operations for application questions associated with study abroad programs.
+    ## Features:
+    - **Retrieve all application questions** (`GET /api/questions/`)
+    - **Retrieve questions for a specific program** (`GET /api/questions/?program=<id>`)
+    - **Retrieve a single question** (`GET /api/questions/{id}/`)
 
-    Permissions:
-    - List/Retrieve: Admin or authenticated users only
-    - Create/Update/Delete: Admin only
+    ## Permissions:
+    - **All users (authenticated or not)** can list and retrieve application questions.
+    - **No one (not even admins)** can create, update, or delete questions, as they are auto-generated when a program is created.
+
+    ## Expected Inputs:
+    - **Query Parameter** (Optional): `?program=<id>` → Filter questions by a specific program.
+
+    ## Expected Outputs:
+    - **200 OK** → Returns a list of application questions or a single question.
+    - **404 Not Found** → If a requested question or program ID does not exist.
     """
 
     queryset = ApplicationQuestion.objects.all()
@@ -537,12 +547,22 @@ class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
+        """
+        ## Retrieves application questions.
+        - If a `program_id` query parameter is provided, filters the questions for that specific program.
+        - If the provided `program_id` does not exist, returns a 404 error.
+        """
         queryset = ApplicationQuestion.objects.all()
-        program_id = self.request.query_params.get('program', None)
-        
+        program_id = self.request.query_params.get("program", None)
+
         if program_id is not None:
+            if not Program.objects.filter(id=program_id).exists():
+                return Response(
+                    {"detail": "Program not found."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
             queryset = queryset.filter(program_id=program_id)
-        
+
         return queryset
 
 
