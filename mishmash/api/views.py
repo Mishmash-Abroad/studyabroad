@@ -570,13 +570,24 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing responses to application questions.
 
-    Provides:
-    - Viewing and editing responses to application questions
-    - Filtering by question ID and student ID
+    ## Features:
+    - **Students can**:
+      - View and edit their own responses.
+      - Filter responses by question ID or application ID.
+    - **Admins can**:
+      - View all responses.
+      - **Cannot edit or delete** any responses.
 
-    Permissions:
-    - List/Retrieve: Authenticated users (only their own responses) and admins
-    - Create/Update/Delete: Authenticated users (only their own responses) and admins
+    ## Served Endpoints:
+    - `GET /api/responses/` → View responses (Students: their own, Admins: all)
+    - `GET /api/responses/{id}/` → Retrieve a response (Students: own, Admins: any)
+    - `POST /api/responses/` → Create a response (Students only)
+    - `PATCH /api/responses/{id}/` → Update a response (Students only)
+    - `DELETE /api/responses/{id}/` → **Disabled** (Responses cannot be deleted)
+
+    ## Permissions:
+    - **Students** can view and edit **their own responses**.
+    - **Admins** can view **all responses** but **cannot edit or delete** responses.
     """
 
     queryset = ApplicationResponse.objects.all()
@@ -588,18 +599,26 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Admins can view all responses and filter by question or student.
-        Students can only view their own responses.
+        ## Retrieves responses based on filters:
+        - **Admins see all responses**.
+        - **Students see only their own responses**.
+        - Filters available for `?question=<id>` and `?application=<id>`.
+
+        ## Errors:
+        - **404 Not Found** if an invalid `application_id` or `question_id` is provided.
         """
         queryset = ApplicationResponse.objects.all()
-
         question_id = self.request.query_params.get("question", None)
         application_id = self.request.query_params.get("application", None)
 
         if question_id:
+            if not ApplicationQuestion.objects.filter(id=question_id).exists():
+                return Response({"detail": "Question not found."}, status=status.HTTP_404_NOT_FOUND)
             queryset = queryset.filter(question_id=question_id)
 
         if application_id:
+            if not Application.objects.filter(id=application_id).exists():
+                return Response({"detail": "Application not found."}, status=status.HTTP_404_NOT_FOUND)
             queryset = queryset.filter(application_id=application_id)
 
         if not self.request.user.is_admin:
@@ -609,83 +628,68 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     
     def get_object(self):
         """
-        Ensures that the object-level permissions check is applied for every action.
-        Also ensures that students can only access responses tied to their applications.
+        ## Ensures object-level permission checks:
+        - **Students can only access responses tied to their applications**.
+        - **Admins can access any response**.
+        - Raises **403 Forbidden** for unauthorized access.
         """
         obj = super().get_object()
 
         if not self.request.user.is_admin and obj.application.student != self.request.user:
             raise PermissionDenied(detail="You do not have permission to access this response.")
 
-        self.check_object_permissions(self.request, obj)
         return obj
     
     def destroy(self, request, *args, **kwargs):
         """
-        Prevent unauthorized users from deleting another student's response.
+        ## Deleting responses is **not allowed**.
         """
-        response = self.get_object()
-
-        if response.application.student != request.user and not request.user.is_admin:
-            return Response(
-                {"detail": "You do not have permission to delete this response."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        return super().destroy(request, *args, **kwargs)
+        return Response(
+            {"detail": "Deleting responses is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     def update(self, request, *args, **kwargs):
         """
-        Prevent unauthorized users from updating another student's response.
+        ## Updates a response (Students only).
+
+        **Permissions:**
+        - **Students** can update responses tied to their applications.
+        - **Admins cannot update responses.**
+
+        **Expected Input:**
+        ```json
+        {
+          "response": "Updated response text"
+        }
+        ```
+
+        **Errors:**
+        - **403 Forbidden** if a student tries to update another student's response.
+        - **403 Forbidden** if an admin attempts to update a response.
+        - **400 Bad Request** if `response` text is missing.
         """
         response = self.get_object()
 
-        if response.application.student != request.user and not request.user.is_admin:
+        if request.user.is_admin:
+            return Response(
+                {"detail": "Admins cannot modify responses."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if response.application.student != request.user:
             return Response(
                 {"detail": "You do not have permission to modify this response."},
-                status=status.HTTP_403_FORBIDDEN,
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if "response" not in request.data:
+            return Response(
+                {"detail": "Response text is required."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         return super().update(request, *args, **kwargs)
-
-    @action(detail=False, methods=["post"])
-    def create_or_edit(self, request):
-        """
-        Create or edit the current user's responses for a specific program.
-        """
-
-        application = Application.objects.get(
-            id=request.data.get("application")
-        )
-        
-        question = ApplicationQuestion.objects.get(
-            id=request.data.get("question_id")
-        )
-
-        questionResponse = ApplicationResponse.objects.filter(
-            application=application,
-            question=question,
-        ).first()
-
-        if not questionResponse:
-            newQuestionResponse = ApplicationResponse.objects.create(
-                application=application,
-                question=question,
-                response=request.data.get("response_text"),
-            )
-            return Response(
-                {"message": "Responses created", "id": newQuestionResponse.id},
-                status=status.HTTP_200_OK,
-            )
-
-        questionResponse.response = request.data.get("response_text")
-        questionResponse.save()
-
-        return Response(
-            {"message": "Responses updated", "id": questionResponse.id},
-            status=status.HTTP_200_OK,
-        )
-
 
 class AnnouncementViewSet(viewsets.ModelViewSet):
     """
