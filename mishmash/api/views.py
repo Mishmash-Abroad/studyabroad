@@ -96,17 +96,6 @@ class IsAdmin(permissions.BasePermission):
 
 ### ViewSet classes for the API interface ###
 
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def logout_view(request):
-    """
-    Logout the current user
-    """
-    auth_logout(request)
-    return Response({"detail": "Successfully logged out"})
-
-
 class ProgramViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad programs.
@@ -735,33 +724,108 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing users. Admins can view all users, while regular users can only view their own data.
+    ViewSet for managing users.
 
-    Provides:
-    - Viewing the current authenticated user's details
-    - Logging in to obtain an authentication token
-    - Logging out to invalidate the authentication token
+    ## Features:
+    - **Regular users**:
+      - Retrieve their own details.
+      - Change their password.
+    - **Admins**:
+      - View all users.
+      - Manage user accounts.
+    - **Public**:
+      - Login, signup, and obtain authentication tokens.
 
-    Permissions:
-    - Login: Anyone
-    - Logout: Authenticated users
-    - Current user details: Authenticated users
+    ## Served Endpoints:
+    - `GET /api/users/` → List all users (Admins only)
+    - `POST /api/users/signup/` → Create a new user account
+    - `POST /api/users/login/` → Authenticate user and provide token
+    - `POST /api/users/logout/` → Log out current user
+    - `GET /api/users/current_user/` → Retrieve current user details
+    - `PATCH /api/users/change_password/` → Change current user's password
+
+    ## Permissions:
+    - **Public:** Can sign up, log in, and log out.
+    - **Authenticated Users:** Can view their own data and change their password.
+    - **Admins:** Can manage all users.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
 
-    @action(
-        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
-        """Get details of the currently authenticated user."""
+        """
+        ## Retrieve Current User's Details
+        **URL:** `GET /api/users/current_user/`
+        **Permissions:** Authenticated users only.
+        **Response:** User details.
+        """
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
+    def signup(self, request):
+        """
+        ## Sign Up a New User
+        **URL:** `POST /api/users/signup/`
+        **Permissions:** Public access.
+        **Request:** 
+        ```json
+        {
+            "username": "user123",
+            "password": "securepassword",
+            "display_name": "John Doe",
+            "email": "user@example.com"
+        }
+        ```
+        **Response:** Authentication token and user details on success.
+        **Errors:** 400 if missing credentials.
+        """
+        username = request.data.get("username")
+        password = request.data.get("password")
+        display_name = request.data.get("display_name")
+        email = request.data.get("email")
+
+        if not username or not password:
+            return Response({"detail": "Please provide both username and password"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create(
+            username=username,
+            password=make_password(password),
+            display_name=display_name,
+            email=email,
+            is_active=True,
+        )
+
+        token, _ = Token.objects.get_or_create(user=user)
+
+        return Response(
+            {
+                "token": token.key,
+                "user_id": user.id,
+                "username": user.username,
+                "display_name": user.display_name,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def login(self, request):
-        """Custom login endpoint."""
+        """
+        ## User Login
+        **URL:** `POST /api/users/login/`
+        **Permissions:** Public access.
+        **Request:** 
+        ```json
+        {
+            "username": "user123",
+            "password": "securepassword"
+        }
+        ```
+        **Response:** Authentication token and user details on success.
+        **Errors:** 401 if invalid credentials.
+        """
         username = request.data.get("username")
         password = request.data.get("password")
         user = authenticate(request, username=username, password=password)
@@ -769,177 +833,60 @@ class UserViewSet(viewsets.ModelViewSet):
         if user:
             token, _ = Token.objects.get_or_create(user=user)
             return Response({"token": token.key, "user": UserSerializer(user).data})
-        return Response(
-            {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
-        )
 
-    @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
+        return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def logout(self, request):
-        """Custom logout endpoint."""
+        """
+        ## User Logout
+        **URL:** `POST /api/users/logout/`
+        **Permissions:** Authenticated users only.
+        **Response:** Success message.
+        """
         try:
             request.auth.delete()
-            return Response({"detail": "Successfully logged out."})
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
         except AttributeError:
-            return Response(
-                {"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST)
 
-
-### Frontend Views ###
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_current_user(request):
-    """
-    Retrieve the currently authenticated user's profile information.
-
-    Requires:
-        - Valid authentication token in request header
-
-    Returns:
-        - User ID, username, display name, and admin status
-        - 401 if not authenticated
-    """
-    user = request.user
-    return Response(
+    @action(detail=False, methods=["patch"], permission_classes=[permissions.IsAuthenticated])
+    def change_password(self, request):
+        """
+        ## Change Password
+        **URL:** `PATCH /api/users/change_password/`
+        **Permissions:** Authenticated users only.
+        **Request:** 
+        ```json
         {
-            "user_id": user.id,
-            "username": user.username,
-            "display_name": user.display_name,
-            "is_admin": user.is_admin,
+            "password": "newpassword",
+            "confirm_password": "newpassword"
         }
-    )
+        ```
+        **Response:** Updated authentication token.
+        **Errors:** 400 if passwords do not match.
+        """
+        password = request.data.get("password")
+        confirm_password = request.data.get("confirm_password")
 
+        if password != confirm_password:
+            return Response({"detail": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def login_view(request):
-    """
-    Authenticate a user and provide an access token.
+        user = request.user
+        user.set_password(password)
+        user.save()
 
-    Accepts:
-        - username: User's login name
-        - password: User's password
+        update_session_auth_hash(request, user)
 
-    Returns:
-        - Authentication token and user details on success
-        - 400 if missing credentials
-        - 401 if invalid credentials
-    """
-    username = request.data.get("username")
-    password = request.data.get("password")
+        token, _ = Token.objects.get_or_create(user=user)
 
-    # Validate input
-    if not username or not password:
         return Response(
-            {"detail": "Please provide both username and password"}, status=400
+            {
+                "token": token.key,
+                "user_id": user.id,
+                "username": user.username,
+                "display_name": user.display_name,
+            },
+            status=status.HTTP_200_OK,
         )
-
-    # Authenticate user
-    user = authenticate(username=username, password=password)
-    if not user:
-        return Response({"detail": "Invalid credentials"}, status=401)
-
-    # Get or create authentication token
-    token, _ = Token.objects.get_or_create(user=user)
-
-    return Response(
-        {
-            "token": token.key,
-            "user_id": user.id,
-            "username": user.username,
-            "display_name": user.display_name,
-            "is_admin": user.is_admin,
-        }
-    )
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def signup_view(request):
-    """
-    Sign up a user and provide an access token.
-
-    Accepts:
-        - username: User's login name
-        - password: User's password
-
-    Returns:
-        - Authentication token and user details on success
-        - 400 if missing credentials
-        - 401 if invalid credentials
-    """
-    username = request.data.get("username")
-    password = request.data.get("password")
-    display_name = request.data.get("displayName")
-    email = request.data.get("email")
-
-    # Validate input
-    if not username or not password:
-        return Response(
-            {"detail": "Please provide both username and password"}, status=400
-        )
-
-    # Authenticate user
-    # Create base user account with authentication fields
-    user = User.objects.create(
-        username=username,
-        password=make_password(password),  # All test users have password 'guest'
-        display_name=display_name,
-        email=email,
-        is_admin=False,
-        is_staff=False,
-        is_superuser=False,
-        is_active=True,  # Account is active and can log in
-    )
-
-    if not user:
-        return Response({"detail": "Invalid credentials"}, status=401)
-
-    # Get or create authentication token
-    token, _ = Token.objects.get_or_create(user=user)
-
-    return Response(
-        {
-            "token": token.key,
-            "user_id": user.id,
-            "username": user.username,
-            "display_name": user.display_name,
-            "is_admin": user.is_admin,
-        }
-    )
-
-
-@api_view(["PATCH"])
-@permission_classes([IsAuthenticated])
-def change_password(request):
-    """
-    Change the current user's password.
-    """
-    confirmPassword = request.data.get("confirmPassword")
-    password = request.data.get("password")
-
-    # Validate input
-    if password != confirmPassword:
-        return Response({"detail": "Please provide both fields"}, status=400)
-
-    user = request.user
-    user.set_password(password)
-    user.save()
-
-    # Update the session auth hash to keep the user logged in
-    update_session_auth_hash(request, user)
-
-    # Generate a new token (optional)
-    token, _ = Token.objects.get_or_create(user=user)
-
-    return Response(
-        {
-            "token": token.key,
-            "user_id": user.id,
-            "username": user.username,
-            "display_name": user.display_name,
-            "is_admin": user.is_admin,
-        }
-    )
