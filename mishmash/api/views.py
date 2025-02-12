@@ -111,15 +111,22 @@ class ProgramViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad programs.
 
-    Provides CRUD operations for programs and includes:
-    - Search by title or faculty leads
-    - Ordering by application deadline
-    - Filtering for current/future programs only
-    - Application status checking for authenticated users
+    This API provides CRUD operations for programs, along with additional endpoints for 
+    retrieving application status, applicant statistics, and application questions.
 
-    Permissions:
+    ## Permissions:
     - List/Retrieve: All users
     - Create/Update/Delete: Admin only
+
+    ## Endpoints:
+    - `GET /api/programs/` → List all programs (public)
+    - `POST /api/programs/` → Create a new program (admin only)
+    - `GET /api/programs/{id}/` → Retrieve specific program details (public)
+    - `PUT/PATCH /api/programs/{id}/` → Update an existing program (admin only)
+    - `DELETE /api/programs/{id}/` → Delete a program (admin only)
+    - `GET /api/programs/{id}/application_status/` → Get current user's application status (authenticated users)
+    - `GET /api/programs/{id}/applicant_counts/` → Get applicant counts for a program (admin only)
+    - `GET /api/programs/{id}/questions/` → Get application questions for a program (public)
     """
 
     serializer_class = ProgramSerializer
@@ -131,15 +138,25 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Get the list of programs, filtered by:
-        - End date (only current/future programs)
-        - Search query (title or faculty leads)
+        Retrieve the list of study abroad programs.
+
+        ## Filters:
+        - Filters programs where `end_date >= today` (only current and future programs are shown)
+        - Optional search filter for `title` or `faculty_leads`
+
+        ## Returns:
+        - 200 OK: List of programs (filtered)
+
+        ## Example:
+        - `GET /api/programs/?search=engineering`
+
+        ## Permissions:
+        - Public access (any user)
         """
-        # Only show current and future programs
+
         today = timezone.now().date()
         queryset = Program.objects.filter(end_date__gte=today)
 
-        # Apply search filter if provided
         search = self.request.query_params.get("search", None)
         if search:
             queryset = queryset.filter(
@@ -150,17 +167,40 @@ class ProgramViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """
-        When an admin creates a new program, automatically add default questions.
-        Also, enforce validation for application and program dates.
+        Create a new study abroad program.
+
+        ## Expected Input (JSON):
+        ```json
+        {
+            "title": "Engineering in Germany",
+            "year_semester": "Fall 2025",
+            "faculty_leads": "Dr. Smith",
+            "application_open_date": "2025-01-01",
+            "application_deadline": "2025-03-15",
+            "start_date": "2025-05-01",
+            "end_date": "2025-07-31",
+            "description": "An amazing program in Germany."
+        }
+        ```
+
+        ## Validation:
+        - `application_open_date` cannot be after `application_deadline`
+        - `start_date` cannot be after `end_date`
+        - Dates must be formatted as `YYYY-MM-DD`
+
+        ## Returns:
+        - 201 Created: Program created successfully
+        - 400 Bad Request: Invalid input or date validation failed
+
+        ## Permissions:
+        - Admin only
         """
 
-        # Extract date fields from request data
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
 
-        # Convert date strings to datetime.date objects
         try:
             application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date()
             application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date()
@@ -169,19 +209,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        # Validate date logic
         if application_open_date > application_deadline:
             raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
 
         if start_date > end_date:
             raise ValidationError({"detail": "Start date cannot be after the end date."})
 
-        # Proceed with program creation
         response = super().create(request, *args, **kwargs)
-        program_id = response.data.get("id")
-        program_instance = Program.objects.get(id=program_id)
+        program_instance = Program.objects.get(id=response.data.get("id"))
 
-        # Default application questions
         default_questions = [
             "Why do you want to participate in this study abroad program?",
             "How does this program align with your academic or career goals?",
@@ -197,17 +233,41 @@ class ProgramViewSet(viewsets.ModelViewSet):
     
     def update(self, request, *args, **kwargs):
         """
-        Ensure validation for application and program dates during updates.
+        Update an existing study abroad program.
+
+        ## Expected Input (JSON):
+        ```json
+        {
+            "title": "Updated Program Name",
+            "year_semester": "Fall 2026",
+            "faculty_leads": "Dr. New Lead",
+            "application_open_date": "2026-02-01",
+            "application_deadline": "2026-04-15",
+            "start_date": "2026-06-01",
+            "end_date": "2026-08-31",
+            "description": "Updated program details."
+        }
+        ```
+
+        ## Validation:
+        - `application_open_date` cannot be after `application_deadline`
+        - `start_date` cannot be after `end_date`
+        - Dates must be formatted as `YYYY-MM-DD`
+
+        ## Returns:
+        - 200 OK: Program updated successfully
+        - 400 Bad Request: Invalid input or failed validation
+
+        ## Permissions:
+        - Admin only
         """
         program_instance = self.get_object()
 
-        # Extract date fields from request data (if provided)
         application_open_date = request.data.get("application_open_date", program_instance.application_open_date)
         application_deadline = request.data.get("application_deadline", program_instance.application_deadline)
         start_date = request.data.get("start_date", program_instance.start_date)
         end_date = request.data.get("end_date", program_instance.end_date)
 
-        # Convert date strings to datetime.date objects
         try:
             application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date() if isinstance(application_open_date, str) else application_open_date
             application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date() if isinstance(application_deadline, str) else application_deadline
@@ -216,25 +276,30 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        # Validate date logic
         if application_open_date > application_deadline:
             raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
 
         if start_date > end_date:
             raise ValidationError({"detail": "Start date cannot be after the end date."})
 
-        # Proceed with update
         return super().update(request, *args, **kwargs)
 
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def application_status(self, request, pk=None):
         """
-        Check the current user's application status for a specific program.
+        Get the current user's application status for a specific program.
 
-        Returns:
-        - Application status and ID if an application exists
-        - None if no application found or user not authenticated
+        ## Returns:
+        - 200 OK: `{"status": "Applied", "application_id": 12}`
+        - 401 Unauthorized: If user is not authenticated
+        - 404 Not Found: If application does not exist
+
+        ## Example:
+        - `GET /api/programs/5/application_status/`
+
+        ## Permissions:
+        - Authenticated users only
         """
         program = self.get_object()
         if not request.user.is_authenticated:
@@ -248,10 +313,19 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except Application.DoesNotExist:
             return Response({'status': None})
     
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def applicant_counts(self, request, pk=None):
         """
-        Returns counts of applicants in different statuses for a given program.
+        Retrieve the number of applicants in different statuses for a program.
+
+        ## Returns:
+        - 200 OK: `{ "applied": 10, "enrolled": 5, "withdrawn": 2, "canceled": 1, "total_active": 15 }`
+
+        ## Example:
+        - `GET /api/programs/3/applicant_counts/`
+
+        ## Permissions:
+        - Admin only
         """
         program = self.get_object()
 
@@ -266,10 +340,20 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         return Response(applicant_counts)
     
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def questions(self, request, pk=None):
         """
-        Returns all application questions for a program.
+        Retrieve all application questions for a specific program.
+
+        ## Returns:
+        - 200 OK: List of questions
+        - 404 Not Found: If program does not exist
+
+        ## Example:
+        - `GET /api/programs/2/questions/`
+
+        ## Permissions:
+        - Public access
         """
         program = self.get_object()
         questions = ApplicationQuestion.objects.filter(program=program)
