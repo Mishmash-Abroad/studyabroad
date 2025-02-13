@@ -257,7 +257,7 @@ const ApplicationPage = () => {
       }
 
       const application_response = await axiosInstance.post(
-        `/api/applications/create_or_edit/`,
+        `/api/applications/`,
         applicationData
       );
 
@@ -278,7 +278,7 @@ const ApplicationPage = () => {
       for (const questionResponse of questionResponses) {
         try {
           const questions_response = await axiosInstance.post(
-            `/api/responses/create_or_edit/`,
+            `/api/responses/`,
             { ...questionResponse, application: application_response.data.id }
           );
 
