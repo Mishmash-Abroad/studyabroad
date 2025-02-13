@@ -403,6 +403,12 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
         return queryset
     
+    def perform_create(self, serializer):
+        """
+        Automatically assign the authenticated user as the applicant.
+        """
+        serializer.save(student=self.request.user)
+    
     def create(self, request, *args, **kwargs):
         """
         Submit a new application.
@@ -496,9 +502,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if new_status not in ["Applied", "Enrolled", "Cancelled"]:
+                if new_status not in ["Applied", "Enrolled", "Canceled"]:
                     return Response(
-                        {"detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Cancelled'."},
+                        {"detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
@@ -602,13 +608,19 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 
         if question_id:
             if not ApplicationQuestion.objects.filter(id=question_id).exists():
-                return Response({"detail": "Question not found."}, status=status.HTTP_404_NOT_FOUND)
+                raise NotFound(detail="Question not found.")
             queryset = queryset.filter(question_id=question_id)
 
         if application_id:
-            if not Application.objects.filter(id=application_id).exists():
-                return Response({"detail": "Application not found."}, status=status.HTTP_404_NOT_FOUND)
-            queryset = queryset.filter(application_id=application_id)
+            try:
+                application = Application.objects.get(id=application_id)
+            except Application.DoesNotExist:
+                raise NotFound(detail="Application not found.")
+
+            if not self.request.user.is_admin and application.student != self.request.user:
+                raise PermissionDenied(detail="You do not have permission to access this application's responses.")
+
+            queryset = queryset.filter(application=application)
 
         if not self.request.user.is_admin:
             queryset = queryset.filter(application__student=self.request.user)
