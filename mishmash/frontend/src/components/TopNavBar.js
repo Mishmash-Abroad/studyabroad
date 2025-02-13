@@ -147,7 +147,7 @@ function TopNavBar({ onLoginClick }) {
   const handleLogout = async () => {
     handleUserMenuClose(); // Close the menu first
     try {
-      await axiosInstance.post("/api/logout/");
+      await axiosInstance.post("/api/users/logout/");
       logout();
       navigate("/");
     } catch (error) {
