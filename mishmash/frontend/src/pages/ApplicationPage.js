@@ -217,7 +217,7 @@ useEffect(() => {
 
   const renderWithdrawReapply = () => {
     if (!applicationData.id) {
-      return null; // No application exists, so no buttons needed
+      return null;
     }
 
     const handleWithdraw = async () => {
