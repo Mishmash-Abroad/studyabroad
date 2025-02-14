@@ -391,7 +391,6 @@ class Command(BaseCommand):
 
         client.force_authenticate(user=student)
         response = client.post("/api/applications/", {
-            "student": student.id,
             "program": program.id,
             "date_of_birth": "2000-01-01",
             "gpa": 3.8,
