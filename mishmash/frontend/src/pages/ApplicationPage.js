@@ -201,8 +201,6 @@ useEffect(() => {
       setLoading(false);
     }
   };
-  
-  
 
   const renderSubmitButton = () => {
     if (isApplicationReadOnly) return null;
@@ -216,6 +214,48 @@ useEffect(() => {
       </Button>
     );
   };
+
+  const renderWithdrawReapply = () => {
+    if (!applicationData.id) {
+      return null; // No application exists, so no buttons needed
+    }
+
+    const handleWithdraw = async () => {
+      const userConfirmed = window.confirm(
+        "Are you sure you want to withdraw your application?"
+      );
+      if (!userConfirmed) return;
+
+      try {
+        setLoading(true);
+        await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
+          status: "Withdrawn",
+        });
+
+        setApplicationData({ ...applicationData, status: "Withdrawn" });
+      } catch (err) {
+        setError(`${err} Failed to withdraw application.`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (applicationData.status === "Applied") {
+      return (
+        <Box mt={3} display="flex" justifyContent="space-between">
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleWithdraw}
+            disabled={loading}
+          >
+            Withdraw Application
+          </Button>
+        </Box>
+      );
+    }
+};
+
 
   return (
     <PageContainer>
@@ -300,6 +340,7 @@ useEffect(() => {
           ))}
 
           {renderSubmitButton()}
+          {renderWithdrawReapply()}
         </form>
       </ContentContainer>
     </PageContainer>
