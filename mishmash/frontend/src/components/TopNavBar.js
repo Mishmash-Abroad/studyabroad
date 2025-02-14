@@ -147,7 +147,7 @@ function TopNavBar({ onLoginClick }) {
   const handleLogout = async () => {
     handleUserMenuClose(); // Close the menu first
     try {
-      await axiosInstance.post("/api/logout/");
+      await axiosInstance.post("/api/users/logout/");
       logout();
       navigate("/");
     } catch (error) {
@@ -194,7 +194,7 @@ function TopNavBar({ onLoginClick }) {
                 onClick={handleUserMenuClick}
                 startIcon={<UserIcon />}
               >
-                {user.display_name}
+                {user.user.display_name}
               </UserButton>
               <StyledMenu
                 id="user-menu"

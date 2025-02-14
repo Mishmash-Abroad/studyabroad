@@ -116,7 +116,7 @@ const LoginModal = ({ onClose }) => {
     setLoading(true);
 
     try {
-      const response = await axiosInstance.post("/api/login/", {
+      const response = await axiosInstance.post("/api/users/login/", {
         username,
         password,
       });
@@ -155,7 +155,7 @@ const LoginModal = ({ onClose }) => {
     }
 
     try {
-      const response = await axiosInstance.post("/api/signup/", {
+      const response = await axiosInstance.post("/api/users/signup/", {
         username,
         password,
         email,
