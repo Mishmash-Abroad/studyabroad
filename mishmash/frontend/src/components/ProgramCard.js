@@ -188,7 +188,6 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
   const today = new Date();
   const applicationOpenDate = new Date(program.application_open_date);
   const applicationDeadline = new Date(program.application_deadline);
-  console.log(user);
   useEffect(() => {
     const fetchApplicationStatus = async () => {
       try {
