@@ -35,7 +35,14 @@ from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from django.db.models import Q
-from .models import Program, Application, ApplicationQuestion, ApplicationResponse, Announcement
+from .models import (
+    Program,
+    Application,
+    ApplicationQuestion,
+    ApplicationResponse,
+    Announcement,
+    Document
+)
 from .serializers import (
     ProgramSerializer,
     ApplicationSerializer,
@@ -43,7 +50,9 @@ from .serializers import (
     ApplicationQuestionSerializer,
     ApplicationResponseSerializer,
     AnnouncementSerializer,
+    DocumentSerializer
 )
+from django.shortcuts import render, redirect
 from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
@@ -70,14 +79,14 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.student == request.user or request.user.is_admin
 
-    
+
 class IsAdminOrSelf(permissions.BasePermission):
     """Custom permission to allow users to access their own data, while admins can access any user's data."""
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_admin or obj.id == request.user.id
 
-    
+
 class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
 
@@ -87,20 +96,22 @@ class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
 
         return obj.application.student == request.user
 
-    
+
 class IsAdmin(permissions.BasePermission):
     """Custom permission to allow only admin to view or edit views"""
+
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.is_admin
 
 
 ### ViewSet classes for the API interface ###
 
+
 class ProgramViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing study abroad programs.
 
-    This API provides CRUD operations for programs, along with additional endpoints for 
+    This API provides CRUD operations for programs, along with additional endpoints for
     retrieving application status, applicant statistics, and application questions.
 
     ## Permissions:
@@ -121,9 +132,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'faculty_leads']
-    ordering_fields = ['application_deadline']
-    ordering = ['application_deadline']
+    search_fields = ["title", "faculty_leads"]
+    ordering_fields = ["application_deadline"]
+    ordering = ["application_deadline"]
 
     def get_queryset(self):
         """
@@ -153,7 +164,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
             )
 
         return queryset
-    
+
     def create(self, request, *args, **kwargs):
         """
         Create a new study abroad program.
@@ -191,18 +202,28 @@ class ProgramViewSet(viewsets.ModelViewSet):
         end_date = request.data.get("end_date")
 
         try:
-            application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date()
-            application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date()
+            application_open_date = datetime.strptime(
+                application_open_date, "%Y-%m-%d"
+            ).date()
+            application_deadline = datetime.strptime(
+                application_deadline, "%Y-%m-%d"
+            ).date()
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
         if application_open_date > application_deadline:
-            raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
+            raise ValidationError(
+                {
+                    "detail": "Application open date cannot be after the application deadline."
+                }
+            )
 
         if start_date > end_date:
-            raise ValidationError({"detail": "Start date cannot be after the end date."})
+            raise ValidationError(
+                {"detail": "Start date cannot be after the end date."}
+            )
 
         response = super().create(request, *args, **kwargs)
         program_instance = Program.objects.get(id=response.data.get("id"))
@@ -216,10 +237,12 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ]
 
         for question_text in default_questions:
-            ApplicationQuestion.objects.create(program=program_instance, text=question_text)
+            ApplicationQuestion.objects.create(
+                program=program_instance, text=question_text
+            )
 
         return response
-    
+
     def update(self, request, *args, **kwargs):
         """
         Update an existing study abroad program.
@@ -252,27 +275,52 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         program_instance = self.get_object()
 
-        application_open_date = request.data.get("application_open_date", program_instance.application_open_date)
-        application_deadline = request.data.get("application_deadline", program_instance.application_deadline)
+        application_open_date = request.data.get(
+            "application_open_date", program_instance.application_open_date
+        )
+        application_deadline = request.data.get(
+            "application_deadline", program_instance.application_deadline
+        )
         start_date = request.data.get("start_date", program_instance.start_date)
         end_date = request.data.get("end_date", program_instance.end_date)
 
         try:
-            application_open_date = datetime.strptime(application_open_date, "%Y-%m-%d").date() if isinstance(application_open_date, str) else application_open_date
-            application_deadline = datetime.strptime(application_deadline, "%Y-%m-%d").date() if isinstance(application_deadline, str) else application_deadline
-            start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if isinstance(start_date, str) else start_date
-            end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if isinstance(end_date, str) else end_date
+            application_open_date = (
+                datetime.strptime(application_open_date, "%Y-%m-%d").date()
+                if isinstance(application_open_date, str)
+                else application_open_date
+            )
+            application_deadline = (
+                datetime.strptime(application_deadline, "%Y-%m-%d").date()
+                if isinstance(application_deadline, str)
+                else application_deadline
+            )
+            start_date = (
+                datetime.strptime(start_date, "%Y-%m-%d").date()
+                if isinstance(start_date, str)
+                else start_date
+            )
+            end_date = (
+                datetime.strptime(end_date, "%Y-%m-%d").date()
+                if isinstance(end_date, str)
+                else end_date
+            )
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
         if application_open_date > application_deadline:
-            raise ValidationError({"detail": "Application open date cannot be after the application deadline."})
+            raise ValidationError(
+                {
+                    "detail": "Application open date cannot be after the application deadline."
+                }
+            )
 
         if start_date > end_date:
-            raise ValidationError({"detail": "Start date cannot be after the end date."})
+            raise ValidationError(
+                {"detail": "Start date cannot be after the end date."}
+            )
 
         return super().update(request, *args, **kwargs)
-
 
     @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def application_status(self, request, pk=None):
@@ -300,8 +348,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 {"status": application.status, "application_id": application.id}
             )
         except Application.DoesNotExist:
-            return Response({'status': None})
-    
+            return Response({"status": None})
+
     @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def applicant_counts(self, request, pk=None):
         """
@@ -319,16 +367,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
         program = self.get_object()
 
         applicant_counts = Application.objects.filter(program=program).aggregate(
-            applied=Count('id', filter=Q(status='Applied')),
-            enrolled=Count('id', filter=Q(status='Enrolled')),
-            withdrawn=Count('id', filter=Q(status='Withdrawn')),
-            canceled=Count('id', filter=Q(status='Canceled'))
+            applied=Count("id", filter=Q(status="Applied")),
+            enrolled=Count("id", filter=Q(status="Enrolled")),
+            withdrawn=Count("id", filter=Q(status="Withdrawn")),
+            canceled=Count("id", filter=Q(status="Canceled")),
         )
 
-        applicant_counts['total_active'] = applicant_counts['applied'] + applicant_counts['enrolled']
+        applicant_counts["total_active"] = (
+            applicant_counts["applied"] + applicant_counts["enrolled"]
+        )
 
         return Response(applicant_counts)
-    
+
     @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def questions(self, request, pk=None):
         """
@@ -348,6 +398,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         questions = ApplicationQuestion.objects.filter(program=program)
         serializer = ApplicationQuestionSerializer(questions, many=True)
         return Response(serializer.data)
+
 
 class ApplicationViewSet(viewsets.ModelViewSet):
     """
@@ -393,22 +444,22 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         """
         queryset = Application.objects.all()
 
-        student_id = self.request.query_params.get('student', None)
+        student_id = self.request.query_params.get("student", None)
         if student_id:
             queryset = queryset.filter(student_id=student_id)
 
-        program_id = self.request.query_params.get('program', None)
+        program_id = self.request.query_params.get("program", None)
         if program_id:
             queryset = queryset.filter(program_id=program_id)
 
         return queryset
-    
+
     def perform_create(self, serializer):
         """
         Automatically assign the authenticated user as the applicant.
         """
         serializer.save(student=self.request.user)
-    
+
     def create(self, request, *args, **kwargs):
         """
         Submit a new application.
@@ -440,11 +491,17 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         try:
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
         except ValueError:
-            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
         if date_of_birth > min_birth_date:
-            return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Applicants must be at least 10 years old."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return super().create(request, *args, **kwargs)
 
@@ -485,11 +542,17 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             try:
                 new_dob = datetime.strptime(data["date_of_birth"], "%Y-%m-%d").date()
             except ValueError:
-                return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Invalid date format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             min_birth_date = datetime.today().date() - timedelta(days=10 * 365)
             if new_dob > min_birth_date:
-                return Response({"detail": "Applicants must be at least 10 years old."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Applicants must be at least 10 years old."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if "status" in data:
             new_status = data["status"]
@@ -497,22 +560,28 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             if not user.is_admin:
                 if new_status not in ["Applied", "Withdrawn"]:
                     return Response(
-                        {"detail": "Students can only change their application status to 'Applied' or 'Withdrawn'."},
+                        {
+                            "detail": "Students can only change their application status to 'Applied' or 'Withdrawn'."
+                        },
                         status=status.HTTP_403_FORBIDDEN,
                     )
 
             else:
                 if new_status not in ["Applied", "Enrolled", "Canceled"]:
                     return Response(
-                        {"detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."},
+                        {
+                            "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
+                        },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
         if "program" in data and data["program"] != application.program.id:
-            return Response({"detail": "You cannot change the program after applying."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "You cannot change the program after applying."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         return super().update(request, *args, **kwargs)
-
 
 
 class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
@@ -553,8 +622,7 @@ class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
         if program_id is not None:
             if not Program.objects.filter(id=program_id).exists():
                 return Response(
-                    {"detail": "Program not found."}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND
                 )
             queryset = queryset.filter(program_id=program_id)
 
@@ -617,8 +685,13 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             except Application.DoesNotExist:
                 raise NotFound(detail="Application not found.")
 
-            if not self.request.user.is_admin and application.student != self.request.user:
-                raise PermissionDenied(detail="You do not have permission to access this application's responses.")
+            if (
+                not self.request.user.is_admin
+                and application.student != self.request.user
+            ):
+                raise PermissionDenied(
+                    detail="You do not have permission to access this application's responses."
+                )
 
             queryset = queryset.filter(application=application)
 
@@ -626,7 +699,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(application__student=self.request.user)
 
         return queryset
-    
+
     def get_object(self):
         """
         ## Ensures object-level permission checks:
@@ -636,18 +709,23 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
         """
         obj = super().get_object()
 
-        if not self.request.user.is_admin and obj.application.student != self.request.user:
-            raise PermissionDenied(detail="You do not have permission to access this response.")
+        if (
+            not self.request.user.is_admin
+            and obj.application.student != self.request.user
+        ):
+            raise PermissionDenied(
+                detail="You do not have permission to access this response."
+            )
 
         return obj
-    
+
     def destroy(self, request, *args, **kwargs):
         """
         ## Deleting responses is **not allowed**.
         """
         return Response(
             {"detail": "Deleting responses is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     def update(self, request, *args, **kwargs):
@@ -675,22 +753,23 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
         if request.user.is_admin:
             return Response(
                 {"detail": "Admins cannot modify responses."},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         if response.application.student != request.user:
             return Response(
                 {"detail": "You do not have permission to modify this response."},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         if "response" not in request.data:
             return Response(
                 {"detail": "Response text is required."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return super().update(request, *args, **kwargs)
+
 
 class AnnouncementViewSet(viewsets.ModelViewSet):
     """
@@ -714,11 +793,12 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     - **Public & Students:** Can only view active announcements.
     - **Admins:** Can view, create, edit, and delete announcements.
     """
+
     serializer_class = AnnouncementSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['created_at', 'importance']
-    ordering = ['-created_at']
+    ordering_fields = ["created_at", "importance"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """
@@ -727,10 +807,10 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         - **Public users & students see only active announcements**.
         """
         queryset = Announcement.objects.all()
-        
+
         if not self.request.user.is_authenticated or not self.request.user.is_admin:
             queryset = queryset.filter(is_active=True)
-            
+
         return queryset
 
 
@@ -761,11 +841,14 @@ class UserViewSet(viewsets.ModelViewSet):
     - **Authenticated Users:** Can view their own data and change their password.
     - **Admins:** Can manage all users.
     """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -775,14 +858,14 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def signup(self, request):
         """
         ## Sign Up a New User
         **URL:** `POST /api/users/signup/`
         **Permissions:** Public access.
-        **Request:** 
+        **Request:**
         ```json
         {
             "username": "user123",
@@ -800,7 +883,10 @@ class UserViewSet(viewsets.ModelViewSet):
         email = request.data.get("email")
 
         if not username or not password:
-            return Response({"detail": "Please provide both username and password"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Please provide both username and password"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user = User.objects.create(
             username=username,
@@ -828,7 +914,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ## User Login
         **URL:** `POST /api/users/login/`
         **Permissions:** Public access.
-        **Request:** 
+        **Request:**
         ```json
         {
             "username": "user123",
@@ -846,10 +932,13 @@ class UserViewSet(viewsets.ModelViewSet):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({"token": token.key, "user": UserSerializer(user).data})
 
-        return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
-
-    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
+    )
     def logout(self, request):
         """
         ## User Logout
@@ -859,17 +948,25 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         try:
             request.auth.delete()
-            return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Successfully logged out."}, status=status.HTTP_200_OK
+            )
         except AttributeError:
-            return Response({"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-    @action(detail=False, methods=["patch"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False,
+        methods=["patch"],
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def change_password(self, request):
         """
         ## Change Password
         **URL:** `PATCH /api/users/change_password/`
         **Permissions:** Authenticated users only.
-        **Request:** 
+        **Request:**
         ```json
         {
             "password": "newpassword",
@@ -883,7 +980,10 @@ class UserViewSet(viewsets.ModelViewSet):
         confirm_password = request.data.get("confirm_password")
 
         if password != confirm_password:
-            return Response({"detail": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Passwords do not match."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user = request.user
         user.set_password(password)
@@ -902,3 +1002,14 @@ class UserViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+
+
+class DocumentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing documents.
+    """
+
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrSelf]
