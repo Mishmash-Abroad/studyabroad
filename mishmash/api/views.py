@@ -896,6 +896,12 @@ class UserViewSet(viewsets.ModelViewSet):
             is_active=True,
         )
 
+        if not user:
+            return Response(
+                {"detail": "Something went wrong when creating user"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         token, _ = Token.objects.get_or_create(user=user)
 
         return Response(

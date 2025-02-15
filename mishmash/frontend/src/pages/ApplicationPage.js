@@ -63,7 +63,7 @@ useEffect(() => {
       const questionsResponse = await axiosInstance.get(`/api/programs/${program_id}/questions/`);
       setQuestions(questionsResponse.data);
 
-      const applicationsResponse = await axiosInstance.get(`/api/applications/?student=${user.user.id}`);
+      const applicationsResponse = await axiosInstance.get(`/api/applications/?student=${user.id}`);
       const existingApplication = applicationsResponse.data.find(app => app.program == program_id);
 
       if (existingApplication) {
@@ -119,7 +119,7 @@ useEffect(() => {
   };
 
   getApplicationAndResponses();
-}, [program_id, user.user.id]);
+}, [program_id, user.id]);
 
 
   const handleInputChange = (e) => {

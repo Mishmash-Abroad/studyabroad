@@ -323,8 +323,8 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
         return (
           <ApplicationButton
             onClick={handleApply}
-            disabled={user?.user.is_admin}
-            variant={user?.user.is_admin ? "disabled" : "success"}
+            disabled={user?.is_admin}
+            variant={user?.is_admin ? "disabled" : "success"}
           >
             Apply Now
           </ApplicationButton>
