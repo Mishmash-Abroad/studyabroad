@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
-import { TextField, Button, Typography, Box, Tabs, Tab, Paper } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Tabs,
+  Tab,
+  Paper,
+} from "@mui/material";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -49,109 +57,136 @@ const ApplicationPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
-useEffect(() => {
-  const getApplicationAndResponses = async () => {
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    const getApplicationAndResponses = async () => {
+      setLoading(true);
+      setError("");
 
-    try {
-      const programResponse = await axiosInstance.get(`/api/programs/${program_id}`);
-      setProgram(programResponse.data);
+      try {
+        const programResponse = await axiosInstance.get(
+          `/api/programs/${program_id}`
+        );
+        setProgram(programResponse.data);
 
-      setIsApplicationReadOnly(new Date() > new Date(programResponse.data.application_deadline));
+        setIsApplicationReadOnly(
+          new Date() > new Date(programResponse.data.application_deadline)
+        );
 
-      const questionsResponse = await axiosInstance.get(`/api/programs/${program_id}/questions/`);
-      setQuestions(questionsResponse.data);
+        const questionsResponse = await axiosInstance.get(
+          `/api/programs/${program_id}/questions/`
+        );
+        setQuestions(questionsResponse.data);
 
-      const applicationsResponse = await axiosInstance.get(`/api/applications/?student=${user.id}`);
-      const existingApplication = applicationsResponse.data.find(app => app.program == program_id);
+        const applicationsResponse = await axiosInstance.get(
+          `/api/applications/?student=${user.user.id}`
+        );
+        const existingApplication = applicationsResponse.data.find(
+          (app) => app.program == program_id
+        );
 
-      if (existingApplication) {
-        setApplicationData({
-          id: existingApplication.id,
-          status: existingApplication.status,
-          program: existingApplication.program,
-          student: existingApplication.student,
-          date_of_birth: existingApplication.date_of_birth,
-          gpa: existingApplication.gpa,
-          major: existingApplication.major
-        });
+        if (existingApplication) {
+          setApplicationData({
+            id: existingApplication.id,
+            status: existingApplication.status,
+            program: existingApplication.program,
+            student: existingApplication.student,
+            date_of_birth: existingApplication.date_of_birth,
+            gpa: existingApplication.gpa,
+            major: existingApplication.major,
+          });
 
-        const responsesResponse = await axiosInstance.get(`/api/responses/?application=${existingApplication.id}`);
-        const responsesMap = new Map(responsesResponse.data.map(response => [response.question, response]));
+          const responsesResponse = await axiosInstance.get(
+            `/api/responses/?application=${existingApplication.id}`
+          );
+          const responsesMap = new Map(
+            responsesResponse.data.map((response) => [
+              response.question,
+              response,
+            ])
+          );
 
-        const questionsResponse = await axiosInstance.get(`/api/questions/?program=${program_id}`);
-        const updatedResponses = questionsResponse.data.map(question => {
-          const existingResponse = responsesMap.get(question.id);
-          return {
-            application: existingApplication.id,
+          const questionsResponse = await axiosInstance.get(
+            `/api/questions/?program=${program_id}`
+          );
+          const updatedResponses = questionsResponse.data.map((question) => {
+            const existingResponse = responsesMap.get(question.id);
+            return {
+              application: existingApplication.id,
+              question_id: question.id,
+              question_text: question.text,
+              response_id: existingResponse ? existingResponse.id : null,
+              response_text: existingResponse ? existingResponse.response : "",
+            };
+          });
+
+          setQuestionResponses(updatedResponses);
+        } else {
+          const questionsResponse = await axiosInstance.get(
+            `/api/questions/?program=${program_id}`
+          );
+          const blankResponses = questionsResponse.data.map((question) => ({
+            application: null,
             question_id: question.id,
             question_text: question.text,
-            response_id: existingResponse ? existingResponse.id : null,
-            response_text: existingResponse ? existingResponse.response : ""
-          };
-        });
+            response_id: null,
+            response_text: "",
+          }));
 
-        setQuestionResponses(updatedResponses);
-      } else {
-        const questionsResponse = await axiosInstance.get(`/api/questions/?program=${program_id}`);
-        const blankResponses = questionsResponse.data.map(question => ({
-          application: null,
-          question_id: question.id,
-          question_text: question.text,
-          response_id: null,
-          response_text: ""
-        }));
-
-        setQuestionResponses(blankResponses);
+          setQuestionResponses(blankResponses);
+        }
+      } catch (err) {
+        setError(
+          err.response?.data?.detail ||
+            err.response?.data?.error ||
+            err.message ||
+            "An error occurred while initializing the application."
+        );
+      } finally {
+        setLoading(false);
       }
+    };
 
-    } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        err.message ||
-        "An error occurred while initializing the application."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  getApplicationAndResponses();
-}, [program_id, user.id]);
-
+    getApplicationAndResponses();
+  }, [program_id, user.user.id]);
 
   const handleInputChange = (e) => {
     setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
   };
 
   const handleResponseChange = (questionId, value) => {
-    setQuestionResponses(prev => prev.map(resp =>
-      resp.question_id === questionId ? { ...resp, response_text: value } : resp
-    ));
+    setQuestionResponses((prev) =>
+      prev.map((resp) =>
+        resp.question_id === questionId
+          ? { ...resp, response_text: value }
+          : resp
+      )
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-  
+
     try {
-      if (!applicationData.date_of_birth || !applicationData.gpa || !applicationData.major) {
+      if (
+        !applicationData.date_of_birth ||
+        !applicationData.gpa ||
+        !applicationData.major
+      ) {
         throw new Error("Please fill out all required fields.");
       }
-  
+
       let applicationResponse;
       let applicationId;
-  
+
       if (applicationData.id) {
         applicationResponse = await axiosInstance.patch(
           `/api/applications/${applicationData.id}/`,
           {
             date_of_birth: applicationData.date_of_birth,
             gpa: applicationData.gpa,
-            major: applicationData.major
+            major: applicationData.major,
           }
         );
         applicationId = applicationData.id;
@@ -160,42 +195,49 @@ useEffect(() => {
           program: applicationData.program,
           date_of_birth: applicationData.date_of_birth,
           gpa: applicationData.gpa,
-          major: applicationData.major
+          major: applicationData.major,
         });
-  
+
         applicationResponse = response.data;
         applicationId = response.data.id;
-  
+
         setApplicationData((prev) => ({
           ...prev,
-          id: applicationId
+          id: applicationId,
         }));
-  
+
         setQuestionResponses((prevResponses) =>
           prevResponses.map((response) => ({
             ...response,
-            application: applicationId
+            application: applicationId,
           }))
         );
       }
-  
+
       for (const response of questionResponses) {
         const payload = {
           application: applicationId,
           question: response.question_id,
-          response: response.response_text
+          response: response.response_text,
         };
-  
+
         if (response.response_id) {
-          await axiosInstance.patch(`/api/responses/${response.response_id}/`, payload);
+          await axiosInstance.patch(
+            `/api/responses/${response.response_id}/`,
+            payload
+          );
         } else {
           await axiosInstance.post(`/api/responses/`, payload);
         }
       }
-  
+
       window.location.reload();
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || "Failed to submit application.");
+      setError(
+        err.response?.data?.detail ||
+          err.message ||
+          "Failed to submit application."
+      );
       console.error("Error submitting application:", err);
     } finally {
       setLoading(false);
@@ -205,11 +247,21 @@ useEffect(() => {
   const renderSubmitButton = () => {
     if (isApplicationReadOnly) return null;
 
-    const buttonText = applicationData.status === "Withdrawn" ? "Resubmit Application" :
-      applicationData.status === "Applied" ? "Update Application" : "Submit Application";
+    const buttonText =
+      applicationData.status === "Withdrawn"
+        ? "Resubmit Application"
+        : applicationData.status === "Applied"
+        ? "Update Application"
+        : "Submit Application";
 
     return (
-      <Button type="submit" variant="contained" color="primary" disabled={loading} fullWidth>
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        disabled={loading}
+        fullWidth
+      >
         {loading ? "Processing..." : buttonText}
       </Button>
     );
@@ -254,8 +306,7 @@ useEffect(() => {
         </Box>
       );
     }
-};
-
+  };
 
   return (
     <PageContainer>
@@ -264,9 +315,11 @@ useEffect(() => {
           <Typography variant="h4" color="primary" gutterBottom>
             Application for {program.title} {program.year_semester}
           </Typography>
-          <Typography variant="h6" color="textSecondary" gutterBottom>
-            Status: {applicationData.status || "Not Submitted"}
+          <Typography variant="h5" color="secondary" gutterBottom>
+            <strong>Current Application Status:</strong>{" "}
+            {applicationData.status || "Not Submitted"}
           </Typography>
+
           {error && (
             <Typography color="error" mb={2}>
               {error}
@@ -280,68 +333,108 @@ useEffect(() => {
           </Tabs>
         </StyledTabContainer>
 
-        <form onSubmit={handleSubmit}>
-          <Box mb={3}>
-            <TextField
-              fullWidth
-              type="date"
-              label="Date of Birth"
-              name="date_of_birth"
-              variant="outlined"
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ max: new Date().toISOString().split("T")[0], readOnly: isApplicationReadOnly }}
-              value={applicationData.date_of_birth}
-              onChange={handleInputChange}
-              required
-            />
-          </Box>
+        <Box display="flex" flexDirection="column" alignItems="center">
 
-          <Box mb={3}>
-            <TextField
-              fullWidth
-              label="GPA"
-              variant="outlined"
-              name="gpa"
-              type="number"
-              inputProps={{ step: "0.01", min: "0", max: "4.0", readOnly: isApplicationReadOnly }}
-              value={applicationData.gpa}
-              onChange={handleInputChange}
-              required
-            />
-          </Box>
+          <Typography variant="body1" paragraph>
+            {program.description}
+          </Typography>
 
-          <Box mb={3}>
-            <TextField
-              fullWidth
-              label="Major"
-              name="major"
-              variant="outlined"
-              inputProps={{ readOnly: isApplicationReadOnly }}
-              value={applicationData.major}
-              onChange={handleInputChange}
-              required
-            />
-          </Box>
+          <Typography variant="body1" paragraph>
+            <strong>Duration:</strong> {program.start_date} - {program.end_date}
+          </Typography>
 
-          {questions.map((question) => (
-            <Box key={question.id} mb={3}>
+          <Typography variant="body1" paragraph>
+            <strong>Application Open:</strong>{" "}
+            {program.application_open_date}
+          </Typography>
+
+          <Typography variant="body1" paragraph>
+            <strong>Application Deadline:</strong>{" "}
+            {program.application_deadline}
+          </Typography>
+
+          <Typography variant="body1">
+            <strong>Faculty Leads:</strong> {program.faculty_leads}
+          </Typography>
+        </Box>
+        <Box mt={4} />
+        <div>
+          <form onSubmit={handleSubmit}>
+            <Box mb={3}>
               <TextField
                 fullWidth
-                label={question.text}
+                type="date"
+                label="Date of Birth"
+                name="date_of_birth"
                 variant="outlined"
-                multiline
-                rows={4}
-                value={questionResponses.find(q => q.question_id === question.id)?.response_text || ""}
-                onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                inputProps={{ readOnly: isApplicationReadOnly }}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  max: new Date().toISOString().split("T")[0],
+                  readOnly: isApplicationReadOnly,
+                }}
+                value={applicationData.date_of_birth}
+                onChange={handleInputChange}
                 required
               />
             </Box>
-          ))}
 
-          {renderSubmitButton()}
-          {renderWithdrawReapply()}
-        </form>
+            <Box mb={3}>
+              <TextField
+                fullWidth
+                label="GPA"
+                variant="outlined"
+                name="gpa"
+                type="number"
+                inputProps={{
+                  step: "0.01",
+                  min: "0",
+                  max: "4.0",
+                  readOnly: isApplicationReadOnly,
+                }}
+                value={applicationData.gpa}
+                onChange={handleInputChange}
+                required
+              />
+            </Box>
+
+            <Box mb={3}>
+              <TextField
+                fullWidth
+                label="Major"
+                name="major"
+                variant="outlined"
+                inputProps={{ readOnly: isApplicationReadOnly }}
+                value={applicationData.major}
+                onChange={handleInputChange}
+                required
+              />
+            </Box>
+
+            {questions.map((question) => (
+              <Box key={question.id} mb={3}>
+                <TextField
+                  fullWidth
+                  label={question.text}
+                  variant="outlined"
+                  multiline
+                  rows={4}
+                  value={
+                    questionResponses.find((q) => q.question_id === question.id)
+                      ?.response_text || ""
+                  }
+                  onChange={(e) =>
+                    handleResponseChange(question.id, e.target.value)
+                  }
+                  inputProps={{ readOnly: isApplicationReadOnly }}
+                  required
+                />
+              </Box>
+            ))}
+
+            {renderSubmitButton()}
+            {renderWithdrawReapply()}
+          </form>
+        </div>
       </ContentContainer>
     </PageContainer>
   );
