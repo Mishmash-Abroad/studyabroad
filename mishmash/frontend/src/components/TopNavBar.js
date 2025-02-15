@@ -194,7 +194,7 @@ function TopNavBar({ onLoginClick }) {
                 onClick={handleUserMenuClick}
                 startIcon={<UserIcon />}
               >
-                {user.display_name}
+                {user.user.display_name}
               </UserButton>
               <StyledMenu
                 id="user-menu"

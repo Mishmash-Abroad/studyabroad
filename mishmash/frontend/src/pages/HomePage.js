@@ -207,7 +207,7 @@ const HomePage = () => {
           <HeroTitle>Discover Your World</HeroTitle>
           <HeroText>
             {user
-              ? `Welcome back, ${user?.display_name}! Continue your journey with us.`
+              ? `Welcome back, ${user?.user.display_name}! Continue your journey with us.`
               : 'Transform your education through global experiences with HCC Study Abroad'}
           </HeroText>
           {!user && (
