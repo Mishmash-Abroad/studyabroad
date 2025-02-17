@@ -205,7 +205,13 @@ const LoginModal = ({ onClose }) => {
               {loading ? "Logging in..." : "Login"}
             </FormButton>
 
-            <FormButton onClick={() => setShowSignUpModal(true)}>
+            <FormButton 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowSignUpModal(true);
+              }}
+            >
               Don't have an account? Sign Up!
             </FormButton>
           </ModalForm>
@@ -264,7 +270,13 @@ const LoginModal = ({ onClose }) => {
                 {loading ? "Signing up..." : "Sign up"}
               </FormButton>
 
-              <FormButton onClick={() => setShowSignUpModal(false)}>
+              <FormButton 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowSignUpModal(false);
+                }}
+              >
                 already have an account? Login!
               </FormButton>
             </ModalForm>
