@@ -121,7 +121,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'faculty_leads']
+    search_fields = ['title']
     ordering_fields = ['application_deadline']
     ordering = ['application_deadline']
 
@@ -132,27 +132,32 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Filters:
         - Filters programs where `end_date >= today` (only current and future programs are shown)
         - Optional search filter for `title` or `faculty_leads`
+        - Optional faculty_ids filter for specific faculty members
 
         ## Returns:
         - 200 OK: List of programs (filtered)
 
         ## Example:
-        - `GET /api/programs/?search=engineering`
-
-        ## Permissions:
-        - Public access (any user)
+        - `GET /api/programs/?search=engineering&faculty_ids=1,2,3`
         """
 
         today = timezone.now().date()
         queryset = Program.objects.filter(end_date__gte=today)
 
         search = self.request.query_params.get("search", None)
+        faculty_ids = self.request.query_params.get("faculty_ids", None)
+
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(faculty_leads__icontains=search)
+                Q(title__icontains=search)
             )
 
-        return queryset
+        if faculty_ids:
+            faculty_id_list = [int(id) for id in faculty_ids.split(',') if id.isdigit()]
+            if faculty_id_list:
+                queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
+
+        return queryset.distinct()
     
     def create(self, request, *args, **kwargs):
         """
@@ -902,3 +907,19 @@ class UserViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, permission_classes=[AllowAny])
+    def faculty(self, request):
+        """
+        Retrieve a list of all faculty members (admin users).
+
+        ## Returns:
+        - List of faculty members with their display names and IDs
+        - Faculty are sorted by display name
+
+        ## Permissions:
+        - Public access (any user can view faculty list)
+        """
+        faculty = User.objects.filter(is_admin=True).order_by('display_name')
+        serializer = UserSerializer(faculty, many=True)
+        return Response(serializer.data)
