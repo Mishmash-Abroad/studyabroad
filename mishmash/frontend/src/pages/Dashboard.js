@@ -140,18 +140,18 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const routes = user?.user.is_admin ? ADMIN_ROUTES : STUDENT_ROUTES;
-
+  const routes = user?.user?.is_admin ? ADMIN_ROUTES : STUDENT_ROUTES;
+  console.log(user);
   // Handle default route
   React.useEffect(() => {
     if (location.pathname === '/dashboard') {
-      const defaultPath = `/dashboard/${user?.user.is_admin ? 'admin-overview' : 'overview'}`;
+      const defaultPath = `/dashboard/${user?.user?.is_admin ? 'admin-overview' : 'overview'}`;
       // Replace the current history entry instead of adding a new one
       window.history.replaceState(null, '', defaultPath);
       // Force a re-render to show the correct content
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
-  }, [location.pathname, user?.user.is_admin]);
+  }, [location.pathname, user?.user?.is_admin]);
 
   // Get current active tab from path
   const activeTab = location.pathname.split('/').pop();
@@ -166,7 +166,7 @@ const Dashboard = () => {
       <DashboardContent>
         <DashboardHeader>
           <DashboardTitle>
-            {user?.user.is_admin ? "Admin Dashboard" : "Student Dashboard"}
+            {user?.user?.is_admin ? "Admin Dashboard" : "Student Dashboard"}
           </DashboardTitle>
         </DashboardHeader>
 
@@ -187,7 +187,7 @@ const Dashboard = () => {
         <TabContent>
           <Routes>
             {/* Admin Routes */}
-            {user?.user.is_admin && (
+            {user?.user?.is_admin && (
               <>
                 <Route path="admin-overview" element={<AdminOverview />} />
                 <Route path="admin-programs" element={<AdminProgramsTable />} />
@@ -197,7 +197,7 @@ const Dashboard = () => {
             )}
 
             {/* Student Routes */}
-            {!user?.user.is_admin && (
+            {!user?.user?.is_admin && (
               <>
                 <Route path="overview" element={<StudentOverview />} />
                 <Route path="my-programs" element={<MyProgramsTable />} />
@@ -207,7 +207,7 @@ const Dashboard = () => {
             {/* Common Routes */}
             <Route path="browse" element={<ProgramBrowser />} />
             <Route path="browse/:programTitle" element={<ProgramBrowser />} />
-            <Route path="*" element={<Navigate to={user?.user.is_admin ? "admin-overview" : "overview"} replace />} />
+            <Route path="*" element={<Navigate to={user?.user?.is_admin ? "admin-overview" : "overview"} replace />} />
           </Routes>
         </TabContent>
       </DashboardContent>
