@@ -117,7 +117,7 @@ const ChangePasswordModal = ({ onClose }) => {
     }
 
     try {
-      const response = await axiosInstance.patch("/api/changepassword/", {
+      const response = await axiosInstance.patch("/api/users/changepassword/", {
         password,
         confirmPassword,
       });

@@ -22,6 +22,7 @@ class ApplicationQuestionSerializer(serializers.ModelSerializer):
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
+    student = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Application
         fields = ['id', 'student', 'program', 'date_of_birth', 'gpa', 'major', 

@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token && !user) {
       // Verify token by fetching user data
-      axiosInstance.get('/api/users/me/')
+      axiosInstance.get('/api/users/current_user/')
         .then(response => {
           // Store valid user data
           setUser(response.data);
