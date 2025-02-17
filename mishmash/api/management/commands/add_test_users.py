@@ -83,6 +83,42 @@ class Command(BaseCommand):
         )
         self.stdout.write(f'Created admin user: {admin.username} (Superuser: {admin.is_superuser})')
 
+        faculty_data = [
+            ('Elena Papadopoulos', 'epapadopoulos', 'elena.papadopoulos@hcc.edu'),
+            ('Marcus Wisdom', 'mwisdom', 'marcus.wisdom@hcc.edu'),
+            ('Rachel Ocean', 'rocean', 'rachel.ocean@hcc.edu'),
+            ('James Coral', 'jcoral', 'james.coral@hcc.edu'),
+            ('Isabella Romano', 'iromano', 'isabella.romano@hcc.edu'),
+            ('Robert Art', 'rart', 'robert.art@hcc.edu'),
+            ('Samuel Health', 'shealth', 'samuel.health@hcc.edu'),
+            ('Nomvula Mbeki', 'nmbeki', 'nomvula.mbeki@hcc.edu'),
+            ('Marie Laurent', 'mlaurent', 'marie.laurent@hcc.edu'),
+            ('Sarah Chen', 'schen', 'sarah.chen@hcc.edu'),
+            ('Hiroshi Tanaka', 'htanaka', 'hiroshi.tanaka@hcc.edu'),
+            ('Erik Anderson', 'eanderson', 'erik.anderson@hcc.edu'),
+            ('Maria Nilsson', 'mnilsson', 'maria.nilsson@hcc.edu'),
+            ('Michael Chang', 'mchang', 'michael.chang@hcc.edu'),
+            ('Lisa Tan', 'ltan', 'lisa.tan@hcc.edu'),
+            ('Carlos Verde', 'cverde', 'carlos.verde@hcc.edu'),
+            ('Emma Nature', 'enature', 'emma.nature@hcc.edu'),
+            ('Giulia Fashion', 'gfashion', 'giulia.fashion@hcc.edu')
+        ]
+
+        faculty_users = {}  # Store faculty users for reference in add_test_programs
+        for display_name, username, email in faculty_data:
+            user = User.objects.create(
+                username=username,
+                password=make_password('guest'),
+                display_name=display_name,
+                email=email,
+                is_admin=True,
+                is_staff=True,
+                is_superuser=False,
+                is_active=True
+            )
+            faculty_users[display_name] = user
+            self.stdout.write(f'Created faculty: {username}')
+
         if prod_mode:
             for display_name, username, email, password in prod_students_data:
                 user = User.objects.create(
@@ -91,7 +127,6 @@ class Command(BaseCommand):
                     display_name=display_name,
                     email=email,
                     is_admin=False,
-                    is_staff=False,
                     is_superuser=False,
                     is_active=True
                 )
@@ -105,7 +140,6 @@ class Command(BaseCommand):
                     display_name=display_name,
                     email=email,
                     is_admin=False,
-                    is_staff=False,
                     is_superuser=False,
                     is_active=True
                 )
