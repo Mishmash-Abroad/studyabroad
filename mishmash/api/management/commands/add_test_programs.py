@@ -17,7 +17,7 @@ Program States:
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from api.models import Program, ApplicationQuestion
+from api.models import Program, ApplicationQuestion, User
 from datetime import timedelta, datetime
 
 DEFAULT_QUESTIONS = [
@@ -42,12 +42,14 @@ class Command(BaseCommand):
         prod_mode = options['prod']
         today = timezone.now().date()
         
+        # Get faculty users
+        faculty_users = {user.display_name: user for user in User.objects.filter(is_admin=True).exclude(username='admin')}
+        
         programs_data = [
             # Past Programs (Fall 2024)
             {
                 'title': 'Ancient Philosophy in Athens',
                 'year_semester': '2024 Fall',
-                'faculty_leads': 'Prof. Elena Papadopoulos, Dr. Marcus Wisdom',
                 'description': 'Study ancient Greek philosophy where it all began. Visit historical sites and engage with contemporary scholars in philosophical discussions.',
                 'application_open_date': today - timedelta(days=300),
                 'application_deadline': today - timedelta(days=240),
@@ -57,7 +59,6 @@ class Command(BaseCommand):
             {
                 'title': 'Digital Innovation in Silicon Valley',
                 'year_semester': '2024 Fall',
-                'faculty_leads': 'Dr. Tech Expert, Prof. Innovation Leader',
                 'description': 'Experience Silicon Valley\'s thriving tech scene and startup ecosystem. Work on projects with local tech companies and attend industry events.',
                 'application_open_date': today - timedelta(days=310),
                 'application_deadline': today - timedelta(days=250),
@@ -67,7 +68,6 @@ class Command(BaseCommand):
             {
                 'title': 'Sustainable Agriculture in New Zealand',
                 'year_semester': '2024 Fall',
-                'faculty_leads': 'Dr. Farm Expert, Prof. Sustainable Practices',
                 'description': 'Study sustainable farming practices and agricultural innovation in New Zealand. Work with local farmers and research sustainable methods.',
                 'application_open_date': today - timedelta(days=305),
                 'application_deadline': today - timedelta(days=245),
@@ -77,7 +77,6 @@ class Command(BaseCommand):
             {
                 'title': 'Journalism in New York City',
                 'year_semester': '2024 Fall',
-                'faculty_leads': 'Prof. Media Expert, Dr. Journalism Pro',
                 'description': 'Experience journalism in the media capital of the world. Work with leading news organizations and learn modern digital journalism.',
                 'application_open_date': today - timedelta(days=315),
                 'application_deadline': today - timedelta(days=255),
@@ -89,7 +88,6 @@ class Command(BaseCommand):
             {
                 'title': 'European Politics Tour',
                 'year_semester': '2025 Spring',
-                'faculty_leads': 'Dr. Euro Expert, Prof. Political Science',
                 'description': 'Travel through major European capitals studying political systems and international relations. Meet with government officials and policy makers.',
                 'application_open_date': today - timedelta(days=150),
                 'application_deadline': today - timedelta(days=90),
@@ -99,7 +97,6 @@ class Command(BaseCommand):
             {
                 'title': 'Wildlife Conservation in Kenya',
                 'year_semester': '2025 Spring',
-                'faculty_leads': 'Dr. Nature Expert, Prof. Wildlife Studies',
                 'description': 'Study wildlife conservation and ecological preservation in Kenya\'s national parks. Work with local conservation experts and research teams.',
                 'application_open_date': today - timedelta(days=160),
                 'application_deadline': today - timedelta(days=100),
@@ -109,7 +106,6 @@ class Command(BaseCommand):
             {
                 'title': 'Film Production in Los Angeles',
                 'year_semester': '2025 Spring',
-                'faculty_leads': 'Prof. Cinema Arts, Dr. Film Studies',
                 'description': 'Learn film production in Hollywood. Work on actual film sets and learn from industry professionals.',
                 'application_open_date': today - timedelta(days=155),
                 'application_deadline': today - timedelta(days=95),
@@ -119,7 +115,6 @@ class Command(BaseCommand):
             {
                 'title': 'Robotics Research in Seoul',
                 'year_semester': '2025 Spring',
-                'faculty_leads': 'Dr. Robotics Expert, Prof. AI Science',
                 'description': 'Study advanced robotics in South Korea\'s tech hub. Work with leading robotics companies and research labs.',
                 'application_open_date': today - timedelta(days=165),
                 'application_deadline': today - timedelta(days=105),
@@ -131,7 +126,6 @@ class Command(BaseCommand):
             {
                 'title': 'Marine Biology in Great Barrier Reef',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Dr. Rachel Ocean, Prof. James Coral',
                 'description': 'Study marine ecosystems and conservation efforts in the world\'s largest coral reef system. Includes diving certification and hands-on research projects.',
                 'application_open_date': today - timedelta(days=25),
                 'application_deadline': today + timedelta(days=35),
@@ -141,7 +135,6 @@ class Command(BaseCommand):
             {
                 'title': 'Art and Architecture in Florence',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Prof. Isabella Romano, Dr. Robert Art',
                 'description': 'Immerse yourself in Renaissance art and architecture. Study in historic studios and visit world-renowned museums and architectural sites.',
                 'application_open_date': today - timedelta(days=20),
                 'application_deadline': today + timedelta(days=40),
@@ -151,7 +144,6 @@ class Command(BaseCommand):
             {
                 'title': 'Global Health in Cape Town',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Dr. Samuel Health, Prof. Nomvula Mbeki',
                 'description': 'Study healthcare systems and public health challenges in South Africa. Work with local clinics and healthcare professionals.',
                 'application_open_date': today - timedelta(days=30),
                 'application_deadline': today + timedelta(days=30),
@@ -161,7 +153,6 @@ class Command(BaseCommand):
             {
                 'title': 'Culinary Arts in Paris',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Chef Marie Laurent, Prof. Gastronomy',
                 'description': 'Master French culinary techniques and food culture. Study at prestigious cooking schools and visit local markets.',
                 'application_open_date': today - timedelta(days=15),
                 'application_deadline': today + timedelta(days=45),
@@ -171,7 +162,6 @@ class Command(BaseCommand):
             {
                 'title': 'Music Performance in Vienna',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Maestro Classical, Dr. Music History',
                 'description': 'Study classical music in the heart of Europe. Perform in historic venues and learn from world-class musicians.',
                 'application_open_date': today - timedelta(days=18),
                 'application_deadline': today + timedelta(days=42),
@@ -183,7 +173,6 @@ class Command(BaseCommand):
             {
                 'title': 'Technology Innovation in Tokyo',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Sarah Chen, Prof. Hiroshi Tanaka',
                 'description': 'Explore the intersection of traditional culture and cutting-edge technology in Japan\'s bustling capital. Work with leading tech companies and experience Japanese innovation firsthand.',
                 'application_open_date': today - timedelta(days=10),
                 'application_deadline': today + timedelta(days=80),
@@ -193,7 +182,6 @@ class Command(BaseCommand):
             {
                 'title': 'Sustainable Engineering in Stockholm',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Erik Anderson, Dr. Maria Nilsson',
                 'description': 'Study renewable energy solutions and sustainable urban planning in one of the world\'s greenest cities. Includes visits to leading clean tech companies and research facilities.',
                 'application_open_date': today - timedelta(days=5),
                 'application_deadline': today + timedelta(days=85),
@@ -203,7 +191,6 @@ class Command(BaseCommand):
             {
                 'title': 'Global Business in Singapore',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Prof. Michael Chang, Dr. Lisa Tan',
                 'description': 'Gain insights into Asian business practices and innovation ecosystems. Work directly with startups and established companies in Singapore\'s dynamic business environment.',
                 'application_open_date': today - timedelta(days=15),
                 'application_deadline': today + timedelta(days=75),
@@ -213,7 +200,6 @@ class Command(BaseCommand):
             {
                 'title': 'Psychology Research in Copenhagen',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Mind Expert, Prof. Behavioral Science',
                 'description': 'Study advanced psychological research methods in Denmark. Work with leading research institutions on cutting-edge studies.',
                 'application_open_date': today - timedelta(days=8),
                 'application_deadline': today + timedelta(days=82),
@@ -223,7 +209,6 @@ class Command(BaseCommand):
             {
                 'title': 'Urban Design in Barcelona',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Prof. Architecture Master, Dr. Urban Planning',
                 'description': 'Study urban design and architecture in one of Europe\'s most innovative cities. Work on real urban development projects.',
                 'application_open_date': today - timedelta(days=12),
                 'application_deadline': today + timedelta(days=78),
@@ -235,7 +220,6 @@ class Command(BaseCommand):
             {
                 'title': 'Antarctic Research Expedition',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Dr. Ice Expert, Prof. Polar Science',
                 'description': 'Conduct research in Antarctica studying climate change, marine biology, and glaciology. Work alongside international research teams in extreme conditions.',
                 'application_open_date': today + timedelta(days=90),
                 'application_deadline': today + timedelta(days=150),
@@ -245,7 +229,6 @@ class Command(BaseCommand):
             {
                 'title': 'Environmental Science in Costa Rica',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Dr. Carlos Verde, Prof. Emma Nature',
                 'description': 'Study tropical ecosystems and biodiversity conservation. Conduct field research in rainforests and participate in local conservation projects.',
                 'application_open_date': today + timedelta(days=85),
                 'application_deadline': today + timedelta(days=145),
@@ -255,7 +238,6 @@ class Command(BaseCommand):
             {
                 'title': 'Fashion Design in Milan',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Prof. Giulia Fashion, Dr. Style Expert',
                 'description': 'Study fashion design and industry practices in one of the world\'s fashion capitals. Work with leading designers and attend Milan Fashion Week.',
                 'application_open_date': today + timedelta(days=88),
                 'application_deadline': today + timedelta(days=148),
@@ -265,7 +247,6 @@ class Command(BaseCommand):
             {
                 'title': 'Space Science in Houston',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Dr. Astronomy Expert, Prof. Space Science',
                 'description': 'Study space science and astronomy at NASA\'s Johnson Space Center. Work with space scientists and learn about space exploration.',
                 'application_open_date': today + timedelta(days=92),
                 'application_deadline': today + timedelta(days=152),
@@ -275,7 +256,6 @@ class Command(BaseCommand):
             {
                 'title': 'Game Design in Montreal',
                 'year_semester': '2026 Spring',
-                'faculty_leads': 'Prof. Game Dev, Dr. Interactive Media',
                 'description': 'Study game design and development in one of the world\'s leading gaming hubs. Work with major gaming studios on real projects.',
                 'application_open_date': today + timedelta(days=95),
                 'application_deadline': today + timedelta(days=155),
@@ -288,7 +268,6 @@ class Command(BaseCommand):
             {
                 'title': 'Science in Spain',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Alice Lee',
                 'description': 'Science in Spain: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2024, 12, 1),
                 'application_deadline': datetime(2025, 2, 28),
@@ -298,7 +277,6 @@ class Command(BaseCommand):
             {
                 'title': 'History in Canada',
                 'year_semester': '2025 Fall',
-                'faculty_leads': 'Dr. Alice Garcia',
                 'description': 'History in Canada: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2024, 12, 1),
                 'application_deadline': datetime(2025, 2, 28),
@@ -308,7 +286,6 @@ class Command(BaseCommand):
             {
                 'title': 'Art in Italy',
                 'year_semester': '2024 Fall',
-                'faculty_leads': 'Ms. Alice Johnson',
                 'description': 'Art in Italy: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2023, 12, 1),
                 'application_deadline': datetime(2024, 2, 28),
@@ -318,7 +295,6 @@ class Command(BaseCommand):
             {
                 'title': 'Medicine in India',
                 'year_semester': '2028 Fall',
-                'faculty_leads': 'Mr. Daniel Garcia',
                 'description': 'Medicine in India: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2027, 12, 1),
                 'application_deadline': datetime(2028, 2, 29),
@@ -328,7 +304,6 @@ class Command(BaseCommand):
             {
                 'title': 'Language in Japan',
                 'year_semester': '2029 Fall',
-                'faculty_leads': 'Mr. Daniel Lee',
                 'description': 'Language in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2028, 12, 1),
                 'application_deadline': datetime(2029, 2, 28),
@@ -338,7 +313,6 @@ class Command(BaseCommand):
             {
                 'title': 'Technology in Japan',
                 'year_semester': '2030 Fall',
-                'faculty_leads': 'Ms. Emily Garcia',
                 'description': 'Technology in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2029, 12, 1),
                 'application_deadline': datetime(2030, 2, 28),
@@ -348,7 +322,6 @@ class Command(BaseCommand):
             {
                 'title': 'Medicine in Canada',
                 'year_semester': '2025 Spring',
-                'faculty_leads': 'Ms. Alice Brown',
                 'description': 'Medicine in Canada: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2024, 9, 1),
                 'application_deadline': datetime(2024, 11, 30),
@@ -358,7 +331,6 @@ class Command(BaseCommand):
             {
                 'title': 'Technology in Australia',
                 'year_semester': '2027 Spring',
-                'faculty_leads': 'Ms. Catherine Taylor',
                 'description': 'Technology in Australia: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2026, 9, 1),
                 'application_deadline': datetime(2026, 11, 30),
@@ -368,7 +340,6 @@ class Command(BaseCommand):
             {
                 'title': 'Art in Australia',
                 'year_semester': '2028 Spring',
-                'faculty_leads': 'Ms. Alice Smith',
                 'description': 'Art in Australia: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2027, 9, 1),
                 'application_deadline': datetime(2027, 11, 30),
@@ -378,7 +349,6 @@ class Command(BaseCommand):
             {
                 'title': 'Art in Japan',
                 'year_semester': '2029 Spring',
-                'faculty_leads': 'Ms. Emily Smith',
                 'description': 'Art in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2028, 9, 1),
                 'application_deadline': datetime(2028, 11, 30),
@@ -388,7 +358,6 @@ class Command(BaseCommand):
             {
                 'title': 'Art in France',
                 'year_semester': '2025 Summer',
-                'faculty_leads': 'Mr. Frank Taylor',
                 'description': 'Art in France: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.',
                 'application_open_date': datetime(2024, 9, 1),
                 'application_deadline': datetime(2024, 11, 30),
@@ -397,26 +366,72 @@ class Command(BaseCommand):
             },
         ]
 
-
-
         Program.objects.all().delete()
         ApplicationQuestion.objects.all().delete()
         self.stdout.write('Cleared existing programs and questions')
 
+        # Faculty assignments for each program
+        faculty_assignments = {
+            'Ancient Philosophy in Athens': ['Elena Papadopoulos', 'Marcus Wisdom'],
+            'Marine Biology in Great Barrier Reef': ['Rachel Ocean', 'James Coral'],
+            'Art and Architecture in Florence': ['Isabella Romano', 'Robert Art'],
+            'Global Health in Cape Town': ['Samuel Health', 'Nomvula Mbeki'],
+            'Culinary Arts in Paris': ['Marie Laurent'],
+            'Technology Innovation in Tokyo': ['Sarah Chen', 'Hiroshi Tanaka'],
+            'Sustainable Engineering in Stockholm': ['Erik Anderson', 'Maria Nilsson'],
+            'Global Business in Singapore': ['Michael Chang', 'Lisa Tan'],
+            'Environmental Science in Costa Rica': ['Carlos Verde', 'Emma Nature'],
+            'Fashion Design in Milan': ['Giulia Fashion'],
+            # For other programs, we'll assign random faculty members
+        }
+
         if prod_mode:
             for program_data in prod_programs_data:
                 program = Program.objects.create(**program_data)
-                self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
+                
+                # Assign faculty leads
+                if program.title in faculty_assignments:
+                    for faculty_name in faculty_assignments[program.title]:
+                        if faculty_name in faculty_users:
+                            program.faculty_leads.add(faculty_users[faculty_name])
+                        else:
+                            self.stdout.write(f'Warning: Faculty {faculty_name} not found')
+                # else:
+                    # # Assign random faculty if no specific assignment
+                    # available_faculty = list(faculty_users.values())[:2]  # Get first two faculty members
+                    # for faculty in available_faculty:
+                    #     program.faculty_leads.add(faculty)
+                
+                # Add default questions
+                for question_text in DEFAULT_QUESTIONS:
+                    ApplicationQuestion.objects.create(
+                        program=program,
+                        text=question_text
+                    )
 
-                for q in DEFAULT_QUESTIONS:
-                    question = ApplicationQuestion.objects.create(text=q, program=program)
-                    self.stdout.write(f'Created question for {program.title}: {question.text}')
+                self.stdout.write(f'Created program: {program.title}')
         else:
             for program_data in programs_data:
                 program = Program.objects.create(**program_data)
-                self.stdout.write(f'Created program: {program.title} ({program.year_semester})')
+                
+                # Assign faculty leads
+                if program.title in faculty_assignments:
+                    for faculty_name in faculty_assignments[program.title]:
+                        if faculty_name in faculty_users:
+                            program.faculty_leads.add(faculty_users[faculty_name])
+                        else:
+                            self.stdout.write(f'Warning: Faculty {faculty_name} not found')
+                else:
+                    # Assign random faculty if no specific assignment
+                    available_faculty = list(faculty_users.values())[:2]  # Get first two faculty members
+                    for faculty in available_faculty:
+                        program.faculty_leads.add(faculty)
+                
+                # Add default questions
+                for question_text in DEFAULT_QUESTIONS:
+                    ApplicationQuestion.objects.create(
+                        program=program,
+                        text=question_text
+                    )
 
-                for q in DEFAULT_QUESTIONS:
-                    question = ApplicationQuestion.objects.create(text=q, program=program)
-                    self.stdout.write(f'Created question for {program.title}: {question.text}')
-
+                self.stdout.write(f'Created program: {program.title}')
