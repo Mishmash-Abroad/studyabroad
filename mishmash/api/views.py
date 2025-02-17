@@ -27,12 +27,13 @@ Security:
 - Proper request validation and error handling
 """
 
-from rest_framework import viewsets, filters, permissions, status
+from rest_framework import viewsets, filters, permissions, status, views
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.db.models import Q
 from .models import (
@@ -41,7 +42,7 @@ from .models import (
     ApplicationQuestion,
     ApplicationResponse,
     Announcement,
-    Document
+    Document,
 )
 from .serializers import (
     ProgramSerializer,
@@ -50,7 +51,7 @@ from .serializers import (
     ApplicationQuestionSerializer,
     ApplicationResponseSerializer,
     AnnouncementSerializer,
-    DocumentSerializer
+    DocumentSerializer,
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -60,6 +61,7 @@ from datetime import datetime, timedelta
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.parsers import FileUploadParser
 
 ### Custom permission classes for API access ###
 
@@ -907,7 +909,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "token": token.key,
-                "user_id": user.id,
+                "id": user.id,
                 "username": user.username,
                 "display_name": user.display_name,
             },
@@ -1002,7 +1004,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "token": token.key,
-                "user_id": user.id,
+                "id": user.id,
                 "username": user.username,
                 "display_name": user.display_name,
             },
@@ -1010,12 +1012,16 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
 
-
 class DocumentViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing documents.
-    """
-
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrSelf]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def create(self, request, *args, **kwargs):
+        """
+        Handle file upload via POST request.
+        """
+        if "pdf" not in request.data:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().create(request, *args, **kwargs)

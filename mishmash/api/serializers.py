@@ -91,4 +91,4 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
-        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'application']
+        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'program']

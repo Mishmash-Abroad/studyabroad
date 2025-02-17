@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement
+from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, Document
 
 
 @admin.register(User)
@@ -44,3 +44,10 @@ class AnnouncementAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'student', 'uploaded_at', 'program', 'pdf')
+    list_filter = ('title', 'student', 'uploaded_at', 'program', 'pdf')
+    search_fields = ('title', 'student', 'uploaded_at', 'program', 'pdf')
