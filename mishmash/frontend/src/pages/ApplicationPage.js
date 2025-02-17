@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
+import PDFUploadForm from "../components/PDFUploadForm";
 
 // -------------------- STYLES --------------------
 const PageContainer = styled("div")(({ theme }) => ({
@@ -56,7 +57,7 @@ const ApplicationPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-
+  console.log(user);
   useEffect(() => {
     const getApplicationAndResponses = async () => {
       setLoading(true);
@@ -78,7 +79,7 @@ const ApplicationPage = () => {
         setQuestions(questionsResponse.data);
 
         const applicationsResponse = await axiosInstance.get(
-          `/api/applications/?student=${user.user.id}`
+          `/api/applications/?student=${user.id}`
         );
         const existingApplication = applicationsResponse.data.find(
           (app) => app.program == program_id
@@ -147,7 +148,7 @@ const ApplicationPage = () => {
     };
 
     getApplicationAndResponses();
-  }, [program_id, user.user.id]);
+  }, [program_id, user.id]);
 
   const handleInputChange = (e) => {
     setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
@@ -334,7 +335,6 @@ const ApplicationPage = () => {
         </StyledTabContainer>
 
         <Box display="flex" flexDirection="column" alignItems="center">
-
           <Typography variant="body1" paragraph>
             {program.description}
           </Typography>
@@ -344,8 +344,7 @@ const ApplicationPage = () => {
           </Typography>
 
           <Typography variant="body1" paragraph>
-            <strong>Application Open:</strong>{" "}
-            {program.application_open_date}
+            <strong>Application Open:</strong> {program.application_open_date}
           </Typography>
 
           <Typography variant="body1" paragraph>
@@ -434,6 +433,10 @@ const ApplicationPage = () => {
             {renderSubmitButton()}
             {renderWithdrawReapply()}
           </form>
+
+          <Box mt={4} />
+
+          <PDFUploadForm user_id={user.id} program_id={program_id}/>
         </div>
       </ContentContainer>
     </PageContainer>
