@@ -136,5 +136,7 @@ class Document(models.Model):
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
     uploaded_at = models.DateTimeField(auto_now_add=True)
     student = models.ForeignKey("User", on_delete=models.CASCADE)
-    application = models.ForeignKey("Application", on_delete=models.CASCADE)
-    
+    program = models.ForeignKey("Program", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.title}"
