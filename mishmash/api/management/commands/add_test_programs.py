@@ -373,16 +373,39 @@ class Command(BaseCommand):
         # Faculty assignments for each program
         faculty_assignments = {
             'Ancient Philosophy in Athens': ['Elena Papadopoulos', 'Marcus Wisdom'],
+            'Digital Innovation in Silicon Valley': ['Anna Digital', 'Sarah Chen'],
+            'Sustainable Agriculture in New Zealand': ['Thomas Farm', 'Linda Sustainable'],
+            'Journalism in New York City': ['James Journalism', 'Maria Media'],
+            'European Politics Tour': ['Marco Urban', 'Maria Nilsson'],
+            'Wildlife Conservation in Kenya': ['Carlos Verde', 'Emma Nature'],
+            'Film Production in Los Angeles': ['Claire Design', 'Robert Art'],
+            'Robotics Research in Seoul': ['Hiroshi Tanaka', 'Sarah Chen'],
             'Marine Biology in Great Barrier Reef': ['Rachel Ocean', 'James Coral'],
             'Art and Architecture in Florence': ['Isabella Romano', 'Robert Art'],
             'Global Health in Cape Town': ['Samuel Health', 'Nomvula Mbeki'],
-            'Culinary Arts in Paris': ['Marie Laurent'],
+            'Culinary Arts in Paris': ['Marie Laurent', 'Frank Taylor'],
+            'Music Performance in Vienna': ['Alice Smith', 'Emily Smith'],
             'Technology Innovation in Tokyo': ['Sarah Chen', 'Hiroshi Tanaka'],
             'Sustainable Engineering in Stockholm': ['Erik Anderson', 'Maria Nilsson'],
             'Global Business in Singapore': ['Michael Chang', 'Lisa Tan'],
+            'Psychology Research in Copenhagen': ['Alice Brown', 'Samuel Health'],
+            'Urban Design in Barcelona': ['Marco Urban', 'Claire Design'],
+            'Antarctic Research Expedition': ['Sophie Polar', 'John Astronomy'],
             'Environmental Science in Costa Rica': ['Carlos Verde', 'Emma Nature'],
-            'Fashion Design in Milan': ['Giulia Fashion'],
-            # For other programs, we'll assign random faculty members
+            'Fashion Design in Milan': ['Giulia Fashion', 'Isabella Romano'],
+            'Space Science in Houston': ['David Space', 'John Astronomy'],
+            'Game Design in Montreal': ['Paul Game', 'Anna Digital'],
+            'Science in Spain': ['Alice Lee', 'Sarah Chen'],
+            'History in Canada': ['Alice Garcia', 'Maria Media'],
+            'Art in Italy': ['Alice Johnson', 'Robert Art'],
+            'Medicine in India': ['Daniel Garcia', 'Samuel Health'],
+            'Language in Japan': ['Daniel Lee', 'Hiroshi Tanaka'],
+            'Technology in Japan': ['Emily Garcia', 'Sarah Chen'],
+            'Medicine in Canada': ['Alice Brown', 'Samuel Health'],
+            'Technology in Australia': ['Catherine Taylor', 'Anna Digital'],
+            'Art in Australia': ['Alice Smith', 'Isabella Romano'],
+            'Art in Japan': ['Emily Smith', 'Hiroshi Tanaka'],
+            'Art in France': ['Frank Taylor', 'Isabella Romano']
         }
 
         if prod_mode:
@@ -396,11 +419,8 @@ class Command(BaseCommand):
                             program.faculty_leads.add(faculty_users[faculty_name])
                         else:
                             self.stdout.write(f'Warning: Faculty {faculty_name} not found')
-                # else:
-                    # # Assign random faculty if no specific assignment
-                    # available_faculty = list(faculty_users.values())[:2]  # Get first two faculty members
-                    # for faculty in available_faculty:
-                    #     program.faculty_leads.add(faculty)
+                else:
+                    self.stdout.write(f'Warning: No faculty leads assigned for {program.title}')
                 
                 # Add default questions
                 for question_text in DEFAULT_QUESTIONS:
@@ -422,10 +442,7 @@ class Command(BaseCommand):
                         else:
                             self.stdout.write(f'Warning: Faculty {faculty_name} not found')
                 else:
-                    # Assign random faculty if no specific assignment
-                    available_faculty = list(faculty_users.values())[:2]  # Get first two faculty members
-                    for faculty in available_faculty:
-                        program.faculty_leads.add(faculty)
+                    self.stdout.write(f'Warning: No faculty leads assigned for {program.title}')
                 
                 # Add default questions
                 for question_text in DEFAULT_QUESTIONS:
