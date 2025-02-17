@@ -231,13 +231,16 @@ const MyProgramsTable = () => {
     if (
       orderBy === "title" ||
       orderBy === "year_semester" ||
-      orderBy === "faculty_leads" ||
       orderBy === "application_deadline" ||
       orderBy === "start_date" ||
       orderBy === "end_date"
     ) {
       valueA = a.program[orderBy];
       valueB = b.program[orderBy];
+    } else if (orderBy === "faculty_leads") {
+      // Sort by concatenated faculty names for faculty_leads
+      valueA = a.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
+      valueB = b.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
     } else {
       valueA = a[orderBy];
       valueB = b[orderBy];
@@ -378,7 +381,7 @@ const MyProgramsTable = () => {
                   {application.program.year_semester}
                 </StyledTableCell>
                 <StyledTableCell>
-                  {application.program.faculty_leads}
+                  {application.program.faculty_leads.map((faculty) => faculty.display_name).join(", ")}
                 </StyledTableCell>
                 <StyledTableCell>
                   {formatDate(application.program.application_deadline)}
