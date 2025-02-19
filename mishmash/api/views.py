@@ -752,9 +752,11 @@ class UserViewSet(viewsets.ModelViewSet):
       - Manage user accounts.
     - **Public**:
       - Login, signup, and obtain authentication tokens.
+      - View list of faculty members
 
     ## Served Endpoints:
     - `GET /api/users/` → List all users (Admins only)
+    - `GET /api/users/?is_faculty=true` → List all faculty members (Public)
     - `POST /api/users/signup/` → Create a new user account
     - `POST /api/users/login/` → Authenticate user and provide token
     - `POST /api/users/logout/` → Log out current user
@@ -762,14 +764,40 @@ class UserViewSet(viewsets.ModelViewSet):
     - `PATCH /api/users/change_password/` → Change current user's password
 
     ## Permissions:
-    - **Public:** Can sign up, log in, and log out.
+    - **Public:** Can sign up, log in, log out, and view faculty list.
     - **Authenticated Users:** Can view their own data and change their password.
     - **Admins:** Can manage all users.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'display_name', 'email']
 
+    def get_permissions(self):
+        """
+        Override to allow public access to faculty list
+        """
+        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
+    def get_queryset(self):
+        """
+        Return all users for admins, but only faculty for public faculty list
+        """
+        queryset = User.objects.all()
+        
+        # If requesting faculty list, filter to only show faculty
+        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+            return queryset.filter(is_admin=True).order_by('display_name')
+            
+        # For other list requests, maintain admin-only access
+        if self.action == 'list' and not self.request.user.is_admin:
+            return queryset.none()
+            
+        return queryset
+    
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
         """
