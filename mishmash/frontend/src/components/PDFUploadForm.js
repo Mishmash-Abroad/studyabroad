@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axiosInstance from '../utils/axios'
 
-const PDFUploadForm = ({ program_id, user_id , doc_type}) => {
+const PDFUploadForm = ({ pdf_name, program_id, user_id , doc_type}) => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -50,7 +50,7 @@ const PDFUploadForm = ({ program_id, user_id , doc_type}) => {
 
   return (
     <div className="upload-container">
-      <h3>Upload PDF</h3>
+      <h3>Upload {pdf_name} PDF</h3>
       <form onSubmit={handleSubmit}>
         <input type="file" accept="application/pdf" onChange={handleFileChange} />
         <button type="submit">Upload</button>
