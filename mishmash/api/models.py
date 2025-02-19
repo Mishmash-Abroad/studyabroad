@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils.timezone import now
 
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
@@ -59,6 +60,18 @@ class ApplicationQuestion(models.Model):
 
     def __str__(self):
         return f"Question for {self.program.title}: {self.text}"
+    
+class ConfidentialNote(models.Model):
+    author = models.ForeignKey('User', null=True, blank=True, on_delete=models.SET_NULL, related_name='author')
+    application = models.ForeignKey('Application', on_delete=models.CASCADE, related_name='confidential_notes')
+    content = models.TextField(default="Confidential note text. Only admin accounts will be able to see this content.")
+    timestamp = models.DateTimeField(default=now, editable=False)
+
+    def __str__(self):
+        return f"Note by {self.get_author_display()} on {self.timestamp}"
+    
+    def get_author_display(self):
+        return self.author.username if self.author else "Deleted user"
 
 class ApplicationResponse(models.Model):
     application = models.ForeignKey('Application', on_delete=models.CASCADE, related_name='responses')
