@@ -19,6 +19,12 @@ const PDFUploadForm = ({ program_id, user_id , doc_type}) => {
       return;
     }
 
+    if (file.type != 'application/pdf') {
+      setFile(null);    
+      setError('Please select a PDF file.');
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", file.name);
     formData.append("pdf", file);

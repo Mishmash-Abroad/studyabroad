@@ -437,7 +437,6 @@ const ApplicationPage = () => {
           <Box mt={4} />
 
           <PDFUploadForm user_id={user.id} program_id={program_id} doc_type={'code_of_conduct'} />
-
           <Typography>
             Acknowledgement of the code of conduct: A document reviewing the
             code of conduct, and attesting to student's understanding and
