@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axiosInstance from '../utils/axios'
 
-const PDFUploadForm = ({ program_id, user_id }) => {
+const PDFUploadForm = ({ program_id, user_id , doc_type}) => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -24,6 +24,7 @@ const PDFUploadForm = ({ program_id, user_id }) => {
     formData.append("pdf", file);
     formData.append("student", user_id); // Auto-set in Django, so optional
     formData.append("program", program_id);
+    formData.append("type", doc_type);
 
     try {
       const response = await axiosInstance.post("/api/documents/", formData, {
