@@ -60,7 +60,9 @@ instance.interceptors.response.use(
     // Handle response errors
     (error) => {
         // Check for unauthorized access (invalid/expired token)
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && 
+            error.config.url !== '/api/login/' && // Don't handle 401s from login attempts
+            localStorage.getItem('token')) {      // Only handle if we had a token
             // Clear invalid credentials and redirect to login
             localStorage.removeItem('token');
             window.location.href = '/';
