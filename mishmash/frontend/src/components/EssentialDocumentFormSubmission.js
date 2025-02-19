@@ -18,10 +18,10 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
   return (
     <>
       <PDFUploadForm
-        pdf_name={"Code of Conduct Form"}
+        pdf_name={"Acknowledgement of the code of conduct"}
         user_id={user_id}
         program_id={program_id}
-        doc_type={"code_of_conduct"}
+        doc_type={"Acknowledgement of the code of conduct"}
       />
       <Typography>
         Acknowledgement of the code of conduct: A document reviewing the code of
@@ -30,10 +30,10 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
       </Typography>
 
       <PDFUploadForm
-        pdf_name={"Housing Form"}
+        pdf_name={"Housing questionnaire"}
         user_id={user_id}
         program_id={program_id}
-        doc_type={"housing"}
+        doc_type={"Housing questionnaire"}
       />
 
       <Typography>
@@ -43,10 +43,10 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
       </Typography>
 
       <PDFUploadForm
-        pdf_name={"Medical Form"}
+        pdf_name={"Medical/health history and immunization records"}
         user_id={user_id}
         program_id={program_id}
-        doc_type={"medical_history"}
+        doc_type={"Medical/health history and immunization records"}
       />
 
       <Typography>
@@ -57,10 +57,10 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
       </Typography>
 
       <PDFUploadForm
-        pdf_name={"Assumption of Risk Form"}
+        pdf_name={"Assumption of risk form"}
         user_id={user_id}
         program_id={program_id}
-        doc_type={"assumption_of_risk"}
+        doc_type={"Assumption of risk form"}
       />
 
       <Typography>
