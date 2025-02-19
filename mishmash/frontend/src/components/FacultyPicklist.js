@@ -53,7 +53,9 @@ const FacultyPicklist = ({ onFacultyChange, initialSelected = [] }) => {
     const fetchFaculty = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/api/users/faculty/');
+        const response = await axiosInstance.get('/api/users/', {
+          params: { is_faculty: true }
+        });
         setFacultyList(response.data);
         setError(null);
       } catch (err) {
