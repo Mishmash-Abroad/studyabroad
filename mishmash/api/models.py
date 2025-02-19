@@ -133,18 +133,19 @@ class Announcement(models.Model):
 
 class Document(models.Model):
     TYPES_OF_DOCS = [
-        ("code_of_conduct", "code_of_conduct"),
-        ("medical", "medical"),
-        ("housing", "housing"),
-        ("assumption_of_risk", "assumption_of_risk"),
+        ("Assumption of risk form", "Assumption of risk form"),
+        ("Acknowledgement of the code of conduct", "Acknowledgement of the code of conduct"),
+        ("Housing questionnaire", "Housing questionnaire"),
+        ("Medical/health history and immunization records", "Medical/health history and immunization records"),
     ]
     title = models.CharField(max_length=255)
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
     uploaded_at = models.DateTimeField(auto_now_add=True)
     student = models.ForeignKey("User", on_delete=models.CASCADE)
     program = models.ForeignKey("Program", on_delete=models.CASCADE)
-    type = models.CharField(
-        max_length=20, choices=TYPES_OF_DOCS
+    type = models.CharField(  # Change TextField to CharField
+        max_length=100,  # Set a max_length that fits your longest choice
+        choices=TYPES_OF_DOCS
     )
 
     def __str__(self):

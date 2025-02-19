@@ -58,7 +58,8 @@ const ApplicationPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-  console.log(user);
+  const [missingDocs, setMissingDocs] = useState([]);
+
   useEffect(() => {
     const getApplicationAndResponses = async () => {
       setLoading(true);
@@ -136,6 +137,18 @@ const ApplicationPage = () => {
 
           setQuestionResponses(blankResponses);
         }
+
+        const documentsResponse = await axiosInstance.get(
+          `/api/documents/?program=${program_id}&student=${user.id}`
+        );
+        const doc_submitted = documentsResponse.data.map((doc) => {return doc.type});
+        console.log(doc_submitted);
+        setMissingDocs([
+          "Assumption of risk form",
+          "Acknowledgement of the code of conduct",
+          "Housing questionnaire", 
+          "Medical/health history and immunization records",
+        ].filter((str) => !doc_submitted.includes(str)));
       } catch (err) {
         setError(
           err.response?.data?.detail ||
@@ -434,6 +447,14 @@ const ApplicationPage = () => {
             {renderSubmitButton()}
             {renderWithdrawReapply()}
           </form>
+          <Box mt={4} />
+
+          <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
+          <ul>
+            {missingDocs.map((type, index) => {
+              return <li sx={{ color: "red" }} key={index}> {type} </li>;
+            })}
+          </ul>
 
           <Box mt={4} />
 
