@@ -436,7 +436,39 @@ const ApplicationPage = () => {
 
           <Box mt={4} />
 
-          <PDFUploadForm user_id={user.id} program_id={program_id}/>
+          <PDFUploadForm user_id={user.id} program_id={program_id} doc_type={'code_of_conduct'} />
+
+          <Typography>
+            Acknowledgement of the code of conduct: A document reviewing the
+            code of conduct, and attesting to student's understanding and
+            commitment to abide by same. The student must sign this to
+            participate.
+          </Typography>
+
+          <PDFUploadForm user_id={user.id} program_id={program_id} doc_type={'housing'}/>
+
+          <Typography>
+            Housing questionnaire: A set of questions about housing preferences
+            to be reviewed by the faculty lead(s) to help with assigning
+            housing. The student must fill this out.
+          </Typography>
+
+          <PDFUploadForm user_id={user.id} program_id={program_id} doc_type={'medical_history'}/>
+
+          <Typography>
+            Medical/health history and immunization records: A high-level
+            summary of health status and attestation regarding immunizations.
+            This document in particular is covered by HIPAA (definition 11). The
+            student must fill out and sign this.
+          </Typography>
+
+          <PDFUploadForm user_id={user.id} program_id={program_id} doc_type={'assumption_of_risk'}/>
+
+          <Typography>
+            Assumption of risk form: A document waiving HCC's liability for
+            student participation in the program. The student must sign this to
+            participate.
+          </Typography>
         </div>
       </ContentContainer>
     </PageContainer>

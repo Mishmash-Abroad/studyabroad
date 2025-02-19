@@ -137,6 +137,7 @@ class Document(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     student = models.ForeignKey("User", on_delete=models.CASCADE)
     program = models.ForeignKey("Program", on_delete=models.CASCADE)
+    type = models.CharField(max_length=255)
 
     def __str__(self):
         return f"{self.title}"
