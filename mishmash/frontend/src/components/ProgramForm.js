@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Paper, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
-import ApplicantTable from './ApplicantTable'; // Import the new ApplicantTable component
+import ApplicantTable from './ApplicantTable';
+import FacultyPicklist from './FacultyPicklist';
 
 const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const [programData, setProgramData] = useState({
     title: '',
     year_semester: '',
-    faculty_leads: '',
+    faculty_lead_ids: [],
     application_open_date: '',
     application_deadline: '',
     start_date: '',
@@ -25,7 +26,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       setProgramData({
         title: editingProgram.title,
         year_semester: editingProgram.year_semester,
-        faculty_leads: editingProgram.faculty_leads,
+        faculty_lead_ids: editingProgram.faculty_leads.map(faculty => faculty.id),
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
         start_date: editingProgram.start_date,
@@ -39,9 +40,15 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setProgramData({ ...programData, [e.target.name]: e.target.value });
   };
 
+  const handleFacultyChange = (selectedFaculty) => {
+    setProgramData({
+      ...programData,
+      faculty_lead_ids: selectedFaculty.map(faculty => faculty.id)
+    });
+  };
+
   const handleSubmit = async () => {
     try {
-  
       if (editingProgram) {
         await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
       } else {
@@ -79,12 +86,40 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         {editingProgram ? 'Program Detail' : 'Create New Program'}
       </Typography>
 
+      {errorMessage && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {errorMessage}
+        </Typography>
+      )}
+
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <TextField label="Title" name="title" fullWidth value={programData.title} onChange={handleInputChange} />
-        <TextField label="Year & Semester" name="year_semester" fullWidth value={programData.year_semester} onChange={handleInputChange} />
-        <TextField label="Faculty Leads" name="faculty_leads" fullWidth value={programData.faculty_leads} onChange={handleInputChange} />
-        <TextField label="Description" name="description" multiline rows={3} fullWidth value={programData.description} onChange={handleInputChange} />
-        {/* Date Fields */}
+        <TextField 
+          label="Title" 
+          name="title" 
+          fullWidth 
+          value={programData.title} 
+          onChange={handleInputChange}
+        />
+        <TextField 
+          label="Year & Semester" 
+          name="year_semester" 
+          fullWidth 
+          value={programData.year_semester} 
+          onChange={handleInputChange}
+        />
+        <FacultyPicklist
+          onFacultyChange={handleFacultyChange}
+          initialSelected={programData.faculty_lead_ids}
+        />
+        <TextField 
+          label="Description" 
+          name="description" 
+          multiline 
+          rows={3} 
+          fullWidth 
+          value={programData.description} 
+          onChange={handleInputChange}
+        />
         <TextField
           label="Application Open Date"
           type="date"
@@ -94,7 +129,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.application_open_date}
           onChange={handleInputChange}
         />
-        
         <TextField
           label="Application Deadline"
           type="date"
@@ -104,7 +138,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.application_deadline}
           onChange={handleInputChange}
         />
-
         <TextField
           label="Start Date"
           type="date"
@@ -114,7 +147,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.start_date}
           onChange={handleInputChange}
         />
-
         <TextField
           label="End Date"
           type="date"
@@ -124,20 +156,24 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.end_date}
           onChange={handleInputChange}
         />
+
+        <Box sx={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', mt: 2 }}>
+          {editingProgram && (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleDeleteProgram}
+            >
+              Delete Program
+            </Button>
+          )}
+          <Button variant="contained" onClick={handleSubmit}>
+            {editingProgram ? 'Update Program' : 'Create Program'}
+          </Button>
+        </Box>
       </Box>
 
       {editingProgram && <ApplicantTable programId={editingProgram.id} />}
-
-      <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
-        {editingProgram && <Button variant="outlined" color="error" onClick={handleDeleteProgram}>Delete Program</Button>}
-        <Button variant="contained" color="primary" onClick={handleSubmit}>{editingProgram ? 'Update Program' : 'Create Program'}</Button>
-        <Button onClick={() => navigate('/dashboard/admin-programs')}>Cancel</Button>
-      </Box>
-      {errorMessage && (
-        <Typography color="error" sx={{ marginTop: 2, fontWeight: "bold" }}>
-          {errorMessage}
-        </Typography>
-      )}
     </Paper>
   );
 };

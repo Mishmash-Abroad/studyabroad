@@ -129,7 +129,7 @@ const AdminProgramsTable = () => {
     })
     .filter((p) =>
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.faculty_leads.toLowerCase().includes(searchQuery.toLowerCase())
+      p.faculty_leads.map(faculty => faculty.display_name).join(", ").toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const sortedPrograms = [...filteredPrograms].sort((a, b) => {
@@ -241,7 +241,7 @@ const AdminProgramsTable = () => {
                   {program.title}
                 </TableCell>
                 <TableCell>{program.year_semester}</TableCell>
-                <TableCell>{program.faculty_leads}</TableCell>
+                <TableCell>{program.faculty_leads.map(faculty => faculty.display_name).join(", ")}</TableCell>
                 <TableCell>{formatDate(program.application_open_date)}</TableCell>
                 <TableCell>{formatDate(program.application_deadline)}</TableCell>
                 <TableCell>{formatDate(program.start_date)}</TableCell>

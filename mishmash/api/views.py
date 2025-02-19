@@ -121,7 +121,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'faculty_leads']
+    search_fields = ['title']
     ordering_fields = ['application_deadline']
     ordering = ['application_deadline']
 
@@ -132,27 +132,32 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Filters:
         - Filters programs where `end_date >= today` (only current and future programs are shown)
         - Optional search filter for `title` or `faculty_leads`
+        - Optional faculty_ids filter for specific faculty members
 
         ## Returns:
         - 200 OK: List of programs (filtered)
 
         ## Example:
-        - `GET /api/programs/?search=engineering`
-
-        ## Permissions:
-        - Public access (any user)
+        - `GET /api/programs/?search=engineering&faculty_ids=1,2,3`
         """
 
         today = timezone.now().date()
         queryset = Program.objects.filter(end_date__gte=today)
 
         search = self.request.query_params.get("search", None)
+        faculty_ids = self.request.query_params.get("faculty_ids", None)
+
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(faculty_leads__icontains=search)
+                Q(title__icontains=search)
             )
 
-        return queryset
+        if faculty_ids:
+            faculty_id_list = [int(id) for id in faculty_ids.split(',') if id.isdigit()]
+            if faculty_id_list:
+                queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
+
+        return queryset.distinct()
     
     def create(self, request, *args, **kwargs):
         """
@@ -747,9 +752,11 @@ class UserViewSet(viewsets.ModelViewSet):
       - Manage user accounts.
     - **Public**:
       - Login, signup, and obtain authentication tokens.
+      - View list of faculty members
 
     ## Served Endpoints:
     - `GET /api/users/` → List all users (Admins only)
+    - `GET /api/users/?is_faculty=true` → List all faculty members (Public)
     - `POST /api/users/signup/` → Create a new user account
     - `POST /api/users/login/` → Authenticate user and provide token
     - `POST /api/users/logout/` → Log out current user
@@ -757,14 +764,40 @@ class UserViewSet(viewsets.ModelViewSet):
     - `PATCH /api/users/change_password/` → Change current user's password
 
     ## Permissions:
-    - **Public:** Can sign up, log in, and log out.
+    - **Public:** Can sign up, log in, log out, and view faculty list.
     - **Authenticated Users:** Can view their own data and change their password.
     - **Admins:** Can manage all users.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'display_name', 'email']
 
+    def get_permissions(self):
+        """
+        Override to allow public access to faculty list
+        """
+        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
+    def get_queryset(self):
+        """
+        Return all users for admins, but only faculty for public faculty list
+        """
+        queryset = User.objects.all()
+        
+        # If requesting faculty list, filter to only show faculty
+        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+            return queryset.filter(is_admin=True).order_by('display_name')
+            
+        # For other list requests, maintain admin-only access
+        if self.action == 'list' and not self.request.user.is_admin:
+            return queryset.none()
+            
+        return queryset
+    
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
         """
@@ -902,3 +935,19 @@ class UserViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, permission_classes=[AllowAny])
+    def faculty(self, request):
+        """
+        Retrieve a list of all faculty members (admin users).
+
+        ## Returns:
+        - List of faculty members with their display names and IDs
+        - Faculty are sorted by display name
+
+        ## Permissions:
+        - Public access (any user can view faculty list)
+        """
+        faculty = User.objects.filter(is_admin=True).order_by('display_name')
+        serializer = UserSerializer(faculty, many=True)
+        return Response(serializer.data)
