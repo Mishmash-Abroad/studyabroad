@@ -991,7 +991,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
     - **Students:** No access to any notes.
     - **No modifications or deletions are allowed.**
     """
-    queryset = ConfidentialNote.objects.all()
+    queryset = ConfidentialNote.objects.all().order_by("-timestamp")
     serializer_class = ConfidentialNoteSerializer
     permission_classes = [AdminCreateAndView]
 
@@ -1039,6 +1039,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         **Errors:**
         - **403 Forbidden** if a non-admin tries to create a note.
         """
+        print(self.request.user)
         serializer.save(author=self.request.user, timestamp=now())
 
     def update(self, request, *args, **kwargs):
