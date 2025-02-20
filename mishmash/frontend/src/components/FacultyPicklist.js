@@ -111,15 +111,18 @@ const FacultyPicklist = ({ onFacultyChange, initialSelected = [] }) => {
         />
       )}
       renderTags={(value, getTagProps) =>
-        value.map((option, index) => (
-          <Chip
-            key={option.id}
-            label={option.display_name}
-            {...getTagProps({ index })}
-            color="primary"
-            variant="outlined"
-          />
-        ))
+        value.map((option, index) => {
+          const { key, ...chipProps } = getTagProps({ index });
+          return (
+            <Chip
+              key={option.id}
+              label={option.display_name}
+              {...chipProps}
+              color="primary"
+              variant="outlined"
+            />
+          );
+        })
       }
       isOptionEqualToValue={(option, value) => option.id === value.id}
     />

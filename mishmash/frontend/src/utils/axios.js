@@ -8,6 +8,7 @@
  * - Authentication token management
  * - Request/response interceptors
  * - Automatic error handling
+ * - Session timeout handling
  * 
  * Used by:
  * - All frontend components making API calls
@@ -18,6 +19,7 @@
  * - Automatically attaches authentication tokens to requests
  * - Handles unauthorized responses (401) by logging out
  * - Maintains consistent Content-Type headers
+ * - Handles session timeouts
  */
 
 import axios from 'axios';
@@ -52,20 +54,26 @@ instance.interceptors.request.use(
 
 // Response Interceptor
 // -------------------
-// Handles common API response scenarios and errors
+// Handles session timeouts and unauthorized responses
 instance.interceptors.response.use(
-    // Pass through successful responses
     (response) => response,
-    
-    // Handle response errors
     (error) => {
-        // Check for unauthorized access (invalid/expired token)
-        if (error.response?.status === 401 && 
-            error.config.url !== '/api/login/' && // Don't handle 401s from login attempts
-            localStorage.getItem('token')) {      // Only handle if we had a token
-            // Clear invalid credentials and redirect to login
-            localStorage.removeItem('token');
-            window.location.href = '/';
+        if (error.response) {
+            // Handle session timeout responses
+            if (error.response.status === 401 && 
+                error.response.data?.detail?.includes('Session expired')) {
+                // Clear authentication data
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                
+                // Dispatch custom event for session expiry
+                const reason = error.response.data.detail.includes('inactivity') 
+                    ? 'inactivity' 
+                    : 'absolute';
+                window.dispatchEvent(new CustomEvent('sessionExpired', { 
+                    detail: { reason } 
+                }));
+            }
         }
         return Promise.reject(error);
     }
