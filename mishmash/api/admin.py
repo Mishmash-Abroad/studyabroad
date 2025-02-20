@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement
+from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, ConfidentialNote
 
 
 @admin.register(User)
@@ -44,3 +44,14 @@ class AnnouncementAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at')
+
+@admin.register(ConfidentialNote)
+class ConfidentialNoteAdmin(admin.ModelAdmin):
+    list_display = ["application", "get_author_display", "timestamp", "content"]
+    list_filter = ["timestamp"]
+    search_fields = ["author__display_name", "application__id", "content"]
+
+    def get_author_display(self, obj):
+        return obj.get_author_display()
+    get_author_display.admin_order_field = "author"
+    get_author_display.short_description = "Author"
