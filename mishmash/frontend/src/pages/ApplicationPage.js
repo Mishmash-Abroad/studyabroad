@@ -65,7 +65,7 @@ const ApplicationPage = () => {
     const getApplicationAndResponses = async () => {
       setLoading(true);
       setError("");
-
+      console.log(program_id);
       try {
         const programResponse = await axiosInstance.get(
           `/api/programs/${program_id}`
@@ -138,14 +138,18 @@ const ApplicationPage = () => {
           setQuestionResponses(blankResponses);
         }
 
-        const documentsResponse = await axiosInstance.get(
-          `/api/documents/?program=${program_id}&student=${user.user.id}`
-        );
+        const documentsResponse = await axiosInstance.get("/api/documents/", {
+          params: {
+            program: program_id,
+            student: user.user.id
+          }
+        });
         const doc_submitted = documentsResponse.data.map((doc) => {
           return doc.type;
         });
         console.log(doc_submitted);
         setDocsSubmitted(documentsResponse.data);
+        console.log(documentsResponse.data);
         setMissingDocs(
           [
             "Assumption of risk form",
