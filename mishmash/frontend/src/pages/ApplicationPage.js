@@ -79,9 +79,8 @@ const ApplicationPage = () => {
           `/api/programs/${program_id}/questions/`
         );
         setQuestions(questionsResponse.data);
-
         const applicationsResponse = await axiosInstance.get(
-          `/api/applications/?student=${user.id}`
+          `/api/applications/?student=${user.user.id}`
         );
         const existingApplication = applicationsResponse.data.find(
           (app) => app.program == program_id
@@ -139,7 +138,7 @@ const ApplicationPage = () => {
         }
 
         const documentsResponse = await axiosInstance.get(
-          `/api/documents/?program=${program_id}&student=${user.id}`
+          `/api/documents/?program=${program_id}&student=${user.user.id}`
         );
         const doc_submitted = documentsResponse.data.map((doc) => {
           return doc.type;
@@ -166,7 +165,7 @@ const ApplicationPage = () => {
     };
 
     getApplicationAndResponses();
-  }, [program_id, user.id]);
+  }, [program_id, user.user.id]);
 
   const handleInputChange = (e) => {
     setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
@@ -353,25 +352,25 @@ const ApplicationPage = () => {
         </StyledTabContainer>
 
         <Box display="flex" flexDirection="column" alignItems="center">
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             {program.description}
           </Typography>
 
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             <strong>Duration:</strong> {program.start_date} - {program.end_date}
           </Typography>
 
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             <strong>Application Open:</strong> {program.application_open_date}
           </Typography>
 
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             <strong>Application Deadline:</strong>{" "}
             {program.application_deadline}
           </Typography>
 
           <Typography variant="body1">
-            <strong>Faculty Leads:</strong> {program.faculty_leads}
+            <strong>Faculty Leads:</strong> {program.faculty_leads?.map(user => user.display_name).join(", ")}
           </Typography>
         </Box>
         <Box mt={4} />
@@ -477,7 +476,7 @@ const ApplicationPage = () => {
               <Box mt={4} />
 
               <EssentialDocumentFormSubmission
-                user_id={user.id}
+                user_id={user.user.id}
                 program_id={program_id}
               />
             </>
