@@ -62,20 +62,20 @@ class ApplicationQuestion(models.Model):
         return f"Question for {self.program.title}: {self.text}"
     
 class ConfidentialNote(models.Model):
-    author = models.ForeignKey('User', null=True, blank=True, on_delete=models.SET_NULL, related_name='author')
+    author = models.ForeignKey('User', null=True, blank=True, on_delete=models.SET_NULL, related_name='authored_notes')
     application = models.ForeignKey('Application', on_delete=models.CASCADE, related_name='confidential_notes')
     content = models.TextField(default="Confidential note text. Only admin accounts will be able to see this content.")
     timestamp = models.DateTimeField(default=now, editable=False)
 
+    def get_author_display(self):
+        return self.author.display_name if self.author else "Deleted user"
+
     def __str__(self):
         return f"Note by {self.get_author_display()} on {self.timestamp}"
-    
-    def get_author_display(self):
-        return self.author.username if self.author else "Deleted user"
 
 class ApplicationResponse(models.Model):
     application = models.ForeignKey('Application', on_delete=models.CASCADE, related_name='responses')
-    question = models.ForeignKey('ApplicationQuestion', on_delete=models.CASCADE, default=1)  # Replace 1 with the ID of an existing ApplicationQuestion
+    question = models.ForeignKey('ApplicationQuestion', on_delete=models.CASCADE, default=1)
     response = models.TextField(blank=True, default="")
 
     class Meta:
