@@ -42,6 +42,7 @@ Available Endpoints:
 
 - /users/:
     - GET: List all users (admin only)
+    - GET /?is_faculty=true: List all faculty members (public)
     - POST: Create a new user (optional feature, if implemented)
     - /<id>/:
         - GET: Retrieve a specific user (admin only)

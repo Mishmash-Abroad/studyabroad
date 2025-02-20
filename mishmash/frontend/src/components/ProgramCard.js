@@ -457,7 +457,7 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
                   fontSize: "1.1em",
                 }}
               >
-                {program.year_semester} • Led by {program.faculty_leads}
+                {program.year_semester} • Led by {program.faculty_leads.map(faculty => faculty.display_name).join(", ")}
               </p>
               <p
                 style={{
