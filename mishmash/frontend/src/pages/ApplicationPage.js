@@ -141,14 +141,18 @@ const ApplicationPage = () => {
         const documentsResponse = await axiosInstance.get(
           `/api/documents/?program=${program_id}&student=${user.id}`
         );
-        const doc_submitted = documentsResponse.data.map((doc) => {return doc.type});
+        const doc_submitted = documentsResponse.data.map((doc) => {
+          return doc.type;
+        });
         console.log(doc_submitted);
-        setMissingDocs([
-          "Assumption of risk form",
-          "Acknowledgement of the code of conduct",
-          "Housing questionnaire", 
-          "Medical/health history and immunization records",
-        ].filter((str) => !doc_submitted.includes(str)));
+        setMissingDocs(
+          [
+            "Assumption of risk form",
+            "Acknowledgement of the code of conduct",
+            "Housing questionnaire",
+            "Medical/health history and immunization records",
+          ].filter((str) => !doc_submitted.includes(str))
+        );
       } catch (err) {
         setError(
           err.response?.data?.detail ||
@@ -449,20 +453,34 @@ const ApplicationPage = () => {
           </form>
           <Box mt={4} />
 
-          <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
-          <ul>
-            {missingDocs.map((type, index) => {
-              return <li sx={{ color: "red" }} key={index}> {type} </li>;
-            })}
-          </ul>
-
-          <Box mt={4} />
+          {applicationData.status == "Applied" && (
+            <>
+              <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
+              <Typography sx={{ color: "red" }}>SUBMIT THESE DOCUMENTS {
+                true ? "BEFORE"  : "AFTER" // TODO add logic here for whether the deadline has passed or not
+                } </Typography>
+              <ul>
+                {missingDocs.map((type, index) => {
+                  return (
+                    <li sx={{ color: "red" }} key={index}>
+                      {" "}
+                      {type}{" "}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
 
           {applicationData.status == "Applied" && (
-            <EssentialDocumentFormSubmission
-              user_id={user.id}
-              program_id={program_id}
-            />
+            <>
+              <Box mt={4} />
+
+              <EssentialDocumentFormSubmission
+                user_id={user.id}
+                program_id={program_id}
+              />
+            </>
           )}
         </div>
       </ContentContainer>

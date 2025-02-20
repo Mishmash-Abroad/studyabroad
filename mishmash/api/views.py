@@ -1025,3 +1025,17 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
 
         return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Handle updating an existing document via PUT or PATCH.
+        """
+        partial = kwargs.pop('partial', False)  # Check if it's a PATCH request
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
