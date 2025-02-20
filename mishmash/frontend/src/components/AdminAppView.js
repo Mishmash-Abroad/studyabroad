@@ -25,6 +25,8 @@ const AdminAppView = () => {
   const [program, setProgram] = useState(null);
   const [responses, setResponses] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [confidentialNotes, setConfidentialNotes] = useState([]);
+  const [newNoteContent, setNewNoteContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
@@ -58,6 +60,18 @@ const AdminAppView = () => {
       const responsesResponse = await axiosInstance.get(`/api/responses/?application=${id}`);
       setResponses(responsesResponse.data);
 
+      // Fetch confidential notes
+      try {
+        const notesResponse = await axiosInstance.get(`/api/notes/?application=${id}`);
+        setConfidentialNotes(notesResponse.data);
+      } catch (err) {
+        if (err.response && err.response.status === 404) {
+          setConfidentialNotes([]);
+        } else {
+          throw err;
+        }
+      }
+
       setError(null);
     } catch (err) {
       console.error("Error fetching application details:", err);
@@ -74,6 +88,27 @@ const AdminAppView = () => {
       setStatus(newStatus);
     } catch (error) {
       console.error("Error updating status:", error);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNoteContent.trim()) {
+      setError("Note content cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post(`/api/notes/`, {
+        application: id,
+        content: newNoteContent,
+      });
+
+      setConfidentialNotes((prevNotes) => [...prevNotes, response.data]);
+      setNewNoteContent("");
+      setError(null);
+    } catch (err) {
+      console.error("Error adding confidential note:", err);
+      setError("Failed to add note. Please try again.");
     }
   };
 
@@ -140,6 +175,51 @@ const AdminAppView = () => {
             </TableBody>
           </Table>
         </TableContainer>
+      </Box>
+
+      {/* Confidential Notes Section */}
+      <Box sx={{ marginBottom: 3 }}>
+        <Typography variant="h6">Confidential Notes</Typography>
+        {confidentialNotes.length > 0 ? (
+          confidentialNotes
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .map((note) => (
+            <Paper key={note.id} sx={{ padding: 2, marginBottom: 2, width: "100%" }}>
+              <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                {note.content}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  marginTop: 1,
+                  textAlign: "right",
+                  fontStyle: "italic",
+                  color: "gray",
+                }}
+              >
+                — {note.author_display}, {new Date(note.timestamp).toLocaleString()}
+              </Typography>
+            </Paper>
+          ))
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            No confidential notes yet.
+          </Typography>
+        )}
+
+        <TextField
+          fullWidth
+          label="Add a Confidential Note"
+          variant="outlined"
+          multiline
+          rows={3}
+          value={newNoteContent}
+          onChange={(e) => setNewNoteContent(e.target.value)}
+        />
+        <Button onClick={handleAddNote} variant="contained" color="primary" sx={{ marginTop: 2 }}>
+          Add Note
+        </Button>
       </Box>
   
       {/* Status Dropdown - Now Appears After Responses */}
