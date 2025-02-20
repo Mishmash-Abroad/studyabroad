@@ -1,9 +1,5 @@
 from django.contrib import admin
-<<<<<<< HEAD
-from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, ConfidentialNote
-=======
-from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, Document
->>>>>>> c1c055c2334df13d82d8ed64fac09541f1afa398
+from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, Document, ConfidentialNote
 
 
 @admin.register(User)
