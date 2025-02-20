@@ -46,7 +46,7 @@ const ApplicantTable = ({ programId }) => {
 
       const userMap = {};
       userResponses.forEach(user => {
-        userMap[user.id] = user;
+        userMap[user.user.id] = user;
       });
       setUserDetails(userMap);
 
