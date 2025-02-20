@@ -40,6 +40,9 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Format: comma-separated list (e.g., "localhost,example.com")
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
+CLIENT_SECRET = config('CLIENT_SECRET', default='your-client-secret')
+
+
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
@@ -66,6 +69,13 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',     # Token authentication
     'corsheaders',                  # CORS handling
     
+    #oauth2 setup
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.openid_connect',
+
+    
     # Local apps
     'api',                         # Main application API
 ]
@@ -82,6 +92,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Add the account middleware:
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # URL Configuration
@@ -135,6 +147,46 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+# OAUTH AUTHEENTICATION
+# ==================
+
+AUTHENTICATION_BACKENDS = [
+    
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by email
+    'allauth.account.auth_backends.AuthenticationBackend',
+    
+]
+
+
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+    "openid_connect": {
+        "OAUTH_PKCE_ENABLED": True,  # PKCE support, if required
+        "APPS": [
+            {
+                "provider_id": "duke-oidc",
+                "name": "Duke University Login",
+                "client_id": "ece-spring-2025-sc814",
+                "secret": CLIENT_SECRET,
+                "settings": {
+                    "server_url": "https://oauth.oit.duke.edu/oidc",
+                    "token_auth_method": "client_secret_basic",
+                    "oauth_pkce_enabled": True,
+                },
+            }
+        ]
+    }
+}
+
+
+
+
+
+
+
 
 # INTERNATIONALIZATION
 # ===================
