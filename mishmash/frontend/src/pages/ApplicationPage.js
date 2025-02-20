@@ -59,12 +59,13 @@ const ApplicationPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [missingDocs, setMissingDocs] = useState([]);
+  const [docsSubmitted, setDocsSubmitted] = useState([]);
 
   useEffect(() => {
     const getApplicationAndResponses = async () => {
       setLoading(true);
       setError("");
-
+      console.log(program_id);
       try {
         const programResponse = await axiosInstance.get(
           `/api/programs/${program_id}`
@@ -79,9 +80,8 @@ const ApplicationPage = () => {
           `/api/programs/${program_id}/questions/`
         );
         setQuestions(questionsResponse.data);
-
         const applicationsResponse = await axiosInstance.get(
-          `/api/applications/?student=${user.id}`
+          `/api/applications/?student=${user.user.id}`
         );
         const existingApplication = applicationsResponse.data.find(
           (app) => app.program == program_id
@@ -138,13 +138,18 @@ const ApplicationPage = () => {
           setQuestionResponses(blankResponses);
         }
 
-        const documentsResponse = await axiosInstance.get(
-          `/api/documents/?program=${program_id}&student=${user.id}`
-        );
+        const documentsResponse = await axiosInstance.get("/api/documents/", {
+          params: {
+            program: program_id,
+            student: user.user.id
+          }
+        });
         const doc_submitted = documentsResponse.data.map((doc) => {
           return doc.type;
         });
         console.log(doc_submitted);
+        setDocsSubmitted(documentsResponse.data);
+        console.log(documentsResponse.data);
         setMissingDocs(
           [
             "Assumption of risk form",
@@ -166,7 +171,7 @@ const ApplicationPage = () => {
     };
 
     getApplicationAndResponses();
-  }, [program_id, user.id]);
+  }, [program_id, user.user.id]);
 
   const handleInputChange = (e) => {
     setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
@@ -206,6 +211,7 @@ const ApplicationPage = () => {
             date_of_birth: applicationData.date_of_birth,
             gpa: applicationData.gpa,
             major: applicationData.major,
+            status: "Applied",
           }
         );
         applicationId = applicationData.id;
@@ -353,25 +359,24 @@ const ApplicationPage = () => {
         </StyledTabContainer>
 
         <Box display="flex" flexDirection="column" alignItems="center">
-          <Typography variant="body1" paragraph>
-            {program.description}
-          </Typography>
+          <Typography variant="body1">{program.description}</Typography>
 
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             <strong>Duration:</strong> {program.start_date} - {program.end_date}
           </Typography>
 
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             <strong>Application Open:</strong> {program.application_open_date}
           </Typography>
 
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1">
             <strong>Application Deadline:</strong>{" "}
             {program.application_deadline}
           </Typography>
 
           <Typography variant="body1">
-            <strong>Faculty Leads:</strong> {program.faculty_leads}
+            <strong>Faculty Leads:</strong>{" "}
+            {program.faculty_leads?.map((user) => user.display_name).join(", ")}
           </Typography>
         </Box>
         <Box mt={4} />
@@ -456,9 +461,12 @@ const ApplicationPage = () => {
           {applicationData.status == "Applied" && (
             <>
               <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
-              <Typography sx={{ color: "red" }}>SUBMIT THESE DOCUMENTS {
-                true ? "BEFORE"  : "AFTER" // TODO add logic here for whether the deadline has passed or not
-                } </Typography>
+              <Typography sx={{ color: "red" }}>
+                SUBMIT THESE DOCUMENTS{" "}
+                {
+                  true ? "BEFORE" : "AFTER" // TODO add logic here for whether the deadline has passed or not
+                }{" "}
+              </Typography>
               <ul>
                 {missingDocs.map((type, index) => {
                   return (
@@ -472,12 +480,29 @@ const ApplicationPage = () => {
             </>
           )}
 
+          <div>
+            {docsSubmitted.map((doc, index) => {
+              return (
+                <Typography key={index} variant="body1">
+                  <strong>Submitted {doc.type}:</strong>{" "}
+                  <a
+                    href={doc.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {doc.title}
+                  </a>
+                </Typography>
+              );
+            })}
+          </div>
+
           {applicationData.status == "Applied" && (
             <>
               <Box mt={4} />
 
               <EssentialDocumentFormSubmission
-                user_id={user.id}
+                user_id={user.user.id}
                 program_id={program_id}
               />
             </>
