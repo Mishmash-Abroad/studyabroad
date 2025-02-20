@@ -92,7 +92,7 @@ const AdminAppView = () => {
             <TextField label="Title" value={program.title} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Description" value={program.description} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Year & Semester" value={program.year_semester} fullWidth InputProps={{ readOnly: true }} />
-            <TextField label="Faculty Leads" value={program.faculty_leads} fullWidth InputProps={{ readOnly: true }} />
+            <TextField label="Faculty Leads" value={program.faculty_leads.map(faculty => faculty.display_name).join(", ")} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Open Date" value={program.application_open_date} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Deadline" value={program.application_deadline} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Start Date" value={program.start_date} fullWidth InputProps={{ readOnly: true }} />

@@ -18,19 +18,19 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProgramSerializer(serializers.ModelSerializer):
+    faculty_leads = UserSerializer(many=True, read_only=True)
+    faculty_lead_ids = serializers.PrimaryKeyRelatedField(
+        source='faculty_leads',
+        queryset=User.objects.filter(is_admin=True),
+        many=True,
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Program
-        fields = [
-            "id",
-            "title",
-            "year_semester",
-            "description",
-            "faculty_leads",
-            "application_open_date",
-            "application_deadline",
-            "start_date",
-            "end_date",
-        ]
+        fields = ['id', 'title', 'year_semester', 'description', 'faculty_leads', 'faculty_lead_ids',
+                 'application_open_date', 'application_deadline', 'start_date', 'end_date']
 
 
 class ApplicationQuestionSerializer(serializers.ModelSerializer):
