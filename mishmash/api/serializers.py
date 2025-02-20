@@ -89,6 +89,15 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
+    pdf_url = serializers.SerializerMethodField()  # ✅ Add this line
+
     class Meta:
         model = Document
-        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'program', 'type']
+        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'program', 'type', 'pdf_url']
+
+    def get_pdf_url(self, obj):
+        """Generate the absolute URL for the PDF file."""
+        request = self.context.get('request')  # Get the request context
+        if obj.pdf:
+            return request.build_absolute_uri(obj.pdf.url) if request else obj.pdf.url
+        return None

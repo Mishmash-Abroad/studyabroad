@@ -59,6 +59,7 @@ const ApplicationPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [missingDocs, setMissingDocs] = useState([]);
+  const [docsSubmitted, setDocsSubmitted] = useState([]);
 
   useEffect(() => {
     const getApplicationAndResponses = async () => {
@@ -144,6 +145,7 @@ const ApplicationPage = () => {
           return doc.type;
         });
         console.log(doc_submitted);
+        setDocsSubmitted(documentsResponse.data);
         setMissingDocs(
           [
             "Assumption of risk form",
@@ -205,6 +207,7 @@ const ApplicationPage = () => {
             date_of_birth: applicationData.date_of_birth,
             gpa: applicationData.gpa,
             major: applicationData.major,
+            status: "Applied",
           }
         );
         applicationId = applicationData.id;
@@ -352,9 +355,7 @@ const ApplicationPage = () => {
         </StyledTabContainer>
 
         <Box display="flex" flexDirection="column" alignItems="center">
-          <Typography variant="body1">
-            {program.description}
-          </Typography>
+          <Typography variant="body1">{program.description}</Typography>
 
           <Typography variant="body1">
             <strong>Duration:</strong> {program.start_date} - {program.end_date}
@@ -370,7 +371,8 @@ const ApplicationPage = () => {
           </Typography>
 
           <Typography variant="body1">
-            <strong>Faculty Leads:</strong> {program.faculty_leads?.map(user => user.display_name).join(", ")}
+            <strong>Faculty Leads:</strong>{" "}
+            {program.faculty_leads?.map((user) => user.display_name).join(", ")}
           </Typography>
         </Box>
         <Box mt={4} />
@@ -455,9 +457,12 @@ const ApplicationPage = () => {
           {applicationData.status == "Applied" && (
             <>
               <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
-              <Typography sx={{ color: "red" }}>SUBMIT THESE DOCUMENTS {
-                true ? "BEFORE"  : "AFTER" // TODO add logic here for whether the deadline has passed or not
-                } </Typography>
+              <Typography sx={{ color: "red" }}>
+                SUBMIT THESE DOCUMENTS{" "}
+                {
+                  true ? "BEFORE" : "AFTER" // TODO add logic here for whether the deadline has passed or not
+                }{" "}
+              </Typography>
               <ul>
                 {missingDocs.map((type, index) => {
                   return (
@@ -470,6 +475,23 @@ const ApplicationPage = () => {
               </ul>
             </>
           )}
+
+          <div>
+            {docsSubmitted.map((doc, index) => {
+              return (
+                <Typography key={index} variant="body1">
+                  <strong>Submitted {doc.type}:</strong>{" "}
+                  <a
+                    href={doc.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {doc.title}
+                  </a>
+                </Typography>
+              );
+            })}
+          </div>
 
           {applicationData.status == "Applied" && (
             <>
