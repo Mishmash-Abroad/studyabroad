@@ -159,7 +159,7 @@ const LoginModal = ({ onClose }) => {
         username,
         password,
         email,
-        displayName,
+        display_name: displayName,
       });
 
       if (response.data.token) {

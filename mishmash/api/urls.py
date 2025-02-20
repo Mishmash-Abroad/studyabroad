@@ -86,6 +86,7 @@ router.register(r'questions', ApplicationQuestionViewSet, basename='question')
 router.register(r'responses', ApplicationResponseViewSet, basename='response')
 router.register(r'announcements', AnnouncementViewSet, basename='announcement')
 router.register(r'notes', ConfidentialNoteViewSet, basename="confidentialnote")
+router.register(r'documents', DocumentViewSet, basename='documents')
 
 # Define URL patterns, including both router-generated and custom endpoints
 urlpatterns = [
