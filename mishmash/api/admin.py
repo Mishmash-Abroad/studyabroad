@@ -1,5 +1,9 @@
 from django.contrib import admin
+<<<<<<< HEAD
 from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, ConfidentialNote
+=======
+from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, Document
+>>>>>>> c1c055c2334df13d82d8ed64fac09541f1afa398
 
 
 @admin.register(User)
@@ -55,3 +59,9 @@ class ConfidentialNoteAdmin(admin.ModelAdmin):
         return obj.get_author_display()
     get_author_display.admin_order_field = "author"
     get_author_display.short_description = "Author"
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
+    list_filter = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
+    search_fields = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')

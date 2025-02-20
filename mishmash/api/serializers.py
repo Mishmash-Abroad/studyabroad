@@ -1,11 +1,21 @@
 from rest_framework import serializers
-from .models import User, Program, Application, ApplicationQuestion, ApplicationResponse, Announcement, ConfidentialNote
+from .models import (
+    User,
+    Program,
+    Application,
+    ApplicationQuestion,
+    ApplicationResponse,
+    Announcement,
+    Document,
+    ConfidentialNote,
+)
+from django import forms
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'display_name', 'email', 'is_admin']
+        fields = ["id", "username", "display_name", "email", "is_admin"]
 
 
 class ProgramSerializer(serializers.ModelSerializer):
@@ -27,37 +37,55 @@ class ProgramSerializer(serializers.ModelSerializer):
 class ApplicationQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApplicationQuestion
-        fields = ['id', 'text', 'program', 'is_required']
+        fields = ["id", "text", "program", "is_required"]
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Application
-        fields = ['id', 'student', 'program', 'date_of_birth', 'gpa', 'major', 
-                  'status', 'applied_on']
+        fields = [
+            "id",
+            "student",
+            "program",
+            "date_of_birth",
+            "gpa",
+            "major",
+            "status",
+            "applied_on",
+        ]
 
 
 class ApplicationResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApplicationResponse
-        fields = ['id', 'application', 'question', 'response']
+        fields = ["id", "application", "question", "response"]
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
-    created_by_name = serializers.CharField(source='created_by.display_name', read_only=True)
+    created_by_name = serializers.CharField(
+        source="created_by.display_name", read_only=True
+    )
 
     class Meta:
         model = Announcement
         fields = [
-            'id', 'title', 'content', 'created_at', 'updated_at',
-            'importance', 'is_active', 'created_by', 'created_by_name'
+            "id",
+            "title",
+            "content",
+            "created_at",
+            "updated_at",
+            "importance",
+            "is_active",
+            "created_by",
+            "created_by_name",
         ]
-        read_only_fields = ['created_at', 'updated_at', 'created_by']
+        read_only_fields = ["created_at", "updated_at", "created_by"]
 
     def create(self, validated_data):
         # Set the created_by field to the current user
-        validated_data['created_by'] = self.context['request'].user
+        validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
     
 
@@ -71,3 +99,9 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
     def get_author_name(self, obj):
         """Returns 'Deleted user' if author is null."""
         return obj.get_author_display()
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'program', 'type']
