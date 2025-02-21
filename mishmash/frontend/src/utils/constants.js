@@ -17,3 +17,8 @@ export const ALL_ADMIN_EDITABLE_STATUSES = [
     "Canceled",
 ]
 
+export const ALL_ESSENTIAL_DOC_STATUSES = [
+    "Eligible",
+    "Approved",
+    "Completed",
+]
