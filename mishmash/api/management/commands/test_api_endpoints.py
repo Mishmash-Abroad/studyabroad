@@ -77,6 +77,14 @@ class Command(BaseCommand):
         failed_tests += f
         warnings += w
 
+        # Test Confidential Notes Responses
+        self.stdout.write("Testing confidential notes endpoints...")
+        t, p, f, w = self.test_notes_endpoints(client)
+        total_tests += t
+        passed_tests += p
+        failed_tests += f
+        warnings += w
+
         # Overall Summary Report
         print("\n==================== OVERALL TEST SUMMARY =========================")
         print(f"Total Tests: {total_tests}")
@@ -382,12 +390,12 @@ class Command(BaseCommand):
             title="Test Program",
             year_semester="2025 Spring",
             description="A program for testing applications.",
-            faculty_leads="Test Faculty",
             application_open_date=now().date(),
             application_deadline=now().date() + timedelta(days=10),
             start_date=now().date() + timedelta(days=20),
             end_date=now().date() + timedelta(days=30),
         )
+        program.faculty_leads.add(admin)
 
         client.force_authenticate(user=student)
         response = client.post("/api/applications/", {
@@ -508,7 +516,7 @@ class Command(BaseCommand):
             "title": "Test Program for Questions",
             "year_semester": "2025 Fall",
             "description": "A program for testing questions.",
-            "faculty_leads": "Test Faculty",
+            "faculty_leads": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() + timedelta(days=10),
             "start_date": now().date() + timedelta(days=20),
@@ -807,6 +815,104 @@ class Command(BaseCommand):
 
         # Summary Report
         print("\n==================== ANNOUNCEMENT TEST SUMMARY ====================")
+        print(f"Total Tests: {total_tests[0]}")
+        print(f"Passed: {passed_tests[0]}")
+        print(f"Failed: {failed_tests[0]}")
+        print(f"Warnings: {warnings[0]}")
+        print("===================================================================")
+
+        return total_tests[0], passed_tests[0], failed_tests[0], warnings[0]
+    
+    def test_notes_endpoints(self, client):
+        '''
+        API Endpoints:
+        Method Endpoint                         Description                     Permission Classes Arguments                 Expected Response            Errors
+        GET    /api/notes/                      List all confidential notes     Admin Only         None                      List of confidential notes   403 if unauthorized
+        GET    /api/notes/?application=<id>     Filter notes by application     Admin Only         Application ID            Created announcement details 403 if unauthorized
+        POST   /api/notes/                      Create new note                 Admin Only         Application ID, Content   Created Note Details         403 if unauthorized
+        '''
+
+        total_tests = [0]
+        passed_tests = [0]
+        failed_tests = [0]
+        warnings = [0]
+
+        admin = User.objects.get(username="admin_user")
+        student = User.objects.get(username="student_user")
+
+        # Create a test application
+        client.force_authenticate(user=student)
+        application_data = {
+            "program": 1,
+            "date_of_birth": "2000-01-01",
+            "gpa": 3.8,
+            "major": "Computer Science"
+        }
+        response = client.post("/api/applications/", application_data)
+        Command.check_response(response, 201, success_message="Application submitted successfully.",
+                            error_message="Failed to submit application.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        application_id = response.data["id"]
+
+        # Attempt to fetch all notes as an unauthenticated user (should fail)
+        client.force_authenticate(user=None)
+        response = client.get("/api/notes/")
+        Command.check_response(response, 401, success_message="Unauthenticated user was correctly denied access to confidential notes.",
+                            error_message="Unauthenticated user should not be able to access confidential notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Attempt to fetch all notes as a student (should fail)
+        client.force_authenticate(user=student)
+        response = client.get("/api/notes/")
+        Command.check_response(response, 403, success_message="Student was correctly denied access to confidential notes.",
+                            error_message="Student should not be able to access confidential notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Fetch all notes as an admin (should succeed)
+        client.force_authenticate(user=admin)
+        response = client.get("/api/notes/")
+        Command.check_response(response, 200, success_message="Admin successfully retrieved all confidential notes.",
+                            error_message="Admin failed to retrieve confidential notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Fetch notes for a specific application as a student (should fail)
+        client.force_authenticate(user=student)
+        response = client.get(f"/api/notes/?application={application_id}")
+        Command.check_response(response, 403, success_message="Student was correctly denied access to application notes.",
+                            error_message="Student should not be able to access application notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Fetch notes for a specific application as an admin (should succeed)
+        client.force_authenticate(user=admin)
+        response = client.get(f"/api/notes/?application={application_id}")
+        Command.check_response(response, 200, success_message="Admin successfully retrieved notes for application.",
+                            error_message="Admin failed to retrieve notes for application.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Attempt to create a note as a student (should fail)
+        client.force_authenticate(user=student)
+        note_data = {"application": application_id, "content": "This is a confidential note."}
+        response = client.post("/api/notes/", note_data)
+        Command.check_response(response, 403, success_message="Student was correctly denied access to create a confidential note.",
+                            error_message="Student should not be able to create a confidential note.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Create a note as an admin (should succeed)
+        client.force_authenticate(user=admin)
+        response = client.post("/api/notes/", note_data)
+        Command.check_response(response, 201, success_message="Admin successfully created a confidential note.",
+                            error_message="Admin failed to create a confidential note.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Verify the created note is associated with the correct application
+        note_id = response.data["id"]
+        response = client.get(f"/api/notes/?application={application_id}")
+        assert any(note["id"] == note_id for note in response.data), "Created note is not associated with the correct application."
+
+
+        # Summary Report
+        print("\n======================= NOTES TEST SUMMARY ========================")
         print(f"Total Tests: {total_tests[0]}")
         print(f"Passed: {passed_tests[0]}")
         print(f"Failed: {failed_tests[0]}")

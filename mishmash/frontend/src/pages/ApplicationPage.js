@@ -70,7 +70,6 @@ const ApplicationPage = () => {
     const getApplicationAndResponses = async () => {
       setLoading(true);
       setError("");
-      console.log(program_id);
       try {
         const programResponse = await axiosInstance.get(
           `/api/programs/${program_id}`
@@ -86,7 +85,7 @@ const ApplicationPage = () => {
         );
         setQuestions(questionsResponse.data);
         const applicationsResponse = await axiosInstance.get(
-          `/api/applications/?student=${user.user.id}`
+          `/api/applications/?student=${user.id}`
         );
         const existingApplication = applicationsResponse.data.find(
           (app) => app.program == program_id
@@ -173,7 +172,7 @@ const ApplicationPage = () => {
     };
 
     getApplicationAndResponses();
-  }, [program_id, user.user.id]);
+  }, [program_id, user.id]);
 
   const handleInputChange = (e) => {
     setApplicationData({ ...applicationData, [e.target.name]: e.target.value });

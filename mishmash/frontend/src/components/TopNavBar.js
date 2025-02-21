@@ -141,6 +141,7 @@ function TopNavBar({ onLoginClick }) {
 
   // Reset anchorEl when user changes
   useEffect(() => {
+    console.log(user);
     setAnchorEl(null);
   }, [user]);
 
@@ -194,7 +195,7 @@ function TopNavBar({ onLoginClick }) {
                 onClick={handleUserMenuClick}
                 startIcon={<UserIcon />}
               >
-                {user.user.display_name}
+                {user.display_name}
               </UserButton>
               <StyledMenu
                 id="user-menu"
