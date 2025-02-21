@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axiosInstance from "../utils/axios";
 
-const PDFUploadForm = ({ pdf_name, program_id, user_id, doc_type }) => {
+const PDFUploadForm = ({ pdf_name, application_id, doc_type }) => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -28,13 +28,12 @@ const PDFUploadForm = ({ pdf_name, program_id, user_id, doc_type }) => {
     const formData = new FormData();
     formData.append("title", file.name);
     formData.append("pdf", file);
-    formData.append("student", user_id);
-    formData.append("program", program_id);
+    formData.append("application", application_id);
     formData.append("type", doc_type);
 
     try {
       const submitted_doc_response = await axiosInstance.get(
-        `/api/documents/?student=${user_id}&program=${program_id}`
+        `/api/documents/?application=${application_id}`
       );
 
       const submitted_docs_with_type = submitted_doc_response.data.filter(

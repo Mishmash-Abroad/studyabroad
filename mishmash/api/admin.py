@@ -48,6 +48,6 @@ class AnnouncementAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
-    list_filter = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
-    search_fields = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
+    list_display = ('title', 'application', 'uploaded_at', 'pdf', 'type')
+    list_filter = ('title', 'application', 'uploaded_at', 'pdf', 'type')
+    search_fields = ('title', 'application', 'uploaded_at', 'pdf', 'type')

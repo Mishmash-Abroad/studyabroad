@@ -52,6 +52,7 @@ const ApplicationPage = () => {
     date_of_birth: "",
     gpa: "",
     major: "",
+    id: 0,
   });
   const [questions, setQuestions] = useState([]);
   const [questionResponses, setQuestionResponses] = useState([]);
@@ -123,6 +124,23 @@ const ApplicationPage = () => {
           });
 
           setQuestionResponses(updatedResponses);
+
+
+          const documentsResponse = await axiosInstance.get(`/api/documents/?application=${existingApplication.id}`);
+          const doc_submitted = documentsResponse.data.map((doc) => {
+            return doc.type;
+          });
+          console.log(doc_submitted);
+          setDocsSubmitted(documentsResponse.data);
+          console.log(documentsResponse.data);
+          setMissingDocs(
+            [
+              "Assumption of risk form",
+              "Acknowledgement of the code of conduct",
+              "Housing questionnaire",
+              "Medical/health history and immunization records",
+            ].filter((str) => !doc_submitted.includes(str))
+          );
         } else {
           const questionsResponse = await axiosInstance.get(
             `/api/questions/?program=${program_id}`
@@ -137,27 +155,6 @@ const ApplicationPage = () => {
 
           setQuestionResponses(blankResponses);
         }
-
-        const documentsResponse = await axiosInstance.get("/api/documents/", {
-          params: {
-            program: program_id,
-            student: user.user.id
-          }
-        });
-        const doc_submitted = documentsResponse.data.map((doc) => {
-          return doc.type;
-        });
-        console.log(doc_submitted);
-        setDocsSubmitted(documentsResponse.data);
-        console.log(documentsResponse.data);
-        setMissingDocs(
-          [
-            "Assumption of risk form",
-            "Acknowledgement of the code of conduct",
-            "Housing questionnaire",
-            "Medical/health history and immunization records",
-          ].filter((str) => !doc_submitted.includes(str))
-        );
       } catch (err) {
         setError(
           err.response?.data?.detail ||
@@ -502,8 +499,7 @@ const ApplicationPage = () => {
               <Box mt={4} />
 
               <EssentialDocumentFormSubmission
-                user_id={user.user.id}
-                program_id={program_id}
+                application_id={applicationData.id}
               />
             </>
           )}

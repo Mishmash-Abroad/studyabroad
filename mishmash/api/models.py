@@ -141,8 +141,7 @@ class Document(models.Model):
     title = models.CharField(max_length=255)
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    student = models.ForeignKey("User", on_delete=models.CASCADE)
-    program = models.ForeignKey("Program", on_delete=models.CASCADE)
+    application = models.ForeignKey("Application", on_delete=models.CASCADE)
     type = models.CharField(  # Change TextField to CharField
         max_length=100,  # Set a max_length that fits your longest choice
         choices=TYPES_OF_DOCS
