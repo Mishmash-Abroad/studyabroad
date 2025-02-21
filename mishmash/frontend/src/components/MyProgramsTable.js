@@ -10,6 +10,7 @@
  * - Application status display
  * - Links to application details
  * - Re-apply functionality for withdrawn/canceled applications
+ * - Document status tracking and display
  */
 
 import React, { useState, useEffect } from "react";
@@ -28,6 +29,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
+import DocumentStatusDisplay from "./DocumentStatusDisplay";
 
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
@@ -159,20 +161,23 @@ const MyProgramsTable = () => {
         // First get all programs
         const programsResponse = await axiosInstance.get("/api/programs/");
 
-        // Then get application status for each program
+        // Then get application status and documents for each program
         const programsWithStatus = await Promise.all(
           programsResponse.data.map(async (program) => {
             try {
-              const statusResponse = await axiosInstance.get(
-                `/api/programs/${program.id}/application_status/`
-              );
+              const [statusResponse, documentsResponse] = await Promise.all([
+                axiosInstance.get(`/api/programs/${program.id}/application_status/`),
+                axiosInstance.get(`/api/documents/?program=${program.id}&user=${user.id}`)
+              ]);
+              
               return {
                 id: program.id,
                 program: program,
                 status: statusResponse.data.status,
+                documents: documentsResponse.data
               };
             } catch (error) {
-              console.error("Error fetching status:", error);
+              console.error("Error fetching status or documents:", error);
               return null;
             }
           })
@@ -199,7 +204,7 @@ const MyProgramsTable = () => {
     };
 
     fetchApplications();
-  }, []);
+  }, [user.id]);
 
   // Handle sort requests
   const handleRequestSort = (property) => {
@@ -241,6 +246,10 @@ const MyProgramsTable = () => {
       // Sort by concatenated faculty names for faculty_leads
       valueA = a.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
       valueB = b.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
+    } else if (orderBy === "documents") {
+      // Sort by number of submitted documents
+      valueA = a.documents?.filter(doc => doc.program === a.program.id).length || 0;
+      valueB = b.documents?.filter(doc => doc.program === b.program.id).length || 0;
     } else {
       valueA = a[orderBy];
       valueB = b[orderBy];
@@ -310,6 +319,7 @@ const MyProgramsTable = () => {
     { id: "start_date", label: "Program Start", sortable: true },
     { id: "end_date", label: "Program End", sortable: true },
     { id: "status", label: "Application Status", sortable: true },
+    { id: "documents", label: "Documents", sortable: true },
   ];
 
   // Format date for display
@@ -395,16 +405,30 @@ const MyProgramsTable = () => {
                 <StatusCell status={application.status}>
                   <span className="status-badge">{application.status}</span>
                 </StatusCell>
+                <StyledTableCell>
+                  <span className="status-badge">
+                    {(application.documents?.filter(doc => doc.program === application.program.id).length || 0)}/4 Documents
+                  </span>
+                </StyledTableCell>
               </TableRow>
               <DetailRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={8}>
                   <Collapse in={expandedRow === application.id}>
                     <Box sx={{ margin: 2 }}>
+                      <Box sx={{ marginBottom: 2 }}>
+                        <DocumentStatusDisplay 
+                          documents={application.documents || []} 
+                          programId={application.program.id}
+                        />
+                      </Box>
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
+                          marginTop: "16px",
+                          borderTop: "1px solid rgba(224, 224, 224, 1)",
+                          paddingTop: "16px"
                         }}
                       >
                         <ApplicationButton
