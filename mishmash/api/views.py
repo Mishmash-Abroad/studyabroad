@@ -987,7 +987,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user:
             token, _ = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key, "user": UserSerializer(user).data})
+            serializer = UserSerializer(user).data
+            serializer["token"] = token.key
+            return Response(serializer)
 
         return Response(
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
