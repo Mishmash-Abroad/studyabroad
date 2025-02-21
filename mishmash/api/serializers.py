@@ -30,7 +30,7 @@ class ProgramSerializer(serializers.ModelSerializer):
     class Meta:
         model = Program
         fields = ['id', 'title', 'year_semester', 'description', 'faculty_leads', 'faculty_lead_ids',
-                 'application_open_date', 'application_deadline', 'start_date', 'end_date']
+                 'application_open_date', 'application_deadline', 'essential_document_deadline', 'start_date', 'end_date']
 
 
 class ApplicationQuestionSerializer(serializers.ModelSerializer):

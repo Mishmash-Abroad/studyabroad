@@ -12,7 +12,7 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'year_semester', 'application_open_date', 'application_deadline')
+    list_display = ('id', 'title', 'year_semester', 'application_open_date', 'application_deadline', 'essential_document_deadline')
     list_filter = ('year_semester',)
     search_fields = ('title', 'faculty_leads')
 
