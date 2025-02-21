@@ -460,9 +460,10 @@ const ApplicationPage = () => {
               <>
                 <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
                 <Typography sx={{ color: "red" }}>
-                  SUBMIT THESE DOCUMENTS{" "}
+                  SUBMIT THESE DOCUMENTS by {program.essential_document_deadline}{" "}
+                  It has been {(new Date() - new Date(program.essential_document_deadline))} days
                   {
-                    true ? "BEFORE" : "AFTER" // TODO add logic here for whether the deadline has passed or not
+                    new Date() > new Date(program.essential_document_deadline) ? `since` : `after`
                   }{" "}
                 </Typography>
                 <ul>

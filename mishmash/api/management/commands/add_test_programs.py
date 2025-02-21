@@ -53,6 +53,7 @@ class Command(BaseCommand):
                 'description': 'Study ancient Greek philosophy where it all began. Visit historical sites and engage with contemporary scholars in philosophical discussions.',
                 'application_open_date': today - timedelta(days=300),
                 'application_deadline': today - timedelta(days=240),
+                'essential_document_deadline': today - timedelta(days=240),
                 'start_date': today - timedelta(days=180),
                 'end_date': today - timedelta(days=90)
             },
@@ -62,6 +63,7 @@ class Command(BaseCommand):
                 'description': 'Experience Silicon Valley\'s thriving tech scene and startup ecosystem. Work on projects with local tech companies and attend industry events.',
                 'application_open_date': today - timedelta(days=310),
                 'application_deadline': today - timedelta(days=250),
+                'essential_document_deadline': today - timedelta(days=250),
                 'start_date': today - timedelta(days=190),
                 'end_date': today - timedelta(days=100)
             },
@@ -71,6 +73,7 @@ class Command(BaseCommand):
                 'description': 'Study sustainable farming practices and agricultural innovation in New Zealand. Work with local farmers and research sustainable methods.',
                 'application_open_date': today - timedelta(days=305),
                 'application_deadline': today - timedelta(days=245),
+                'essential_document_deadline': today - timedelta(days=245),
                 'start_date': today - timedelta(days=185),
                 'end_date': today - timedelta(days=95)
             },
@@ -80,6 +83,7 @@ class Command(BaseCommand):
                 'description': 'Experience journalism in the media capital of the world. Work with leading news organizations and learn modern digital journalism.',
                 'application_open_date': today - timedelta(days=315),
                 'application_deadline': today - timedelta(days=255),
+                'essential_document_deadline': today - timedelta(days=255),
                 'start_date': today - timedelta(days=195),
                 'end_date': today - timedelta(days=105)
             },
@@ -91,6 +95,7 @@ class Command(BaseCommand):
                 'description': 'Travel through major European capitals studying political systems and international relations. Meet with government officials and policy makers.',
                 'application_open_date': today - timedelta(days=150),
                 'application_deadline': today - timedelta(days=90),
+                'essential_document_deadline': today - timedelta(days=90),
                 'start_date': today - timedelta(days=30),
                 'end_date': today + timedelta(days=60)
             },
@@ -100,6 +105,7 @@ class Command(BaseCommand):
                 'description': 'Study wildlife conservation and ecological preservation in Kenya\'s national parks. Work with local conservation experts and research teams.',
                 'application_open_date': today - timedelta(days=160),
                 'application_deadline': today - timedelta(days=100),
+                'essential_document_deadline': today - timedelta(days=100),
                 'start_date': today - timedelta(days=40),
                 'end_date': today + timedelta(days=50)
             },
@@ -109,6 +115,7 @@ class Command(BaseCommand):
                 'description': 'Learn film production in Hollywood. Work on actual film sets and learn from industry professionals.',
                 'application_open_date': today - timedelta(days=155),
                 'application_deadline': today - timedelta(days=95),
+                'essential_document_deadline': today - timedelta(days=95),
                 'start_date': today - timedelta(days=35),
                 'end_date': today + timedelta(days=55)
             },
@@ -118,6 +125,7 @@ class Command(BaseCommand):
                 'description': 'Study advanced robotics in South Korea\'s tech hub. Work with leading robotics companies and research labs.',
                 'application_open_date': today - timedelta(days=165),
                 'application_deadline': today - timedelta(days=105),
+                'essential_document_deadline': today - timedelta(days=105),
                 'start_date': today - timedelta(days=45),
                 'end_date': today + timedelta(days=45)
             },
@@ -129,6 +137,17 @@ class Command(BaseCommand):
                 'description': 'Study marine ecosystems and conservation efforts in the world\'s largest coral reef system. Includes diving certification and hands-on research projects.',
                 'application_open_date': today - timedelta(days=25),
                 'application_deadline': today + timedelta(days=35),
+                'essential_document_deadline': today - timedelta(days=35),
+                'start_date': today + timedelta(days=120),
+                'end_date': today + timedelta(days=150)
+            },
+            {
+                'title': 'AAAAAAAAAAAAAAAAAAAAAA',
+                'year_semester': '2025 Summer',
+                'description': 'Study marine ecosystems and conservation efforts in the world\'s largest coral reef system. Includes diving certification and hands-on research projects.',
+                'application_open_date': today - timedelta(days=25),
+                'application_deadline': today + timedelta(days=35),
+                'essential_document_deadline': today - timedelta(days=35),
                 'start_date': today + timedelta(days=120),
                 'end_date': today + timedelta(days=150)
             },
@@ -138,6 +157,7 @@ class Command(BaseCommand):
                 'description': 'Immerse yourself in Renaissance art and architecture. Study in historic studios and visit world-renowned museums and architectural sites.',
                 'application_open_date': today - timedelta(days=20),
                 'application_deadline': today + timedelta(days=40),
+                'essential_document_deadline': today - timedelta(days=40),
                 'start_date': today + timedelta(days=130),
                 'end_date': today + timedelta(days=160)
             },
@@ -147,6 +167,7 @@ class Command(BaseCommand):
                 'description': 'Study healthcare systems and public health challenges in South Africa. Work with local clinics and healthcare professionals.',
                 'application_open_date': today - timedelta(days=30),
                 'application_deadline': today + timedelta(days=30),
+                'essential_document_deadline': today - timedelta(days=30),
                 'start_date': today + timedelta(days=140),
                 'end_date': today + timedelta(days=170)
             },
@@ -156,6 +177,7 @@ class Command(BaseCommand):
                 'description': 'Master French culinary techniques and food culture. Study at prestigious cooking schools and visit local markets.',
                 'application_open_date': today - timedelta(days=15),
                 'application_deadline': today + timedelta(days=45),
+                'essential_document_deadline': today - timedelta(days=80),
                 'start_date': today + timedelta(days=125),
                 'end_date': today + timedelta(days=155)
             },

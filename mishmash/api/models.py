@@ -27,6 +27,7 @@ class Program(models.Model):
     faculty_leads = models.ManyToManyField('User', related_name='led_programs', limit_choices_to={'is_admin': True}, default=[1])
     application_open_date = models.DateField(null=True, blank=True)
     application_deadline = models.DateField(null=True, blank=True)
+    essential_document_deadline = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
