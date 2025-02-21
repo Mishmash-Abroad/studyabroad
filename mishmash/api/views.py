@@ -108,14 +108,21 @@ class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.is_admin
     
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_admin
+    
 class AdminCreateAndView(permissions.BasePermission):
     """
     Custom permission to allow only admin users to create and view confidential notes.
     Updates and deletions are always forbidden.
     """
     def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
         if request.method in ["GET", "POST"]:
-            return request.user.is_authenticated and request.user.is_admin
+            return request.user.is_admin
         return False
 
     def has_object_permission(self, request, view, obj):
@@ -1099,7 +1106,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
     """
     queryset = ConfidentialNote.objects.all().order_by("-timestamp")
     serializer_class = ConfidentialNoteSerializer
-    permission_classes = [AdminCreateAndView]
+    permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
 
     def get_queryset(self):
         """
