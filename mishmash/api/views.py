@@ -35,6 +35,7 @@ from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
+from django.utils.timezone import now
 from django.db.models import Q
 from .models import (
     Program,
@@ -43,6 +44,7 @@ from .models import (
     ApplicationResponse,
     Announcement,
     Document,
+    ConfidentialNote
 )
 from .serializers import (
     ProgramSerializer,
@@ -52,6 +54,7 @@ from .serializers import (
     ApplicationResponseSerializer,
     AnnouncementSerializer,
     DocumentSerializer,
+    ConfidentialNoteSerializer
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -106,6 +109,26 @@ class IsAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.is_admin
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_admin
+    
+class AdminCreateAndView(permissions.BasePermission):
+    """
+    Custom permission to allow only admin users to create and view confidential notes.
+    Updates and deletions are always forbidden.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ["GET", "POST"]:
+            return request.user.is_admin
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS
 
 
 ### ViewSet classes for the API interface ###
@@ -873,11 +896,9 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         queryset = User.objects.all()
         
-        # If requesting faculty list, filter to only show faculty
         if self.action == 'list' and self.request.query_params.get('is_faculty'):
             return queryset.filter(is_admin=True).order_by('display_name')
             
-        # For other list requests, maintain admin-only access
         if self.action == 'list' and not self.request.user.is_admin:
             return queryset.none()
             
@@ -891,8 +912,8 @@ class UserViewSet(viewsets.ModelViewSet):
         **Permissions:** Authenticated users only.
         **Response:** User details.
         """
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        serializer = UserSerializer(request.user).data
+        return Response(serializer)
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def signup(self, request):
@@ -939,15 +960,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response(
-            {
-                "token": token.key,
-                "id": user.id,
-                "username": user.username,
-                "display_name": user.display_name,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        serializer = UserSerializer(user).data
+        serializer["token"] = token.key
+        return Response(serializer, status=status.HTTP_201_CREATED)
+        
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def login(self, request):
@@ -971,15 +987,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user:
             token, _ = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key, "user": UserSerializer(user).data})
+            serializer = UserSerializer(user).data
+            serializer["token"] = token.key
+            return Response(serializer)
 
         return Response(
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(
-        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def logout(self, request):
         """
         ## User Logout
@@ -1034,15 +1050,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response(
-            {
-                "token": token.key,
-                "id": user.id,
-                "username": user.username,
-                "display_name": user.display_name,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response({"token": token.key, "user": UserSerializer(user).data}, status=status.HTTP_200_OK)
+
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
         """
@@ -1060,6 +1069,112 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+class ConfidentialNoteViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing confidential notes on applications.
+
+    ## Features:
+    - **Admins can**:
+      - Create new confidential notes on applications.
+      - View all confidential notes.
+    - **Admins cannot**:
+      - Modify or delete any existing notes.
+    - **Students cannot**:
+      - View, create, update, or delete any notes.
+
+    ## Served Endpoints:
+    - `GET /api/notes/` → List all confidential notes (Admins only)
+    - `GET /api/notes/?application=<id>` → Filter notes by application (Admins only)
+    - `POST /api/notes/` → Create a new confidential note (Admins only)
+
+    ## Permissions:
+    - **Admins:** Full access to create and view confidential notes.
+    - **Students:** No access to any notes.
+    - **No modifications or deletions are allowed.**
+    """
+    queryset = ConfidentialNote.objects.all().order_by("-timestamp")
+    serializer_class = ConfidentialNoteSerializer
+    permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
+
+    def get_queryset(self):
+        """
+        ## Retrieve Notes:
+        - **Admins:** Can see all confidential notes.
+        - **Students:** Cannot see any notes.
+        - **Filtering:** Admins can filter by application ID using `?application=<id>`.
+        
+        ## Errors:
+        - **404 Not Found** if an invalid `application_id` is provided.
+        """
+        application_id = self.request.query_params.get("application", None)
+        queryset = ConfidentialNote.objects.all()
+
+        if application_id:
+            if not Application.objects.filter(id=application_id).exists():
+                return Response(
+                    {"detail": "Application not found."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            queryset = queryset.filter(application_id=application_id)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """
+        ## Create a Confidential Note:
+        - **Auto-assigns the current user as the author.**
+        - **Records the creation timestamp automatically.**
+        
+        **Expected Input:**
+        ```json
+        {
+            "application": 5,
+            "content": "This is an admin-only note."
+        }
+        ```
+        
+        **Returns:**
+        - `201 Created` with the new note data.
+        - `400 Bad Request` if invalid application ID.
+        
+        **Errors:**
+        - **403 Forbidden** if a non-admin tries to create a note.
+        """
+        print(self.request.user)
+        serializer.save(author=self.request.user, timestamp=now())
+
+    def update(self, request, *args, **kwargs):
+        """
+        ## Updating Confidential Notes is **Not Allowed**.
+        **Returns:**
+        - `403 Forbidden` if a user tries to edit a note.
+        """
+        return Response(
+            {"detail": "Editing confidential notes is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    def partial_update(self, request, *args, **kwargs):
+        """
+        ## Partially Updating Confidential Notes is **Not Allowed**.
+        **Returns:**
+        - `403 Forbidden` if a user tries to edit a note.
+        """
+        return Response(
+            {"detail": "Editing confidential notes is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        ## Deleting Confidential Notes is **Not Allowed**.
+        **Returns:**
+        - `403 Forbidden` if a user tries to delete a note.
+        """
+        return Response(
+            {"detail": "Deleting confidential notes is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
