@@ -92,9 +92,12 @@ const AdminProgramsTable = () => {
 
   useEffect(() => {
     if (programTitle && programTitle !== "new-program") {
+      const decodedTitle = decodeURIComponent(programTitle);
+  
       const selectedProgram = programs.find((p) =>
-        encodeURIComponent(p.title.replace(/\s+/g, "-")) === programTitle
+        p.title.replace(/\s+/g, "-") === decodedTitle
       );
+  
       setEditingProgram(selectedProgram || null);
     } else {
       setEditingProgram(null);
