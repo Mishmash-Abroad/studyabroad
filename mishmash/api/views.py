@@ -894,11 +894,9 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         queryset = User.objects.all()
         
-        # If requesting faculty list, filter to only show faculty
         if self.action == 'list' and self.request.query_params.get('is_faculty'):
             return queryset.filter(is_admin=True).order_by('display_name')
             
-        # For other list requests, maintain admin-only access
         if self.action == 'list' and not self.request.user.is_admin:
             return queryset.none()
             
@@ -912,8 +910,8 @@ class UserViewSet(viewsets.ModelViewSet):
         **Permissions:** Authenticated users only.
         **Response:** User details.
         """
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        serializer = UserSerializer(request.user).data
+        return Response(serializer)
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def signup(self, request):
@@ -960,15 +958,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response(
-            {
-                "token": token.key,
-                "id": user.id,
-                "username": user.username,
-                "display_name": user.display_name,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        serializer = UserSerializer(user).data
+        serializer["token"] = token.key
+        return Response(serializer, status=status.HTTP_201_CREATED)
+        
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def login(self, request):
@@ -998,9 +991,7 @@ class UserViewSet(viewsets.ModelViewSet):
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(
-        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def logout(self, request):
         """
         ## User Logout
@@ -1055,15 +1046,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response(
-            {
-                "token": token.key,
-                "id": user.id,
-                "username": user.username,
-                "display_name": user.display_name,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response({"token": token.key, "user": UserSerializer(user).data}, status=status.HTTP_200_OK)
+
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
         """
