@@ -93,7 +93,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'program', 'type', 'pdf_url']
+        fields = ['id', 'title', 'pdf', 'uploaded_at', 'application', 'type', 'pdf_url']
 
     def get_pdf_url(self, obj):
         """Generate the absolute URL for the PDF file."""
