@@ -18,7 +18,12 @@ export const ALL_ADMIN_EDITABLE_STATUSES = [
 ]
 
 export const ALL_ESSENTIAL_DOC_STATUSES = [
-    "Eligible",
     "Approved",
+    "Enrolled",
+]
+
+export const READ_ONLY_APPLICATION_STATUSES = [
+    "Canceled",
+    "Withdrawn",
     "Completed",
 ]

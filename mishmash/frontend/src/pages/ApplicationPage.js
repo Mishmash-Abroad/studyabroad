@@ -13,7 +13,7 @@ import {
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
-import { ALL_ESSENTIAL_DOC_STATUSES } from "../utils/constants";
+import { ALL_ESSENTIAL_DOC_STATUSES, READ_ONLY_APPLICATION_STATUSES } from "../utils/constants";
 // -------------------- STYLES --------------------
 const PageContainer = styled("div")(({ theme }) => ({
   paddingTop: "72px",
@@ -319,7 +319,7 @@ const ApplicationPage = () => {
       }
     };
 
-    if (applicationData.status === "Applied") {
+    if (applicationData.status && !READ_ONLY_APPLICATION_STATUSES.includes(applicationData.status)) {
       return (
         <Box mt={3} display="flex" justifyContent="space-between">
           <Button
@@ -374,6 +374,11 @@ const ApplicationPage = () => {
           <Typography variant="body1">
             <strong>Application Deadline:</strong>{" "}
             {program.application_deadline}
+          </Typography>
+
+          <Typography variant="body1">
+            <strong>Essential Document Deadline:</strong>{" "}
+            {program.essential_document_deadline}
           </Typography>
 
           <Typography variant="body1">
@@ -472,7 +477,7 @@ const ApplicationPage = () => {
                   IT HAS BEEN {daysSinceEssentialDocDeadline} DAYS
                   {new Date() > new Date(program.essential_document_deadline)
                     ? ` SINCE `
-                    : ` AFTER `}
+                    : ` UNTIL `}
                   {program.essential_document_deadline}
                 </Typography>
                 <ul>
