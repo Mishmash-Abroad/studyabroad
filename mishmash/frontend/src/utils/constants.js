@@ -27,3 +27,9 @@ export const READ_ONLY_APPLICATION_STATUSES = [
     "Withdrawn",
     "Completed",
 ]
+
+export const SEMESTERS = [
+    "Summer",
+    "Fall",
+    "Spring",
+]
