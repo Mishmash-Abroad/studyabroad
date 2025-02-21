@@ -106,6 +106,19 @@ class IsAdmin(permissions.BasePermission):
         return request.user.is_authenticated and request.user.is_admin
 
 
+class IsDocumentOwnerOrAdmin(permissions.BasePermission):
+    """
+    Allows access only to the owner of the document.
+    Admins are allowed read-only access (safe methods).
+    """
+    def has_object_permission(self, request, view, obj):
+        # Admins are allowed to read, but not modify documents.
+        if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+        # Otherwise, only the document's owner can modify it.
+        return obj.student == request.user
+
+
 ### ViewSet classes for the API interface ###
 
 
@@ -1064,7 +1077,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [
         permissions.IsAuthenticated,
-        IsApplicationResponseOwnerOrAdmin,
+        IsDocumentOwnerOrAdmin,  # Use our new permission here
     ]
 
     def create(self, request, *args, **kwargs):
