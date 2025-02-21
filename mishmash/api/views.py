@@ -66,7 +66,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
 from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
-
+import re
 
 ### Custom permission classes for API access ###
 
@@ -159,9 +159,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title']
-    ordering_fields = ['application_deadline']
-    ordering = ['application_deadline']
+    search_fields = ["title"]
+    ordering_fields = ["application_deadline"]
+    ordering = ["application_deadline"]
 
     def get_queryset(self):
         """
@@ -186,17 +186,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
         faculty_ids = self.request.query_params.get("faculty_ids", None)
 
         if search:
-            queryset = queryset.filter(
-                Q(title__icontains=search)
-            )
+            queryset = queryset.filter(Q(title__icontains=search))
 
         if faculty_ids:
-            faculty_id_list = [int(id) for id in faculty_ids.split(',') if id.isdigit()]
+            faculty_id_list = [int(id) for id in faculty_ids.split(",") if id.isdigit()]
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
 
         return queryset.distinct()
-    
+
     def create(self, request, *args, **kwargs):
         """
         Create a new study abroad program.
@@ -227,7 +225,6 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Admin only
         """
-
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         start_date = request.data.get("start_date")
@@ -245,16 +242,27 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        if application_open_date > application_deadline:
+        if application_deadline > application_open_date:
             raise ValidationError(
                 {
                     "detail": "Application open date cannot be after the application deadline."
                 }
             )
-
-        if start_date > end_date:
+        elif start_date > end_date:
             raise ValidationError(
                 {"detail": "Start date cannot be after the end date."}
+            )
+
+        if not (
+            application_open_date
+            <= application_deadline
+            <= start_date
+            <= end_date
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
+                }
             )
 
         response = super().create(request, *args, **kwargs)
@@ -307,6 +315,17 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         program_instance = self.get_object()
 
+        year_semester = request.data.get(
+            "year_semester", program_instance.year_semester
+        )
+        
+        # Define the regex pattern
+        pattern = r"^\d{4} (Spring|Summer|Fall|Winter)$"
+
+        # Check if it matches
+        if not re.match(pattern, year_semester):
+            raise ValidationError({"detail": "Invalid format. Expected format: 'YYYY Semester' (e.g., '2025 Summer')."})
+
         application_open_date = request.data.get(
             "application_open_date", program_instance.application_open_date
         )
@@ -350,6 +369,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if start_date > end_date:
             raise ValidationError(
                 {"detail": "Start date cannot be after the end date."}
+            )
+
+        if not (
+            application_open_date
+            <= application_deadline
+            <= start_date
+            <= end_date
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
+                }
             )
 
         return super().update(request, *args, **kwargs)
@@ -880,13 +911,13 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'display_name', 'email']
+    search_fields = ["username", "display_name", "email"]
 
     def get_permissions(self):
         """
         Override to allow public access to faculty list
         """
-        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+        if self.action == "list" and self.request.query_params.get("is_faculty"):
             return [permissions.AllowAny()]
         return super().get_permissions()
 
@@ -895,16 +926,20 @@ class UserViewSet(viewsets.ModelViewSet):
         Return all users for admins, but only faculty for public faculty list
         """
         queryset = User.objects.all()
-        
-        if self.action == 'list' and self.request.query_params.get('is_faculty'):
-            return queryset.filter(is_admin=True).order_by('display_name')
-            
-        if self.action == 'list' and not self.request.user.is_admin:
+
+        # If requesting faculty list, filter to only show faculty
+        if self.action == "list" and self.request.query_params.get("is_faculty"):
+            return queryset.filter(is_admin=True).order_by("display_name")
+
+        # For other list requests, maintain admin-only access
+        if self.action == "list" and not self.request.user.is_admin:
             return queryset.none()
-            
+
         return queryset
-    
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -1050,7 +1085,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response({"token": token.key, "user": UserSerializer(user).data}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "token": token.key,
+                "id": user.id,
+                "username": user.username,
+                "display_name": user.display_name,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
@@ -1064,7 +1107,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Public access (any user can view faculty list)
         """
-        faculty = User.objects.filter(is_admin=True).order_by('display_name')
+        faculty = User.objects.filter(is_admin=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
 
@@ -1189,7 +1232,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
         Handle file upload via POST request.
         """
         if "pdf" not in request.data:
-            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return super().create(request, *args, **kwargs)
 
@@ -1197,7 +1242,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         """
         Handle updating an existing document via PUT or PATCH.
         """
-        partial = kwargs.pop('partial', False)  # Check if it's a PATCH request
+        partial = kwargs.pop("partial", False)  # Check if it's a PATCH request
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
 
@@ -1215,7 +1260,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         """
         queryset = Document.objects.all()
         application_id = self.request.query_params.get("application", None)
-        
+
         if application_id is not None:
             if not Application.objects.filter(id=application_id).exists():
                 return Response(
