@@ -161,6 +161,7 @@ const LoginModal = ({ onClose }) => {
         email,
         display_name: displayName,
       });
+      console.log(response);
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
