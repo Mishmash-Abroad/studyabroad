@@ -13,12 +13,23 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import axiosInstance from "../utils/axios";
 
 // -------------------- STYLED COMPONENTS --------------------
+// Container for the entire form with consistent spacing
+const Container = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(4),
+}));
+
 // DropZone handles visual feedback for drag & drop and file states
 // Changes border color and background based on:
 // - isDragActive: When file is being dragged over
 // - hasFile: When file is selected or already uploaded
 // - isReadOnly: When form is in read-only mode
-const DropZone = styled(Box)(({ theme, isDragActive, hasFile, isReadOnly }) => ({
+const DropZone = styled(Box, {
+  shouldComponentUpdate: true,
+  // Filter out custom props so they don't get passed to the DOM
+  shouldForwardProp: (prop) => 
+    !['isDragActive', 'hasFile', 'isReadOnly'].includes(prop)
+})(({ theme, isDragActive, hasFile, isReadOnly }) => ({
   border: '2px dashed',
   borderColor: isDragActive ? theme.palette.primary.main 
     : hasFile ? theme.palette.success.main 
@@ -133,6 +144,27 @@ const PDFUploadForm = ({
   const handleFileChange = (e) => handleFile(e.target.files[0]);
 
   // -------------------- DOCUMENT OPERATIONS --------------------
+  // Handles removal of an existing document after user confirmation
+  const handleRemoveExisting = async () => {
+    if (!existingDoc || !window.confirm("Remove this document?")) return;
+
+    try {
+      updateState({ loading: true });
+      await axiosInstance.delete(`/api/documents/${existingDoc.id}/`);
+      updateState({ 
+        existingDoc: null, 
+        success: "", 
+        error: "", 
+        loading: false 
+      });
+    } catch (err) {
+      updateState({ 
+        error: "Failed to remove document.", 
+        loading: false 
+      });
+    }
+  };
+
   // Handles document upload/update using multipart/form-data
   // Uses PATCH if updating existing doc, POST if creating new
   const handleSubmit = async (e) => {
