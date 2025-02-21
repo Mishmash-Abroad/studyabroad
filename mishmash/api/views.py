@@ -62,6 +62,8 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
+from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
+
 
 ### Custom permission classes for API access ###
 
@@ -574,7 +576,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if new_status not in ["Applied", "Enrolled", "Canceled"]:
+                if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
                     return Response(
                         {
                             "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."

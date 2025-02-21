@@ -49,6 +49,9 @@ class Application(models.Model):
         choices=[
             ("Applied", "Applied"),
             ("Enrolled", "Enrolled"),
+            ("Eligible", "Eligible"),
+            ("Approved", "Approved"),
+            ("Completed", "Completed"),
             ("Withdrawn", "Withdrawn"),
             ("Canceled", "Canceled"),
         ],
