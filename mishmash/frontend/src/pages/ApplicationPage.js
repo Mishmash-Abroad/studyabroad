@@ -61,6 +61,11 @@ const ApplicationPage = () => {
   const [missingDocs, setMissingDocs] = useState([]);
   const [docsSubmitted, setDocsSubmitted] = useState([]);
 
+  const daysSinceEssentialDocDeadline = Math.floor(
+    (new Date() - new Date(program.essential_document_deadline)) /
+      (1000 * 60 * 60 * 24)
+  );
+
   useEffect(() => {
     const getApplicationAndResponses = async () => {
       setLoading(true);
@@ -460,11 +465,15 @@ const ApplicationPage = () => {
               <>
                 <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
                 <Typography sx={{ color: "red" }}>
-                  SUBMIT THESE DOCUMENTS by {program.essential_document_deadline}{" "}
-                  It has been {(new Date() - new Date(program.essential_document_deadline))} days
-                  {
-                    new Date() > new Date(program.essential_document_deadline) ? `since` : `after`
-                  }{" "}
+                  SUBMIT THESE DOCUMENTS BY{" "}
+                  {program.essential_document_deadline}{" "}
+                </Typography>
+                <Typography sx={{ color: "red" }}>
+                  IT HAS BEEN {daysSinceEssentialDocDeadline} DAYS
+                  {new Date() > new Date(program.essential_document_deadline)
+                    ? ` SINCE `
+                    : ` AFTER `}
+                  {program.essential_document_deadline}
                 </Typography>
                 <ul>
                   {missingDocs.map((type, index) => {
