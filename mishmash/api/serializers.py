@@ -7,6 +7,7 @@ from .models import (
     ApplicationResponse,
     Announcement,
     Document,
+    ConfidentialNote,
 )
 from django import forms
 
@@ -86,6 +87,18 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         # Set the created_by field to the current user
         validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
+    
+
+class ConfidentialNoteSerializer(serializers.ModelSerializer):
+    author_display = serializers.CharField(source="author.display_name", read_only=True)
+    class Meta:
+        model = ConfidentialNote
+        fields = ["id", "author", "author_display", "application", "timestamp", "content"]
+        read_only_fields = ["id", "author", "author_display", "timestamp"]
+
+    def get_author_name(self, obj):
+        """Returns 'Deleted user' if author is null."""
+        return obj.get_author_display()
 
 
 class DocumentSerializer(serializers.ModelSerializer):
