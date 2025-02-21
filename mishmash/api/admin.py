@@ -12,7 +12,7 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'year_semester', 'application_open_date', 'application_deadline')
+    list_display = ('id', 'title', 'year_semester', 'application_open_date', 'application_deadline', 'essential_document_deadline')
     list_filter = ('year_semester',)
     search_fields = ('title', 'faculty_leads')
 
@@ -58,6 +58,6 @@ class ConfidentialNoteAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
-    list_filter = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
-    search_fields = ('title', 'student', 'uploaded_at', 'program', 'pdf', 'type')
+    list_display = ('title', 'application', 'uploaded_at', 'pdf', 'type')
+    list_filter = ('title', 'application', 'uploaded_at', 'pdf', 'type')
+    search_fields = ('title', 'application', 'uploaded_at', 'pdf', 'type')

@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
+import {ALL_ADMIN_EDITABLE_STATUSES} from '../utils/constants'
+
 
 const AdminAppView = () => {
   const { id } = useParams();
@@ -235,9 +237,13 @@ const AdminAppView = () => {
           {application.status === "Withdrawn" && (
             <MenuItem value="Withdrawn">Withdrawn</MenuItem>
           )}
-          <MenuItem value="Applied">Applied</MenuItem>
-          <MenuItem value="Enrolled">Enrolled</MenuItem>
-          <MenuItem value="Canceled">Canceled</MenuItem>
+          {
+            ALL_ADMIN_EDITABLE_STATUSES.map((status) => {
+              return (
+                <MenuItem value={status}>{status}</MenuItem>
+              )
+            })
+          }
         </TextField>
       </Box>
   

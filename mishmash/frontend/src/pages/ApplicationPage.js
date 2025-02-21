@@ -12,9 +12,8 @@ import {
 } from "@mui/material";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
-import PDFUploadForm from "../components/PDFUploadForm";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
-
+import { ALL_ESSENTIAL_DOC_STATUSES } from "../utils/constants";
 // -------------------- STYLES --------------------
 const PageContainer = styled("div")(({ theme }) => ({
   paddingTop: "72px",
@@ -52,6 +51,7 @@ const ApplicationPage = () => {
     date_of_birth: "",
     gpa: "",
     major: "",
+    id: 0,
   });
   const [questions, setQuestions] = useState([]);
   const [questionResponses, setQuestionResponses] = useState([]);
@@ -60,6 +60,11 @@ const ApplicationPage = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [missingDocs, setMissingDocs] = useState([]);
   const [docsSubmitted, setDocsSubmitted] = useState([]);
+
+  const daysSinceEssentialDocDeadline = Math.floor(
+    (new Date() - new Date(program.essential_document_deadline)) /
+      (1000 * 60 * 60 * 24)
+  );
 
   useEffect(() => {
     const getApplicationAndResponses = async () => {
@@ -122,6 +127,24 @@ const ApplicationPage = () => {
           });
 
           setQuestionResponses(updatedResponses);
+
+          const documentsResponse = await axiosInstance.get(
+            `/api/documents/?application=${existingApplication.id}`
+          );
+          const doc_submitted = documentsResponse.data.map((doc) => {
+            return doc.type;
+          });
+          console.log(doc_submitted);
+          setDocsSubmitted(documentsResponse.data);
+          console.log(documentsResponse.data);
+          setMissingDocs(
+            [
+              "Assumption of risk form",
+              "Acknowledgement of the code of conduct",
+              "Housing questionnaire",
+              "Medical/health history and immunization records",
+            ].filter((str) => !doc_submitted.includes(str))
+          );
         } else {
           const questionsResponse = await axiosInstance.get(
             `/api/questions/?program=${program_id}`
@@ -136,25 +159,6 @@ const ApplicationPage = () => {
 
           setQuestionResponses(blankResponses);
         }
-
-        const documentsResponse = await axiosInstance.get("/api/documents/", {
-          params: {
-            program: program_id,
-            student: user.id
-          }
-        });
-        const doc_submitted = documentsResponse.data.map((doc) => {
-          return doc.type;
-        });
-        setDocsSubmitted(documentsResponse.data);
-        setMissingDocs(
-          [
-            "Assumption of risk form",
-            "Acknowledgement of the code of conduct",
-            "Housing questionnaire",
-            "Medical/health history and immunization records",
-          ].filter((str) => !doc_submitted.includes(str))
-        );
       } catch (err) {
         setError(
           err.response?.data?.detail ||
@@ -455,53 +459,56 @@ const ApplicationPage = () => {
           </form>
           <Box mt={4} />
 
-          {applicationData.status == "Applied" && (
+          {ALL_ESSENTIAL_DOC_STATUSES.includes(applicationData.status) && (
             <>
-              <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
-              <Typography sx={{ color: "red" }}>
-                SUBMIT THESE DOCUMENTS{" "}
-                {
-                  true ? "BEFORE" : "AFTER" // TODO add logic here for whether the deadline has passed or not
-                }{" "}
-              </Typography>
-              <ul>
-                {missingDocs.map((type, index) => {
+              <>
+                <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
+                <Typography sx={{ color: "red" }}>
+                  SUBMIT THESE DOCUMENTS BY{" "}
+                  {program.essential_document_deadline}{" "}
+                </Typography>
+                <Typography sx={{ color: "red" }}>
+                  IT HAS BEEN {daysSinceEssentialDocDeadline} DAYS
+                  {new Date() > new Date(program.essential_document_deadline)
+                    ? ` SINCE `
+                    : ` AFTER `}
+                  {program.essential_document_deadline}
+                </Typography>
+                <ul>
+                  {missingDocs.map((type, index) => {
+                    return (
+                      <li sx={{ color: "red" }} key={index}>
+                        {" "}
+                        {type}{" "}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+
+              <div>
+                {docsSubmitted.map((doc, index) => {
                   return (
-                    <li sx={{ color: "red" }} key={index}>
-                      {" "}
-                      {type}{" "}
-                    </li>
+                    <Typography key={index} variant="body1">
+                      <strong>Submitted {doc.type}:</strong>{" "}
+                      <a
+                        href={doc.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {doc.title}
+                      </a>
+                    </Typography>
                   );
                 })}
-              </ul>
-            </>
-          )}
+              </div>
+              <>
+                <Box mt={4} />
 
-          <div>
-            {docsSubmitted.map((doc, index) => {
-              return (
-                <Typography key={index} variant="body1">
-                  <strong>Submitted {doc.type}:</strong>{" "}
-                  <a
-                    href={doc.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {doc.title}
-                  </a>
-                </Typography>
-              );
-            })}
-          </div>
-
-          {applicationData.status == "Applied" && (
-            <>
-              <Box mt={4} />
-
-              <EssentialDocumentFormSubmission
-                user_id={user.id}
-                program_id={program_id}
-              />
+                <EssentialDocumentFormSubmission
+                  application_id={applicationData.id}
+                />
+              </>
             </>
           )}
         </div>

@@ -40,6 +40,7 @@ class Command(BaseCommand):
         prod_mode = options['prod']
         students_data = [
             ('Emma Wilson', 'EmmaW', 'emma.wilson@hcc.edu', 'guest'),
+            ('bruh', 'bruh', 'bruh.bruh@hcc.edu', 'bruh'),
             ('James Chen', 'JamesC', 'james.chen@hcc.edu', 'guest'),
             ('Maria Garcia', 'MariaG', 'maria.garcia@hcc.edu', 'guest'),
             ('David Kim', 'DavidK', 'david.kim@hcc.edu', 'guest'),
