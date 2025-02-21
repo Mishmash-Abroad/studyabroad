@@ -65,6 +65,8 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
+from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
+
 
 ### Custom permission classes for API access ###
 
@@ -597,7 +599,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if new_status not in ["Applied", "Enrolled", "Canceled"]:
+                if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
                     return Response(
                         {
                             "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
@@ -1210,18 +1212,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
         - If the provided `program_id` does not exist, returns a 404 error.
         """
         queryset = Document.objects.all()
-        program_id = self.request.query_params.get("program", None)
-        student_id = self.request.query_params.get("student", None)
-
-        if program_id is not None and student_id is not None:
-            if not Program.objects.filter(id=program_id).exists():
+        application_id = self.request.query_params.get("application", None)
+        
+        if application_id is not None:
+            if not Application.objects.filter(id=application_id).exists():
                 return Response(
                     {"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND
                 )
-            if not User.objects.filter(id=student_id).exists():
-                return Response(
-                    {"detail": "Student not found."}, status=status.HTTP_404_NOT_FOUND
-                )                
-            queryset = queryset.filter(program=program_id, student=student_id)
+            queryset = queryset.filter(application=application_id)
 
         return queryset

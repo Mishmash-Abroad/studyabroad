@@ -31,7 +31,7 @@ class ProgramSerializer(serializers.ModelSerializer):
     class Meta:
         model = Program
         fields = ['id', 'title', 'year_semester', 'description', 'faculty_leads', 'faculty_lead_ids',
-                 'application_open_date', 'application_deadline', 'start_date', 'end_date']
+                 'application_open_date', 'application_deadline', 'essential_document_deadline', 'start_date', 'end_date']
 
 
 class ApplicationQuestionSerializer(serializers.ModelSerializer):
@@ -106,7 +106,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ['id', 'title', 'pdf', 'uploaded_at', 'student', 'program', 'type', 'pdf_url']
+        fields = ['id', 'title', 'pdf', 'uploaded_at', 'application', 'type', 'pdf_url']
 
     def get_pdf_url(self, obj):
         """Generate the absolute URL for the PDF file."""

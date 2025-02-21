@@ -28,6 +28,7 @@ class Program(models.Model):
     faculty_leads = models.ManyToManyField('User', related_name='led_programs', limit_choices_to={'is_admin': True}, default=[1])
     application_open_date = models.DateField(null=True, blank=True)
     application_deadline = models.DateField(null=True, blank=True)
+    essential_document_deadline = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
@@ -50,6 +51,9 @@ class Application(models.Model):
         choices=[
             ("Applied", "Applied"),
             ("Enrolled", "Enrolled"),
+            ("Eligible", "Eligible"),
+            ("Approved", "Approved"),
+            ("Completed", "Completed"),
             ("Withdrawn", "Withdrawn"),
             ("Canceled", "Canceled"),
         ],
@@ -154,8 +158,7 @@ class Document(models.Model):
     title = models.CharField(max_length=255)
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    student = models.ForeignKey("User", on_delete=models.CASCADE)
-    program = models.ForeignKey("Program", on_delete=models.CASCADE)
+    application = models.ForeignKey("Application", on_delete=models.CASCADE)
     type = models.CharField(  # Change TextField to CharField
         max_length=100,  # Set a max_length that fits your longest choice
         choices=TYPES_OF_DOCS
