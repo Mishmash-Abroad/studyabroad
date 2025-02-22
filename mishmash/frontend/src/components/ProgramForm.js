@@ -15,6 +15,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     faculty_lead_ids: [],
     application_open_date: '',
     application_deadline: '',
+    essential_document_deadline: '',
     start_date: '',
     end_date: '',
     description: '',
@@ -31,6 +32,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         faculty_lead_ids: editingProgram.faculty_leads.map(faculty => faculty.id),
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
+        essential_document_deadline: editingProgram.essential_document_deadline,
         start_date: editingProgram.start_date,
         end_date: editingProgram.end_date,
         description: editingProgram.description,
@@ -145,6 +147,15 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           fullWidth
           InputLabelProps={{ shrink: true }}
           value={programData.application_deadline}
+          onChange={handleInputChange}
+        />
+        <TextField
+          label="Essential Document Deadline"
+          type="date"
+          name="essential_document_deadline"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          value={programData.essential_document_deadline}
           onChange={handleInputChange}
         />
         <TextField
