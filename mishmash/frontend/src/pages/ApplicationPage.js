@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
-import PDFUploadForm from "../components/PDFUploadForm";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
 
 // -------------------- STYLED COMPONENTS --------------------

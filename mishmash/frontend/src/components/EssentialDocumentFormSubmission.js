@@ -14,13 +14,12 @@ import axiosInstance from "../utils/axios";
 import PDFUploadForm from "../components/PDFUploadForm";
 
 // -------------------- COMPONENT LOGIC --------------------
-const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
+const EssentialDocumentFormSubmission = ({ application_id }) => {
   return (
     <>
       <PDFUploadForm
         pdf_name={"Acknowledgement of the code of conduct"}
-        user_id={user_id}
-        program_id={program_id}
+        application_id={application_id}
         doc_type={"Acknowledgement of the code of conduct"}
       />
       <Typography>
@@ -31,8 +30,7 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
 
       <PDFUploadForm
         pdf_name={"Housing questionnaire"}
-        user_id={user_id}
-        program_id={program_id}
+        application_id={application_id}
         doc_type={"Housing questionnaire"}
       />
 
@@ -44,8 +42,7 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
 
       <PDFUploadForm
         pdf_name={"Medical/health history and immunization records"}
-        user_id={user_id}
-        program_id={program_id}
+        application_id={application_id}
         doc_type={"Medical/health history and immunization records"}
       />
 
@@ -58,8 +55,7 @@ const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
 
       <PDFUploadForm
         pdf_name={"Assumption of risk form"}
-        user_id={user_id}
-        program_id={program_id}
+        application_id={application_id}
         doc_type={"Assumption of risk form"}
       />
 

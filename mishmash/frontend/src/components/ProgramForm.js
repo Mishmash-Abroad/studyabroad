@@ -10,7 +10,8 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const [programData, setProgramData] = useState({
     title: '',
-    year_semester: '',
+    year: '',
+    semester: '',
     faculty_lead_ids: [],
     application_open_date: '',
     application_deadline: '',
@@ -25,7 +26,8 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     if (editingProgram) {
       setProgramData({
         title: editingProgram.title,
-        year_semester: editingProgram.year_semester,
+        year: editingProgram.year,
+        semester: editingProgram.semester,
         faculty_lead_ids: editingProgram.faculty_leads.map(faculty => faculty.id),
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
@@ -101,10 +103,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           onChange={handleInputChange}
         />
         <TextField 
-          label="Year & Semester" 
-          name="year_semester" 
+          label="Year" 
+          name="year" 
           fullWidth 
-          value={programData.year_semester} 
+          value={programData.year} 
+          onChange={handleInputChange}
+        />
+        <TextField 
+          label="Semester" 
+          name="semester" 
+          fullWidth 
+          value={programData.semester} 
           onChange={handleInputChange}
         />
         <FacultyPicklist

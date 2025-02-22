@@ -35,6 +35,7 @@ from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
+from django.utils.timezone import now
 from django.db.models import Q
 from .models import (
     Program,
@@ -43,6 +44,7 @@ from .models import (
     ApplicationResponse,
     Announcement,
     Document,
+    ConfidentialNote
 )
 from .serializers import (
     ProgramSerializer,
@@ -52,6 +54,7 @@ from .serializers import (
     ApplicationResponseSerializer,
     AnnouncementSerializer,
     DocumentSerializer,
+    ConfidentialNoteSerializer
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -62,6 +65,9 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
+from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
+import re
+from .constants import SEMESTERS
 
 ### Custom permission classes for API access ###
 
@@ -104,6 +110,26 @@ class IsAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.is_admin
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_admin
+    
+class AdminCreateAndView(permissions.BasePermission):
+    """
+    Custom permission to allow only admin users to create and view confidential notes.
+    Updates and deletions are always forbidden.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ["GET", "POST"]:
+            return request.user.is_admin
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS
 
 
 class IsDocumentOwnerOrAdmin(permissions.BasePermission):
@@ -147,9 +173,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title']
-    ordering_fields = ['application_deadline']
-    ordering = ['application_deadline']
+    search_fields = ["title"]
+    ordering_fields = ["application_deadline"]
+    ordering = ["application_deadline"]
 
     def get_queryset(self):
         """
@@ -174,17 +200,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
         faculty_ids = self.request.query_params.get("faculty_ids", None)
 
         if search:
-            queryset = queryset.filter(
-                Q(title__icontains=search)
-            )
+            queryset = queryset.filter(Q(title__icontains=search))
 
         if faculty_ids:
-            faculty_id_list = [int(id) for id in faculty_ids.split(',') if id.isdigit()]
+            faculty_id_list = [int(id) for id in faculty_ids.split(",") if id.isdigit()]
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
 
         return queryset.distinct()
-    
+
     def create(self, request, *args, **kwargs):
         """
         Create a new study abroad program.
@@ -193,7 +217,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Engineering in Germany",
-            "year_semester": "Fall 2025",
+            "year": "2025", "semester": Fall
             "faculty_leads": "Dr. Smith",
             "application_open_date": "2025-01-01",
             "application_deadline": "2025-03-15",
@@ -215,7 +239,6 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Admin only
         """
-
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         start_date = request.data.get("start_date")
@@ -233,16 +256,27 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        if application_open_date > application_deadline:
+        if application_deadline > application_open_date:
             raise ValidationError(
                 {
                     "detail": "Application open date cannot be after the application deadline."
                 }
             )
-
-        if start_date > end_date:
+        elif start_date > end_date:
             raise ValidationError(
                 {"detail": "Start date cannot be after the end date."}
+            )
+
+        if not (
+            application_open_date
+            <= application_deadline
+            <= start_date
+            <= end_date
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
+                }
             )
 
         response = super().create(request, *args, **kwargs)
@@ -271,7 +305,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Updated Program Name",
-            "year_semester": "Fall 2026",
+            "year": "2025", "semester": Fall
             "faculty_leads": "Dr. New Lead",
             "application_open_date": "2026-02-01",
             "application_deadline": "2026-04-15",
@@ -295,6 +329,25 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         program_instance = self.get_object()
 
+        year = request.data.get(
+            "year", program_instance.year
+        )
+        semester = request.data.get(
+            "semester", program_instance.semester
+        )
+        
+                
+        # Define regex for year (must be a 4-digit number)
+        year_pattern = r"^\d{4}$"
+        # Validate year format
+        if not re.match(year_pattern, str(year)) or int(year) < 1000:
+            raise ValidationError({"detail": "Invalid year. Must be a four-digit number (e.g., 2025)."})
+
+        # Validate semester format
+        if semester not in SEMESTERS:
+            raise ValidationError({"detail": f"Invalid semester. Must be one of {', '.join(SEMESTERS)}."})
+        
+        
         application_open_date = request.data.get(
             "application_open_date", program_instance.application_open_date
         )
@@ -338,6 +391,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if start_date > end_date:
             raise ValidationError(
                 {"detail": "Start date cannot be after the end date."}
+            )
+
+        if not (
+            application_open_date
+            <= application_deadline
+            <= start_date
+            <= end_date
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
+                }
             )
 
         return super().update(request, *args, **kwargs)
@@ -587,7 +652,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if new_status not in ["Applied", "Enrolled", "Canceled"]:
+                if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
                     return Response(
                         {
                             "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
@@ -868,13 +933,13 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'display_name', 'email']
+    search_fields = ["username", "display_name", "email"]
 
     def get_permissions(self):
         """
         Override to allow public access to faculty list
         """
-        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+        if self.action == "list" and self.request.query_params.get("is_faculty"):
             return [permissions.AllowAny()]
         return super().get_permissions()
 
@@ -883,18 +948,20 @@ class UserViewSet(viewsets.ModelViewSet):
         Return all users for admins, but only faculty for public faculty list
         """
         queryset = User.objects.all()
-        
+
         # If requesting faculty list, filter to only show faculty
-        if self.action == 'list' and self.request.query_params.get('is_faculty'):
-            return queryset.filter(is_admin=True).order_by('display_name')
-            
+        if self.action == "list" and self.request.query_params.get("is_faculty"):
+            return queryset.filter(is_admin=True).order_by("display_name")
+
         # For other list requests, maintain admin-only access
-        if self.action == 'list' and not self.request.user.is_admin:
+        if self.action == "list" and not self.request.user.is_admin:
             return queryset.none()
-            
+
         return queryset
-    
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -902,8 +969,8 @@ class UserViewSet(viewsets.ModelViewSet):
         **Permissions:** Authenticated users only.
         **Response:** User details.
         """
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        serializer = UserSerializer(request.user).data
+        return Response(serializer)
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def signup(self, request):
@@ -950,15 +1017,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response(
-            {
-                "token": token.key,
-                "id": user.id,
-                "username": user.username,
-                "display_name": user.display_name,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        serializer = UserSerializer(user).data
+        serializer["token"] = token.key
+        return Response(serializer, status=status.HTTP_201_CREATED)
+        
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def login(self, request):
@@ -982,15 +1044,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if user:
             token, _ = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key, "user": UserSerializer(user).data})
+            serializer = UserSerializer(user).data
+            serializer["token"] = token.key
+            return Response(serializer)
 
         return Response(
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(
-        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def logout(self, request):
         """
         ## User Logout
@@ -1054,6 +1116,7 @@ class UserViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
         """
@@ -1066,11 +1129,117 @@ class UserViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Public access (any user can view faculty list)
         """
-        faculty = User.objects.filter(is_admin=True).order_by('display_name')
+        faculty = User.objects.filter(is_admin=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
 
 
+class ConfidentialNoteViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing confidential notes on applications.
+
+    ## Features:
+    - **Admins can**:
+      - Create new confidential notes on applications.
+      - View all confidential notes.
+    - **Admins cannot**:
+      - Modify or delete any existing notes.
+    - **Students cannot**:
+      - View, create, update, or delete any notes.
+
+    ## Served Endpoints:
+    - `GET /api/notes/` → List all confidential notes (Admins only)
+    - `GET /api/notes/?application=<id>` → Filter notes by application (Admins only)
+    - `POST /api/notes/` → Create a new confidential note (Admins only)
+
+    ## Permissions:
+    - **Admins:** Full access to create and view confidential notes.
+    - **Students:** No access to any notes.
+    - **No modifications or deletions are allowed.**
+    """
+    queryset = ConfidentialNote.objects.all().order_by("-timestamp")
+    serializer_class = ConfidentialNoteSerializer
+    permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
+
+    def get_queryset(self):
+        """
+        ## Retrieve Notes:
+        - **Admins:** Can see all confidential notes.
+        - **Students:** Cannot see any notes.
+        - **Filtering:** Admins can filter by application ID using `?application=<id>`.
+        
+        ## Errors:
+        - **404 Not Found** if an invalid `application_id` is provided.
+        """
+        application_id = self.request.query_params.get("application", None)
+        queryset = ConfidentialNote.objects.all()
+
+        if application_id:
+            if not Application.objects.filter(id=application_id).exists():
+                return Response(
+                    {"detail": "Application not found."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            queryset = queryset.filter(application_id=application_id)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """
+        ## Create a Confidential Note:
+        - **Auto-assigns the current user as the author.**
+        - **Records the creation timestamp automatically.**
+        
+        **Expected Input:**
+        ```json
+        {
+            "application": 5,
+            "content": "This is an admin-only note."
+        }
+        ```
+        
+        **Returns:**
+        - `201 Created` with the new note data.
+        - `400 Bad Request` if invalid application ID.
+        
+        **Errors:**
+        - **403 Forbidden** if a non-admin tries to create a note.
+        """
+        print(self.request.user)
+        serializer.save(author=self.request.user, timestamp=now())
+
+    def update(self, request, *args, **kwargs):
+        """
+        ## Updating Confidential Notes is **Not Allowed**.
+        **Returns:**
+        - `403 Forbidden` if a user tries to edit a note.
+        """
+        return Response(
+            {"detail": "Editing confidential notes is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    def partial_update(self, request, *args, **kwargs):
+        """
+        ## Partially Updating Confidential Notes is **Not Allowed**.
+        **Returns:**
+        - `403 Forbidden` if a user tries to edit a note.
+        """
+        return Response(
+            {"detail": "Editing confidential notes is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        ## Deleting Confidential Notes is **Not Allowed**.
+        **Returns:**
+        - `403 Forbidden` if a user tries to delete a note.
+        """
+        return Response(
+            {"detail": "Deleting confidential notes is not allowed."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
@@ -1085,7 +1254,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
         Handle file upload via POST request.
         """
         if "pdf" not in request.data:
-            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return super().create(request, *args, **kwargs)
 
@@ -1093,7 +1264,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         """
         Handle updating an existing document via PUT or PATCH.
         """
-        partial = kwargs.pop('partial', False)  # Check if it's a PATCH request
+        partial = kwargs.pop("partial", False)  # Check if it's a PATCH request
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
 
@@ -1110,18 +1281,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
         - If the provided `program_id` does not exist, returns a 404 error.
         """
         queryset = Document.objects.all()
-        program_id = self.request.query_params.get("program", None)
-        student_id = self.request.query_params.get("student", None)
+        application_id = self.request.query_params.get("application", None)
 
-        if program_id is not None and student_id is not None:
-            if not Program.objects.filter(id=program_id).exists():
+        if application_id is not None:
+            if not Application.objects.filter(id=application_id).exists():
                 return Response(
                     {"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND
                 )
-            if not User.objects.filter(id=student_id).exists():
-                return Response(
-                    {"detail": "Student not found."}, status=status.HTTP_404_NOT_FOUND
-                )                
-            queryset = queryset.filter(program=program_id, student=student_id)
+            queryset = queryset.filter(application=application_id)
 
         return queryset

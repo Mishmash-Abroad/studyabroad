@@ -270,7 +270,7 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
   const getApplicationButton = () => {
     const detailedStatus = getDetailedStatus();
     const programStatus = getProgramStatus();
-
+    
     // If the user has already applied and has a status
     if (applicationStatus) {
       switch (applicationStatus.toLowerCase()) {
@@ -284,6 +284,9 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
             </ApplicationButton>
           );
         case "applied":
+        case "eligible":
+        case "approved":
+        case "completed":
           return (
             <ApplicationButton
               onClick={handleEditApplication}
@@ -295,7 +298,6 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
             </ApplicationButton>
           );
         case "withdrawn":
-        case "canceled":
           return (
             <ApplicationButton onClick={handleReapply} variant="success">
               Apply Again
