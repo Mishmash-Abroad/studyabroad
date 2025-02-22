@@ -43,7 +43,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) 
           pdf_name={"Acknowledgement of the code of conduct"}
           application_id={application_id}
           doc_type={"Acknowledgement of the code of conduct"}
-          isReadOnly={isReadOnly}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are being worked out
         />
         <DocumentDescription>
           Acknowledgement of the code of conduct: A document reviewing the code of
@@ -57,7 +57,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) 
           pdf_name={"Housing questionnaire"}
           application_id={application_id}
           doc_type={"Housing questionnaire"}
-          isReadOnly={isReadOnly}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are being worked out
         />
         <DocumentDescription>
           Housing questionnaire: A set of questions about housing preferences to
@@ -71,7 +71,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) 
           pdf_name={"Medical/health history and immunization records"}
           application_id={application_id}
           doc_type={"Medical/health history and immunization records"}
-          isReadOnly={isReadOnly}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are being worked out
         />
         <DocumentDescription>
           Medical/health history and immunization records: A high-level summary of
@@ -86,7 +86,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) 
           pdf_name={"Assumption of risk form"}
           application_id={application_id}
           doc_type={"Assumption of risk form"}
-          isReadOnly={isReadOnly}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are bing worked out
         />
         <DocumentDescription>
           Assumption of risk form: A document waiving HCC's liability for student
