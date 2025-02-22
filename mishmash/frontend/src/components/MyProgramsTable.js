@@ -165,19 +165,29 @@ const MyProgramsTable = () => {
         const programsWithStatus = await Promise.all(
           programsResponse.data.map(async (program) => {
             try {
-              const [statusResponse, documentsResponse] = await Promise.all([
-                axiosInstance.get(`/api/programs/${program.id}/application_status/`),
-                axiosInstance.get(`/api/documents/?program=${program.id}&user=${user.id}`)
-              ]);
-              
+              // First get the application status which includes the application_id
+              const statusResponse = await axiosInstance.get(
+                `/api/programs/${program.id}/application_status/`
+              );
+
+              // Only fetch documents if there's an application
+              let documents = [];
+              if (statusResponse.data.application_id) {
+                const documentsResponse = await axiosInstance.get(
+                  `/api/documents/?application=${statusResponse.data.application_id}`
+                );
+                documents = documentsResponse.data;
+              }
+
               return {
                 id: program.id,
                 program: program,
+                application_id: statusResponse.data.application_id,
                 status: statusResponse.data.status,
-                documents: documentsResponse.data
+                documents: documents,
               };
             } catch (error) {
-              console.error("Error fetching status or documents:", error);
+              console.error("Error fetching status:", error);
               return null;
             }
           })
@@ -248,8 +258,8 @@ const MyProgramsTable = () => {
       valueB = b.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
     } else if (orderBy === "documents") {
       // Sort by number of submitted documents
-      valueA = a.documents?.filter(doc => doc.program === a.program.id).length || 0;
-      valueB = b.documents?.filter(doc => doc.program === b.program.id).length || 0;
+      valueA = a.documents?.length || 0;
+      valueB = b.documents?.length || 0;
     } else {
       valueA = a[orderBy];
       valueB = b[orderBy];
@@ -407,7 +417,7 @@ const MyProgramsTable = () => {
                 </StatusCell>
                 <StyledTableCell>
                   <span className="status-badge">
-                    {(application.documents?.filter(doc => doc.program === application.program.id).length || 0)}/4 Documents
+                    {(application.documents?.length || 0)}/4 Documents
                   </span>
                 </StyledTableCell>
               </TableRow>
@@ -418,7 +428,7 @@ const MyProgramsTable = () => {
                       <Box sx={{ marginBottom: 2 }}>
                         <DocumentStatusDisplay 
                           documents={application.documents || []} 
-                          programId={application.program.id}
+                          application_id={application.application_id}
                         />
                       </Box>
                       <div

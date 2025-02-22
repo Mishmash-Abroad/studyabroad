@@ -1,8 +1,9 @@
 import React from 'react';
 import { styled } from "@mui/material/styles";
-import { Box, Typography, Tooltip } from '@mui/material';
+import { Box, Typography, Tooltip, CircularProgress } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import PropTypes from 'prop-types';
 
 const DocumentContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -33,10 +34,7 @@ const StatusIcon = styled(Box)(({ theme, status }) => ({
 }));
 
 const REQUIRED_DOCUMENTS = [
-  {
-    type: "Assumption of risk form",
-    description: "A document waiving liability for student participation"
-  },
+
   {
     type: "Acknowledgement of the code of conduct",
     description: "Attestation to understanding and commitment to the code of conduct"
@@ -48,15 +46,58 @@ const REQUIRED_DOCUMENTS = [
   {
     type: "Medical/health history and immunization records",
     description: "Health status and immunization records (HIPAA protected)"
+  },
+  {
+    type: "Assumption of risk form",
+    description: "A document waiving liability for student participation"
   }
 ];
 
-const DocumentStatusDisplay = ({ documents, programId }) => {
+const DocumentStatusDisplay = ({ documents, application_id, isLoading, error }) => {
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <DocumentContainer>
+        <Typography variant="subtitle2" gutterBottom>
+          Loading Document Status...
+        </Typography>
+        <Box display="flex" justifyContent="center" p={2}>
+          <CircularProgress size={24} />
+        </Box>
+      </DocumentContainer>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <DocumentContainer>
+        <Typography variant="subtitle2" color="error" gutterBottom>
+          Error Loading Documents
+        </Typography>
+        <Typography variant="body2" color="error">
+          {error}
+        </Typography>
+      </DocumentContainer>
+    );
+  }
+
   const getDocumentStatus = (type) => {
-    return documents?.some(doc => 
+    // Handle case where documents is undefined/null
+    if (!documents) {
+      return 'missing';
+    }
+
+    return documents.some(doc => 
       doc.type === type && 
-      doc.program === programId
+      doc.application === application_id
     ) ? 'submitted' : 'missing';
+  };
+
+  const getStatusTooltip = (status) => {
+    return status === 'submitted' 
+      ? 'Document has been successfully uploaded'
+      : 'Document needs to be uploaded';
   };
 
   return (
@@ -67,7 +108,16 @@ const DocumentStatusDisplay = ({ documents, programId }) => {
       {REQUIRED_DOCUMENTS.map(({ type, description }) => {
         const status = getDocumentStatus(type);
         return (
-          <Tooltip key={type} title={description} placement="left">
+          <Tooltip 
+            key={type} 
+            title={
+              <div>
+                <div>{description}</div>
+                <div>{getStatusTooltip(status)}</div>
+              </div>
+            } 
+            placement="left"
+          >
             <DocumentRow>
               <DocumentName>{type}</DocumentName>
               <StatusIcon status={status}>
@@ -83,6 +133,22 @@ const DocumentStatusDisplay = ({ documents, programId }) => {
       })}
     </DocumentContainer>
   );
+};
+
+DocumentStatusDisplay.propTypes = {
+  documents: PropTypes.arrayOf(PropTypes.shape({
+    type: PropTypes.string.isRequired,
+    application: PropTypes.number.isRequired,
+  })),
+  application_id: PropTypes.number.isRequired,
+  isLoading: PropTypes.bool,
+  error: PropTypes.string,
+};
+
+DocumentStatusDisplay.defaultProps = {
+  documents: [],
+  isLoading: false,
+  error: null,
 };
 
 export default DocumentStatusDisplay;
