@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
   // Initialize user state from localStorage if available
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    return savedUser ? JSON.parse(savedUser).user ?? JSON.parse(savedUser) : null;
   });
 
   /**
@@ -51,9 +51,9 @@ export const AuthProvider = ({ children }) => {
       // Verify token by fetching user data
       axiosInstance.get('/api/users/current_user/')
         .then(response => {
-          // Store valid user data
-          setUser(response.data);
-          localStorage.setItem('user', JSON.stringify(response.data));
+          const userData = response.data.user ?? response.data;
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
         })
         .catch(() => {
           // Clear invalid authentication data
