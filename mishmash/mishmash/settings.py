@@ -42,6 +42,8 @@ ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,test
 
 CLIENT_SECRET = config('CLIENT_SECRET', default='your-client-secret')
 
+#should use default site
+SITE_ID = 1
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
@@ -162,6 +164,8 @@ AUTHENTICATION_BACKENDS = [
 
 
 # Provider specific settings
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
 SOCIALACCOUNT_PROVIDERS = {
     "openid_connect": {
         "OAUTH_PKCE_ENABLED": True,  # PKCE support, if required
