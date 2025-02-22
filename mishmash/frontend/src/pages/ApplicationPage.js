@@ -491,7 +491,7 @@ const ApplicationPage = () => {
               />
             ) : (
               <Alert severity="warning">
-                Please save your application before uploading documents.
+                Please submit your application before uploading documents.
               </Alert>
             )}
           </Box>
