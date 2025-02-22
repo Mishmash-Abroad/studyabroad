@@ -139,7 +139,7 @@ const LoginModal = ({ onClose }) => {
   const handleDukeSSOLogin = async (e) => {
     // Redirect to Django allauth's Duke login endpoint.
     // By default, this might be at "/accounts/duke/login/".
-    window.location.href = "/accounts/oidc/duke-oidc/login/";
+    window.location.href = "/api/accounts/oidc/duke-oidc/login/";
   };
   
 
