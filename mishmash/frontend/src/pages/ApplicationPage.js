@@ -136,7 +136,7 @@ const ApplicationPage = () => {
       updateState({ loading: true, error: "" });
       
       try {
-        // Step 1: Get program details and determine if application can be edited
+        // Get program details and determine if application can be edited
         const programRes = await axiosInstance.get(`/api/programs/${program_id}`);
         const programData = programRes.data;
         
@@ -146,11 +146,11 @@ const ApplicationPage = () => {
         const isReadOnly = new Date() > new Date(programData.application_deadline) ||
                          application.status?.toLowerCase() === "enrolled";
 
-        // Step 2: Find student's existing application for this program
-        const applicationsRes = await axiosInstance.get(`/api/applications/?student=${user.user.id}`);
+        // Find student's existing application for this program
+        const applicationsRes = await axiosInstance.get(`/api/applications/?student=${user.id}`);
         const existingApp = applicationsRes.data.find(app => app.program == program_id);
 
-        // Step 3: Load program questions and student's responses
+        // Load program questions and student's responses
         const questionsRes = await axiosInstance.get(`/api/programs/${program_id}/questions/`);
         const questions = questionsRes.data;
         
@@ -179,9 +179,9 @@ const ApplicationPage = () => {
           }));
         }
 
-        // Step 4: Track document submission status
+        // Track document submission status
         const documentsRes = await axiosInstance.get("/api/documents/", {
-          params: { program: program_id, student: user.user.id }
+          params: { application: existingApp?.id }
         });
         
         // Compare submitted documents against required documents
@@ -210,7 +210,7 @@ const ApplicationPage = () => {
     };
 
     fetchApplicationData();
-  }, [program_id, user.user.id]);
+  }, [program_id, user.id]);
 
   // -------------------- EVENT HANDLERS --------------------
   const handleSubmit = async (e) => {
@@ -484,11 +484,16 @@ const ApplicationPage = () => {
                 Please upload all required documents in PDF format.
               </Alert>
             )}
-            <EssentialDocumentFormSubmission
-              user_id={user.user.id}
-              program_id={program_id}
-              isReadOnly={isReadOnly}
-            />
+            {application.id ? (
+              <EssentialDocumentFormSubmission
+                application_id={application.id}
+                isReadOnly={isReadOnly}
+              />
+            ) : (
+              <Alert severity="warning">
+                Please save your application before uploading documents.
+              </Alert>
+            )}
           </Box>
         )}
       </ContentContainer>

@@ -65,12 +65,7 @@ const FileInfo = styled(Box)(({ theme }) => ({
 // - program_id: ID of the study abroad program
 // - user_id: ID of the student uploading the document
 // - isReadOnly: If true, prevents document upload/modification
-const PDFUploadForm = ({
-  doc_type,
-  program_id,
-  user_id,
-  isReadOnly = false,
-}) => {
+const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
   // -------------------- STATE MANAGEMENT --------------------
   // Consolidated state object to manage:
   // - file: Currently selected file (not yet uploaded)
@@ -94,9 +89,9 @@ const PDFUploadForm = ({
     const fetchExistingDocument = async () => {
       try {
         const response = await axiosInstance.get(
-          `/api/documents/?student=${user_id}&program=${program_id}`
+          `/api/documents/?application=${application_id}`
         );
-        const doc = response.data.find(d => d.type === doc_type);
+        const doc = response.data.find((d) => d.type === doc_type);
         if (doc) {
           updateState({ 
             existingDoc: doc, 
@@ -107,9 +102,9 @@ const PDFUploadForm = ({
         console.error("Error fetching document:", err);
       }
     };
-
+  
     fetchExistingDocument();
-  }, [user_id, program_id, doc_type]);
+  }, [application_id, doc_type]);
 
   // -------------------- FILE HANDLING --------------------
   // Validates and processes file selection, ensuring:
