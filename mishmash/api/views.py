@@ -44,7 +44,7 @@ from .models import (
     ApplicationResponse,
     Announcement,
     Document,
-    ConfidentialNote
+    ConfidentialNote,
 )
 from .serializers import (
     ProgramSerializer,
@@ -54,7 +54,7 @@ from .serializers import (
     ApplicationResponseSerializer,
     AnnouncementSerializer,
     DocumentSerializer,
-    ConfidentialNoteSerializer
+    ConfidentialNoteSerializer,
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -110,17 +110,19 @@ class IsAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.is_admin
-    
+
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         return request.user.is_admin
-    
+
+
 class AdminCreateAndView(permissions.BasePermission):
     """
     Custom permission to allow only admin users to create and view confidential notes.
     Updates and deletions are always forbidden.
     """
+
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
@@ -228,6 +230,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
+        essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
 
@@ -237,6 +240,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
             ).date()
             application_deadline = datetime.strptime(
                 application_deadline, "%Y-%m-%d"
+            ).date()
+            essential_document_deadline = datetime.strptime(
+                essential_document_deadline, "%Y-%m-%d"
             ).date()
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -257,6 +263,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if not (
             application_open_date
             <= application_deadline
+            <= essential_document_deadline
             <= start_date
             <= end_date
         ):
@@ -316,30 +323,31 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         program_instance = self.get_object()
 
-        year = request.data.get(
-            "year", program_instance.year
-        )
-        semester = request.data.get(
-            "semester", program_instance.semester
-        )
-        
-                
+        year = request.data.get("year", program_instance.year)
+        semester = request.data.get("semester", program_instance.semester)
+
         # Define regex for year (must be a 4-digit number)
         year_pattern = r"^\d{4}$"
         # Validate year format
         if not re.match(year_pattern, str(year)) or int(year) < 1000:
-            raise ValidationError({"detail": "Invalid year. Must be a four-digit number (e.g., 2025)."})
+            raise ValidationError(
+                {"detail": "Invalid year. Must be a four-digit number (e.g., 2025)."}
+            )
 
         # Validate semester format
         if semester not in SEMESTERS:
-            raise ValidationError({"detail": f"Invalid semester. Must be one of {', '.join(SEMESTERS)}."})
-        
-        
+            raise ValidationError(
+                {"detail": f"Invalid semester. Must be one of {', '.join(SEMESTERS)}."}
+            )
+
         application_open_date = request.data.get(
             "application_open_date", program_instance.application_open_date
         )
         application_deadline = request.data.get(
             "application_deadline", program_instance.application_deadline
+        )
+        essential_document_deadline = request.data.get(
+            "essential_document_deadline", program_instance.essential_document_deadline
         )
         start_date = request.data.get("start_date", program_instance.start_date)
         end_date = request.data.get("end_date", program_instance.end_date)
@@ -354,6 +362,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 datetime.strptime(application_deadline, "%Y-%m-%d").date()
                 if isinstance(application_deadline, str)
                 else application_deadline
+            )
+            essential_document_deadline = (
+                datetime.strptime(essential_document_deadline, "%Y-%m-%d").date()
+                if isinstance(essential_document_deadline, str)
+                else essential_document_deadline
             )
             start_date = (
                 datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -383,6 +396,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if not (
             application_open_date
             <= application_deadline
+            <= essential_document_deadline
             <= start_date
             <= end_date
         ):
@@ -1007,7 +1021,6 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(user).data
         serializer["token"] = token.key
         return Response(serializer, status=status.HTTP_201_CREATED)
-        
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def login(self, request):
@@ -1039,7 +1052,9 @@ class UserViewSet(viewsets.ModelViewSet):
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
+    )
     def logout(self, request):
         """
         ## User Logout
@@ -1144,6 +1159,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
     - **Students:** No access to any notes.
     - **No modifications or deletions are allowed.**
     """
+
     queryset = ConfidentialNote.objects.all().order_by("-timestamp")
     serializer_class = ConfidentialNoteSerializer
     permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
@@ -1154,7 +1170,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         - **Admins:** Can see all confidential notes.
         - **Students:** Cannot see any notes.
         - **Filtering:** Admins can filter by application ID using `?application=<id>`.
-        
+
         ## Errors:
         - **404 Not Found** if an invalid `application_id` is provided.
         """
@@ -1164,8 +1180,8 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         if application_id:
             if not Application.objects.filter(id=application_id).exists():
                 return Response(
-                    {"detail": "Application not found."}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Application not found."},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
             queryset = queryset.filter(application_id=application_id)
 
@@ -1176,7 +1192,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         ## Create a Confidential Note:
         - **Auto-assigns the current user as the author.**
         - **Records the creation timestamp automatically.**
-        
+
         **Expected Input:**
         ```json
         {
@@ -1184,11 +1200,11 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
             "content": "This is an admin-only note."
         }
         ```
-        
+
         **Returns:**
         - `201 Created` with the new note data.
         - `400 Bad Request` if invalid application ID.
-        
+
         **Errors:**
         - **403 Forbidden** if a non-admin tries to create a note.
         """
@@ -1203,9 +1219,9 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         """
         return Response(
             {"detail": "Editing confidential notes is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
-    
+
     def partial_update(self, request, *args, **kwargs):
         """
         ## Partially Updating Confidential Notes is **Not Allowed**.
@@ -1214,7 +1230,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         """
         return Response(
             {"detail": "Editing confidential notes is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     def destroy(self, request, *args, **kwargs):
@@ -1225,8 +1241,10 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         """
         return Response(
             {"detail": "Deleting confidential notes is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
+
+
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
