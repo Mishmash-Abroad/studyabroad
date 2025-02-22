@@ -263,7 +263,7 @@ class Command(BaseCommand):
         # Application deadline before open date
         bad_program_data = {
             "title": "Bad Program 1",
-            "year_semester": "2025 Fall",
+            "year": "2025", "semester": "Fall",
             "description": "Invalid test case.",
             "faculty_leads": "Test Faculty",
             "application_open_date": now().date(),
@@ -298,7 +298,7 @@ class Command(BaseCommand):
         # Successfully create a valid program
         valid_program_data = {
             "title": "Valid Program",
-            "year_semester": "2025 Fall",
+            "year": "2025", "semester": "Fall",
             "description": "A valid test program.",
             "faculty_leads": "Test Faculty",
             "application_open_date": now().date(),
@@ -388,7 +388,7 @@ class Command(BaseCommand):
 
         program = Program.objects.create(
             title="Test Program",
-            year_semester="2025 Spring",
+            "year": "2025", "semester": "Fall",
             description="A program for testing applications.",
             application_open_date=now().date(),
             application_deadline=now().date() + timedelta(days=10),
@@ -514,7 +514,7 @@ class Command(BaseCommand):
         client.force_authenticate(user=admin)
         program_data = {
             "title": "Test Program for Questions",
-            "year_semester": "2025 Fall",
+            "year": "2025", "semester": "Fall",
             "description": "A program for testing questions.",
             "faculty_leads": [admin.id],
             "application_open_date": now().date(),
@@ -610,7 +610,7 @@ class Command(BaseCommand):
         client.force_authenticate(user=admin)
         program_data = {
             "title": "Response Test Program",
-            "year_semester": "2025 Spring",
+            "year": "2025", "semester": "Fall",
             "description": "A program for testing application responses.",
             "faculty_leads": "Test Faculty",
             "application_open_date": now().date(),

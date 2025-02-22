@@ -21,17 +21,29 @@ class UserSerializer(serializers.ModelSerializer):
 class ProgramSerializer(serializers.ModelSerializer):
     faculty_leads = UserSerializer(many=True, read_only=True)
     faculty_lead_ids = serializers.PrimaryKeyRelatedField(
-        source='faculty_leads',
+        source="faculty_leads",
         queryset=User.objects.filter(is_admin=True),
         many=True,
         write_only=True,
-        required=False
+        required=False,
     )
 
     class Meta:
         model = Program
-        fields = ['id', 'title', 'year_semester', 'description', 'faculty_leads', 'faculty_lead_ids',
-                 'application_open_date', 'application_deadline', 'essential_document_deadline', 'start_date', 'end_date']
+        fields = [
+            "id",
+            "title",
+            "year",
+            "semester",
+            "description",
+            "faculty_leads",
+            "faculty_lead_ids",
+            "application_open_date",
+            "application_deadline",
+            "essential_document_deadline",
+            "start_date",
+            "end_date",
+        ]
 
 
 class ApplicationQuestionSerializer(serializers.ModelSerializer):
@@ -87,13 +99,21 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         # Set the created_by field to the current user
         validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
-    
+
 
 class ConfidentialNoteSerializer(serializers.ModelSerializer):
     author_display = serializers.CharField(source="author.display_name", read_only=True)
+
     class Meta:
         model = ConfidentialNote
-        fields = ["id", "author", "author_display", "application", "timestamp", "content"]
+        fields = [
+            "id",
+            "author",
+            "author_display",
+            "application",
+            "timestamp",
+            "content",
+        ]
         read_only_fields = ["id", "author", "author_display", "timestamp"]
 
     def get_author_name(self, obj):
@@ -106,11 +126,11 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ['id', 'title', 'pdf', 'uploaded_at', 'application', 'type', 'pdf_url']
+        fields = ["id", "title", "pdf", "uploaded_at", "application", "type", "pdf_url"]
 
     def get_pdf_url(self, obj):
         """Generate the absolute URL for the PDF file."""
-        request = self.context.get('request')  # Get the request context
+        request = self.context.get("request")  # Get the request context
         if obj.pdf:
             return request.build_absolute_uri(obj.pdf.url) if request else obj.pdf.url
         return None
