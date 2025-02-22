@@ -35,6 +35,7 @@ class ProgramSerializer(serializers.ModelSerializer):
             "title",
             "year",
             "semester",
+            "year_semester",
             "description",
             "faculty_leads",
             "faculty_lead_ids",

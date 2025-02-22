@@ -398,6 +398,7 @@ const MyProgramsTable = () => {
               >
                 <StyledTableCell>{application.program.title}</StyledTableCell>
                 <StyledTableCell>
+                  {console.log(application.program)}
                   {application.program.year_semester}
                 </StyledTableCell>
                 <StyledTableCell>
