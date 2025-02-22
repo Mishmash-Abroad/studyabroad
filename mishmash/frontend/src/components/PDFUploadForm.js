@@ -174,8 +174,7 @@ const PDFUploadForm = ({
     const formData = new FormData();
     formData.append("title", file.name);
     formData.append("pdf", file);
-    formData.append("student", user_id);
-    formData.append("program", program_id);
+    formData.append("application", application_id);
     formData.append("type", doc_type);
 
     try {
