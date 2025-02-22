@@ -1,6 +1,11 @@
 import "./App.css";
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -9,6 +14,8 @@ import TopNavBar from "./components/TopNavBar";
 import LoginModal from "./components/LoginModal";
 import ApplicationPage from "./pages/ApplicationPage";
 import AdminAppView from "./components/AdminAppView";
+import MFAOverview, { loader as mfaOverviewLoader } from './mfa/MFAOverview'
+
 
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -32,14 +39,24 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
+          <Route path="/account/2fa">
+            element=
+            {
+              <AuthenticatedRoute>
+                <MFAOverview />
+              </AuthenticatedRoute>
+            }
+          </Route>
 
           {/* Redirect any other path to Dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
 
         {/* Login Modal */}
-        {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
+        {showLoginModal && (
+          <LoginModal onClose={() => setShowLoginModal(false)} />
+        )}
       </AuthProvider>
     </Router>
   );
