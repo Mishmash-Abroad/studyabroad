@@ -134,6 +134,19 @@ class AdminCreateAndView(permissions.BasePermission):
         return request.method in permissions.SAFE_METHODS
 
 
+class IsDocumentOwnerOrAdmin(permissions.BasePermission):
+    """
+    Allows access only to the owner of the document.
+    Admins are allowed read-only access (safe methods).
+    """
+    def has_object_permission(self, request, view, obj):
+        # Admins are allowed to read, but not modify documents.
+        if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+        # Otherwise, only the document's owner can modify it.
+        return obj.application.student == request.user
+
+
 ### ViewSet classes for the API interface ###
 
 
@@ -1249,10 +1262,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsApplicationResponseOwnerOrAdmin,
-    ]
+    permission_classes = [permissions.IsAuthenticated, IsDocumentOwnerOrAdmin]
 
     def create(self, request, *args, **kwargs):
         """
@@ -1291,7 +1301,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if application_id is not None:
             if not Application.objects.filter(id=application_id).exists():
                 return Response(
-                    {"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Application not found."}, status=status.HTTP_404_NOT_FOUND
                 )
             queryset = queryset.filter(application=application_id)
 
