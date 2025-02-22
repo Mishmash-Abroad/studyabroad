@@ -467,6 +467,7 @@ const ProgramCard = ({ program, isInAppliedSection, onExpand }) => {
                   fontSize: "1.1em",
                   lineHeight: "1.6",
                   color: theme.palette.text.primary,
+                  whiteSpace: "pre-line",
                 }}
               >
                 {program.description}
