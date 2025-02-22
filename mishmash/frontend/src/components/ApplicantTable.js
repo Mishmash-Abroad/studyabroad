@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
+import {ALL_STATUSES} from '../utils/constants';
+import {ALL_ADMIN_EDITABLE_STATUSES} from '../utils/constants';
 
 const ApplicantTable = ({ programId }) => {
   const navigate = useNavigate();
@@ -106,10 +108,13 @@ const ApplicantTable = ({ programId }) => {
           sx={{ minWidth: '200px' }} // 🔹 Wider dropdown for readability
         >
           <MenuItem value="">All</MenuItem>
-          <MenuItem value="Applied">Applied</MenuItem>
-          <MenuItem value="Enrolled">Enrolled</MenuItem>
-          <MenuItem value="Withdrawn">Withdrawn</MenuItem>
-          <MenuItem value="Canceled">Canceled</MenuItem>
+          {
+            ALL_STATUSES.map((status, index) => {
+              return (
+                <MenuItem key={index} value={status}>{status}</MenuItem>
+              )
+            })
+          }
         </TextField>
       </Box>
 
@@ -183,9 +188,13 @@ const ApplicantTable = ({ programId }) => {
                         {applicant.status === 'Withdrawn' && (
                           <MenuItem value="Withdrawn">Withdrawn</MenuItem>
                         )}
-                        <MenuItem value="Applied">Applied</MenuItem>
-                        <MenuItem value="Enrolled">Enrolled</MenuItem>
-                        <MenuItem value="Canceled">Canceled</MenuItem>
+                        {
+                          ALL_ADMIN_EDITABLE_STATUSES.map((status, index) => {
+                            return (
+                              <MenuItem key={index} value={status}>{status}</MenuItem>
+                            )
+                          })
+                        }
                       </TextField>
                     </Box>
                   </TableCell>
