@@ -30,20 +30,16 @@ jobs:
           
           if [ -n "$FAILED_URLS" ]; then
             echo "Some endpoints failed:$FAILED_URLS"
-            # Set the output so it can be referenced in subsequent steps
-            echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
-            # Exit with a non-zero code to mark this step as failed
-            exit 1
           else
             echo "All endpoints passed the health check."
           fi
-        # Allow workflow continuation even if this step fails
-        continue-on-error: true
+          
+          # Always set the output (empty if all passed)
+          echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
 
       - name: Send Discord Notification on Failure
-        if: steps.check_health.outcome == 'failure'
+        if: steps.check_health.outputs.failed_urls != ''
         run: |
-          # Discord webhook URL should be stored in your repository secrets
           WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL_HEALTHCHECK }}"
           FAILED="${{ steps.check_health.outputs.failed_urls }}"
           MESSAGE=":warning: Health check failed for the following endpoint(s): $FAILED"
