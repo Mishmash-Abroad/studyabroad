@@ -109,9 +109,9 @@ const ApplicantTable = ({ programId }) => {
         >
           <MenuItem value="">All</MenuItem>
           {
-            ALL_STATUSES.map((status) => {
+            ALL_STATUSES.map((status, index) => {
               return (
-                <MenuItem value={status}>{status}</MenuItem>
+                <MenuItem key={index} value={status}>{status}</MenuItem>
               )
             })
           }
@@ -189,9 +189,9 @@ const ApplicantTable = ({ programId }) => {
                           <MenuItem value="Withdrawn">Withdrawn</MenuItem>
                         )}
                         {
-                          ALL_ADMIN_EDITABLE_STATUSES.map((status) => {
+                          ALL_ADMIN_EDITABLE_STATUSES.map((status, index) => {
                             return (
-                              <MenuItem value={status}>{status}</MenuItem>
+                              <MenuItem key={index} value={status}>{status}</MenuItem>
                             )
                           })
                         }
