@@ -67,6 +67,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from rest_framework.parsers import FileUploadParser
 from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
 import re
+from .constants import SEMESTERS
 
 ### Custom permission classes for API access ###
 
@@ -203,7 +204,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Engineering in Germany",
-            "year_semester": "Fall 2025",
+            "year": "2025", "semester": Fall
             "faculty_leads": "Dr. Smith",
             "application_open_date": "2025-01-01",
             "application_deadline": "2025-03-15",
@@ -291,7 +292,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Updated Program Name",
-            "year_semester": "Fall 2026",
+            "year": "2025", "semester": Fall
             "faculty_leads": "Dr. New Lead",
             "application_open_date": "2026-02-01",
             "application_deadline": "2026-04-15",
@@ -315,17 +316,25 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         program_instance = self.get_object()
 
-        year_semester = request.data.get(
-            "year_semester", program_instance.year_semester
+        year = request.data.get(
+            "year", program_instance.year
+        )
+        semester = request.data.get(
+            "semester", program_instance.semester
         )
         
-        # Define the regex pattern
-        pattern = r"^\d{4} (Spring|Summer|Fall|Winter)$"
+                
+        # Define regex for year (must be a 4-digit number)
+        year_pattern = r"^\d{4}$"
+        # Validate year format
+        if not re.match(year_pattern, str(year)) or int(year) < 1000:
+            raise ValidationError({"detail": "Invalid year. Must be a four-digit number (e.g., 2025)."})
 
-        # Check if it matches
-        if not re.match(pattern, year_semester):
-            raise ValidationError({"detail": "Invalid format. Expected format: 'YYYY Semester' (e.g., '2025 Summer')."})
-
+        # Validate semester format
+        if semester not in SEMESTERS:
+            raise ValidationError({"detail": f"Invalid semester. Must be one of {', '.join(SEMESTERS)}."})
+        
+        
         application_open_date = request.data.get(
             "application_open_date", program_instance.application_open_date
         )
