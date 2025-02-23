@@ -108,7 +108,7 @@ const LoginModal = ({ onClose }) => {
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, logout } = useAuth();
+  const { login, logout, verifyMFA } = useAuth();
   const [isMFAEnabled, setIsMFAEnabled] = useState(false);
   const navigate = useNavigate();
   const [mfaToken, setMfaToken] = useState(null);
@@ -127,13 +127,12 @@ const LoginModal = ({ onClose }) => {
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
+        login(userData, token, userData.is_mfa_enabled ? false : true); // Set isMFAVerified to false if MFA is enabled
         if (userData.is_mfa_enabled) {
           setIsMFAEnabled(userData.is_mfa_enabled);
-          login(userData, token);
           setMfaToken(token);
           setMfaUserData(userData);
         } else {
-          login(userData, token);
           onClose();
           navigate("/dashboard");
         }
@@ -313,6 +312,7 @@ const LoginModal = ({ onClose }) => {
           }}
           onSuccess={() => {
             onClose();
+            verifyMFA();
             navigate("/dashboard");
           }}
         />
