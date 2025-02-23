@@ -1306,3 +1306,17 @@ class DocumentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(application=application_id)
 
         return queryset
+
+
+class MFAStatusViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this
+
+    @action(detail=False, methods=["get"])
+    def status(self, request):
+        # Fetch MFA status for the authenticated user
+        user = request.user
+        status = {
+            "totp": user.totpdevice_set.exists(),  # Check if TOTP is enabled
+            "recovery_codes": user.staticdevice_set.count(),  # Count recovery codes
+        }
+        return Response(status)
