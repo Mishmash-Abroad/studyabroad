@@ -7,9 +7,12 @@ import {
   Alert,
   Paper,
   IconButton,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import axiosInstance from "../utils/axios";
 
 // -------------------- STYLED COMPONENTS --------------------
@@ -52,11 +55,25 @@ const DropZone = styled(Box, {
 const FileInfo = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  gap: theme.spacing(1),
+  justifyContent: "space-between",
+  gap: theme.spacing(2),
   marginTop: theme.spacing(2),
-  padding: theme.spacing(1),
+  padding: theme.spacing(2),
   backgroundColor: theme.palette.grey[50],
   borderRadius: theme.shape.borderRadius.small,
+  border: `1px solid ${theme.palette.grey[200]}`,
+}));
+
+const FileDetails = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(0.5),
+}));
+
+const ActionButtons = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
 }));
 
 // -------------------- COMPONENT DEFINITION --------------------
@@ -77,10 +94,22 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
     success: "",
     loading: false,
     isDragActive: false,
-    existingDoc: null
+    existingDoc: null,
+    pdfViewerOpen: false,
+    selectedDocUrl: null,
   });
 
-  const { file, error, success, loading, isDragActive, existingDoc } = state;
+  const { 
+    file, 
+    error, 
+    success, 
+    loading, 
+    isDragActive, 
+    existingDoc, 
+    pdfViewerOpen, 
+    selectedDocUrl 
+  } = state;
+  
   const updateState = (newState) => setState(prev => ({ ...prev, ...newState }));
 
   // -------------------- DATA FETCHING --------------------
@@ -200,106 +229,159 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
     }
   };
 
-  // -------------------- RENDER COMPONENT --------------------
+  const handleView = async () => {
+    if (!existingDoc?.pdf_url) {
+      updateState({ error: "Document URL not available." });
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.get(existingDoc.pdf_url, {
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blobUrl = window.URL.createObjectURL(blob);
+      updateState({ 
+        selectedDocUrl: blobUrl,
+        pdfViewerOpen: true,
+        error: "" 
+      });
+    } catch (err) {
+      console.error("Error viewing document:", err);
+      updateState({ error: "Failed to view document." });
+    }
+  };
+
+  const handleCloseViewer = () => {
+    if (selectedDocUrl) {
+      URL.revokeObjectURL(selectedDocUrl);
+    }
+    updateState({ 
+      selectedDocUrl: null,
+      pdfViewerOpen: false 
+    });
+  };
+
   return (
     <Container>
-      {/* Document Title */}
       <Typography variant="h6" gutterBottom>
         {doc_type}
       </Typography>
-      
-      {/* Upload Form */}
-      <form onSubmit={handleSubmit}>
-        {/* Hidden File Input */}
-        <input
-          type="file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          style={{ display: "none" }}
-          id={`file-input-${doc_type}`}
-          disabled={isReadOnly}
-        />
-        
-        {/* Drag & Drop Zone */}
-        <label htmlFor={`file-input-${doc_type}`}>
-          <DropZone
-            onDrop={handleDrop}
-            onDragOver={(e) => {
-              e.preventDefault();
-              updateState({ isDragActive: true });
-            }}
-            onDragLeave={() => updateState({ isDragActive: false })}
-            isDragActive={isDragActive}
-            hasFile={!!file || !!existingDoc}
-            isReadOnly={isReadOnly}
-          >
-            {(file || existingDoc) ? (
-              <FileInfo>
-                <CloudUploadIcon />
-                <Typography sx={{ flex: 1 }}>
-                  {file ? file.name : existingDoc.title}
-                </Typography>
-                {!loading && !isReadOnly && (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (file) {
-                        updateState({ file: null });
-                      } else {
-                        handleRemoveExisting();
-                      }
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                )}
-              </FileInfo>
-            ) : (
-              <>
-                <CloudUploadIcon
-                  sx={{ fontSize: 48, color: "primary.main", mb: 1 }}
-                />
-                <Typography variant="body1" gutterBottom>
-                  {isReadOnly
-                    ? "Document upload is disabled"
-                    : isDragActive
-                    ? "Drop the PDF file here"
-                    : "Drag and drop your PDF here, or click to select"}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Only PDF files are accepted
-                </Typography>
-              </>
-            )}
-          </DropZone>
-        </label>
 
-        {file && !isReadOnly && !success && (
-          <Box mt={2} display="flex" justifyContent="center">
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+
+      {existingDoc ? (
+        <FileInfo>
+          <FileDetails>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+              {existingDoc.title || "Uploaded Document"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Uploaded on {new Date(existingDoc.uploaded_at).toLocaleString()}
+            </Typography>
+          </FileDetails>
+          <ActionButtons>
             <Button
-              variant="contained"
-              color="primary"
-              type="submit"
-              disabled={loading}
+              startIcon={<VisibilityIcon />}
+              onClick={handleView}
+              variant="outlined"
+              size="small"
             >
-              {loading ? "Uploading..." : "Upload Document"}
+              View
             </Button>
-          </Box>
-        )}
-      </form>
+            {!isReadOnly && (
+              <Button
+                startIcon={<DeleteIcon />}
+                onClick={handleRemoveExisting}
+                variant="outlined"
+                size="small"
+                color="error"
+              >
+                Remove
+              </Button>
+            )}
+          </ActionButtons>
+        </FileInfo>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+            id={`pdf-upload-${doc_type}`}
+            disabled={isReadOnly}
+          />
+          <label htmlFor={`pdf-upload-${doc_type}`}>
+            <DropZone
+              onDragEnter={(e) => {
+                e.preventDefault();
+                updateState({ isDragActive: true });
+              }}
+              onDragLeave={() => updateState({ isDragActive: false })}
+              onDragOver={(e) => {
+                e.preventDefault();
+                updateState({ isDragActive: true });
+              }}
+              onDrop={handleDrop}
+              isDragActive={isDragActive}
+              hasFile={!!file}
+              isReadOnly={isReadOnly}
+            >
+              <CloudUploadIcon sx={{ fontSize: 48, mb: 1 }} />
+              <Typography>
+                {isReadOnly
+                  ? "Document upload is currently disabled"
+                  : "Drag and drop a PDF file here, or click to select"}
+              </Typography>
+            </DropZone>
+          </label>
 
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
+          {file && (
+            <FileInfo>
+              <FileDetails>
+                <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                  {file.name}
+                </Typography>
+              </FileDetails>
+              <ActionButtons>
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  disabled={loading || isReadOnly}
+                >
+                  Upload
+                </Button>
+              </ActionButtons>
+            </FileInfo>
+          )}
+        </form>
       )}
 
-      {success && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          {success}
-        </Alert>
-      )}
+      <Dialog
+        open={pdfViewerOpen}
+        onClose={handleCloseViewer}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogContent>
+          {selectedDocUrl && (
+            <Box sx={{ height: "80vh" }}>
+              <iframe
+                src={selectedDocUrl}
+                width="100%"
+                height="100%"
+                style={{ border: "none" }}
+              >
+                <Typography>
+                  PDF cannot be displayed. Please try downloading it instead.
+                </Typography>
+              </iframe>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };
