@@ -19,6 +19,7 @@ class UserAdmin(admin.ModelAdmin):
         "display_name",
         "email",
         "is_admin",
+        "is_mfa_enabled",
     )  # Display `is_admin`
     list_filter = ("is_admin",)  # Filter by admin status
     search_fields = ("username", "email", "display_name")  # Allow searching users
