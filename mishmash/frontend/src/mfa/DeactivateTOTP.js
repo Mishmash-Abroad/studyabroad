@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axios";
 
 function DeactivateTOTP() {
   const [error, setError] = useState(null);
@@ -7,8 +7,8 @@ function DeactivateTOTP() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios
-      .post("/api/mfa/totp/deactivate/")
+    axiosInstance
+      .post("/api/mfa/deactivate_totp_device/")
       .then(() => {
         setSuccess(true);
         setError(null);
