@@ -27,6 +27,14 @@ function ActivateTOTP() {
       ) : (
         <form onSubmit={handleSubmit}>
           <label>
+            Authenticator secret:
+            <input disabled type="text" value={totp.meta?.secret} />
+            <span>
+              You can store this secret and use it to reinstall your
+              authenticator app at a later time.
+            </span>
+          </label>
+          <label>
             Enter the code from your authenticator app:
             <input
               type="text"
