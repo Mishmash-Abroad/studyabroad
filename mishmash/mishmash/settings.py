@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',       # Session framework
     'django.contrib.messages',       # Messaging framework
     'django.contrib.staticfiles',    # Static file management
+    'django_otp',
+    'django_otp.plugins.otp_totp',
     
     # Third-party apps
     'rest_framework',               # REST API framework
