@@ -6,7 +6,8 @@ from django.utils.timezone import now
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
-
+    is_mfa_enabled = models.BooleanField(default=False)
+    
     groups = models.ManyToManyField(
         "auth.Group",
         related_name="custom_user_set",  # Avoid conflict with 'auth.User.groups'

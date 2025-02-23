@@ -1308,7 +1308,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class MFAStatusViewSet(viewsets.ViewSet):
+class MFAViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this
 
     @action(detail=False, methods=["get"])
@@ -1316,7 +1316,15 @@ class MFAStatusViewSet(viewsets.ViewSet):
         # Fetch MFA status for the authenticated user
         user = request.user
         status = {
-            "totp": user.totpdevice_set.exists(),  # Check if TOTP is enabled
-            "recovery_codes": user.staticdevice_set.count(),  # Count recovery codes
+            "is_mfa_enabled": user.is_mfa_enabled,  # Check if TOTP is enabled
+        }
+        return Response(status)
+    
+    @action(detail=False, methods=["get"])
+    def generate_totp_secret(self, request):
+        # Fetch MFA status for the authenticated user
+        user = request.user
+        status = {
+            "is_mfa_enabled": user.is_mfa_enabled,  # Check if TOTP is enabled
         }
         return Response(status)
