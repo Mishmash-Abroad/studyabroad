@@ -76,7 +76,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.openid_connect',
-
+    "allauth.mfa",
     
     # Local apps
     'api',                         # Main application API
@@ -105,7 +105,7 @@ ROOT_URLCONF = "mishmash.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -236,3 +236,8 @@ CORS_ALLOWED_ORIGINS = [
 # DEFAULT PRIMARY KEY FIELD TYPE
 # ===============================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+MFA_SUPPORTED_TYPES = ["totp"]
+MFA_PASSKEY_LOGIN_ENABLED = True
+MFA_PASSKEY_SIGNUP_ENABLED = True
