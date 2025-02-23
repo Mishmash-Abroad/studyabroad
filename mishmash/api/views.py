@@ -68,6 +68,13 @@ from rest_framework.parsers import FileUploadParser
 from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
 import re
 from .constants import SEMESTERS
+from django_otp.plugins.otp_totp.models import TOTPDevice
+import qrcode
+import io
+from django.http import JsonResponse
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp.util import random_hex
+import base64
 
 ### Custom permission classes for API access ###
 
@@ -1322,9 +1329,51 @@ class MFAViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=["get"])
     def generate_totp_secret(self, request):
-        # Fetch MFA status for the authenticated user
         user = request.user
-        status = {
-            "is_mfa_enabled": user.is_mfa_enabled,  # Check if TOTP is enabled
-        }
-        return Response(status)
+        device, created = TOTPDevice.objects.get_or_create(user=user)
+
+        # Generate a new key if not already set
+        if not device.key:
+            device.key = device.random_key()  # Generate a new key
+            device.save()
+
+        # Create the QR Code URL for the TOTP secret
+        config_url = device.config_url
+        qr_image = qrcode.make(config_url)
+
+        # Convert the QR code image to a Base64 string
+        img_byte_arr = io.BytesIO()
+        qr_image.save(img_byte_arr, format="PNG")
+        img_byte_arr.seek(0)
+        img_base64 = base64.b64encode(img_byte_arr.read()).decode("utf-8")
+
+        return JsonResponse({
+            'qr_code': img_base64,
+            'message': 'QR code generated successfully.',
+        })
+
+    @action(detail=False, methods=["post"])
+    def verify_totp(self, request):
+        """
+        Verifies the TOTP code provided by the user.
+        If successful, enables MFA for the user.
+        """
+        user = request.user
+        code = request.data.get("code")
+
+        if not code:
+            return Response({"error": "No TOTP code provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch the user's TOTP device
+        try:
+            device = TOTPDevice.objects.get(user=user)
+        except TOTPDevice.DoesNotExist:
+            return Response({"error": "TOTP device not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify the code
+        if device.verify_token(code):
+            user.is_mfa_enabled = True  # Enable MFA flag
+            user.save()
+            return Response({"success": "TOTP verified successfully."})
+
+        return Response({"error": "Invalid TOTP code."}, status=status.HTTP_400_BAD_REQUEST)
