@@ -1350,9 +1350,15 @@ class MFAViewSet(viewsets.ViewSet):
         img_byte_arr.seek(0)
         img_base64 = base64.b64encode(img_byte_arr.read()).decode("utf-8")
 
+        bytes_key = bytes.fromhex(device.key)  # Convert hex to bytes
+        base32_key = base64.b32encode(
+            bytes_key
+        ).decode()  # Convert bytes to Base32 and decode to string
+
         return JsonResponse(
             {
                 "qr_code": img_base64,
+                "secret": base32_key,  # Return the secret key for manual entry
                 "message": "QR code generated successfully.",
             }
         )
