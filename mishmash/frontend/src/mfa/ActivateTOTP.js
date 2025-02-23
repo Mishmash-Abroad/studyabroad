@@ -94,7 +94,7 @@ function ActivateTOTP() {
       axiosInstance
         .get("/api/mfa/generate_totp_secret/")
         .then((response) => {
-          setTotpSecret(response.data.message); // Store the TOTP secret
+          setTotpSecret(response.data.secret); // Store the TOTP secret
           setQrCode(response.data.qr_code); // Store the Base64 QR code string
         })
         .catch((error) => {
