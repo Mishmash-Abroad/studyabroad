@@ -17,6 +17,7 @@ import AdminAppView from "./components/AdminAppView";
 import MFAOverview from "./mfa/MFAOverview";
 import ActivateTOTP from "./mfa/ActivateTOTP";
 import DeactivateTOTP from "./mfa/DeactivateTOTP";
+import MFALogin from "./mfa/MFAModal";
 
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -65,7 +66,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Redirect any other path to Dashboard */}
           {/* Alexis - I changed this logic TODO might have to change back /dashboard*/}
           <Route path="*" element={<Navigate to="/" />} />

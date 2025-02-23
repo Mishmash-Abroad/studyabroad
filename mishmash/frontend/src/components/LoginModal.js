@@ -3,6 +3,7 @@ import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
+import MFALogin from "../mfa/MFAModal";
 
 // -------------------- STYLES --------------------
 const ModalOverlay = styled("div")(({ theme }) => ({
@@ -107,8 +108,11 @@ const LoginModal = ({ onClose }) => {
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
+  const [isMFAEnabled, setIsMFAEnabled] = useState(false);
   const navigate = useNavigate();
+  const [mfaToken, setMfaToken] = useState(null);
+  const [mfaUserData, setMfaUserData] = useState(null);
 
   const handleSubmitLogin = async (e) => {
     e.preventDefault();
@@ -123,10 +127,17 @@ const LoginModal = ({ onClose }) => {
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
-        login(userData, token);
-        onClose();
-        navigate("/dashboard");
-      } else{
+        if (userData.is_mfa_enabled) {
+          setIsMFAEnabled(userData.is_mfa_enabled);
+          login(userData, token);
+          setMfaToken(token);
+          setMfaUserData(userData);
+        } else {
+          login(userData, token);
+          onClose();
+          navigate("/dashboard");
+        }
+      } else {
         throw new Error("Invalid Credentials");
       }
     } catch (err) {
@@ -141,21 +152,20 @@ const LoginModal = ({ onClose }) => {
     // By default, this might be at "/accounts/duke/login/".
     window.location.href = "/accounts/oidc/duke-oidc/login/";
   };
-  
 
   const handleSubmitSignUp = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    if (password !== confirmPassword){
+    if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
       return;
     }
 
     var testEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$/i;
-    if(!testEmail.test(email)){
+    if (!testEmail.test(email)) {
       setError("invalid email address");
       setLoading(false);
       return;
@@ -212,11 +222,12 @@ const LoginModal = ({ onClose }) => {
             <FormButton type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </FormButton>
-<FormButton type="button" onClick={handleDukeSSOLogin}>
-  Login with Duke SSO
-</FormButton>
 
-            <FormButton 
+            <FormButton type="button" onClick={handleDukeSSOLogin}>
+              Login with Duke SSO
+            </FormButton>
+
+            <FormButton
               type="button"
               onClick={(e) => {
                 e.preventDefault();
@@ -281,7 +292,7 @@ const LoginModal = ({ onClose }) => {
                 {loading ? "Signing up..." : "Sign up"}
               </FormButton>
 
-              <FormButton 
+              <FormButton
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
@@ -293,6 +304,18 @@ const LoginModal = ({ onClose }) => {
             </ModalForm>
           </ModalContainer>
         </ModalOverlay>
+      )}
+      {isMFAEnabled && (
+        <MFALogin
+          onClose={() => {
+            onClose();
+            logout();
+          }}
+          onSuccess={() => {
+            onClose();
+            navigate("/dashboard");
+          }}
+        />
       )}
     </>
   );
