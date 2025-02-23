@@ -146,6 +146,7 @@ class IsDocumentOwnerOrAdmin(permissions.BasePermission):
     Allows access only to the owner of the document.
     Admins are allowed read-only access (safe methods).
     """
+
     def has_object_permission(self, request, view, obj):
         # Admins are allowed to read, but not modify documents.
         if request.user.is_admin:
@@ -1308,7 +1309,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if application_id is not None:
             if not Application.objects.filter(id=application_id).exists():
                 return Response(
-                    {"detail": "Application not found."}, status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Application not found."},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
             queryset = queryset.filter(application=application_id)
 
@@ -1316,7 +1318,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 class MFAViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this
+    permission_classes = [
+        IsAuthenticated
+    ]  # Ensure only authenticated users can access this
 
     @action(detail=False, methods=["get"])
     def status(self, request):
@@ -1326,16 +1330,15 @@ class MFAViewSet(viewsets.ViewSet):
             "is_mfa_enabled": user.is_mfa_enabled,  # Check if TOTP is enabled
         }
         return Response(status)
-    
+
     @action(detail=False, methods=["get"])
     def generate_totp_secret(self, request):
         user = request.user
-        device, created = TOTPDevice.objects.get_or_create(user=user)
+        # Delete any existing TOTP device for the user
+        TOTPDevice.objects.filter(user=user).delete()
 
-        # Generate a new key if not already set
-        if not device.key:
-            device.key = device.random_key()  # Generate a new key
-            device.save()
+        # Create a new TOTP device
+        device = TOTPDevice.objects.create(user=user, name="default")
 
         # Create the QR Code URL for the TOTP secret
         config_url = device.config_url
@@ -1347,10 +1350,35 @@ class MFAViewSet(viewsets.ViewSet):
         img_byte_arr.seek(0)
         img_base64 = base64.b64encode(img_byte_arr.read()).decode("utf-8")
 
-        return JsonResponse({
-            'qr_code': img_base64,
-            'message': 'QR code generated successfully.',
-        })
+        return JsonResponse(
+            {
+                "qr_code": img_base64,
+                "message": "QR code generated successfully.",
+            }
+        )
+
+    @action(detail=False, methods=["post"])
+    def deactivate_totp_device(self, request):
+        user = request.user
+
+        # Find and delete the TOTP device for the user
+        deleted_count, _ = TOTPDevice.objects.filter(user=user).delete()
+        user.is_mfa_enabled = False  # Disable MFA flag
+        user.save()
+        if deleted_count > 0:
+            return Response(
+                {
+                    "message": "TOTP device deactivated successfully.",
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {
+                    "message": "No TOTP device found for the user.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
     @action(detail=False, methods=["post"])
     def verify_totp(self, request):
@@ -1362,13 +1390,17 @@ class MFAViewSet(viewsets.ViewSet):
         code = request.data.get("code")
 
         if not code:
-            return Response({"error": "No TOTP code provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "No TOTP code provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Fetch the user's TOTP device
         try:
             device = TOTPDevice.objects.get(user=user)
         except TOTPDevice.DoesNotExist:
-            return Response({"error": "TOTP device not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "TOTP device not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Verify the code
         if device.verify_token(code):
@@ -1376,4 +1408,6 @@ class MFAViewSet(viewsets.ViewSet):
             user.save()
             return Response({"success": "TOTP verified successfully."})
 
-        return Response({"error": "Invalid TOTP code."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Invalid TOTP code."}, status=status.HTTP_400_BAD_REQUEST
+        )

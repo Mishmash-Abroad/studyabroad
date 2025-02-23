@@ -90,15 +90,19 @@ function ActivateTOTP() {
   const [qrCode, setQrCode] = useState(null);
 
   useEffect(() => {
-    axiosInstance
-      .get("/api/mfa/generate_totp_secret/")
-      .then((response) => {
-        setTotpSecret(response.data.message); // Store the TOTP secret
-        setQrCode(response.data.qr_code);    // Store the Base64 QR code string
-      })
-      .catch((error) => {
-        setError(error.response?.data?.error || "Failed to create TOTP secret.");
-      });
+    if (!totpSecret) {
+      axiosInstance
+        .get("/api/mfa/generate_totp_secret/")
+        .then((response) => {
+          setTotpSecret(response.data.message); // Store the TOTP secret
+          setQrCode(response.data.qr_code); // Store the Base64 QR code string
+        })
+        .catch((error) => {
+          setError(
+            error.response?.data?.error || "Failed to create TOTP secret."
+          );
+        });
+    }
   }, []);
 
   const handleSubmit = (e) => {
@@ -125,7 +129,8 @@ function ActivateTOTP() {
           <SuccessMessage>
             <Typography variant="h6">TOTP activated successfully!</Typography>
             <Typography variant="body1">
-              You can now use your authenticator app for two-factor authentication.
+              You can now use your authenticator app for two-factor
+              authentication.
             </Typography>
           </SuccessMessage>
         ) : (
@@ -134,14 +139,10 @@ function ActivateTOTP() {
               <Typography variant="body1" fontWeight="bold">
                 Authenticator Secret:
               </Typography>
-              <Input
-                disabled
-                type="text"
-                value={totpSecret}
-              />
+              <Input disabled type="text" value={totpSecret} />
               <HintText>
-                You can store this secret and use it to reinstall your authenticator
-                app at a later time.
+                You can store this secret and use it to reinstall your
+                authenticator app at a later time.
               </HintText>
             </FormGroup>
 
@@ -151,7 +152,7 @@ function ActivateTOTP() {
                   Scan the QR code with your authenticator app:
                 </Typography>
                 <img
-                  src={`data:image/png;base64,${qrCode}`}  // Display the QR code
+                  src={`data:image/png;base64,${qrCode}`} // Display the QR code
                   alt="QR Code"
                   width="200"
                   height="200"
