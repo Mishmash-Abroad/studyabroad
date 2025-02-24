@@ -36,7 +36,12 @@ import { useAuth } from "../context/AuthContext";
  */
 const ProtectedRoute = ({ children }) => {
   // Get authentication state from context
-  const { user, isMFAVerified } = useAuth();
+  const { user, isMFAVerified, authLoading } = useAuth();
+
+  // Show loading state while authentication is being determined
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
 
   // Redirect to login if user is not authenticated
   if (!user) {
