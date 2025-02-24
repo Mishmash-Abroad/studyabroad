@@ -241,3 +241,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MFA_SUPPORTED_TYPES = ["totp"]
 MFA_PASSKEY_LOGIN_ENABLED = True
 MFA_PASSKEY_SIGNUP_ENABLED = True
+
+
+# Sentry Configuration
+import sentry_sdk
+
+sentry_sdk.init(
+    dsn="https://dfa2f3f4b7b087e327da924f83723e59@o4508874878812161.ingest.us.sentry.io/4508874881826816",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    _experiments={
+        # Set continuous_profiling_auto_start to True
+        # to automatically start the profiler on when
+        # possible.
+        "continuous_profiling_auto_start": True,
+    },
+)
