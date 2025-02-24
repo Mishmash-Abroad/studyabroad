@@ -153,8 +153,8 @@ function TopNavBar({ onLoginClick }) {
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
-      logout();
-      navigate("/");
+    logout();
+    navigate("/");
     }
   };
 

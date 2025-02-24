@@ -187,12 +187,10 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-
-
-
-
-
-
+# Session Settings
+SESSION_COOKIE_AGE = 24 * 60 * 60      # 86400 seconds = 24 hours
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = False     # We do NOT want to reset the clock on each request.
 
 # INTERNATIONALIZATION
 # ===================
