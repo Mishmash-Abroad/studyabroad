@@ -100,6 +100,11 @@ export const SEVERITY_LEVELS = {
     STATUS.COMPLETED,
     STATUS.ENROLLED
   ];
+
+  export const DOCUMENT_SUBMISSION_STATUSES = [ // Statuses where documents can be submitted.
+    STATUS.ELIGIBLE,
+    STATUS.APPLIED,
+  ];
   
   export const EDITABLE_APPLICATION_STATUSES = [ // Application responses are editable only when in these statuses.
     STATUS.APPLIED

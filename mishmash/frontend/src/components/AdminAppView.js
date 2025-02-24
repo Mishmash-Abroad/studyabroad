@@ -169,6 +169,11 @@ const AdminAppView = () => {
               {option}
             </MenuItem>
           ))}
+          {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
+            <MenuItem key="current" value={status} disabled>
+              {status}
+            </MenuItem>
+          )}
         </TextField>
       </Box>
   

@@ -15,6 +15,13 @@ import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
 import DeadlineIndicator from "../components/DeadlineIndicator";
+import {
+  ALL_STATUSES,
+  ALL_ADMIN_EDITABLE_STATUSES,
+  READ_ONLY_APPLICATION_STATUSES,
+  APPLICATION_ACTION_BUTTON_TEXT,
+  DOCUMENT_SUBMISSION_STATUSES,
+} from "../utils/constants";
 
 // -------------------- STYLED COMPONENTS --------------------
 const StyledComponents = {
@@ -139,6 +146,8 @@ const ApplicationPage = () => {
 
   // -------------------- DATA FETCHING --------------------
   useEffect(() => {
+    if (!user) return; // Guard: user may be null during initial render
+    
     const fetchApplicationData = async () => {
       updateState({ loading: true, error: "" });
       
@@ -149,9 +158,9 @@ const ApplicationPage = () => {
         
         // Application becomes read-only if:
         // - Past the program's deadline
-        // - Student is already enrolled
-        const isReadOnly = new Date() > new Date(programData.application_deadline) ||
-                         application.status?.toLowerCase() === "enrolled";
+        // - Status is one of the read-only statuses
+        const isReadOnly = new Date() > new Date(programData.application_deadline) || 
+                         READ_ONLY_APPLICATION_STATUSES.includes(application.status);
 
         // Find student's existing application for this program
         const applicationsRes = await axiosInstance.get(`/api/applications/?student=${user.id}`);
@@ -209,15 +218,15 @@ const ApplicationPage = () => {
           loading: false
         });
       } catch (err) {
-        updateState({
-          error: err.response?.data?.detail || err.message || "Failed to load application data",
-          loading: false
-        });
+        console.error("Error fetching application data:", err);
+        updateState({ error: "Failed to load application data. Please try again." });
+      } finally {
+        updateState({ loading: false });
       }
     };
 
     fetchApplicationData();
-  }, [program_id, user.id]);
+  }, [program_id, user]);
 
   // -------------------- EVENT HANDLERS --------------------
   const handleSubmit = async (e) => {
@@ -283,6 +292,15 @@ const ApplicationPage = () => {
         loading: false
       });
     }
+  };
+
+  // Helper function to determine submit button text based on application status
+  const getSubmitButtonText = () => {
+    if (loading) return "Processing...";
+    if (application.status) {
+      return APPLICATION_ACTION_BUTTON_TEXT[application.status] || "Submit Application";
+    }
+    return "Submit Application";
   };
 
   // -------------------- HELPER FUNCTIONS --------------------
@@ -480,11 +498,7 @@ const ApplicationPage = () => {
                     disabled={loading}
                     size="large"
                   >
-                    {loading ? "Processing..." : application.status === "Withdrawn"
-                      ? "Resubmit Application"
-                      : application.status === "Applied"
-                      ? "Update Application"
-                      : "Submit Application"}
+                    {getSubmitButtonText()}
                   </Button>
                 )}
               </Box>
