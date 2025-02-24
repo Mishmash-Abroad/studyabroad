@@ -14,6 +14,7 @@ import {
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
+import DeadlineIndicator from "../components/DeadlineIndicator";
 
 // -------------------- STYLED COMPONENTS --------------------
 const StyledComponents = {
@@ -77,6 +78,12 @@ const StyledComponents = {
     backgroundColor: 'rgba(0, 0, 0, 0.02)',
     borderRadius: theme.shape.borderRadius.medium,
     pointerEvents: 'none',
+  })),
+
+  DeadlineContainer: styled(Box)(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(3),
   }))
 };
 
@@ -290,7 +297,8 @@ const ApplicationPage = () => {
 
   const {
     PageContainer, ContentContainer, Header, TabContainer,
-    ProgramCard, InfoGrid, FormSection, ButtonContainer, ReadOnlyOverlay
+    ProgramCard, InfoGrid, FormSection, ButtonContainer, 
+    ReadOnlyOverlay, DeadlineContainer
   } = StyledComponents;
 
   // -------------------- RENDER COMPONENT --------------------
@@ -329,6 +337,18 @@ const ApplicationPage = () => {
         {/* Program Details Tab */}
         {activeTab === 0 && (
           <ProgramCard>
+            <DeadlineContainer>
+              <DeadlineIndicator 
+                deadline={program.application_deadline} 
+                type="application"
+                expanded={true}
+              />
+              <DeadlineIndicator 
+                deadline={program.essential_document_deadline} 
+                type="document"
+                expanded={true}
+              />
+            </DeadlineContainer>
             <InfoGrid>
               <Box>
                 <Typography variant="subtitle2">Faculty Leads</Typography>
@@ -336,12 +356,6 @@ const ApplicationPage = () => {
                   {Array.isArray(program.faculty_leads) && program.faculty_leads.length > 0
                     ? program.faculty_leads.map(lead => lead.display_name).join(', ')
                     : 'No faculty leads assigned'}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2">Application Deadline</Typography>
-                <Typography>
-                  {program.application_deadline ? new Date(program.application_deadline).toLocaleDateString() : 'No deadline set'}
                 </Typography>
               </Box>
               <Box>
@@ -360,6 +374,12 @@ const ApplicationPage = () => {
         {/* Application Form Tab */}
         {activeTab === 1 && (
           <form onSubmit={handleSubmit}>
+            <DeadlineContainer>
+              <DeadlineIndicator 
+                deadline={program.application_deadline} 
+                type="application"
+              />
+            </DeadlineContainer>
             {isReadOnly && (
               <Alert severity="info" sx={{ mb: 3 }}>
                 This application is currently in read-only mode.
@@ -474,27 +494,18 @@ const ApplicationPage = () => {
 
         {/* Required Documents Tab */}
         {activeTab === 2 && (
-          <Box>
-            {isReadOnly ? (
-              <Alert severity="info" sx={{ mb: 4 }}>
-                Your application is in read-only mode. You cannot modify documents at this time.
-              </Alert>
-            ) : (
-              <Alert severity="info" sx={{ mb: 4 }}>
-                Please upload all required documents in PDF format.
-              </Alert>
-            )}
-            {application.id ? (
-              <EssentialDocumentFormSubmission
-                application_id={application.id}
-                isReadOnly={isReadOnly}
+          <>
+            <DeadlineContainer>
+              <DeadlineIndicator 
+                deadline={program.essential_document_deadline} 
+                type="document"
               />
-            ) : (
-              <Alert severity="warning">
-                Please submit your application before uploading documents.
-              </Alert>
-            )}
-          </Box>
+            </DeadlineContainer>
+            <EssentialDocumentFormSubmission
+              application_id={application.id}
+              isReadOnly={isReadOnly}
+            />
+          </>
         )}
       </ContentContainer>
     </PageContainer>
