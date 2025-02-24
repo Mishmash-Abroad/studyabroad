@@ -12,6 +12,7 @@ services:
     environment:
       - NODE_ENV=production
       - REACT_APP_API_URL=https://dev-mishmash.colab.duke.edu
+      - SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
     depends_on:
       - backend
 
