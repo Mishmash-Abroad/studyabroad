@@ -12,8 +12,7 @@ import * as Sentry from "@sentry/react";
 Sentry.init({
   dsn: "https://373510ff6656d657af5f7ee9f4551775@o4508874878812161.ingest.us.sentry.io/4508874947035136",
   integrations: [
-    Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
+ 
   ],
   tracesSampleRate: 1.0, // Capture 100% of the transactions
   tracePropagationTargets: [
@@ -26,6 +25,7 @@ Sentry.init({
   replaysSessionSampleRate: 0.1, // 10% session sampling
   replaysOnErrorSampleRate: 1.0, // 100% sampling for sessions with errors
 });
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
