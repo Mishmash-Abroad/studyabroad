@@ -15,7 +15,14 @@ from django import forms
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "display_name", "email", "is_admin"]
+        fields = [
+            "id",
+            "username",
+            "display_name",
+            "email",
+            "is_admin",
+            "is_mfa_enabled",
+        ]
 
 
 class ProgramSerializer(serializers.ModelSerializer):

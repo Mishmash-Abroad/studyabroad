@@ -4,8 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import { Menu, MenuItem, IconButton, Button } from "@mui/material";
-import PersonIcon from '@mui/icons-material/Person';
-import ChangePasswordModal from './ChangePasswordModal';
+import PersonIcon from "@mui/icons-material/Person";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 // -------------------- STYLES --------------------
 const NavBar = styled("div")(({ theme }) => ({
@@ -87,16 +87,16 @@ const WelcomeText = styled("span")(({ theme }) => ({
   color: theme.palette.primary.contrastText,
   fontSize: theme.typography.subtitle2.fontSize,
   opacity: 0.9,
-  transition: 'all 0.2s ease',
+  transition: "all 0.2s ease",
 }));
 
 const UserButton = styled(Button)(({ theme }) => ({
   color: theme.palette.primary.contrastText,
-  textTransform: 'none',
-  padding: '6px 12px',
-  borderRadius: '20px',
-  '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  textTransform: "none",
+  padding: "6px 12px",
+  borderRadius: "20px",
+  "&:hover": {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
 }));
 
@@ -105,26 +105,26 @@ const UserIcon = styled(PersonIcon)(({ theme }) => ({
 }));
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
-  '& .MuiPaper-root': {
+  "& .MuiPaper-root": {
     borderRadius: theme.shape.borderRadius.large,
-    marginTop: '8px',
+    marginTop: "8px",
     minWidth: 180,
     boxShadow: theme.customShadows.raised,
-    '& .MuiMenu-list': {
-      padding: '8px',
+    "& .MuiMenu-list": {
+      padding: "8px",
     },
-    '& .MuiMenuItem-root': {
+    "& .MuiMenuItem-root": {
       borderRadius: theme.shape.borderRadius.medium,
       fontSize: theme.typography.body2.fontSize,
       fontWeight: theme.typography.subtitle2.fontWeight,
-      padding: '10px 16px',
-      margin: '2px 0',
+      padding: "10px 16px",
+      margin: "2px 0",
       transition: theme.transitions.quick,
-      '&:hover': {
-        backgroundColor: theme.palette.primary.main + '10',
+      "&:hover": {
+        backgroundColor: theme.palette.primary.main + "10",
       },
-      '&:active': {
-        backgroundColor: theme.palette.primary.main + '20',
+      "&:active": {
+        backgroundColor: theme.palette.primary.main + "20",
       },
     },
   },
@@ -171,6 +171,10 @@ function TopNavBar({ onLoginClick }) {
     setIsChangePasswordOpen(true);
   };
 
+  const handleMFASettings = () => {
+    handleUserMenuClose();
+    navigate("/mfa");
+  };
   const open = Boolean(anchorEl);
 
   return (
@@ -189,9 +193,9 @@ function TopNavBar({ onLoginClick }) {
               </NavButton>
               <UserButton
                 id="user-menu-button"
-                aria-controls={open ? 'user-menu' : undefined}
+                aria-controls={open ? "user-menu" : undefined}
                 aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
+                aria-expanded={open ? "true" : undefined}
                 onClick={handleUserMenuClick}
                 startIcon={<UserIcon />}
               >
@@ -203,10 +207,13 @@ function TopNavBar({ onLoginClick }) {
                 open={open}
                 onClose={handleUserMenuClose}
                 MenuListProps={{
-                  'aria-labelledby': 'user-menu-button',
+                  "aria-labelledby": "user-menu-button",
                 }}
               >
-                <MenuItem onClick={handleChangePassword}>Change Password</MenuItem>
+                <MenuItem onClick={handleChangePassword}>
+                  Change Password
+                </MenuItem>
+                <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </StyledMenu>
             </>

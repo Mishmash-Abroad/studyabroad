@@ -34,11 +34,28 @@ jobs:
             git checkout main  # Switch to main branch
             git reset --hard origin/main  # Force sync to remote main branch
             git pull origin main
+
+            
+            # setup sentry token
+            cat <<EOF > ./mishmash/frontend/.sentryclirc
+            [auth]
+            token=${{ secrets.SENTRY_AUTH_TOKEN }}
+            EOF
+            
+            
+            # Create .env file with all secret values.
+            cat <<EOF > .env
+
+
+            EOF
+
+
             docker compose -f docker-compose.dev.yml down
             docker volume rm $(docker volume ls -q)
             docker compose -f docker-compose.dev.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps
+    
 
       - name: Discord success notification
         if: success()
