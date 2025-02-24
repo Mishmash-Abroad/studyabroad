@@ -226,18 +226,6 @@ const LoginModal = ({ onClose }) => {
               Login with Duke SSO
             </FormButton>
 
-            <FormButton
-            type="button"
-            onClick={() => {
-              try {
-                throw new Error("This is your first error!");
-              } catch (err) {
-                Sentry.captureException(err);
-              }
-            }}
-          >
-            Break the world
-          </FormButton>
 
             <FormButton
               type="button"
