@@ -17,7 +17,6 @@ import AdminAppView from "./components/AdminAppView";
 import MFAOverview from "./mfa/MFAOverview";
 import ActivateTOTP from "./mfa/ActivateTOTP";
 import DeactivateTOTP from "./mfa/DeactivateTOTP";
-import MFALogin from "./mfa/MFAModal";
 
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
