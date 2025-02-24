@@ -46,8 +46,7 @@ jobs:
             # Create .env file with all secret values.
             cat <<EOF > .env
             DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-
-
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
             EOF
 
 
