@@ -47,6 +47,7 @@ jobs:
             cat <<EOF > .env
             DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
+            DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
             EOF
 
 
