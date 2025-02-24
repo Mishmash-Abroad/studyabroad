@@ -10,6 +10,7 @@
  * - Application status display
  * - Links to application details
  * - Re-apply functionality for withdrawn/canceled applications
+ * - Document status tracking and display
  */
 
 import React, { useState, useEffect } from "react";
@@ -24,10 +25,14 @@ import {
   TableSortLabel,
   Collapse,
   Box,
+  Typography,
+  Grid,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
+import DocumentStatusDisplay from "./DocumentStatusDisplay";
+import DeadlineIndicator from "./DeadlineIndicator";
 
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
@@ -128,6 +133,24 @@ const DetailRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
+const DetailBox = styled(Box)(({ theme }) => ({
+  margin: theme.spacing(2),
+  padding: theme.spacing(2),
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius.medium,
+  boxShadow: theme.customShadows.z1,
+}));
+
+const DeadlineBox = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+  '& .MuiBox-root': {  // Target DeadlineIndicator's root component
+    transform: 'scale(0.9)',
+    transformOrigin: 'left center',
+  }
+}));
+
 const LoadingMessage = styled("div")(({ theme }) => ({
   padding: "40px",
   textAlign: "center",
@@ -159,17 +182,30 @@ const MyProgramsTable = () => {
         // First get all programs
         const programsResponse = await axiosInstance.get("/api/programs/");
 
-        // Then get application status for each program
+        // Then get application status and documents for each program
         const programsWithStatus = await Promise.all(
           programsResponse.data.map(async (program) => {
             try {
+              // First get the application status which includes the application_id
               const statusResponse = await axiosInstance.get(
                 `/api/programs/${program.id}/application_status/`
               );
+
+              // Only fetch documents if there's an application
+              let documents = [];
+              if (statusResponse.data.application_id) {
+                const documentsResponse = await axiosInstance.get(
+                  `/api/documents/?application=${statusResponse.data.application_id}`
+                );
+                documents = documentsResponse.data;
+              }
+
               return {
                 id: program.id,
                 program: program,
+                application_id: statusResponse.data.application_id,
                 status: statusResponse.data.status,
+                documents: documents,
               };
             } catch (error) {
               console.error("Error fetching status:", error);
@@ -199,7 +235,7 @@ const MyProgramsTable = () => {
     };
 
     fetchApplications();
-  }, []);
+  }, [user.id]);
 
   // Handle sort requests
   const handleRequestSort = (property) => {
@@ -241,6 +277,10 @@ const MyProgramsTable = () => {
       // Sort by concatenated faculty names for faculty_leads
       valueA = a.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
       valueB = b.program.faculty_leads.map((faculty) => faculty.display_name).join(", ");
+    } else if (orderBy === "documents") {
+      // Sort by number of submitted documents
+      valueA = a.documents?.length || 0;
+      valueB = b.documents?.length || 0;
     } else {
       valueA = a[orderBy];
       valueB = b[orderBy];
@@ -310,6 +350,7 @@ const MyProgramsTable = () => {
     { id: "start_date", label: "Program Start", sortable: true },
     { id: "end_date", label: "Program End", sortable: true },
     { id: "status", label: "Application Status", sortable: true },
+    { id: "documents", label: "Documents", sortable: true },
   ];
 
   // Format date for display
@@ -327,6 +368,72 @@ const MyProgramsTable = () => {
     } else {
       setExpandedRow(applicationId);
     }
+  };
+
+  const renderExpandedRow = (application) => {
+    return (
+      <DetailRow>
+        <TableCell colSpan={8}>
+          <Collapse in={expandedRow === application.id}>
+            <DetailBox>
+              <DeadlineBox>
+                <DeadlineIndicator 
+                  deadline={application.program.application_deadline} 
+                  type="application"
+                  expanded={true}
+                />
+                <DeadlineIndicator 
+                  deadline={application.program.essential_document_deadline} 
+                  type="document"
+                  expanded={true}
+                />
+              </DeadlineBox>
+              <Box sx={{ margin: 2 }}>
+                <Box sx={{ marginBottom: 2 }}>
+                  <DocumentStatusDisplay 
+                    documents={application.documents || []} 
+                    application_id={application.application_id}
+                  />
+                </Box>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: "16px",
+                    borderTop: "1px solid rgba(224, 224, 224, 1)",
+                    paddingTop: "16px"
+                  }}
+                >
+                  <ApplicationButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/apply/${application.program.id}`);
+                    }}
+                  >
+                    View Application Details
+                  </ApplicationButton>
+                  {["withdrawn", "canceled"].includes(
+                    application.status.toLowerCase()
+                  ) &&
+                    isProgramOpen(application.program) && (
+                      <ApplicationButton
+                        variant="success"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/apply/${application.program.id}`);
+                        }}
+                      >
+                        Re-apply Now
+                      </ApplicationButton>
+                    )}
+                </div>
+              </Box>
+            </DetailBox>
+          </Collapse>
+        </TableCell>
+      </DetailRow>
+    );
   };
 
   if (loading) {
@@ -395,45 +502,13 @@ const MyProgramsTable = () => {
                 <StatusCell status={application.status}>
                   <span className="status-badge">{application.status}</span>
                 </StatusCell>
+                <StyledTableCell>
+                  <span className="status-badge">
+                    {(application.documents?.length || 0)}/4 Documents
+                  </span>
+                </StyledTableCell>
               </TableRow>
-              <DetailRow>
-                <TableCell colSpan={7}>
-                  <Collapse in={expandedRow === application.id}>
-                    <Box sx={{ margin: 2 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <ApplicationButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/apply/${application.program.id}`);
-                          }}
-                        >
-                          View Application Details
-                        </ApplicationButton>
-                        {["withdrawn", "canceled"].includes(
-                          application.status.toLowerCase()
-                        ) &&
-                          isProgramOpen(application.program) && (
-                            <ApplicationButton
-                              variant="success"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/apply/${application.program.id}`);
-                              }}
-                            >
-                              Re-apply Now
-                            </ApplicationButton>
-                          )}
-                      </div>
-                    </Box>
-                  </Collapse>
-                </TableCell>
-              </DetailRow>
+              {renderExpandedRow(application)}
             </React.Fragment>
           ))}
         </TableBody>

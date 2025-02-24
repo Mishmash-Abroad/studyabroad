@@ -15,7 +15,7 @@ asgiref==3.8.1
 # MySQL: Primary database
 # SQLParse: SQL query parsing and formatting
 mysqlclient==2.2.1
-PyMySQL==1.1.0
+PyMySQL==1.1.1
 sqlparse==0.5.3
 
 # Security and Configuration
@@ -26,3 +26,6 @@ django-cors-headers==4.3.1
 
 # Time and Internationalization
 tzdata==2024.2
+
+# User Authentication and Authorization
+django-allauth[socialaccount]

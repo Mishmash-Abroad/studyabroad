@@ -22,7 +22,10 @@ from .settings import MEDIA_URL, MEDIA_ROOT
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('api/accounts/', include('allauth.urls')),
     path('api/', include('api.urls')),
+    path('accounts/', include('allauth.urls')),
+
 ]
 
 urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)

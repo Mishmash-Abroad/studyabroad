@@ -1,0 +1,48 @@
+name: Health Check and Discord Notification
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # Runs every 5 minutes (adjust as needed)
+  workflow_dispatch:       # Allows manual triggering
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Health Endpoints
+        id: check_health
+        run: |
+          # Define the URLs to check
+          URLS=(
+            "https://dev-mishmash.colab.duke.edu/"
+            "https://test-mishmash.colab.duke.edu/"
+            "https://mishmash.colab.duke.edu/"
+          )
+          
+          FAILED_URLS=""
+          for URL in "${URLS[@]}"; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            echo "Checking $URL: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" -ne 200 ]; then
+              FAILED_URLS+="\n$URL returned HTTP $HTTP_CODE"
+            fi
+          done
+          
+          if [ -n "$FAILED_URLS" ]; then
+            echo "Some endpoints failed:$FAILED_URLS"
+          else
+            echo "All endpoints passed the health check."
+          fi
+          
+          # Always set the output (empty if all passed)
+          echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
+
+      - name: Send Discord Notification on Failure
+        if: steps.check_health.outputs.failed_urls != ''
+        run: |
+          WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL_HEALTHCHECK }}"
+          FAILED="${{ steps.check_health.outputs.failed_urls }}"
+          MESSAGE=":warning: Health check failed for the following endpoint(s): $FAILED"
+          PAYLOAD="{\"content\": \"$MESSAGE\"}"
+          echo "Sending Discord notification..."
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK_URL"

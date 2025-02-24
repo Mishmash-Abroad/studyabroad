@@ -9,64 +9,90 @@ import {
   Tabs,
   Tab,
   Paper,
+  Alert,
 } from "@mui/material";
 import axiosInstance from "../utils/axios";
 import PDFUploadForm from "../components/PDFUploadForm";
 
 // -------------------- COMPONENT LOGIC --------------------
-const EssentialDocumentFormSubmission = ({ user_id, program_id }) => {
+const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) => {
+  // Show message if application hasn't been created yet
+  if (!application_id) {
+    return (
+      <Alert severity="info" sx={{ mb: 3 }}>
+        Please submit your application first before uploading documents. 
+        Once your application is submitted, you'll be able to upload the required documents here.
+      </Alert>
+    );
+  }
+
+  const DocumentSection = styled(Box)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+  }));
+
+  const DocumentDescription = styled(Typography)(({ theme }) => ({
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(3),
+    color: theme.palette.text.secondary,
+  }));
+
   return (
     <>
-      <PDFUploadForm
-        pdf_name={"Acknowledgement of the code of conduct"}
-        user_id={user_id}
-        program_id={program_id}
-        doc_type={"Acknowledgement of the code of conduct"}
-      />
-      <Typography>
-        Acknowledgement of the code of conduct: A document reviewing the code of
-        conduct, and attesting to student's understanding and commitment to
-        abide by same. The student must sign this to participate.
-      </Typography>
+      <DocumentSection>
+        <PDFUploadForm
+          pdf_name={"Acknowledgement of the code of conduct"}
+          application_id={application_id}
+          doc_type={"Acknowledgement of the code of conduct"}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are being worked out
+        />
+        <DocumentDescription>
+          Acknowledgement of the code of conduct: A document reviewing the code of
+          conduct, and attesting to student's understanding and commitment to
+          abide by same. The student must sign this to participate.
+        </DocumentDescription>
+      </DocumentSection>
 
-      <PDFUploadForm
-        pdf_name={"Housing questionnaire"}
-        user_id={user_id}
-        program_id={program_id}
-        doc_type={"Housing questionnaire"}
-      />
+      <DocumentSection>
+        <PDFUploadForm
+          pdf_name={"Housing questionnaire"}
+          application_id={application_id}
+          doc_type={"Housing questionnaire"}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are being worked out
+        />
+        <DocumentDescription>
+          Housing questionnaire: A set of questions about housing preferences to
+          be reviewed by the faculty lead(s) to help with assigning housing. The
+          student must fill this out.
+        </DocumentDescription>
+      </DocumentSection>
 
-      <Typography>
-        Housing questionnaire: A set of questions about housing preferences to
-        be reviewed by the faculty lead(s) to help with assigning housing. The
-        student must fill this out.
-      </Typography>
+      <DocumentSection>
+        <PDFUploadForm
+          pdf_name={"Medical/health history and immunization records"}
+          application_id={application_id}
+          doc_type={"Medical/health history and immunization records"}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are being worked out
+        />
+        <DocumentDescription>
+          Medical/health history and immunization records: A high-level summary of
+          health status and attestation regarding immunizations. This document in
+          particular is covered by HIPAA (definition 11). The student must fill
+          out and sign this.
+        </DocumentDescription>
+      </DocumentSection>
 
-      <PDFUploadForm
-        pdf_name={"Medical/health history and immunization records"}
-        user_id={user_id}
-        program_id={program_id}
-        doc_type={"Medical/health history and immunization records"}
-      />
-
-      <Typography>
-        Medical/health history and immunization records: A high-level summary of
-        health status and attestation regarding immunizations. This document in
-        particular is covered by HIPAA (definition 11). The student must fill
-        out and sign this.
-      </Typography>
-
-      <PDFUploadForm
-        pdf_name={"Assumption of risk form"}
-        user_id={user_id}
-        program_id={program_id}
-        doc_type={"Assumption of risk form"}
-      />
-
-      <Typography>
-        Assumption of risk form: A document waiving HCC's liability for student
-        participation in the program. The student must sign this to participate.
-      </Typography>
+      <DocumentSection>
+        <PDFUploadForm
+          pdf_name={"Assumption of risk form"}
+          application_id={application_id}
+          doc_type={"Assumption of risk form"}
+          // isReadOnly={isReadOnly} # Disabling while read only timelines are bing worked out
+        />
+        <DocumentDescription>
+          Assumption of risk form: A document waiving HCC's liability for student
+          participation in the program. The student must sign this to participate.
+        </DocumentDescription>
+      </DocumentSection>
     </>
   );
 };

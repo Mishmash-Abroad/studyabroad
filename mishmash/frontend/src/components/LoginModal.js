@@ -136,6 +136,13 @@ const LoginModal = ({ onClose }) => {
     }
   };
 
+  const handleDukeSSOLogin = async (e) => {
+    // Redirect to Django allauth's Duke login endpoint.
+    // By default, this might be at "/accounts/duke/login/".
+    window.location.href = "/api/accounts/oidc/duke-oidc/login/";
+  };
+  
+
   const handleSubmitSignUp = async (e) => {
     e.preventDefault();
     setError("");
@@ -161,6 +168,7 @@ const LoginModal = ({ onClose }) => {
         email,
         display_name: displayName,
       });
+      console.log(response);
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
@@ -204,6 +212,9 @@ const LoginModal = ({ onClose }) => {
             <FormButton type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </FormButton>
+<FormButton type="button" onClick={handleDukeSSOLogin}>
+  Login with Duke SSO
+</FormButton>
 
             <FormButton 
               type="button"
