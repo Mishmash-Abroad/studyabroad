@@ -21,9 +21,10 @@
  */
 
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
-import axiosInstance from "../utils/axios";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../utils/axios";
+import SessionExpiredDialog from "../components/SessionExpiredDialog";
+import { SESSION_TIMEOUTS } from "../utils/constants";
 
 // Create context for authentication state
 const AuthContext = createContext(null);
@@ -41,11 +42,12 @@ export const AuthProvider = ({ children }) => {
   // Initialize user state from localStorage if available
   const [user, setUser] = useState(null);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [expirationReason, setExpirationReason] = useState(null);
   const navigate = useNavigate();
 
-  // Timers (in ms)
-  const INACTIVITY_TIMEOUT = 5 * 1000;  // 5 seconds for testing
-  const ABSOLUTE_TIMEOUT = 10 * 1000; // 10 seconds for testing
+  // Use timeout values from constants
+  const INACTIVITY_TIMEOUT = SESSION_TIMEOUTS.INACTIVITY;
+  const ABSOLUTE_TIMEOUT = SESSION_TIMEOUTS.ABSOLUTE;
 
   // Initialize user data on mount
   useEffect(() => {
@@ -82,8 +84,12 @@ export const AuthProvider = ({ children }) => {
       const lastActivity = parseInt(localStorage.getItem("lastActivity"), 10);
       const loginTime = parseInt(localStorage.getItem("loginTime"), 10);
 
-      // Check both timeout conditions
-      if (now - lastActivity > INACTIVITY_TIMEOUT || now - loginTime > ABSOLUTE_TIMEOUT) {
+      // Check timeouts and set appropriate reason
+      if (now - lastActivity > INACTIVITY_TIMEOUT) {
+        setExpirationReason('inactivity');
+        setSessionExpired(true);
+      } else if (now - loginTime > ABSOLUTE_TIMEOUT) {
+        setExpirationReason('absolute');
         setSessionExpired(true);
       }
     }, 1000); // Check every second for testing purposes
@@ -142,6 +148,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setSessionExpired(false);
+    setExpirationReason(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("loginTime");
@@ -149,30 +156,19 @@ export const AuthProvider = ({ children }) => {
     navigate("/login");
   };
 
-  const handleSessionExpired = () => {
-    logout();
+  const handleSessionExpiredClose = () => {
+    setSessionExpired(false);
+    setExpirationReason(null);
   };
 
   // Provide authentication context to child components
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
-      {/* Session Expired Dialog */}
-      <Dialog 
-        open={sessionExpired} 
-        onClose={handleSessionExpired}
-        disableEscapeKeyDown
-        disableEnforceFocus
-      >
-        <DialogTitle>Session Expired</DialogTitle>
-        <DialogContent>
-          Your session has expired due to inactivity. Please log in again to continue.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSessionExpired} autoFocus>
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <SessionExpiredDialog
+        open={sessionExpired}
+        reason={expirationReason}
+        onClose={handleSessionExpiredClose}
+      />
       {children}
     </AuthContext.Provider>
   );

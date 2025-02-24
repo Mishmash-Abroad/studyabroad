@@ -33,3 +33,11 @@ export const SEMESTERS = [
     "Fall",
     "Spring",
 ]
+
+// Session timeout settings (in milliseconds)
+export const SESSION_TIMEOUTS = {
+  INACTIVITY: 15 * 60 * 1000,  // 15 minutes
+  ABSOLUTE: 24 * 60 * 60 * 1000,   // 24 hours
+  INACTIVITY_TEXT: '15 minutes',
+  ABSOLUTE_TEXT: '24 hours'
+};
