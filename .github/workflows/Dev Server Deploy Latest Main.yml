@@ -35,9 +35,18 @@ jobs:
             git reset --hard origin/main  # Force sync to remote main branch
             git pull origin main
 
+            
+            # setup sentry token
+            cat <<EOF > ./mishmash/frontend/.sentryclirc
+            [auth]
+            token=${{ secrets.SENTRY_AUTH_TOKEN }}
+            EOF
+            
+            
             # Create .env file with all secret values.
             cat <<EOF > .env
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
+
+
             EOF
 
 
