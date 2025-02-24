@@ -37,7 +37,7 @@ jobs:
 
             # Create .env file with all secret values.
             cat <<EOF > .env
-            SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
             EOF
 
 
@@ -46,8 +46,7 @@ jobs:
             docker compose -f docker-compose.dev.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    
 
       - name: Discord success notification
         if: success()
