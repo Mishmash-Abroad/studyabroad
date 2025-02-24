@@ -153,7 +153,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 # OAUTH AUTHEENTICATION
 # ==================
-
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 AUTHENTICATION_BACKENDS = [
     
     # Needed to login by username in Django admin, regardless of `allauth`
