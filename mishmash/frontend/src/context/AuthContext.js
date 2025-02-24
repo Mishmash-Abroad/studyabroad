@@ -12,7 +12,7 @@
  * - Login/logout functionality
  * - User data management
  * - Session timeout functionality
- * 
+ *
  * Used by:
  * - App.js for global auth state
  * - Login components
@@ -41,23 +41,21 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   // Initialize user state from localStorage if available
   const [user, setUser] = useState(() => {
-  const [sessionExpired, setSessionExpired] = useState(false);
-  const [expirationReason, setExpirationReason] = useState(null);
-  const navigate = useNavigate();
-  
-
     const savedUser = localStorage.getItem("user");
     return savedUser
       ? JSON.parse(savedUser).user ?? JSON.parse(savedUser)
       : null;
   });
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [expirationReason, setExpirationReason] = useState(null);
+  const navigate = useNavigate();
 
   // Initialize MFA verification state from localStorage if available
   const [isMFAVerified, setIsMFAVerified] = useState(() => {
     const savedAuthState = localStorage.getItem("authState");
     return savedAuthState ? JSON.parse(savedAuthState).isMFAVerified : false;
   });
-  
+
   // Use timeout values from constants
   const INACTIVITY_TIMEOUT = SESSION_TIMEOUTS.INACTIVITY;
   const ABSOLUTE_TIMEOUT = SESSION_TIMEOUTS.ABSOLUTE;
@@ -79,7 +77,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("loginTime", Date.now().toString());
     }
     localStorage.setItem("lastActivity", Date.now().toString());
-    
+
     // Event listener to reset lastActivity
     const resetActivityTimer = () => {
       localStorage.setItem("lastActivity", Date.now().toString());
@@ -99,10 +97,10 @@ export const AuthProvider = ({ children }) => {
 
       // Check timeouts and set appropriate reason
       if (now - lastActivity > INACTIVITY_TIMEOUT) {
-        setExpirationReason('inactivity');
+        setExpirationReason("inactivity");
         setSessionExpired(true);
       } else if (now - loginTime > ABSOLUTE_TIMEOUT) {
-        setExpirationReason('absolute');
+        setExpirationReason("absolute");
         setSessionExpired(true);
       }
     }, 1000); // Check every second for testing purposes
@@ -149,13 +147,14 @@ export const AuthProvider = ({ children }) => {
    * @param {Object} userData - User information from API
    * @param {string} token - Authentication token
    */
-  const login = async (userData, token) => {
-    localStorage.setItem("token", token);
+  const login = async (userData, token, isMFAVerified = false) => {
+    setUser(userData);
+    setIsMFAVerified(isMFAVerified);
     localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", token);
     localStorage.setItem("authState", JSON.stringify({ isMFAVerified }));
     localStorage.setItem("loginTime", Date.now().toString());
     localStorage.setItem("lastActivity", Date.now().toString());
-    setUser(userData);
   };
 
   /**
@@ -165,11 +164,11 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setIsMFAVerified(false);
+    setSessionExpired(false);
+    setExpirationReason(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     localStorage.removeItem("authState");
-    setSessionExpired(false);
-    setExpirationReason(null);
     localStorage.removeItem("loginTime");
     localStorage.removeItem("lastActivity");
     navigate("/login");
@@ -182,8 +181,7 @@ export const AuthProvider = ({ children }) => {
   const verifyMFA = () => {
     setIsMFAVerified(true);
     localStorage.setItem("authState", JSON.stringify({ isMFAVerified: true }));
-  }
-
+  };
 
   const handleSessionExpiredClose = () => {
     setSessionExpired(false);
@@ -192,7 +190,9 @@ export const AuthProvider = ({ children }) => {
 
   // Provide authentication context to child components
   return (
-    <AuthContext.Provider value={{ user, isMFAVerified, login, logout, verifyMFA }}>
+    <AuthContext.Provider
+      value={{ user, isMFAVerified, login, logout, verifyMFA }}
+    >
       <SessionExpiredDialog
         open={sessionExpired}
         reason={expirationReason}
