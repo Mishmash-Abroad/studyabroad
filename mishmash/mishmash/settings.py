@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',       # Session framework
     'django.contrib.messages',       # Messaging framework
     'django.contrib.staticfiles',    # Static file management
+    'django_otp',
+    'django_otp.plugins.otp_totp',
     
     # Third-party apps
     'rest_framework',               # REST API framework
@@ -76,7 +78,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.openid_connect',
-
+    "allauth.mfa",
     
     # Local apps
     'api',                         # Main application API
@@ -105,7 +107,7 @@ ROOT_URLCONF = "mishmash.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -151,7 +153,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 # OAUTH AUTHEENTICATION
 # ==================
-
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 AUTHENTICATION_BACKENDS = [
     
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -234,3 +236,28 @@ CORS_ALLOWED_ORIGINS = [
 # DEFAULT PRIMARY KEY FIELD TYPE
 # ===============================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+MFA_SUPPORTED_TYPES = ["totp"]
+MFA_PASSKEY_LOGIN_ENABLED = True
+MFA_PASSKEY_SIGNUP_ENABLED = True
+
+
+# Sentry Configuration
+import sentry_sdk
+
+sentry_sdk.init(
+    dsn="https://dfa2f3f4b7b087e327da924f83723e59@o4508874878812161.ingest.us.sentry.io/4508874881826816",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    _experiments={
+        # Set continuous_profiling_auto_start to True
+        # to automatically start the profiler on when
+        # possible.
+        "continuous_profiling_auto_start": True,
+    },
+)
