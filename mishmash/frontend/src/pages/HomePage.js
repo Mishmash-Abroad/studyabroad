@@ -211,7 +211,7 @@ const HomePage = () => {
               : 'Transform your education through global experiences with HCC Study Abroad'}
           </HeroText>
           {!user && (
-            <HeroButton onClick={() => setShowLoginModal(true)}>
+            <HeroButton onClick={() => {throw new Error("This is your first error!");}}>
               Get Started
             </HeroButton>
           )}
