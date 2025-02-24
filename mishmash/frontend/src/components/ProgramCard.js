@@ -220,15 +220,21 @@ const ProgramCard = ({ program, onExpand }) => {
   };
 
   // Render the action button.
-  const renderActionButton = () => (
-    <ApplicationButton
-      onClick={getButtonHandler()}
-      disabled={user?.is_admin}
-      variant={user?.is_admin ? 'disabled' : 'success'}
-    >
-      {getButtonText()}
-    </ApplicationButton>
-  );
+  const renderActionButton = () => {
+    const currentProgramStatus = getProgramStatus();
+    const isDisabledButton = currentProgramStatus === PROGRAM_STATUS.OPENING_SOON ||
+                             currentProgramStatus === PROGRAM_STATUS.CLOSED ||
+                             user?.is_admin;
+    return (
+      <ApplicationButton
+        onClick={!isDisabledButton ? getButtonHandler() : undefined}
+        disabled={isDisabledButton}
+        variant={isDisabledButton ? 'disabled' : 'success'}
+      >
+        {getButtonText()}
+      </ApplicationButton>
+    );
+  };
 
   return (
     <StyledProgramCard
