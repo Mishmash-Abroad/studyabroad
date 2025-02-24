@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }) => {
   });
   const [sessionExpired, setSessionExpired] = useState(false);
   const [expirationReason, setExpirationReason] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
 
   // Initialize MFA verification state from localStorage if available
@@ -66,6 +67,7 @@ export const AuthProvider = ({ children }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    setAuthLoading(false);
   }, []); // Only run once on mount
 
   // Session timeout management
@@ -191,12 +193,19 @@ export const AuthProvider = ({ children }) => {
   // Provide authentication context to child components
   return (
     <AuthContext.Provider
-      value={{ user, isMFAVerified, login, logout, verifyMFA }}
+      value={{
+        user,
+        isMFAVerified,
+        authLoading,
+        login,
+        logout,
+        verifyMFA,
+      }}
     >
       <SessionExpiredDialog
         open={sessionExpired}
         reason={expirationReason}
-        onClose={handleSessionExpiredClose}
+        onClose={() => setSessionExpired(false)}
       />
       {children}
     </AuthContext.Provider>
@@ -209,6 +218,7 @@ export const AuthProvider = ({ children }) => {
  * @returns {Object} Authentication context value
  * @property {Object} user - Current user data or null if not authenticated
  * @property {boolean} isMFAVerified - Whether MFA is verified
+ * @property {boolean} authLoading - Whether authentication is loading
  * @property {Function} login - Function to handle user login
  * @property {Function} logout - Function to handle user logout
  * @property {Function} verifyMFA - Function to mark MFA as verified
