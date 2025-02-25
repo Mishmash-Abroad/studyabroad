@@ -166,14 +166,13 @@ const AdminAppView = () => {
                   {question.text}
                 </Typography>
 
-                {/* Response (Allow multiline) */}
                 <Typography
                   variant="body1"
                   sx={{
                     padding: "12px",
                     backgroundColor: "#f5f5f5",
                     borderRadius: "8px",
-                    whiteSpace: "pre-line", // ✅ Preserves newlines in responses
+                    whiteSpace: "pre-line",
                   }}
                 >
                   {response ? response.response : "No response provided"}
