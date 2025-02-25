@@ -40,7 +40,7 @@ jobs:
             
             #put secret key in on the system and oidc secret for django settings.py
             export SECRET_KEY=${{ secrets.SECRET_KEY }} 
-
+            export OIDC_CLIENT_SECRET=${{ secrets.OIDC_CLIENT_SECRET }}
 
             # Create .env file with all secret values.
             cat <<EOF > .env

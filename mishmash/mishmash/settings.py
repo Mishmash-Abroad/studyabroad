@@ -31,6 +31,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ================
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
+OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Reads from environment variable, defaults to False for security
@@ -40,7 +42,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Format: comma-separated list (e.g., "localhost,example.com")
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
-OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET')
 
 #should use default site
 SITE_ID = 1
