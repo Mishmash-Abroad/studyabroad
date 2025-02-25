@@ -8,6 +8,7 @@ import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
 import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsViewer from "../components/AnnouncementsViewer";
+import UserManagement from "../components/UserManagement";
 import Typography from '@mui/material/Typography';
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
@@ -15,6 +16,7 @@ const ADMIN_ROUTES = [
   { path: 'admin-overview', label: 'Overview' },
   { path: 'admin-programs', label: 'Program Management' },
   { path: 'browse', label: 'Browse Programs' },
+  { path: 'user-management', label: 'User Management' },
 ];
 
 const STUDENT_ROUTES = [
@@ -192,6 +194,7 @@ const Dashboard = () => {
                 <Route path="admin-programs" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
+                <Route path="user-management" element={<UserManagement />} />
               </>
             )}
 
