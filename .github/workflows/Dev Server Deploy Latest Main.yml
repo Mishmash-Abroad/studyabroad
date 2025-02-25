@@ -3,13 +3,11 @@ name: DEV - Main Branch Mishmash Deployment
 on:
   push:
     branches: [main]
-
   workflow_dispatch:
-    
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 
 jobs:
   deploy:
@@ -20,7 +18,6 @@ jobs:
     steps:
       - name: Set deployment timestamp
         run: echo "DEPLOYMENT_TIME=$(date -u)" >> $GITHUB_ENV
-
 
       - name: Connect to server and deploy
         uses: appleboy/ssh-action@master
@@ -34,9 +31,8 @@ jobs:
             git checkout main  # Switch to main branch
             git reset --hard origin/main  # Force sync to remote main branch
             git pull origin main
-
             
-            # setup sentry token
+            # Setup sentry token
             cat <<EOF > ./mishmash/frontend/.sentryclirc
             [auth]
             token=${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -46,22 +42,52 @@ jobs:
             export SECRET_KEY=${{ secrets.SECRET_KEY }} 
 
 
+
             # Create .env file with all secret values.
             cat <<EOF > .env
             DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
             DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
             EOF
 
-
             docker compose -f docker-compose.dev.yml down
             docker volume rm $(docker volume ls -q)
             docker compose -f docker-compose.dev.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps
-    
 
-      - name: Discord success notification
-        if: success()
+      - name: Check Health Endpoints
+        id: check_health
+        run: |
+          # Define the URLs to check
+          URLS=(
+            "https://dev-mishmash.colab.duke.edu/"
+            "https://test-mishmash.colab.duke.edu/"
+            "https://mishmash.colab.duke.edu/"
+          )
+          
+          # Wait a few seconds for containers to be fully up
+          sleep 5
+          
+          FAILED_URLS=""
+          for URL in "${URLS[@]}"; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            echo "Checking $URL: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" -ne 200 ]; then
+              FAILED_URLS+="\n$URL returned HTTP $HTTP_CODE"
+            fi
+          done
+          
+          if [ -n "$FAILED_URLS" ]; then
+            echo "Some endpoints failed:$FAILED_URLS"
+          else
+            echo "All endpoints passed the health check."
+          fi
+          
+          # Set the output (empty if all passed)
+          echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
+
+      - name: Discord Success Notification
+        if: steps.check_health.outputs.failed_urls == ''
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -69,11 +95,11 @@ jobs:
           description: "Containers started successfully at ${{ env.DEPLOYMENT_TIME }}"
           color: 0x00ff00  # Green color
 
-      - name: Discord failure notification
-        if: failure()
+      - name: Discord Failure Notification
+        if: steps.check_health.outputs.failed_urls != ''
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "DEV - Deployment Failed"
-          description: "Container startup failed at ${{ env.DEPLOYMENT_TIME }}"
+          title: "One or more endpoints failed the health check"
+          description: "Health check failed at ${{ env.DEPLOYMENT_TIME }}. Details: ${{ steps.check_health.outputs.failed_urls }}"
           color: 0xff0000  # Red color
