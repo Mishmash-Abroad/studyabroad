@@ -16,7 +16,7 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import {ALL_ADMIN_EDITABLE_STATUSES} from '../utils/constants'
-
+import DocumentReview from "./DocumentReview";
 
 const AdminAppView = () => {
   const { id } = useParams();
@@ -152,6 +152,30 @@ const AdminAppView = () => {
         <Typography><strong>GPA:</strong> {application.gpa}</Typography>
         <Typography><strong>Major:</strong> {application.major}</Typography>
       </Box>
+
+      {/* Status Selection */}
+      <Box sx={{ marginBottom: 3 }}>
+        <Typography variant="h6">Application Status</Typography>
+        <TextField
+          select
+          value={status}
+          onChange={(e) => handleStatusChange(e.target.value)}
+          fullWidth
+          variant="outlined"
+          sx={{ marginTop: 1 }}
+        >
+          {ALL_ADMIN_EDITABLE_STATUSES.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+          {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
+            <MenuItem key="current" value={status} disabled>
+              {status}
+            </MenuItem>
+          )}
+        </TextField>
+      </Box>
   
       {/* Application Responses */}
       <Box sx={{ marginBottom: 3 }}>
@@ -183,6 +207,9 @@ const AdminAppView = () => {
         </Paper>
       </Box>
 
+      {/* Essential Documents Review */}
+      <DocumentReview application_id={id} />
+
       {/* Confidential Notes Section */}
       <Box sx={{ marginBottom: 3 }}>
         <Typography variant="h6">Confidential Notes</Typography>
@@ -204,7 +231,8 @@ const AdminAppView = () => {
                   color: "gray",
                 }}
               >
-                — {note.author_display}, {new Date(note.timestamp).toLocaleString()}
+                By {note.author_name} on{" "}
+                {new Date(note.timestamp).toLocaleString()}
               </Typography>
             </Paper>
           ))
@@ -214,52 +242,32 @@ const AdminAppView = () => {
           </Typography>
         )}
 
-        <TextField
-          fullWidth
-          label="Add a Confidential Note"
-          variant="outlined"
-          multiline
-          rows={3}
-          value={newNoteContent}
-          onChange={(e) => setNewNoteContent(e.target.value)}
-        />
-        <Button onClick={handleAddNote} variant="contained" color="primary" sx={{ marginTop: 2 }}>
-          Add Note
-        </Button>
-      </Box>
-  
-      {/* Status Dropdown - Now Appears After Responses */}
-      <Box sx={{ marginBottom: 3, maxWidth: 300 }}>
-        <Typography variant="h6">Application Status</Typography>
-        <TextField
-          select
-          fullWidth
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          variant="outlined"
-        >
-          {application.status === "Withdrawn" && (
-            <MenuItem value="Withdrawn">Withdrawn</MenuItem>
-          )}
-          {
-            ALL_ADMIN_EDITABLE_STATUSES.map((status) => {
-              return (
-                <MenuItem value={status}>{status}</MenuItem>
-              )
-            })
-          }
-        </TextField>
-      </Box>
-  
-      {/* Back Button */}
-      <Box sx={{ marginTop: 2 }}>
-        <Button variant="contained" color="primary" onClick={() => navigate(-1)}>
-          Back to Applicant Table
-        </Button>
+        {/* Add New Note */}
+        <Box sx={{ marginTop: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Add New Note
+          </Typography>
+          <TextField
+            multiline
+            rows={4}
+            value={newNoteContent}
+            onChange={(e) => setNewNoteContent(e.target.value)}
+            fullWidth
+            variant="outlined"
+            placeholder="Enter your note here..."
+            sx={{ marginBottom: 2 }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleAddNote}
+            disabled={!newNoteContent.trim()}
+          >
+            Add Note
+          </Button>
+        </Box>
       </Box>
     </Paper>
   );
-  
 };
 
 export default AdminAppView;

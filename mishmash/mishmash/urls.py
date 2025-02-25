@@ -20,9 +20,26 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from .settings import MEDIA_URL, MEDIA_ROOT
 
+
+#sentry testing - ignore or delete
+
+from django.urls import path
+
+def trigger_error(request):
+    division_by_zero = 1 / 0
+
+
+
+
+
+
 urlpatterns = [
+    path('api/sentry-debug/', trigger_error),
     path("admin/", admin.site.urls),
+    path('api/accounts/', include('allauth.urls')),
     path('api/', include('api.urls')),
+    path('accounts/', include('allauth.urls')),
+
 ]
 
 urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)

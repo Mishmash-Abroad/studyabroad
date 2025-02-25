@@ -6,7 +6,8 @@ from django.utils.timezone import now
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
-
+    is_mfa_enabled = models.BooleanField(default=False)
+    
     groups = models.ManyToManyField(
         "auth.Group",
         related_name="custom_user_set",  # Avoid conflict with 'auth.User.groups'
@@ -23,7 +24,8 @@ class User(AbstractUser):
 
 class Program(models.Model):
     title = models.CharField(max_length=80)
-    year_semester = models.CharField(max_length=20)
+    year = models.CharField(max_length=4)
+    semester = models.CharField(max_length=20)
     description = models.TextField(blank=True, default="No description provided.")
     faculty_leads = models.ManyToManyField('User', related_name='led_programs', limit_choices_to={'is_admin': True}, default=[1])
     application_open_date = models.DateField(null=True, blank=True)
@@ -31,6 +33,11 @@ class Program(models.Model):
     essential_document_deadline = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+
+    @property
+    def year_semester(self):
+        """Returns 'YYYY Semester' format."""
+        return f"{self.year} {self.semester}"
 
     def __str__(self):
         return self.title

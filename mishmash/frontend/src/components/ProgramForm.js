@@ -10,10 +10,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const [programData, setProgramData] = useState({
     title: '',
-    year_semester: '',
+    year: '',
+    semester: '',
     faculty_lead_ids: [],
     application_open_date: '',
     application_deadline: '',
+    essential_document_deadline: '',
     start_date: '',
     end_date: '',
     description: '',
@@ -25,10 +27,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     if (editingProgram) {
       setProgramData({
         title: editingProgram.title,
-        year_semester: editingProgram.year_semester,
+        year: editingProgram.year,
+        semester: editingProgram.semester,
         faculty_lead_ids: editingProgram.faculty_leads.map(faculty => faculty.id),
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
+        essential_document_deadline: editingProgram.essential_document_deadline,
         start_date: editingProgram.start_date,
         end_date: editingProgram.end_date,
         description: editingProgram.description,
@@ -101,10 +105,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           onChange={handleInputChange}
         />
         <TextField 
-          label="Year & Semester" 
-          name="year_semester" 
+          label="Year" 
+          name="year" 
           fullWidth 
-          value={programData.year_semester} 
+          value={programData.year} 
+          onChange={handleInputChange}
+        />
+        <TextField 
+          label="Semester" 
+          name="semester" 
+          fullWidth 
+          value={programData.semester} 
           onChange={handleInputChange}
         />
         <FacultyPicklist
@@ -136,6 +147,15 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           fullWidth
           InputLabelProps={{ shrink: true }}
           value={programData.application_deadline}
+          onChange={handleInputChange}
+        />
+        <TextField
+          label="Essential Document Deadline"
+          type="date"
+          name="essential_document_deadline"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          value={programData.essential_document_deadline}
           onChange={handleInputChange}
         />
         <TextField

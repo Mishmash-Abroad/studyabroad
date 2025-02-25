@@ -15,8 +15,12 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
-import {ALL_STATUSES} from '../utils/constants';
-import {ALL_ADMIN_EDITABLE_STATUSES} from '../utils/constants';
+import {
+  ALL_STATUSES,
+  ALL_ADMIN_EDITABLE_STATUSES,
+  STATUS,
+  getStatusLabel
+} from '../utils/constants';
 
 const ApplicantTable = ({ programId }) => {
   const navigate = useNavigate();
@@ -109,11 +113,9 @@ const ApplicantTable = ({ programId }) => {
         >
           <MenuItem value="">All</MenuItem>
           {
-            ALL_STATUSES.map((status) => {
-              return (
-                <MenuItem value={status}>{status}</MenuItem>
-              )
-            })
+            Object.values(STATUS).map((status) => (
+              <MenuItem key={status} value={status}>{getStatusLabel(status)}</MenuItem>
+            ))
           }
         </TextField>
       </Box>
@@ -160,7 +162,7 @@ const ApplicantTable = ({ programId }) => {
                   <TableCell>{applicant.date_of_birth}</TableCell>
                   <TableCell>{applicant.gpa}</TableCell>
                   <TableCell>{applicant.major}</TableCell>
-                  <TableCell>{applicant.status}</TableCell>
+                  <TableCell>{getStatusLabel(applicant.status)}</TableCell>
                   <TableCell>{new Date(applicant.applied_on).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Box sx={{ 
@@ -185,16 +187,16 @@ const ApplicantTable = ({ programId }) => {
                         onChange={(e) => handleStatusChange(e, applicant.id, applicant.status)}
                         onClick={(e) => e.stopPropagation()} // Prevent row click
                       >
-                        {applicant.status === 'Withdrawn' && (
-                          <MenuItem value="Withdrawn">Withdrawn</MenuItem>
+                        {ALL_ADMIN_EDITABLE_STATUSES.map((status, index) => (
+                          <MenuItem key={index} value={status}>
+                            {status}
+                          </MenuItem>
+                        ))}
+                        {!ALL_ADMIN_EDITABLE_STATUSES.includes(applicant.status) && (
+                          <MenuItem key="current" value={applicant.status} disabled>
+                            {applicant.status}
+                          </MenuItem>
                         )}
-                        {
-                          ALL_ADMIN_EDITABLE_STATUSES.map((status) => {
-                            return (
-                              <MenuItem value={status}>{status}</MenuItem>
-                            )
-                          })
-                        }
                       </TextField>
                     </Box>
                   </TableCell>
