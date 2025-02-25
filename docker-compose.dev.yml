@@ -27,12 +27,13 @@ services:
       - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
       - DATABASE_NAME=mishmash
       - DATABASE_USER=root
-      - DATABASE_PASSWORD=root
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
       - DJANGO_SUPERUSER_USERNAME=admin_django
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
-      - DJANGO_SUPERUSER_PASSWORD=mishmash
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -72,7 +73,7 @@ services:
       - mysql_data:/var/lib/mysql
     environment:
       - MYSQL_DATABASE=mishmash
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD}
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s

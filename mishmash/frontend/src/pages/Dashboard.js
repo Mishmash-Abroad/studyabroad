@@ -145,15 +145,15 @@ const Dashboard = () => {
   const routes = user?.is_admin ? ADMIN_ROUTES : STUDENT_ROUTES;
   // Handle default route
   React.useEffect(() => {
-    if (location.pathname === '/dashboard') {
-      const defaultPath = `/dashboard/${user?.is_admin ? 'admin-overview' : 'overview'}`;
+    // Only adjust the route if user is available
+    if (user && location.pathname === '/dashboard') {
+      const defaultPath = `/dashboard/${user.is_admin ? 'admin-overview' : 'overview'}`;
       // Replace the current history entry instead of adding a new one
       window.history.replaceState(null, '', defaultPath);
       // Force a re-render to show the correct content
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
-  }, [location.pathname, user?.is_admin]);
-
+  }, [location.pathname, user]);
   // Get current active tab from path
   const activeTab = location.pathname.split('/').pop();
 

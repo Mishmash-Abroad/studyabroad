@@ -44,7 +44,7 @@ from .models import (
     ApplicationResponse,
     Announcement,
     Document,
-    ConfidentialNote
+    ConfidentialNote,
 )
 from .serializers import (
     ProgramSerializer,
@@ -54,7 +54,7 @@ from .serializers import (
     ApplicationResponseSerializer,
     AnnouncementSerializer,
     DocumentSerializer,
-    ConfidentialNoteSerializer
+    ConfidentialNoteSerializer,
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -66,7 +66,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
 from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
-
+import re
+from .constants import SEMESTERS
+from django_otp.plugins.otp_totp.models import TOTPDevice
+import qrcode
+import io
+from django.http import JsonResponse
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp.util import random_hex
+import base64
 
 ### Custom permission classes for API access ###
 
@@ -109,17 +117,19 @@ class IsAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.is_admin
-    
+
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         return request.user.is_admin
-    
+
+
 class AdminCreateAndView(permissions.BasePermission):
     """
     Custom permission to allow only admin users to create and view confidential notes.
     Updates and deletions are always forbidden.
     """
+
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
@@ -129,6 +139,20 @@ class AdminCreateAndView(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.method in permissions.SAFE_METHODS
+
+
+class IsDocumentOwnerOrAdmin(permissions.BasePermission):
+    """
+    Allows access only to the owner of the document.
+    Admins are allowed read-only access (safe methods).
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Admins are allowed to read, but not modify documents.
+        if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+        # Otherwise, only the document's owner can modify it.
+        return obj.application.student == request.user
 
 
 ### ViewSet classes for the API interface ###
@@ -159,9 +183,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title']
-    ordering_fields = ['application_deadline']
-    ordering = ['application_deadline']
+    search_fields = ["title"]
+    ordering_fields = ["application_deadline"]
+    ordering = ["application_deadline"]
 
     def get_queryset(self):
         """
@@ -186,17 +210,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
         faculty_ids = self.request.query_params.get("faculty_ids", None)
 
         if search:
-            queryset = queryset.filter(
-                Q(title__icontains=search)
-            )
+            queryset = queryset.filter(Q(title__icontains=search))
 
         if faculty_ids:
-            faculty_id_list = [int(id) for id in faculty_ids.split(',') if id.isdigit()]
+            faculty_id_list = [int(id) for id in faculty_ids.split(",") if id.isdigit()]
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
 
         return queryset.distinct()
-    
+
     def create(self, request, *args, **kwargs):
         """
         Create a new study abroad program.
@@ -205,7 +227,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Engineering in Germany",
-            "year_semester": "Fall 2025",
+            "year": "2025", "semester": Fall
             "faculty_leads": "Dr. Smith",
             "application_open_date": "2025-01-01",
             "application_deadline": "2025-03-15",
@@ -227,9 +249,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Admin only
         """
-
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
+        essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
 
@@ -240,21 +262,36 @@ class ProgramViewSet(viewsets.ModelViewSet):
             application_deadline = datetime.strptime(
                 application_deadline, "%Y-%m-%d"
             ).date()
+            essential_document_deadline = datetime.strptime(
+                essential_document_deadline, "%Y-%m-%d"
+            ).date()
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        if application_open_date > application_deadline:
+        if application_deadline > application_open_date:
             raise ValidationError(
                 {
                     "detail": "Application open date cannot be after the application deadline."
                 }
             )
-
-        if start_date > end_date:
+        elif start_date > end_date:
             raise ValidationError(
                 {"detail": "Start date cannot be after the end date."}
+            )
+
+        if not (
+            application_open_date
+            <= application_deadline
+            <= essential_document_deadline
+            <= start_date
+            <= end_date
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
+                }
             )
 
         response = super().create(request, *args, **kwargs)
@@ -283,7 +320,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Updated Program Name",
-            "year_semester": "Fall 2026",
+            "year": "2025", "semester": Fall
             "faculty_leads": "Dr. New Lead",
             "application_open_date": "2026-02-01",
             "application_deadline": "2026-04-15",
@@ -307,11 +344,31 @@ class ProgramViewSet(viewsets.ModelViewSet):
         """
         program_instance = self.get_object()
 
+        year = request.data.get("year", program_instance.year)
+        semester = request.data.get("semester", program_instance.semester)
+
+        # Define regex for year (must be a 4-digit number)
+        year_pattern = r"^\d{4}$"
+        # Validate year format
+        if not re.match(year_pattern, str(year)) or int(year) < 1000:
+            raise ValidationError(
+                {"detail": "Invalid year. Must be a four-digit number (e.g., 2025)."}
+            )
+
+        # Validate semester format
+        if semester not in SEMESTERS:
+            raise ValidationError(
+                {"detail": f"Invalid semester. Must be one of {', '.join(SEMESTERS)}."}
+            )
+
         application_open_date = request.data.get(
             "application_open_date", program_instance.application_open_date
         )
         application_deadline = request.data.get(
             "application_deadline", program_instance.application_deadline
+        )
+        essential_document_deadline = request.data.get(
+            "essential_document_deadline", program_instance.essential_document_deadline
         )
         start_date = request.data.get("start_date", program_instance.start_date)
         end_date = request.data.get("end_date", program_instance.end_date)
@@ -326,6 +383,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 datetime.strptime(application_deadline, "%Y-%m-%d").date()
                 if isinstance(application_deadline, str)
                 else application_deadline
+            )
+            essential_document_deadline = (
+                datetime.strptime(essential_document_deadline, "%Y-%m-%d").date()
+                if isinstance(essential_document_deadline, str)
+                else essential_document_deadline
             )
             start_date = (
                 datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -350,6 +412,19 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if start_date > end_date:
             raise ValidationError(
                 {"detail": "Start date cannot be after the end date."}
+            )
+
+        if not (
+            application_open_date
+            <= application_deadline
+            <= essential_document_deadline
+            <= start_date
+            <= end_date
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
+                }
             )
 
         return super().update(request, *args, **kwargs)
@@ -880,13 +955,13 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSelf]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'display_name', 'email']
+    search_fields = ["username", "display_name", "email"]
 
     def get_permissions(self):
         """
         Override to allow public access to faculty list
         """
-        if self.action == 'list' and self.request.query_params.get('is_faculty'):
+        if self.action == "list" and self.request.query_params.get("is_faculty"):
             return [permissions.AllowAny()]
         return super().get_permissions()
 
@@ -895,16 +970,20 @@ class UserViewSet(viewsets.ModelViewSet):
         Return all users for admins, but only faculty for public faculty list
         """
         queryset = User.objects.all()
-        
-        if self.action == 'list' and self.request.query_params.get('is_faculty'):
-            return queryset.filter(is_admin=True).order_by('display_name')
-            
-        if self.action == 'list' and not self.request.user.is_admin:
+
+        # If requesting faculty list, filter to only show faculty
+        if self.action == "list" and self.request.query_params.get("is_faculty"):
+            return queryset.filter(is_admin=True).order_by("display_name")
+
+        # For other list requests, maintain admin-only access
+        if self.action == "list" and not self.request.user.is_admin:
             return queryset.none()
-            
+
         return queryset
-    
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -963,7 +1042,6 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(user).data
         serializer["token"] = token.key
         return Response(serializer, status=status.HTTP_201_CREATED)
-        
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
     def login(self, request):
@@ -995,7 +1073,9 @@ class UserViewSet(viewsets.ModelViewSet):
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
+    )
     def logout(self, request):
         """
         ## User Logout
@@ -1050,7 +1130,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        return Response({"token": token.key, "user": UserSerializer(user).data}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "token": token.key,
+                "id": user.id,
+                "username": user.username,
+                "display_name": user.display_name,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
@@ -1064,7 +1152,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Public access (any user can view faculty list)
         """
-        faculty = User.objects.filter(is_admin=True).order_by('display_name')
+        faculty = User.objects.filter(is_admin=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
 
@@ -1092,6 +1180,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
     - **Students:** No access to any notes.
     - **No modifications or deletions are allowed.**
     """
+
     queryset = ConfidentialNote.objects.all().order_by("-timestamp")
     serializer_class = ConfidentialNoteSerializer
     permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
@@ -1102,7 +1191,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         - **Admins:** Can see all confidential notes.
         - **Students:** Cannot see any notes.
         - **Filtering:** Admins can filter by application ID using `?application=<id>`.
-        
+
         ## Errors:
         - **404 Not Found** if an invalid `application_id` is provided.
         """
@@ -1112,8 +1201,8 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         if application_id:
             if not Application.objects.filter(id=application_id).exists():
                 return Response(
-                    {"detail": "Application not found."}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Application not found."},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
             queryset = queryset.filter(application_id=application_id)
 
@@ -1124,7 +1213,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         ## Create a Confidential Note:
         - **Auto-assigns the current user as the author.**
         - **Records the creation timestamp automatically.**
-        
+
         **Expected Input:**
         ```json
         {
@@ -1132,11 +1221,11 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
             "content": "This is an admin-only note."
         }
         ```
-        
+
         **Returns:**
         - `201 Created` with the new note data.
         - `400 Bad Request` if invalid application ID.
-        
+
         **Errors:**
         - **403 Forbidden** if a non-admin tries to create a note.
         """
@@ -1151,9 +1240,9 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         """
         return Response(
             {"detail": "Editing confidential notes is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
-    
+
     def partial_update(self, request, *args, **kwargs):
         """
         ## Partially Updating Confidential Notes is **Not Allowed**.
@@ -1162,7 +1251,7 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         """
         return Response(
             {"detail": "Editing confidential notes is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     def destroy(self, request, *args, **kwargs):
@@ -1173,23 +1262,24 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
         """
         return Response(
             {"detail": "Deleting confidential notes is not allowed."},
-            status=status.HTTP_403_FORBIDDEN
+            status=status.HTTP_403_FORBIDDEN,
         )
+
+
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsApplicationResponseOwnerOrAdmin,
-    ]
+    permission_classes = [permissions.IsAuthenticated, IsDocumentOwnerOrAdmin]
 
     def create(self, request, *args, **kwargs):
         """
         Handle file upload via POST request.
         """
         if "pdf" not in request.data:
-            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return super().create(request, *args, **kwargs)
 
@@ -1197,7 +1287,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         """
         Handle updating an existing document via PUT or PATCH.
         """
-        partial = kwargs.pop('partial', False)  # Check if it's a PATCH request
+        partial = kwargs.pop("partial", False)  # Check if it's a PATCH request
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
 
@@ -1215,12 +1305,115 @@ class DocumentViewSet(viewsets.ModelViewSet):
         """
         queryset = Document.objects.all()
         application_id = self.request.query_params.get("application", None)
-        
+
         if application_id is not None:
             if not Application.objects.filter(id=application_id).exists():
                 return Response(
-                    {"detail": "Program not found."}, status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Application not found."},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
             queryset = queryset.filter(application=application_id)
 
         return queryset
+
+
+class MFAViewSet(viewsets.ViewSet):
+    permission_classes = [
+        IsAuthenticated
+    ]  # Ensure only authenticated users can access this
+
+    @action(detail=False, methods=["get"])
+    def status(self, request):
+        # Fetch MFA status for the authenticated user
+        user = request.user
+        status = {
+            "is_mfa_enabled": user.is_mfa_enabled,  # Check if TOTP is enabled
+        }
+        return Response(status)
+
+    @action(detail=False, methods=["get"])
+    def generate_totp_secret(self, request):
+        user = request.user
+        # Delete any existing TOTP device for the user
+        TOTPDevice.objects.filter(user=user).delete()
+
+        # Create a new TOTP device
+        device = TOTPDevice.objects.create(user=user, name="default")
+
+        # Create the QR Code URL for the TOTP secret
+        config_url = device.config_url
+        qr_image = qrcode.make(config_url)
+
+        # Convert the QR code image to a Base64 string
+        img_byte_arr = io.BytesIO()
+        qr_image.save(img_byte_arr, format="PNG")
+        img_byte_arr.seek(0)
+        img_base64 = base64.b64encode(img_byte_arr.read()).decode("utf-8")
+
+        bytes_key = bytes.fromhex(device.key)  # Convert hex to bytes
+        base32_key = base64.b32encode(
+            bytes_key
+        ).decode()  # Convert bytes to Base32 and decode to string
+
+        return JsonResponse(
+            {
+                "qr_code": img_base64,
+                "secret": base32_key,  # Return the secret key for manual entry
+                "message": "QR code generated successfully.",
+            }
+        )
+
+    @action(detail=False, methods=["post"])
+    def deactivate_totp_device(self, request):
+        user = request.user
+
+        # Find and delete the TOTP device for the user
+        deleted_count, _ = TOTPDevice.objects.filter(user=user).delete()
+        user.is_mfa_enabled = False  # Disable MFA flag
+        user.save()
+        if deleted_count > 0:
+            return Response(
+                {
+                    "message": "TOTP device deactivated successfully.",
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {
+                    "message": "No TOTP device found for the user.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    @action(detail=False, methods=["post"])
+    def verify_totp(self, request):
+        """
+        Verifies the TOTP code provided by the user.
+        If successful, enables MFA for the user.
+        """
+        user = request.user
+        code = request.data.get("code")
+
+        if not code:
+            return Response(
+                {"error": "No TOTP code provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Fetch the user's TOTP device
+        try:
+            device = TOTPDevice.objects.get(user=user)
+        except TOTPDevice.DoesNotExist:
+            return Response(
+                {"error": "TOTP device not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verify the code
+        if device.verify_token(code):
+            user.is_mfa_enabled = True  # Enable MFA flag
+            user.save()
+            return Response({"success": "TOTP verified successfully."})
+
+        return Response(
+            {"error": "Invalid TOTP code."}, status=status.HTTP_400_BAD_REQUEST
+        )

@@ -17,3 +17,8 @@ ALL_ADMIN_EDITABLE_STATUSES = [
     "Canceled",
 ]
 
+SEMESTERS = [
+    "Summer",
+    "Fall",
+    "Spring",
+]

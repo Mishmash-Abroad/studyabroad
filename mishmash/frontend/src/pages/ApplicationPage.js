@@ -9,509 +9,518 @@ import {
   Tabs,
   Tab,
   Paper,
+  Alert,
 } from "@mui/material";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
-import { ALL_ESSENTIAL_DOC_STATUSES } from "../utils/constants";
-// -------------------- STYLES --------------------
-const PageContainer = styled("div")(({ theme }) => ({
-  paddingTop: "72px",
-  minHeight: "100vh",
-  backgroundColor: theme.palette.background.default,
-}));
+import DeadlineIndicator from "../components/DeadlineIndicator";
+import {
+  ALL_STATUSES,
+  ALL_ADMIN_EDITABLE_STATUSES,
+  READ_ONLY_APPLICATION_STATUSES,
+  APPLICATION_ACTION_BUTTON_TEXT,
+  DOCUMENT_SUBMISSION_STATUSES,
+} from "../utils/constants";
 
-const ContentContainer = styled(Paper)(({ theme }) => ({
-  maxWidth: "800px",
-  margin: "0 auto",
-  padding: "24px",
-  borderRadius: theme.shape.borderRadius.large,
-}));
+// -------------------- STYLED COMPONENTS --------------------
+const StyledComponents = {
+  PageContainer: styled("div")(({ theme }) => ({
+    padding: `${theme.spacing(9)} 0`,
+    minHeight: "100vh",
+    backgroundColor: theme.palette.background.default,
+  })),
+  
+  ContentContainer: styled(Paper)(({ theme }) => ({
+    maxWidth: "1000px",
+    margin: "0 auto",
+    padding: theme.spacing(4),
+    borderRadius: theme.shape.borderRadius.large,
+  })),
+  
+  Header: styled("div")(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+    textAlign: "center",
+  })),
+  
+  TabContainer: styled(Box)(({ theme }) => ({
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    marginBottom: theme.spacing(4),
+  })),
+  
+  ProgramCard: styled(Paper)(({ theme }) => ({
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(4),
+    backgroundColor: theme.palette.grey[50],
+    borderRadius: theme.shape.borderRadius.medium,
+  })),
+  
+  InfoGrid: styled(Box)(({ theme }) => ({
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: theme.spacing(3),
+    marginBottom: theme.spacing(4),
+  })),
+  
+  FormSection: styled(Box)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+    position: 'relative',
+  })),
+  
+  ButtonContainer: styled(Box)(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(2),
+    marginTop: theme.spacing(4),
+    '& .MuiButton-root': {
+      minWidth: '160px',
+    }
+  })),
+  
+  ReadOnlyOverlay: styled(Box)(({ theme }) => ({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: theme.shape.borderRadius.medium,
+    pointerEvents: 'none',
+  })),
 
-const Header = styled("div")({
-  marginBottom: "16px",
-  textAlign: "center",
-});
+  DeadlineContainer: styled(Box)(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(3),
+  }))
+};
 
-const StyledTabContainer = styled(Box)(({ theme }) => ({
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  marginBottom: "16px",
-}));
+// -------------------- CONSTANTS --------------------
+// List of documents that must be submitted for every application
+// These are matched against uploaded document types to track completion
+const REQUIRED_DOCUMENTS = [
+  "Assumption of risk form",
+  "Acknowledgement of the code of conduct",
+  "Housing questionnaire",
+  "Medical/health history and immunization records",
+];
 
-// -------------------- COMPONENT LOGIC --------------------
 const ApplicationPage = () => {
   const { program_id } = useParams();
   const { user } = useAuth();
-
-  const [isApplicationReadOnly, setIsApplicationReadOnly] = useState(false);
-  const [program, setProgram] = useState({});
-  const [applicationData, setApplicationData] = useState({
-    program: program_id,
-    status: "",
-    date_of_birth: "",
-    gpa: "",
-    major: "",
-    id: 0,
+  
+  // Consolidated state object managing:
+  // - program: Study abroad program details
+  // - application: Student's application data and status
+  // - questions: Program-specific questions
+  // - responses: Student's answers to questions
+  // - documents: Required and submitted document tracking
+  const [state, setState] = useState({
+    isReadOnly: false,
+    program: {},
+    application: {
+      id: null,
+      program: program_id,
+      status: "",
+      date_of_birth: "",
+      gpa: "",
+      major: "",
+    },
+    questions: [],
+    responses: [],
+    documents: {
+      submitted: [],
+      missing: REQUIRED_DOCUMENTS,
+    },
+    error: "",
+    loading: false,
+    activeTab: 0,
   });
-  const [questions, setQuestions] = useState([]);
-  const [questionResponses, setQuestionResponses] = useState([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  const [missingDocs, setMissingDocs] = useState([]);
-  const [docsSubmitted, setDocsSubmitted] = useState([]);
 
-  const daysSinceEssentialDocDeadline = Math.floor(
-    (new Date() - new Date(program.essential_document_deadline)) /
-      (1000 * 60 * 60 * 24)
-  );
+  const updateState = (newState) => setState(prev => ({ ...prev, ...newState }));
+  
+  // Destructure state for easier access
+  const { 
+    isReadOnly, program, application, questions, 
+    responses, documents, error, loading, activeTab 
+  } = state;
 
+  // -------------------- DATA FETCHING --------------------
   useEffect(() => {
-    const getApplicationAndResponses = async () => {
-      setLoading(true);
-      setError("");
+    if (!user) return; // Guard: user may be null during initial render
+    
+    const fetchApplicationData = async () => {
+      updateState({ loading: true, error: "" });
+      
       try {
-        const programResponse = await axiosInstance.get(
-          `/api/programs/${program_id}`
-        );
-        setProgram(programResponse.data);
+        // Get program details and determine if application can be edited
+        const programRes = await axiosInstance.get(`/api/programs/${program_id}`);
+        const programData = programRes.data;
+        
+        // Application becomes read-only if:
+        // - Past the program's deadline
+        // - Status is one of the read-only statuses
+        const isReadOnly = new Date() > new Date(programData.application_deadline) || 
+                         READ_ONLY_APPLICATION_STATUSES.includes(application.status);
 
-        setIsApplicationReadOnly(
-          new Date() > new Date(programResponse.data.application_deadline)
-        );
+        // Find student's existing application for this program
+        const applicationsRes = await axiosInstance.get(`/api/applications/?student=${user.id}`);
+        const existingApp = applicationsRes.data.find(app => app.program == program_id);
 
-        const questionsResponse = await axiosInstance.get(
-          `/api/programs/${program_id}/questions/`
-        );
-        setQuestions(questionsResponse.data);
-        const applicationsResponse = await axiosInstance.get(
-          `/api/applications/?student=${user.id}`
-        );
-        const existingApplication = applicationsResponse.data.find(
-          (app) => app.program == program_id
-        );
-
-        if (existingApplication) {
-          setApplicationData({
-            id: existingApplication.id,
-            status: existingApplication.status,
-            program: existingApplication.program,
-            student: existingApplication.student,
-            date_of_birth: existingApplication.date_of_birth,
-            gpa: existingApplication.gpa,
-            major: existingApplication.major,
-          });
-
-          const responsesResponse = await axiosInstance.get(
-            `/api/responses/?application=${existingApplication.id}`
-          );
-          const responsesMap = new Map(
-            responsesResponse.data.map((response) => [
-              response.question,
-              response,
-            ])
-          );
-
-          const questionsResponse = await axiosInstance.get(
-            `/api/questions/?program=${program_id}`
-          );
-          const updatedResponses = questionsResponse.data.map((question) => {
-            const existingResponse = responsesMap.get(question.id);
-            return {
-              application: existingApplication.id,
-              question_id: question.id,
-              question_text: question.text,
-              response_id: existingResponse ? existingResponse.id : null,
-              response_text: existingResponse ? existingResponse.response : "",
-            };
-          });
-
-          setQuestionResponses(updatedResponses);
-
-          const documentsResponse = await axiosInstance.get(
-            `/api/documents/?application=${existingApplication.id}`
-          );
-          const doc_submitted = documentsResponse.data.map((doc) => {
-            return doc.type;
-          });
-          console.log(doc_submitted);
-          setDocsSubmitted(documentsResponse.data);
-          console.log(documentsResponse.data);
-          setMissingDocs(
-            [
-              "Assumption of risk form",
-              "Acknowledgement of the code of conduct",
-              "Housing questionnaire",
-              "Medical/health history and immunization records",
-            ].filter((str) => !doc_submitted.includes(str))
-          );
+        // Load program questions and student's responses
+        const questionsRes = await axiosInstance.get(`/api/programs/${program_id}/questions/`);
+        const questions = questionsRes.data;
+        
+        // Map questions to responses, handling both existing and new applications
+        let responses = [];
+        if (existingApp) {
+          // For existing applications, fetch and match responses to questions
+          const responsesRes = await axiosInstance.get(`/api/responses/?application=${existingApp.id}`);
+          const responsesMap = new Map(responsesRes.data.map(r => [r.question, r]));
+          
+          responses = questions.map(q => ({
+            application: existingApp.id,
+            question_id: q.id,
+            question_text: q.text,
+            response_id: responsesMap.get(q.id)?.id || null,
+            response_text: responsesMap.get(q.id)?.response || "",
+          }));
         } else {
-          const questionsResponse = await axiosInstance.get(
-            `/api/questions/?program=${program_id}`
-          );
-          const blankResponses = questionsResponse.data.map((question) => ({
+          // For new applications, create empty response objects
+          responses = questions.map(q => ({
             application: null,
-            question_id: question.id,
-            question_text: question.text,
+            question_id: q.id,
+            question_text: q.text,
             response_id: null,
             response_text: "",
           }));
-
-          setQuestionResponses(blankResponses);
         }
+
+        // Track document submission status
+        const documentsRes = await axiosInstance.get("/api/documents/", {
+          params: { application: existingApp?.id }
+        });
+        
+        // Compare submitted documents against required documents
+        const submittedDocs = documentsRes.data;
+        const submittedTypes = submittedDocs.map(d => d.type);
+        const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !submittedTypes.includes(doc));
+
+        updateState({
+          isReadOnly,
+          program: programData,
+          application: existingApp || application,
+          questions,
+          responses,
+          documents: {
+            submitted: submittedDocs,
+            missing: missingDocs
+          },
+          loading: false
+        });
       } catch (err) {
-        setError(
-          err.response?.data?.detail ||
-            err.response?.data?.error ||
-            err.message ||
-            "An error occurred while initializing the application."
-        );
+        console.error("Error fetching application data:", err);
+        updateState({ error: "Failed to load application data. Please try again." });
       } finally {
-        setLoading(false);
+        updateState({ loading: false });
       }
     };
 
-    getApplicationAndResponses();
-  }, [program_id, user.id]);
+    fetchApplicationData();
+  }, [program_id, user]);
 
-  const handleInputChange = (e) => {
-    setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
-  };
-
-  const handleResponseChange = (questionId, value) => {
-    setQuestionResponses((prev) =>
-      prev.map((resp) =>
-        resp.question_id === questionId
-          ? { ...resp, response_text: value }
-          : resp
-      )
-    );
-  };
-
+  // -------------------- EVENT HANDLERS --------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    if (isReadOnly || !application.date_of_birth || !application.gpa || !application.major) {
+      return;
+    }
+
+    updateState({ loading: true, error: "" });
 
     try {
-      if (
-        !applicationData.date_of_birth ||
-        !applicationData.gpa ||
-        !applicationData.major
-      ) {
-        throw new Error("Please fill out all required fields.");
-      }
+      // Submit or update application
+      const appPayload = {
+        date_of_birth: application.date_of_birth,
+        gpa: application.gpa,
+        major: application.major,
+        ...(application.id ? { status: "Applied" } : { program: program_id })
+      };
 
-      let applicationResponse;
-      let applicationId;
+      const appResponse = application.id
+        ? await axiosInstance.patch(`/api/applications/${application.id}/`, appPayload)
+        : await axiosInstance.post('/api/applications/', appPayload);
 
-      if (applicationData.id) {
-        applicationResponse = await axiosInstance.patch(
-          `/api/applications/${applicationData.id}/`,
-          {
-            date_of_birth: applicationData.date_of_birth,
-            gpa: applicationData.gpa,
-            major: applicationData.major,
-            status: "Applied",
-          }
-        );
-        applicationId = applicationData.id;
-      } else {
-        const response = await axiosInstance.post(`/api/applications/`, {
-          program: applicationData.program,
-          date_of_birth: applicationData.date_of_birth,
-          gpa: applicationData.gpa,
-          major: applicationData.major,
-        });
+      const applicationId = application.id || appResponse.data.id;
 
-        applicationResponse = response.data;
-        applicationId = response.data.id;
-
-        setApplicationData((prev) => ({
-          ...prev,
-          id: applicationId,
-        }));
-
-        setQuestionResponses((prevResponses) =>
-          prevResponses.map((response) => ({
-            ...response,
-            application: applicationId,
-          }))
-        );
-      }
-
-      for (const response of questionResponses) {
+      // Submit responses
+      await Promise.all(responses.map(async (response) => {
         const payload = {
           application: applicationId,
           question: response.question_id,
           response: response.response_text,
         };
 
-        if (response.response_id) {
-          await axiosInstance.patch(
-            `/api/responses/${response.response_id}/`,
-            payload
-          );
-        } else {
-          await axiosInstance.post(`/api/responses/`, payload);
-        }
-      }
+        return response.response_id
+          ? axiosInstance.patch(`/api/responses/${response.response_id}/`, payload)
+          : axiosInstance.post('/api/responses/', payload);
+      }));
 
       window.location.reload();
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          err.message ||
-          "Failed to submit application."
-      );
-      console.error("Error submitting application:", err);
-    } finally {
-      setLoading(false);
+      updateState({
+        error: err.response?.data?.detail || err.message || "Failed to submit application",
+        loading: false
+      });
     }
   };
 
-  const renderSubmitButton = () => {
-    if (isApplicationReadOnly) return null;
-
-    const buttonText =
-      applicationData.status === "Withdrawn"
-        ? "Resubmit Application"
-        : applicationData.status === "Applied"
-        ? "Update Application"
-        : "Submit Application";
-
-    return (
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        fullWidth
-      >
-        {loading ? "Processing..." : buttonText}
-      </Button>
-    );
-  };
-
-  const renderWithdrawReapply = () => {
-    if (!applicationData.id) {
-      return null;
+  const handleWithdraw = async () => {
+    if (!application.id || isReadOnly || !window.confirm("Withdraw application?")) {
+      return;
     }
 
-    const handleWithdraw = async () => {
-      const userConfirmed = window.confirm(
-        "Are you sure you want to withdraw your application?"
-      );
-      if (!userConfirmed) return;
-
-      try {
-        setLoading(true);
-        await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
-          status: "Withdrawn",
-        });
-
-        setApplicationData({ ...applicationData, status: "Withdrawn" });
-      } catch (err) {
-        setError(`${err} Failed to withdraw application.`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (applicationData.status === "Applied") {
-      return (
-        <Box mt={3} display="flex" justifyContent="space-between">
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleWithdraw}
-            disabled={loading}
-          >
-            Withdraw Application
-          </Button>
-        </Box>
-      );
+    updateState({ loading: true });
+    try {
+      await axiosInstance.patch(`/api/applications/${application.id}/`, { status: "Withdrawn" });
+      updateState({
+        application: { ...application, status: "Withdrawn" },
+        loading: false
+      });
+    } catch (err) {
+      updateState({
+        error: "Failed to withdraw application",
+        loading: false
+      });
     }
   };
 
+  // Helper function to determine submit button text based on application status
+  const getSubmitButtonText = () => {
+    if (loading) return "Processing...";
+    if (application.status) {
+      return APPLICATION_ACTION_BUTTON_TEXT[application.status] || "Submit Application";
+    }
+    return "Submit Application";
+  };
+
+  // -------------------- HELPER FUNCTIONS --------------------
+  const getStatusColor = (theme) => {
+    switch(application.status?.toLowerCase()) {
+      case 'applied': return theme.palette.info.main;
+      case 'enrolled': return theme.palette.success.main;
+      case 'withdrawn': return theme.palette.error.main;
+      default: return theme.palette.text.secondary;
+    }
+  };
+
+  const {
+    PageContainer, ContentContainer, Header, TabContainer,
+    ProgramCard, InfoGrid, FormSection, ButtonContainer, 
+    ReadOnlyOverlay, DeadlineContainer
+  } = StyledComponents;
+
+  // -------------------- RENDER COMPONENT --------------------
   return (
     <PageContainer>
       <ContentContainer>
+        {/* Header Section */}
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application for {program.title} {program.year_semester}
+            {program.title}
           </Typography>
-          <Typography variant="h5" color="secondary" gutterBottom>
-            <strong>Current Application Status:</strong>{" "}
-            {applicationData.status || "Not Submitted"}
+          <Typography variant="h5" gutterBottom>
+            {program.year_semester}
           </Typography>
-
-          {error && (
-            <Typography color="error" mb={2}>
-              {error}
-            </Typography>
-          )}
+          <Typography variant="h6" sx={{ color: getStatusColor }}>
+            Status: {application.status || "Not Applied"}
+          </Typography>
         </Header>
 
-        <StyledTabContainer>
-          <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} centered>
+        {/* Navigation Tabs */}
+        <TabContainer>
+          <Tabs value={activeTab} onChange={(_, v) => updateState({ activeTab: v })}>
+            <Tab label="Program Details" />
             <Tab label="Application Form" />
+            <Tab label="Required Documents" />
           </Tabs>
-        </StyledTabContainer>
+        </TabContainer>
 
-        <Box display="flex" flexDirection="column" alignItems="center">
-          <Typography variant="body1">{program.description}</Typography>
+        {/* Error Messages */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-          <Typography variant="body1">
-            <strong>Duration:</strong> {program.start_date} - {program.end_date}
-          </Typography>
+        {/* Program Details Tab */}
+        {activeTab === 0 && (
+          <ProgramCard>
+            <DeadlineContainer>
+              <DeadlineIndicator 
+                deadline={program.application_deadline} 
+                type="application"
+                expanded={true}
+              />
+              <DeadlineIndicator 
+                deadline={program.essential_document_deadline} 
+                type="document"
+                expanded={true}
+              />
+            </DeadlineContainer>
+            <InfoGrid>
+              <Box>
+                <Typography variant="subtitle2">Faculty Leads</Typography>
+                <Typography>
+                  {Array.isArray(program.faculty_leads) && program.faculty_leads.length > 0
+                    ? program.faculty_leads.map(lead => lead.display_name).join(', ')
+                    : 'No faculty leads assigned'}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Program Dates</Typography>
+                <Typography>
+                  {program.start_date && program.end_date ? 
+                    `${new Date(program.start_date).toLocaleDateString()} - ${new Date(program.end_date).toLocaleDateString()}` :
+                    'Dates not set'}
+                </Typography>
+              </Box>
+            </InfoGrid>
+            <Typography variant="body1">{program.description}</Typography>
+          </ProgramCard>
+        )}
 
-          <Typography variant="body1">
-            <strong>Application Open:</strong> {program.application_open_date}
-          </Typography>
-
-          <Typography variant="body1">
-            <strong>Application Deadline:</strong>{" "}
-            {program.application_deadline}
-          </Typography>
-
-          <Typography variant="body1">
-            <strong>Faculty Leads:</strong>{" "}
-            {program.faculty_leads?.map((user) => user.display_name).join(", ")}
-          </Typography>
-        </Box>
-        <Box mt={4} />
-        <div>
+        {/* Application Form Tab */}
+        {activeTab === 1 && (
           <form onSubmit={handleSubmit}>
-            <Box mb={3}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Date of Birth"
-                name="date_of_birth"
-                variant="outlined"
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  max: new Date().toISOString().split("T")[0],
-                  readOnly: isApplicationReadOnly,
-                }}
-                value={applicationData.date_of_birth}
-                onChange={handleInputChange}
-                required
+            <DeadlineContainer>
+              <DeadlineIndicator 
+                deadline={program.application_deadline} 
+                type="application"
               />
-            </Box>
-
-            <Box mb={3}>
-              <TextField
-                fullWidth
-                label="GPA"
-                variant="outlined"
-                name="gpa"
-                type="number"
-                inputProps={{
-                  step: "0.01",
-                  min: "0",
-                  max: "4.0",
-                  readOnly: isApplicationReadOnly,
-                }}
-                value={applicationData.gpa}
-                onChange={handleInputChange}
-                required
-              />
-            </Box>
-
-            <Box mb={3}>
-              <TextField
-                fullWidth
-                label="Major"
-                name="major"
-                variant="outlined"
-                inputProps={{ readOnly: isApplicationReadOnly }}
-                value={applicationData.major}
-                onChange={handleInputChange}
-                required
-              />
-            </Box>
-
-            {questions.map((question) => (
-              <Box key={question.id} mb={3}>
+            </DeadlineContainer>
+            {isReadOnly && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                This application is currently in read-only mode.
+              </Alert>
+            )}
+            
+            {/* Personal Information Section */}
+            <FormSection>
+              <Typography variant="h6" gutterBottom>
+                Personal Information
+              </Typography>
+              <Box mb={3}>
                 <TextField
                   fullWidth
-                  label={question.text}
-                  variant="outlined"
-                  multiline
-                  rows={4}
-                  value={
-                    questionResponses.find((q) => q.question_id === question.id)
-                      ?.response_text || ""
-                  }
-                  onChange={(e) =>
-                    handleResponseChange(question.id, e.target.value)
-                  }
-                  inputProps={{ readOnly: isApplicationReadOnly }}
+                  type="date"
+                  label="Date of Birth"
+                  name="date_of_birth"
+                  value={application.date_of_birth}
+                  onChange={e => updateState({ application: { ...application, date_of_birth: e.target.value } })}
+                  InputLabelProps={{ shrink: true }}
+                  disabled={isReadOnly}
                   required
                 />
               </Box>
-            ))}
-
-            {renderSubmitButton()}
-            {renderWithdrawReapply()}
-          </form>
-          <Box mt={4} />
-
-          {ALL_ESSENTIAL_DOC_STATUSES.includes(applicationData.status) && (
-            <>
-              <>
-                <Typography sx={{ color: "red" }}>MISSING DOCUMENTS</Typography>
-                <Typography sx={{ color: "red" }}>
-                  SUBMIT THESE DOCUMENTS BY{" "}
-                  {program.essential_document_deadline}{" "}
-                </Typography>
-                <Typography sx={{ color: "red" }}>
-                  IT HAS BEEN {daysSinceEssentialDocDeadline} DAYS
-                  {new Date() > new Date(program.essential_document_deadline)
-                    ? ` SINCE `
-                    : ` AFTER `}
-                  {program.essential_document_deadline}
-                </Typography>
-                <ul>
-                  {missingDocs.map((type, index) => {
-                    return (
-                      <li sx={{ color: "red" }} key={index}>
-                        {" "}
-                        {type}{" "}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-
-              <div>
-                {docsSubmitted.map((doc, index) => {
-                  return (
-                    <Typography key={index} variant="body1">
-                      <strong>Submitted {doc.type}:</strong>{" "}
-                      <a
-                        href={doc.pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {doc.title}
-                      </a>
-                    </Typography>
-                  );
-                })}
-              </div>
-              <>
-                <Box mt={4} />
-
-                <EssentialDocumentFormSubmission
-                  application_id={applicationData.id}
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="GPA"
+                  name="gpa"
+                  value={application.gpa}
+                  onChange={e => updateState({ application: { ...application, gpa: e.target.value } })}
+                  inputProps={{ min: "0", max: "4", step: "0.01" }}
+                  disabled={isReadOnly}
+                  required
                 />
-              </>
-            </>
-          )}
-        </div>
+              </Box>
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  label="Major"
+                  name="major"
+                  value={application.major}
+                  onChange={e => updateState({ application: { ...application, major: e.target.value } })}
+                  disabled={isReadOnly}
+                  required
+                />
+              </Box>
+              {isReadOnly && <ReadOnlyOverlay />}
+            </FormSection>
+
+            {/* Program Questions Section */}
+            <FormSection>
+              <Typography variant="h6" gutterBottom>
+                Program Questions
+              </Typography>
+              {responses.map((response) => (
+                <Box key={response.question_id} mb={3}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label={response.question_text}
+                    value={response.response_text}
+                    onChange={e => updateState({
+                      responses: responses.map(r =>
+                        r.question_id === response.question_id
+                          ? { ...r, response_text: e.target.value }
+                          : r
+                      )
+                    })}
+                    disabled={isReadOnly}
+                  />
+                </Box>
+              ))}
+              {isReadOnly && <ReadOnlyOverlay />}
+            </FormSection>
+
+            {/* Form Actions */}
+            <ButtonContainer>
+              <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
+                {application.status === "Applied" && !isReadOnly && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleWithdraw}
+                    disabled={loading}
+                    size="large"
+                  >
+                    Withdraw Application
+                  </Button>
+                )}
+                {!isReadOnly && (
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={loading}
+                    size="large"
+                  >
+                    {getSubmitButtonText()}
+                  </Button>
+                )}
+              </Box>
+            </ButtonContainer>
+          </form>
+        )}
+
+        {/* Required Documents Tab */}
+        {activeTab === 2 && (
+          <>
+            <DeadlineContainer>
+              <DeadlineIndicator 
+                deadline={program.essential_document_deadline} 
+                type="document"
+              />
+            </DeadlineContainer>
+            <EssentialDocumentFormSubmission
+              application_id={application.id}
+              isReadOnly={isReadOnly}
+            />
+          </>
+        )}
       </ContentContainer>
     </PageContainer>
   );

@@ -62,6 +62,7 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
+      - SECRET_KEY=hdjakfhsjdkfhaskdjfhskdjfhsadfkjahekjfhsklfdjhlkasdfjhalskdjfhs
     depends_on:
       db:
         condition: service_healthy  # Ensures database is ready before starting
@@ -94,7 +95,7 @@ services:
       - REACT_APP_API_URL=http://localhost:8000/
       - WATCHPACK_POLLING=true        # Enable file watching on Windows
       - CHOKIDAR_USEPOLLING=true     # Enable polling for hot reload
-    command: npm start
+    command: sh -c "chmod -R 777 /app/node_modules && npm start"
     depends_on:
       - backend
 
