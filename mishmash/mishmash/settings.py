@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ================
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
-OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET', default='wrongsecret')
+OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
