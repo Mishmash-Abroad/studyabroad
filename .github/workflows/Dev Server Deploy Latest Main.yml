@@ -38,10 +38,10 @@ jobs:
             token=${{ secrets.SENTRY_AUTH_TOKEN }}
             EOF
             
-            # Put secret key in .env file that is in django root
-            cat <<EOF > ./mishmash/.env
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            EOF
+            #put secret key in on the system
+            export SECRET_KEY=${{ secrets.SECRET_KEY }} 
+
+
 
             # Create .env file with all secret values.
             cat <<EOF > .env
