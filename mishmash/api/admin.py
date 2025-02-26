@@ -9,7 +9,7 @@ from .models import (
     Document,
     ConfidentialNote,
 )
-
+from allauth.socialaccount.models import SocialAccount
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -19,11 +19,32 @@ class UserAdmin(admin.ModelAdmin):
         "display_name",
         "email",
         "is_admin",
+        "is_active",
         "is_mfa_enabled",
-    )  # Display `is_admin`
-    list_filter = ("is_admin",)  # Filter by admin status
-    search_fields = ("username", "email", "display_name")  # Allow searching users
-    readonly_fields = ("password",)  # Ensure password is not editable in admin
+        "is_sso",
+    )
+    list_filter = ("is_admin", "is_active")
+    search_fields = ("username", "email", "display_name")
+
+    def is_sso(self, obj):
+        """Check if user logged in via SSO."""
+        return obj.is_sso
+    
+    is_sso.boolean = True
+    is_sso.short_description = "SSO User"
+
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Make certain fields read-only:
+        - Prevent password from being changed
+        - Prevent admin from removing their own admin status
+        """
+        fields = ["password"]
+        
+        if obj and obj.username == "admin":
+            fields.append("is_admin")
+
+        return fields
 
 
 @admin.register(Program)
