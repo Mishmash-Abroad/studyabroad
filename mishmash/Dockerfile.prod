@@ -7,11 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DATABASE_NAME=mishmash \
     DATABASE_USER=root \
     DATABASE_HOST=127.0.0.1 \
-    DATABASE_PORT=3306 \
+    DATABASE_PORT=3306 
 
 # Set work directory
 WORKDIR /app
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \

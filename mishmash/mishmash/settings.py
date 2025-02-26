@@ -31,6 +31,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ================
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
+OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET', default='wrong')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Reads from environment variable, defaults to False for security
@@ -40,7 +42,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Format: comma-separated list (e.g., "localhost,example.com")
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
-CLIENT_SECRET = config('CLIENT_SECRET', default='your-client-secret')
 
 #should use default site
 SITE_ID = 1
@@ -176,7 +177,7 @@ SOCIALACCOUNT_PROVIDERS = {
                 "provider_id": "duke-oidc",
                 "name": "Duke University Login",
                 "client_id": "ece-spring-2025-sc814",
-                "secret": CLIENT_SECRET,
+                "secret": OIDC_CLIENT_SECRET,
                 "settings": {
                     "server_url": "https://oauth.oit.duke.edu/oidc",
                     "token_auth_method": "client_secret_basic",
