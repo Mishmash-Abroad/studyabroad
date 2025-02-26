@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
-
+from allauth.socialaccount.models import SocialAccount
 
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
@@ -20,6 +20,11 @@ class User(AbstractUser):
         blank=True,
         help_text="Specific permissions for this user.",
     )
+
+    @property
+    def is_sso(self):
+        """Check if user logged in via SSO."""
+        return SocialAccount.objects.filter(user=self).exists()
 
 
 class Program(models.Model):

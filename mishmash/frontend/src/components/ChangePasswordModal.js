@@ -12,7 +12,7 @@ const ModalOverlay = styled("div")(({ theme }) => ({
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.4)", //slight darkening mask
+  backgroundColor: "rgba(0, 0, 0, 0.4)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -99,7 +99,7 @@ const FormError = styled("div")(({ theme }) => ({
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
-const ChangePasswordModal = ({ onClose }) => {
+const ChangePasswordModal = ({ onClose, userId }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -117,15 +117,23 @@ const ChangePasswordModal = ({ onClose }) => {
     }
 
     try {
-      const response = await axiosInstance.patch("/api/users/changepassword/", {
+      console.log(password);
+      console.log(confirmPassword);
+      const response = await axiosInstance.patch("/api/users/change_password/", {
+        user_id: userId,
         password,
-        confirmPassword,
-      });
+        confirm_password: confirmPassword,
+      })
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
         onClose();
       }
+      
+      if (response.status === 200) {
+        onClose();
+      }
+
     } catch (err) {
       setError(err.response?.data?.detail || "Invalid username or password");
     } finally {

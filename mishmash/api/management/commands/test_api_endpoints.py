@@ -388,7 +388,8 @@ class Command(BaseCommand):
 
         program = Program.objects.create(
             title="Test Program",
-            "year": "2025", "semester": "Fall",
+            year="2025", 
+            semester="Fall",
             description="A program for testing applications.",
             application_open_date=now().date(),
             application_deadline=now().date() + timedelta(days=10),
