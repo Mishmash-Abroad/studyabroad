@@ -16,6 +16,8 @@ services:
       - backend
 
   backend:
+    env_file:
+      - .env
     build: 
       context: ./mishmash
       dockerfile: Dockerfile.prod
@@ -72,6 +74,8 @@ services:
     image: mysql:8.0
     volumes:
       - mysql_data:/var/lib/mysql
+    env_file:
+      - .env
     environment:
       - MYSQL_DATABASE=mishmash
       - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD}

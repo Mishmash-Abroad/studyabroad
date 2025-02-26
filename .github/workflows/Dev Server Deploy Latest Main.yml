@@ -38,27 +38,14 @@ jobs:
             token=${{ secrets.SENTRY_AUTH_TOKEN }}
             EOF
             
-            #put secret key in on the system and oidc secret for django settings.py
-            cat <<EOF > ./mishmash/.env
-            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-            DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
-            SECRET_KEY=${{ secrets.SECRET_KEY }} 
-            OIDC_CLIENT_SECRET=${{ secrets.OIDC_CLIENT_SECRET }}
-            EOF
-
-             cat <<EOF > ./mishmash/mishmash/.env
-            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-            DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
-            SECRET_KEY=${{ secrets.SECRET_KEY }} 
-            OIDC_CLIENT_SECRET=${{ secrets.OIDC_CLIENT_SECRET }}
-            EOF
-
+            
 
             # Create .env file with all secret values.
             cat <<EOF > .env
             DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
             DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
             OIDC_CLIENT_SECRET=${{ secrets.OIDC_CLIENT_SECRET }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
             EOF
 
             docker compose -f docker-compose.dev.yml down
