@@ -272,7 +272,7 @@ const LoginModal = ({ onClose }) => {
 
               <FormInput
                 type="text"
-                placeholder="email"
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -280,7 +280,7 @@ const LoginModal = ({ onClose }) => {
 
               <FormInput
                 type="text"
-                placeholder="display name"
+                placeholder="Display Name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
