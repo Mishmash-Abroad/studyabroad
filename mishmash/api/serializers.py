@@ -9,10 +9,11 @@ from .models import (
     Document,
     ConfidentialNote,
 )
-from django import forms
+from allauth.socialaccount.models import SocialAccount
 
 
 class UserSerializer(serializers.ModelSerializer):
+    is_sso = serializers.ReadOnlyField()
     class Meta:
         model = User
         fields = [
@@ -22,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "is_admin",
             "is_mfa_enabled",
+            "is_sso",
         ]
 
 
