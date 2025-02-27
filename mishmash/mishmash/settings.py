@@ -46,6 +46,10 @@ ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,test
 #should use default site
 SITE_ID = 1
 
+# Disable email verification and set the login redirect URL
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_LOGOUT_ON_GET = True
+
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
@@ -75,6 +79,7 @@ INSTALLED_APPS = [
     'corsheaders',                  # CORS handling
     
     #oauth2 setup
+    "django.contrib.sites",
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
