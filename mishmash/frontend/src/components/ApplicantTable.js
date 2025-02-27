@@ -31,6 +31,8 @@ const ApplicantTable = ({ programId }) => {
   const [order, setOrder] = useState('desc');
   const [statusFilter, setStatusFilter] = useState('');
   const [userDetails, setUserDetails] = useState({});
+  const [documents, setDocuments] = useState({});
+  const [confidentialNotes, setConfidentialNotes] = useState({});
 
   useEffect(() => {
     fetchApplicants();
@@ -45,16 +47,57 @@ const ApplicantTable = ({ programId }) => {
       const response = await axiosInstance.get(url);
       setApplicants(response.data);
 
+      // Fetch user details, documents, and notes for each applicant
       const userRequests = response.data.map(app =>
         axiosInstance.get(`/api/users/${app.student}`).then(res => ({ id: app.student, ...res.data }))
       );
-      const userResponses = await Promise.all(userRequests);
+      const documentRequests = response.data.map(app =>
+        axiosInstance.get(`/api/documents/?application=${app.id}`).then(res => ({ id: app.id, docs: res.data }))
+      );
+      const noteRequests = response.data.map(app =>
+        axiosInstance.get(`/api/notes/?application=${app.id}`).then(res => ({ id: app.id, notes: res.data }))
+      );
 
+      const userResponses = await Promise.all(userRequests);
+      const documentResponses = await Promise.all(documentRequests);
+      const noteResponses = await Promise.all(noteRequests);
+
+      // Map users
       const userMap = {};
       userResponses.forEach(user => {
         userMap[user.id] = user;
       });
       setUserDetails(userMap);
+
+      // Map documents
+      const documentMap = {};
+      documentResponses.forEach(({ id, docs }) => {
+        documentMap[id] = {
+          risk: docs.some(doc => doc.document_type === 'Risk'),
+          conduct: docs.some(doc => doc.document_type === 'Conduct'),
+          housing: docs.some(doc => doc.document_type === 'Housing'),
+          health: docs.some(doc => doc.document_type === 'Health'),
+        };
+      });
+      setDocuments(documentMap);
+
+      // Map confidential notes
+      const noteMap = {};
+      noteResponses.forEach(({ id, notes }) => {
+        if (notes.length > 0) {
+          const latestNote = notes.reduce((prev, current) =>
+            new Date(prev.timestamp) > new Date(current.timestamp) ? prev : current
+          );
+          noteMap[id] = {
+            count: notes.length,
+            lastUpdated: new Date(latestNote.timestamp).toLocaleString(),
+            lastAuthor: latestNote.author_display || "Deleted User"
+          };
+        } else {
+          noteMap[id] = { count: 0, lastUpdated: 'N/A', lastAuthor: 'N/A' };
+        }
+      });
+      setConfidentialNotes(noteMap);
 
       setError(null);
     } catch (err) {
@@ -82,23 +125,6 @@ const ApplicantTable = ({ programId }) => {
       return valueA > valueB ? -1 : 1;
     });
 
-  const handleStatusChange = async (e, applicantId, currentStatus) => {
-    e.stopPropagation(); // Prevent row click event
-    const newStatus = e.target.value;
-    if (newStatus === currentStatus) return;
-    
-    try {
-      await axiosInstance.patch(`/api/applications/${applicantId}/`, {
-        status: newStatus
-      });
-      // Refresh the applicants list
-      fetchApplicants();
-    } catch (err) {
-      console.error('Error updating status:', err);
-      setError('Failed to update status.');
-    }
-  };
-
   return (
     <Paper sx={{ padding: '20px', marginTop: '20px' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -109,14 +135,12 @@ const ApplicantTable = ({ programId }) => {
           onChange={(e) => setStatusFilter(e.target.value)}
           variant="outlined"
           size="small"
-          sx={{ minWidth: '200px' }} // 🔹 Wider dropdown for readability
+          sx={{ minWidth: '200px' }}
         >
           <MenuItem value="">All</MenuItem>
-          {
-            Object.values(STATUS).map((status) => (
-              <MenuItem key={status} value={status}>{getStatusLabel(status)}</MenuItem>
-            ))
-          }
+          {Object.values(STATUS).map((status) => (
+            <MenuItem key={status} value={status}>{getStatusLabel(status)}</MenuItem>
+          ))}
         </TextField>
       </Box>
 
@@ -133,6 +157,13 @@ const ApplicantTable = ({ programId }) => {
                 { id: 'major', label: 'Major' },
                 { id: 'status', label: 'Status' },
                 { id: 'applied_on', label: 'Applied On' },
+                { id: 'risk', label: 'Risk Form' },
+                { id: 'conduct', label: 'Conduct Form' },
+                { id: 'housing', label: 'Housing Form' },
+                { id: 'health', label: 'Health Form' },
+                { id: 'num_notes', label: 'Confidential Notes' },
+                { id: 'last_author', label: 'Last Note Author' },
+                { id: 'last_updated', label: 'Last Note Updated' },
                 { id: 'actions', label: 'Actions' },
               ].map((column) => (
                 <TableCell key={column.id}>
@@ -154,6 +185,9 @@ const ApplicantTable = ({ programId }) => {
           <TableBody>
             {sortedApplicants.map((applicant) => {
               const user = userDetails[applicant.student] || {};
+              const docs = documents[applicant.id] || {};
+              const notes = confidentialNotes[applicant.id] || { count: 0, lastUpdated: 'N/A' };
+
               return (
                 <TableRow key={applicant.id} hover>
                   <TableCell>{user.display_name || 'N/A'}</TableCell>
@@ -164,41 +198,17 @@ const ApplicantTable = ({ programId }) => {
                   <TableCell>{applicant.major}</TableCell>
                   <TableCell>{getStatusLabel(applicant.status)}</TableCell>
                   <TableCell>{new Date(applicant.applied_on).toLocaleDateString()}</TableCell>
+                  <TableCell>{docs.risk ? "✔" : "✖"}</TableCell>
+                  <TableCell>{docs.conduct ? "✔" : "✖"}</TableCell>
+                  <TableCell>{docs.housing ? "✔" : "✖"}</TableCell>
+                  <TableCell>{docs.health ? "✔" : "✖"}</TableCell>
+                  <TableCell>{notes.count}</TableCell>
+                  <TableCell>{notes.lastAuthor}</TableCell>
+                  <TableCell>{notes.lastUpdated}</TableCell>
                   <TableCell>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      gap: 1,
-                      '& .MuiButton-root': { width: '150px' },
-                      '& .MuiTextField-root': { width: '150px' }
-                    }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={() => navigate(`/applications/${applicant.id}`)}
-                      >
-                        View
-                      </Button>
-                      <TextField
-                        select
-                        size="small"
-                        value={applicant.status}
-                        onChange={(e) => handleStatusChange(e, applicant.id, applicant.status)}
-                        onClick={(e) => e.stopPropagation()} // Prevent row click
-                      >
-                        {ALL_ADMIN_EDITABLE_STATUSES.map((status, index) => (
-                          <MenuItem key={index} value={status}>
-                            {status}
-                          </MenuItem>
-                        ))}
-                        {!ALL_ADMIN_EDITABLE_STATUSES.includes(applicant.status) && (
-                          <MenuItem key="current" value={applicant.status} disabled>
-                            {applicant.status}
-                          </MenuItem>
-                        )}
-                      </TextField>
-                    </Box>
+                    <Button variant="contained" color="primary" onClick={() => navigate(`/applications/${applicant.id}`)}>
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               );
@@ -206,8 +216,6 @@ const ApplicantTable = ({ programId }) => {
           </TableBody>
         </Table>
       </TableContainer>
-      {loading && <p>Loading applicants...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
     </Paper>
   );
 };
