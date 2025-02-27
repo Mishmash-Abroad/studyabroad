@@ -1192,7 +1192,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         warnings = {
             "applications_count": applications_count,
-            "faculty_programs": [p.title for p in faculty_programs],
+            "faculty_programs": [p.title for p in faculty_programs] if faculty_programs.exists() else ["None"],
         }
 
         return Response(warnings, status=status.HTTP_200_OK)
