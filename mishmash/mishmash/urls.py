@@ -24,8 +24,8 @@ from .settings import MEDIA_URL, MEDIA_ROOT
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('accounts/', include('allauth.urls')),
-    path('accounts/', include('allauth.socialaccount.urls')),
+    path('api/accounts/', include('allauth.urls')),
+    path('api/accounts/', include('allauth.socialaccount.urls')),
     path('api/', include('api.urls')),
 
 ]
