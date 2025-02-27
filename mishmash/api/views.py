@@ -228,10 +228,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Engineering in Germany",
-            "year": "2025", "semester": Fall
-            "faculty_leads": "Dr. Smith",
+            "year": "2025", "semester": "Fall"
+            "faculty_leads": [1, 2],
             "application_open_date": "2025-01-01",
             "application_deadline": "2025-03-15",
+            "essential_document_deadline": "2025-03-15",
             "start_date": "2025-05-01",
             "end_date": "2025-07-31",
             "description": "An amazing program in Germany."
@@ -271,7 +272,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        if application_deadline > application_open_date:
+        if application_deadline < application_open_date:
             raise ValidationError(
                 {
                     "detail": "Application open date cannot be after the application deadline."
