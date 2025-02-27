@@ -53,7 +53,7 @@ const NavButton = styled("button")(({ theme, variant = "default" }) => {
       case "light":
         return {
           backgroundColor: theme.palette.overlay.faint,
-          border: `1px solid ${theme.palette.overlay.subtle}`,
+          border: `2px solid ${theme.palette.overlay.subtle}`,
           color: theme.palette.primary.contrastText,
           "&:hover": {
             backgroundColor: theme.palette.overlay.subtle,
@@ -73,8 +73,8 @@ const NavButton = styled("button")(({ theme, variant = "default" }) => {
   };
 
   return {
-    padding: "8px 16px",
-    borderRadius: theme.shape.borderRadius.small,
+    padding: "10px 18px",
+    borderRadius: theme.shape.borderRadii.small,
     cursor: "pointer",
     transition: theme.transitions.quick,
     fontFamily: theme.typography.fontFamily,
@@ -106,7 +106,7 @@ const UserIcon = styled(PersonIcon)(({ theme }) => ({
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
   "& .MuiPaper-root": {
-    borderRadius: theme.shape.borderRadius.large,
+    borderRadius: theme.shape.borderRadii.large,
     marginTop: "8px",
     minWidth: 180,
     boxShadow: theme.customShadows.raised,
@@ -114,7 +114,7 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
       padding: "8px",
     },
     "& .MuiMenuItem-root": {
-      borderRadius: theme.shape.borderRadius.medium,
+      borderRadius: theme.shape.borderRadii.medium,
       fontSize: theme.typography.body2.fontSize,
       fontWeight: theme.typography.subtitle2.fontWeight,
       padding: "10px 16px",

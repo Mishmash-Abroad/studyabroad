@@ -18,7 +18,7 @@ const MFAOverviewContent = styled("div")(({ theme }) => ({
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.customShadows.card,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   minHeight: "500px",
 }));
 
@@ -31,7 +31,7 @@ const LinkButton = styled(Link)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   border: "none",
-  borderRadius: theme.shape.borderRadius.small,
+  borderRadius: theme.shape.borderRadii.small,
   fontSize: theme.typography.button.fontSize,
   fontFamily: theme.typography.fontFamily,
   textDecoration: "none",

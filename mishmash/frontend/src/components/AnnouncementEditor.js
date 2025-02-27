@@ -64,7 +64,7 @@ const StyledEditorContent = styled(EditorContent)(({ theme }) => ({
   overflowY: 'auto',
   padding: theme.spacing(2),
   border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: theme.shape.borderRadii,
   backgroundColor: theme.palette.background.paper,
   '& .ProseMirror': {
     minHeight: '300px',
@@ -302,7 +302,7 @@ const AnnouncementEditor = ({ onSave, initialData = null }) => {
           {/* Cover Image Upload Section */}
           <Box sx={{ 
             border: theme => `1px solid ${theme.palette.divider}`,
-            borderRadius: theme => theme.shape.borderRadius,
+            borderRadius: theme => theme.shape.borderRadii,
             p: 2,
             mb: 2
           }}>

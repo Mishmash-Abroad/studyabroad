@@ -30,12 +30,12 @@ import AnnouncementDetailModal from './AnnouncementDetailModal';
 
 const ManagerContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: theme.shape.borderRadii,
 }));
 
 const TableWrapper = styled(TableContainer)(({ theme }) => ({
   marginTop: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: theme.shape.borderRadii,
   maxHeight: '500px',
 }));
 

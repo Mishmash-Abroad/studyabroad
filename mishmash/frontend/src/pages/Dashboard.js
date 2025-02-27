@@ -39,7 +39,7 @@ const DashboardContent = styled("div")(({ theme }) => ({
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.customShadows.card,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   minHeight: "500px",
 }));
 
@@ -71,7 +71,7 @@ const TabButton = styled("button")(({ theme, active }) => ({
     : theme.palette.background.default,
   border: `1px solid ${theme.palette.border.light}`,
   borderBottom: active ? "none" : `1px solid ${theme.palette.border.light}`,
-  borderRadius: `${theme.shape.borderRadius.small}px ${theme.shape.borderRadius.small}px 0 0`,
+  borderRadius: `${theme.shape.borderRadii.small}px ${theme.shape.borderRadii.small}px 0 0`,
   marginRight: "5px",
   position: "relative",
   top: "1px",
