@@ -55,9 +55,9 @@ const UserManagement = () => {
   };
 
   const sortedUsers = [...users].sort((a, b) => {
-    const valueA = a[orderBy] || "";
-    const valueB = b[orderBy] || "";
-    return order === "asc" ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
+    const valueA = a[orderBy]?.toString().toLowerCase() || "";
+    const valueB = b[orderBy]?.toString().toLowerCase() || "";
+    return order === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
   });
 
   const handlePromoteDemote = async (user) => {
@@ -132,13 +132,17 @@ const UserManagement = () => {
             <TableRow>
               {["display_name", "username", "email", "is_admin", "is_sso_user", "actions"].map((column) => (
                 <TableCell key={column}>
-                  <TableSortLabel
-                    active={orderBy === column}
-                    direction={orderBy === column ? order : "asc"}
-                    onClick={() => handleRequestSort(column)}
-                  >
-                    {column.replace(/_/g, " ").toUpperCase()}
-                  </TableSortLabel>
+                  {column !== "actions" ? (
+                    <TableSortLabel
+                      active={orderBy === column}
+                      direction={orderBy === column ? order : "asc"}
+                      onClick={() => handleRequestSort(column)}
+                    >
+                      {column.replace(/_/g, " ").toUpperCase()}
+                    </TableSortLabel>
+                  ) : (
+                    column.replace(/_/g, " ").toUpperCase()
+                  )}
                 </TableCell>
               ))}
             </TableRow>

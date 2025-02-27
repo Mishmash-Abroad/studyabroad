@@ -228,10 +228,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Engineering in Germany",
-            "year": "2025", "semester": Fall
-            "faculty_leads": "Dr. Smith",
+            "year": "2025", "semester": "Fall"
+            "faculty_leads": [1, 2],
             "application_open_date": "2025-01-01",
             "application_deadline": "2025-03-15",
+            "essential_document_deadline": "2025-03-15",
             "start_date": "2025-05-01",
             "end_date": "2025-07-31",
             "description": "An amazing program in Germany."
@@ -250,11 +251,35 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Admin only
         """
+        title = request.data.get("title", "").strip()
+        year = request.data.get("year", "").strip()
+        semester = request.data.get("semester", "").strip()
+        description = request.data.get("description", "").strip()
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
+
+        if len(title) > 80:
+            raise ValidationError({"detail": "Title cannot exceed 80 characters."})
+
+        if len(year) > 4:
+            raise ValidationError({"detail": "Year must be a 4-digit number."})
+
+        if len(semester) > 20:
+            raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
+
+        if len(description) > 1000:
+            raise ValidationError({"detail": "Description cannot exceed 1000 characters."})
+
+        if not year.isdigit() or len(year) != 4:
+            raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
+
+        valid_semesters = {"Fall", "Spring", "Summer"}
+        if semester not in valid_semesters:
+            raise ValidationError({"detail": f"Semester must be one of {valid_semesters}."})
+
 
         try:
             application_open_date = datetime.strptime(
@@ -271,7 +296,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        if application_deadline > application_open_date:
+        if application_deadline < application_open_date:
             raise ValidationError(
                 {
                     "detail": "Application open date cannot be after the application deadline."
@@ -1191,7 +1216,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         warnings = {
             "applications_count": applications_count,
-            "faculty_programs": [p.title for p in faculty_programs],
+            "faculty_programs": [p.title for p in faculty_programs] if faculty_programs.exists() else ["None"],
         }
 
         return Response(warnings, status=status.HTTP_200_OK)
