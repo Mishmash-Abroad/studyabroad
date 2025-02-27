@@ -35,7 +35,7 @@ const StyledComponents = {
     maxWidth: "1000px",
     margin: "0 auto",
     padding: theme.spacing(4),
-    borderRadius: theme.shape.borderRadius.large,
+    borderRadius: theme.shape.borderRadii.large,
   })),
 
   Header: styled("div")(({ theme }) => ({
@@ -52,7 +52,7 @@ const StyledComponents = {
     padding: theme.spacing(3),
     marginBottom: theme.spacing(4),
     backgroundColor: theme.palette.grey[50],
-    borderRadius: theme.shape.borderRadius.medium,
+    borderRadius: theme.shape.borderRadii.medium,
   })),
 
   InfoGrid: styled(Box)(({ theme }) => ({
@@ -82,9 +82,9 @@ const StyledComponents = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.02)",
-    borderRadius: theme.shape.borderRadius.medium,
-    pointerEvents: "none",
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: theme.shape.borderRadii.medium,
+    pointerEvents: 'none',
   })),
 
   DeadlineContainer: styled(Box)(({ theme }) => ({

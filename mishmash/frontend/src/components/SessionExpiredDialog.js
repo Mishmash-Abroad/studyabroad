@@ -25,7 +25,7 @@ import { SESSION_TIMEOUTS } from '../utils/constants';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
-    borderRadius: theme.shape.borderRadius.large,
+    borderRadius: theme.shape.borderRadii.large,
     padding: theme.spacing(2),
     maxWidth: 400
   }

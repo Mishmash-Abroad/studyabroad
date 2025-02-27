@@ -34,7 +34,7 @@ const PageContainer = styled('div')(({ theme }) => ({
 const ContentContainer = styled('div')(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   padding: '24px',
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
   marginBottom: '24px',
   elevation: 0,
@@ -56,7 +56,7 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
     fontSize: theme.typography.body1.fontSize,
     fontWeight: theme.typography.body1.fontWeight,
     border: `2px solid ${theme.palette.border.light}`,
-    borderRadius: theme.shape.borderRadius.xl,
+    borderRadius: theme.shape.borderRadii.xl,
     transition: theme.transitions.quick,
     '&:focus': {
       borderColor: theme.palette.primary.main,
@@ -70,7 +70,7 @@ const FilterButton = styled('button')(({ theme, active }) => ({
   backgroundColor: active ? theme.palette.primary.main : theme.palette.background.paper,
   color: active ? theme.palette.primary.contrastText : theme.palette.primary.main,
   border: `1px solid ${active ? theme.palette.primary.main : theme.palette.border.main}`,
-  borderRadius: theme.shape.borderRadius.xl,
+  borderRadius: theme.shape.borderRadii.xl,
   cursor: 'pointer',
   margin: '0 8px',
   transition: theme.transitions.quick,
@@ -102,7 +102,7 @@ const NoResults = styled('div')(({ theme }) => ({
   padding: '40px',
   color: theme.palette.text.secondary,
   backgroundColor: theme.palette.background.default,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   margin: '20px 0',
   '& h3': {
     color: theme.palette.text.primary,

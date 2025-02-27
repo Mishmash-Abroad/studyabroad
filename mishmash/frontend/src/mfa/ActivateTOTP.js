@@ -17,7 +17,7 @@ const ActivateTOTPContent = styled("div")(({ theme }) => ({
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.customShadows.card,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   minHeight: "500px",
 }));
 
@@ -38,7 +38,7 @@ const FormGroup = styled("div")(({ theme }) => ({
 const Input = styled("input")(({ theme }) => ({
   padding: theme.spacing(1.5),
   border: `1px solid ${theme.palette.border.light}`,
-  borderRadius: theme.shape.borderRadius.small,
+  borderRadius: theme.shape.borderRadii.small,
   fontSize: theme.typography.body1.fontSize,
   fontFamily: theme.typography.fontFamily,
   "&:disabled": {
@@ -52,7 +52,7 @@ const Button = styled("button")(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   border: "none",
-  borderRadius: theme.shape.borderRadius.small,
+  borderRadius: theme.shape.borderRadii.small,
   fontSize: theme.typography.button.fontSize,
   fontFamily: theme.typography.fontFamily,
   cursor: "pointer",

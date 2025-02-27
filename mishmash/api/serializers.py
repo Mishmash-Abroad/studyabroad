@@ -90,6 +90,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(
         source="created_by.display_name", read_only=True
     )
+    cover_image_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Announcement
@@ -97,19 +98,35 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
-            "created_at",
-            "updated_at",
+            "cover_image",      # Accept the uploaded file
+            "cover_image_url",  # For retrieving the image URL
+            "pinned",
             "importance",
             "is_active",
             "created_by",
             "created_by_name",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at", "created_by"]
 
+    def get_cover_image_url(self, obj):
+        request = self.context.get("request")
+        if obj.cover_image and request:
+            return request.build_absolute_uri(obj.cover_image.url)
+        return None
+
     def create(self, validated_data):
-        # Set the created_by field to the current user
+        # If is_active is missing or falsy (empty string, None, etc.), default to True.
+        if not validated_data.get("is_active"):
+            validated_data["is_active"] = True
         validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "is_active" not in validated_data:
+            validated_data["is_active"] = instance.is_active
+        return super().update(instance, validated_data)
 
 
 class ConfidentialNoteSerializer(serializers.ModelSerializer):
