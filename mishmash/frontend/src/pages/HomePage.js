@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { styled } from '@mui/material/styles';
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import LoginModal from "../components/LoginModal";
 import Typography from '@mui/material/Typography';
 import AnnouncementsBrowser from '../components/AnnouncementsBrowser';
@@ -76,7 +77,7 @@ const HeroButton = styled('button')(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   color: theme.palette.primary.main,
   border: 'none',
-  borderRadius: theme.shape.borderRadius.xl,
+  borderRadius: theme.shape.borderRadii.xl,
   cursor: 'pointer',
   transition: theme.transitions.medium,
   boxShadow: theme.customShadows.button,
@@ -111,7 +112,7 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 const FeatureCard = styled('div')(({ theme }) => ({
   padding: '30px',
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
   textAlign: 'center',
   transition: theme.transitions.quick,
@@ -153,7 +154,7 @@ const GalleryItem = styled('div')(({ theme }) => ({
   position: 'relative',
   paddingBottom: '66.67%',
   overflow: 'hidden',
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
   transition: theme.transitions.medium,
   '&:hover': {
@@ -179,6 +180,7 @@ const GalleryImage = styled('img')(({ theme }) => ({
 const HomePage = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -210,9 +212,9 @@ const HomePage = () => {
               ? `Welcome back, ${user?.display_name}! Continue your journey with us.`
               : 'Transform your education through global experiences with HCC Study Abroad'}
           </HeroText>
-          {!user && (
-            <HeroButton onClick={() => setShowLoginModal(true)}>Get Started</HeroButton>
-          )}
+          <HeroButton onClick={user ? () => navigate("/dashboard") : () => setShowLoginModal(true)}>
+            {user ? "Go to Dashboard" : "Get Started"}
+          </HeroButton>
         </HeroContent>
       </Hero>
 
