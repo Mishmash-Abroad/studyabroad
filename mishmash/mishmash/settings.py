@@ -80,6 +80,9 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.openid_connect',
     "allauth.mfa",
+
+    #audit logging
+    'auditlog',
     
     # Local apps
     'api',                         # Main application API
@@ -98,7 +101,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Add the account middleware:
-    "allauth.account.middleware.AccountMiddleware",
+    'allauth.account.middleware.AccountMiddleware',
+
+    'auditlog.middleware.AuditlogMiddleware',
 ]
 
 # URL Configuration
@@ -170,7 +175,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/overview/'
 LOGIN_REDIRECT_URL = '/dashboard/overview/'
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
-ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
 #should use default site
 SITE_ID = 1
@@ -275,3 +280,39 @@ sentry_sdk.init(
         "continuous_profiling_auto_start": True,
     },
 )
+
+
+#logging settings
+
+import logging
+import os
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "auditlog": {  # Capture audit logs
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
