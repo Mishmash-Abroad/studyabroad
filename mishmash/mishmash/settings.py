@@ -43,12 +43,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
 
-#should use default site
-SITE_ID = 1
 
-# Disable email verification and set the login redirect URL
-ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_LOGOUT_ON_GET = True
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
@@ -159,7 +154,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 # OAUTH AUTHEENTICATION
 # ==================
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 AUTHENTICATION_BACKENDS = [
     
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -173,6 +167,17 @@ AUTHENTICATION_BACKENDS = [
 
 # Provider specific settings
 SOCIALACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/overview/'
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+
+#should use default site
+SITE_ID = 1
+
+# Disable email verification and set the login redirect URL
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_LOGOUT_ON_GET = True
+
+# Enable SSO login
 
 SOCIALACCOUNT_PROVIDERS = {
     "openid_connect": {
