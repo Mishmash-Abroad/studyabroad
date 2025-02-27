@@ -64,7 +64,8 @@ class ApplicationQuestionSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(read_only=True)
-
+    gpa = serializers.DecimalField(max_digits=4, decimal_places=3, coerce_to_string=True)
+    
     class Meta:
         model = Application
         fields = [

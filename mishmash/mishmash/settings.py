@@ -236,6 +236,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',  # Require authentication by default
     ],
+    'COERCE_DECIMAL_TO_STRING': True,
 }
 
 # CORS Configuration for frontend communication
