@@ -3,6 +3,11 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
 from allauth.socialaccount.models import SocialAccount
 
+
+from auditlog.registry import auditlog
+
+
+
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
@@ -182,3 +187,16 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+
+
+
+
+
+
+auditlog.register(User)
+auditlog.register(Program)
+auditlog.register(Application)
+auditlog.register(ApplicationResponse)
+auditlog.register(Announcement)
+auditlog.register(ConfidentialNote)
+auditlog.register(Document)

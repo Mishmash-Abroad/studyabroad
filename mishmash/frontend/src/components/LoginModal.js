@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -12,7 +12,7 @@ const ModalOverlay = styled("div")(({ theme }) => ({
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.4)", //slight darkening mask
+  backgroundColor: "rgba(0, 0, 0, 0.4)", // slight darkening mask
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -114,6 +114,37 @@ const LoginModal = ({ onClose }) => {
   const [mfaToken, setMfaToken] = useState(null);
   const [mfaUserData, setMfaUserData] = useState(null);
 
+  // ------------- SSO HANDLING: Check session on mount -------------
+  useEffect(() => {
+    async function checkSSO() {
+      try {
+        // Try to get the DRF token using the current session.
+        const tokenResponse = await axiosInstance.get("/api/auth/token/");
+        if (tokenResponse.data.token) {
+          // Get user details.
+          const userResponse = await axiosInstance.get("/api/users/current_user/");
+          const userData = userResponse.data;
+          // Call the login function in your auth context.
+          login(userData, tokenResponse.data.token, userData.is_mfa_enabled ? false : true);
+          // If MFA is enabled, show the MFA modal.
+          if (userData.is_mfa_enabled) {
+            setIsMFAEnabled(true);
+            setMfaToken(tokenResponse.data.token);
+            setMfaUserData(userData);
+          } else {
+            onClose();
+            navigate("/dashboard");
+          }
+        }
+      } catch (err) {
+        // If no session token is returned, do nothing.
+        console.log("No SSO session detected.", err);
+      }
+    }
+    checkSSO();
+  }, [login, navigate, onClose]);
+
+  // ------------- EVENT HANDLERS -------------
   const handleSubmitLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -127,9 +158,9 @@ const LoginModal = ({ onClose }) => {
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
-        login(userData, token, userData.is_mfa_enabled ? false : true); // Set isMFAVerified to false if MFA is enabled
+        login(userData, token, userData.is_mfa_enabled ? false : true);
         if (userData.is_mfa_enabled) {
-          setIsMFAEnabled(userData.is_mfa_enabled);
+          setIsMFAEnabled(true);
           setMfaToken(token);
           setMfaUserData(userData);
         } else {
@@ -146,9 +177,8 @@ const LoginModal = ({ onClose }) => {
     }
   };
 
-  const handleDukeSSOLogin = async (e) => {
-    // Redirect to Django allauth's Duke login endpoint.
-    // By default, this might be at "/accounts/duke/login/".
+  const handleDukeSSOLogin = () => {
+    // Redirect to Django Allauth's Duke SSO login endpoint.
     window.location.href = "/api/accounts/oidc/duke-oidc/login/";
   };
 
@@ -163,9 +193,9 @@ const LoginModal = ({ onClose }) => {
       return;
     }
 
-    var testEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$/i;
+    const testEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+$/i;
     if (!testEmail.test(email)) {
-      setError("invalid email address");
+      setError("Invalid email address");
       setLoading(false);
       return;
     }
@@ -177,8 +207,6 @@ const LoginModal = ({ onClose }) => {
         email,
         display_name: displayName,
       });
-      console.log(response);
-
       if (response.data.token) {
         const { token, ...userData } = response.data;
         login(userData, token);
@@ -198,7 +226,6 @@ const LoginModal = ({ onClose }) => {
         <ModalContainer onClick={(e) => e.stopPropagation()}>
           <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
           <ModalTitle>Welcome Back</ModalTitle>
-
           <ModalForm onSubmit={handleSubmitLogin}>
             <FormInput
               type="text"
@@ -207,7 +234,6 @@ const LoginModal = ({ onClose }) => {
               onChange={(e) => setUsername(e.target.value)}
               required
             />
-
             <FormInput
               type="password"
               placeholder="Password"
@@ -215,18 +241,13 @@ const LoginModal = ({ onClose }) => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-
             {error && <FormError>{error}</FormError>}
-
             <FormButton type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </FormButton>
-
             <FormButton type="button" onClick={handleDukeSSOLogin}>
               Login with Duke SSO
             </FormButton>
-
-
             <FormButton
               type="button"
               onClick={(e) => {
@@ -239,12 +260,12 @@ const LoginModal = ({ onClose }) => {
           </ModalForm>
         </ModalContainer>
       </ModalOverlay>
+
       {showSignUpModal && (
         <ModalOverlay onClick={onClose}>
           <ModalContainer onClick={(e) => e.stopPropagation()}>
             <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
             <ModalTitle>Welcome!</ModalTitle>
-
             <ModalForm onSubmit={handleSubmitSignUp}>
               <FormInput
                 type="text"
@@ -253,7 +274,6 @@ const LoginModal = ({ onClose }) => {
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
-
               <FormInput
                 type="password"
                 placeholder="Password"
@@ -261,7 +281,6 @@ const LoginModal = ({ onClose }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-
               <FormInput
                 type="password"
                 placeholder="Confirm Password"
@@ -269,7 +288,6 @@ const LoginModal = ({ onClose }) => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
-
               <FormInput
                 type="text"
                 placeholder="Email"
@@ -277,7 +295,6 @@ const LoginModal = ({ onClose }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-
               <FormInput
                 type="text"
                 placeholder="Display Name"
@@ -285,13 +302,10 @@ const LoginModal = ({ onClose }) => {
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
               />
-
               {error && <FormError>{error}</FormError>}
-
               <FormButton type="submit" disabled={loading}>
                 {loading ? "Signing up..." : "Sign up"}
               </FormButton>
-
               <FormButton
                 type="button"
                 onClick={(e) => {
@@ -299,12 +313,13 @@ const LoginModal = ({ onClose }) => {
                   setShowSignUpModal(false);
                 }}
               >
-                already have an account? Login!
+                Already have an account? Login!
               </FormButton>
             </ModalForm>
           </ModalContainer>
         </ModalOverlay>
       )}
+
       {isMFAEnabled && (
         <MFALogin
           onClose={() => {
