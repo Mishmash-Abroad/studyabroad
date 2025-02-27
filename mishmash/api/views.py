@@ -883,42 +883,23 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing announcements.
 
-    ## Features:
-    - **Public users & students** can:
-      - View active announcements.
-    - **Admins** can:
-      - Create, update, and delete announcements.
-      - View all announcements (including inactive ones).
-
-    ## Served Endpoints:
-    - `GET /api/announcements/` → List active announcements (Public & Students)
-    - `POST /api/announcements/` → Create an announcement (Admins only)
-    - `GET /api/announcements/{id}/` → Retrieve a specific announcement (Public & Students)
-    - `PATCH /api/announcements/{id}/` → Update an announcement (Admins only)
-    - `DELETE /api/announcements/{id}/` → Delete an announcement (Admins only)
-
-    ## Permissions:
-    - **Public & Students:** Can only view active announcements.
-    - **Admins:** Can view, create, edit, and delete announcements.
+    - Public & Students: Can view active announcements.
+    - Admins: Can create, update, delete, and view all announcements.
     """
-
     serializer_class = AnnouncementSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ["created_at", "importance"]
-    ordering = ["-created_at"]
+    ordering_fields = ["created_at", "importance", "pinned"]
+    # Use model ordering: pinned first, then creation date descending
+    ordering = ["-pinned", "-created_at"]
+
+    # Add parsers to support file uploads
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
-        """
-        Returns the list of announcements:
-        - **Admins see all announcements**.
-        - **Public users & students see only active announcements**.
-        """
         queryset = Announcement.objects.all()
-
         if not self.request.user.is_authenticated or not self.request.user.is_admin:
             queryset = queryset.filter(is_active=True)
-
         return queryset
 
 
