@@ -26,8 +26,16 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/accounts/', include('allauth.urls')),
     path('api/accounts/', include('allauth.socialaccount.urls')),
+
     path('api/', include('api.urls')),
+    path('accounts/', include('allauth.urls')),
+    path('api/accounts/', include('allauth.socialaccount.urls')),
+
+
+
 
 ]
+
+
 
 urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
