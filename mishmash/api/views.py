@@ -251,11 +251,35 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Admin only
         """
+        title = request.data.get("title", "").strip()
+        year = request.data.get("year", "").strip()
+        semester = request.data.get("semester", "").strip()
+        description = request.data.get("description", "").strip()
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
+
+        if len(title) > 80:
+            raise ValidationError({"detail": "Title cannot exceed 80 characters."})
+
+        if len(year) > 4:
+            raise ValidationError({"detail": "Year must be a 4-digit number."})
+
+        if len(semester) > 20:
+            raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
+
+        if len(description) > 1000:
+            raise ValidationError({"detail": "Description cannot exceed 1000 characters."})
+
+        if not year.isdigit() or len(year) != 4:
+            raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
+
+        valid_semesters = {"Fall", "Spring", "Summer"}
+        if semester not in valid_semesters:
+            raise ValidationError({"detail": f"Semester must be one of {valid_semesters}."})
+
 
         try:
             application_open_date = datetime.strptime(
