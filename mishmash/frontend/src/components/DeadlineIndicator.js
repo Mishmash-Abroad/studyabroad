@@ -35,7 +35,7 @@ const DeadlineContainer = styled(Box)(({ theme, severity }) => {
     alignItems: 'center',
     gap: theme.spacing(1),
     padding: '6px 12px',
-    borderRadius: theme.shape.borderRadius.xl,
+    borderRadius: theme.shape.borderRadii.xl,
     backgroundColor: colors.bg,
     color: colors.color,
     fontSize: theme.typography.caption.fontSize,
