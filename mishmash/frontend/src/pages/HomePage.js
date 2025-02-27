@@ -3,7 +3,7 @@ import { styled } from '@mui/material/styles';
 import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
 import Typography from '@mui/material/Typography';
-import AnnouncementsViewer from '../components/AnnouncementsViewer';
+import AnnouncementsBrowser from '../components/AnnouncementsBrowser';
 
 // -------------------- STYLES (moved from index.js) --------------------
 const HomeContainer = styled('div')(({ theme }) => ({
@@ -217,10 +217,7 @@ const HomePage = () => {
       </Hero>
 
       <AnnouncementsSection>
-        <SectionTitle variant="h4">
-          Important Announcements
-        </SectionTitle>
-        <AnnouncementsViewer />
+        <AnnouncementsBrowser />
       </AnnouncementsSection>
 
       <FeaturesContainer>

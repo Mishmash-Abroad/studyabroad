@@ -47,7 +47,6 @@ services:
              python manage.py add_test_users &&
              python manage.py add_test_programs &&
              python manage.py add_test_applications &&
-             python manage.py add_test_announcements &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - static_volume:/app/static    # Persistent storage for static files
