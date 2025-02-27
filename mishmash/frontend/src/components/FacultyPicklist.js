@@ -22,7 +22,7 @@ const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
   margin: "0 auto",
   "& .MuiInputBase-root": {
     padding: "2px 8px",
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: theme.shape.borderRadii,
     border: `1px solid ${theme.palette.divider}`,
     transition: theme.transitions.create(["border-color", "box-shadow"]),
     "&.Mui-focused": {

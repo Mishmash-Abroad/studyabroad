@@ -53,7 +53,12 @@ const REQUIRED_DOCUMENTS = [
   }
 ];
 
-const DocumentStatusDisplay = ({ documents, application_id, isLoading, error }) => {
+const DocumentStatusDisplay = ({ 
+  documents = [], 
+  application_id, 
+  isLoading = false, 
+  error = null 
+}) => {
   // Handle loading state
   if (isLoading) {
     return (
@@ -143,12 +148,6 @@ DocumentStatusDisplay.propTypes = {
   application_id: PropTypes.number.isRequired,
   isLoading: PropTypes.bool,
   error: PropTypes.string,
-};
-
-DocumentStatusDisplay.defaultProps = {
-  documents: [],
-  isLoading: false,
-  error: null,
 };
 
 export default DocumentStatusDisplay;
