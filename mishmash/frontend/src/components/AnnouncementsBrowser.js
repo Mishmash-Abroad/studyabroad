@@ -36,8 +36,14 @@ const AnnouncementsBrowser = () => {
     }
   };
 
-  // Sort announcements based on sortBy and pinned status
+  // Sort announcements based on pinned status first, then by chosen sort criteria
   const sortedAnnouncements = [...announcements].sort((a, b) => {
+    // First prioritize pinned announcements
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    if (a.pinned && b.pinned) return 0;
+    
+    // Then apply the selected sort criteria
     if (sortBy === "importance") {
       const importanceOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
       return importanceOrder[b.importance] - importanceOrder[a.importance];

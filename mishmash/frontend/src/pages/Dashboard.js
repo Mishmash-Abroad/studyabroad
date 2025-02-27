@@ -7,7 +7,7 @@ import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
 import AnnouncementsManager from "../components/AnnouncementsManager";
-import AnnouncementsViewer from "../components/AnnouncementsViewer";
+import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
 import UserManagement from "../components/UserManagement";
 import Typography from '@mui/material/Typography';
 
@@ -129,10 +129,7 @@ const StudentOverview = () => (
       </Typography>
     </WelcomeSection>
     <AnnouncementsSection>
-      <Typography variant="h6" gutterBottom>
-        Recent Announcements
-      </Typography>
-      <AnnouncementsViewer />
+      <AnnouncementsBrowser />
     </AnnouncementsSection>
   </>
 );
