@@ -21,14 +21,6 @@ from django.conf.urls.static import static
 from .settings import MEDIA_URL, MEDIA_ROOT
 
 
-#sentry testing - ignore or delete
-
-from django.urls import path
-
-
-
-
-
 
 urlpatterns = [
     path("admin/", admin.site.urls),
