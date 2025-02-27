@@ -83,11 +83,11 @@ const UserManagement = () => {
           message: `Demoting ${user.display_name} from admin will remove them as faculty lead for the following programs: ${faculty_programs.join(", ")}.`,
           onConfirm: async () => {
             await axiosInstance.patch(`/api/users/${user.id}/`, { is_admin: false });
-            await Promise.all(
-              faculty_programs.map((program) =>
-                axiosInstance.patch(`/api/programs/${program.id}/`, { faculty_lead: "admin" })
-              )
-            );
+            // await Promise.all(
+            //   faculty_programs.map((program) =>
+            //     axiosInstance.patch(`/api/programs/${program.id}/`, { faculty_lead: "admin" })
+            //   )
+            // );
             fetchUsers();
             setConfirmDialog(null);
           },

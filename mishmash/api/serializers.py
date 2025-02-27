@@ -112,7 +112,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
 
 class ConfidentialNoteSerializer(serializers.ModelSerializer):
-    author_display = serializers.CharField(source="author.display_name", read_only=True)
+    author_display = serializers.SerializerMethodField()
 
     class Meta:
         model = ConfidentialNote
@@ -126,9 +126,9 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "author", "author_display", "timestamp"]
 
-    def get_author_name(self, obj):
+    def get_author_display(self, obj):
         """Returns 'Deleted user' if author is null."""
-        return obj.get_author_display()
+        return obj.author.display_name if obj.author else "Deleted User"
 
 
 class DocumentSerializer(serializers.ModelSerializer):
