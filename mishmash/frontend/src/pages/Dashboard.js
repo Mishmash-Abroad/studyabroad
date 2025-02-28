@@ -34,7 +34,7 @@ const DashboardContainer = styled("div")(({ theme }) => ({
 }));
 
 const DashboardContent = styled("div")(({ theme }) => ({
-  maxWidth: "1500px",
+  maxWidth: "1800px",
   margin: "0 auto",
   padding: "20px",
   backgroundColor: theme.palette.background.paper,

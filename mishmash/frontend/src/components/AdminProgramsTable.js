@@ -26,17 +26,16 @@ const TableWrapper = styled("div")(({ theme }) => ({
   boxShadow: theme.shadows.card,
   margin: "20px 0",
   maxHeight: "calc(100vh - 300px)",
-  overflowY: "hidden",
+  overflowY: "auto",
+  overflowX: "hidden",
   width: "100%",
-}));
-
-const TableContainerStyled = styled("div")(({ theme }) => ({
-  overflowX: "auto",
-  "&::-webkit-scrollbar": {
-    display: "none"
+  "& .MuiTableContainer-root": {
+    overflowX: "auto",
+    "&::-webkit-scrollbar": {
+      height: "8px",
+      width: "8px",
+    },
   },
-  scrollbarWidth: "none", // Firefox
-  msOverflowStyle: "none" // IE and Edge
 }));
 
 const FilterContainer = styled(Box)(({ theme }) => ({
@@ -57,6 +56,20 @@ const FilterRow = styled(Box)(({ theme }) => ({
 const StyledFacultyPicklist = styled(FacultyPicklist)(({ theme }) => ({
   flex: "1 1 auto",
   maxWidth: "600px",
+}));
+
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  "&::-webkit-scrollbar": {
+    height: "8px",
+    width: "8px",
+  },
+  "&::-webkit-scrollbar-track": {
+    background: theme.palette.background.paper,
+  },
+  "&::-webkit-scrollbar-thumb": {
+    backgroundColor: theme.palette.divider,
+    borderRadius: "4px",
+  },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -84,6 +97,12 @@ const AdminProgramsTable = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Fetch programs when component mounts or filters change
+    fetchPrograms();
+  }, []);  // Empty dependency array to only fetch on mount
+  
+  // Add debounced fetching for filter changes
+  useEffect(() => {
     const timeoutId = setTimeout(fetchPrograms, 300);
     return () => clearTimeout(timeoutId);
   }, [timeFilter, selectedFaculty, searchQuery]);
@@ -94,6 +113,11 @@ const AdminProgramsTable = () => {
       
       // Prepare request parameters
       const params = {};
+      
+      // Only include current/future programs if that's the selected filter
+      if (timeFilter === "current_future") {
+        params.exclude_ended = "true";
+      }
       
       // Add faculty filtering if faculty are selected
       if (selectedFaculty.length > 0) {
@@ -229,9 +253,6 @@ const AdminProgramsTable = () => {
         <FilterContainer>
           <FilterRow>
             <Box sx={{ display: "flex", flexDirection: "column", flex: "1 1 auto", maxWidth: "500px" }}>
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
-                Filter by Faculty
-              </Typography>
               <StyledFacultyPicklist
                 onFacultyChange={setSelectedFaculty}
               />
@@ -259,8 +280,8 @@ const AdminProgramsTable = () => {
               size="small"
               sx={{ width: "200px", flexShrink: 0 }}
             >
-              <MenuItem value="current_future">Current & Future</MenuItem>
-              <MenuItem value="past">Past</MenuItem>
+              <MenuItem value="current_future">Current & Future Programs</MenuItem>
+              <MenuItem value="past">Past Programs</MenuItem>
               <MenuItem value="accepting_applications">Accepting Applications</MenuItem>
               <MenuItem value="running_now">Running Now</MenuItem>
               <MenuItem value="all">All Programs</MenuItem>
@@ -268,7 +289,7 @@ const AdminProgramsTable = () => {
           </FilterRow>
         </FilterContainer>
 
-        <TableContainerStyled>
+        <StyledTableContainer>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -312,7 +333,7 @@ const AdminProgramsTable = () => {
               ))}
             </TableBody>
           </Table>
-        </TableContainerStyled>
+        </StyledTableContainer>
       </>
     </TableWrapper>
   );
