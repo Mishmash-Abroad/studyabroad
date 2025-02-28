@@ -35,3 +35,6 @@ qrcode[pil]
 Pillow==9.0.0  # Add Pillow as the dependency for image handling
 
 sentry-sdk[django]
+
+
+django-auditlog

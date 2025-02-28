@@ -66,6 +66,7 @@ const AdminAppView = () => {
       try {
         const notesResponse = await axiosInstance.get(`/api/notes/?application=${id}`);
         setConfidentialNotes(notesResponse.data);
+        console.log(notesResponse);
       } catch (err) {
         if (err.response && err.response.status === 404) {
           setConfidentialNotes([]);
@@ -180,27 +181,31 @@ const AdminAppView = () => {
       {/* Application Responses */}
       <Box sx={{ marginBottom: 3 }}>
         <Typography variant="h6">Application Responses</Typography>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Question</TableCell>
-                <TableCell>Response</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {questions.map((question) => {
-                const response = responses.find((r) => r.question === question.id);
-                return (
-                  <TableRow key={question.id}>
-                    <TableCell>{question.text}</TableCell>
-                    <TableCell>{response ? response.response : "No response provided"}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Paper sx={{ padding: 2, backgroundColor: "white", borderRadius: 2 }}>
+          {questions.map((question) => {
+            const response = responses.find((r) => r.question === question.id);
+            return (
+              <Box key={question.id} sx={{ marginBottom: 3 }}>
+                {/* Question */}
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  {question.text}
+                </Typography>
+
+                <Typography
+                  variant="body1"
+                  sx={{
+                    padding: "12px",
+                    backgroundColor: "#f5f5f5",
+                    borderRadius: "8px",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {response ? response.response : "No response provided"}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Paper>
       </Box>
 
       {/* Essential Documents Review */}
@@ -227,7 +232,7 @@ const AdminAppView = () => {
                   color: "gray",
                 }}
               >
-                By {note.author_name} on{" "}
+                By {note.author_display} on{" "}
                 {new Date(note.timestamp).toLocaleString()}
               </Typography>
             </Paper>

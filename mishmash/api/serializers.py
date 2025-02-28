@@ -9,10 +9,11 @@ from .models import (
     Document,
     ConfidentialNote,
 )
-from django import forms
+from allauth.socialaccount.models import SocialAccount
 
 
 class UserSerializer(serializers.ModelSerializer):
+    is_sso = serializers.ReadOnlyField()
     class Meta:
         model = User
         fields = [
@@ -22,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "is_admin",
             "is_mfa_enabled",
+            "is_sso",
         ]
 
 
@@ -62,7 +64,8 @@ class ApplicationQuestionSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(read_only=True)
-
+    gpa = serializers.DecimalField(max_digits=4, decimal_places=3, coerce_to_string=True)
+    
     class Meta:
         model = Application
         fields = [
@@ -87,6 +90,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(
         source="created_by.display_name", read_only=True
     )
+    cover_image_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Announcement
@@ -94,23 +98,39 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
-            "created_at",
-            "updated_at",
+            "cover_image",      # Accept the uploaded file
+            "cover_image_url",  # For retrieving the image URL
+            "pinned",
             "importance",
             "is_active",
             "created_by",
             "created_by_name",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at", "created_by"]
 
+    def get_cover_image_url(self, obj):
+        request = self.context.get("request")
+        if obj.cover_image and request:
+            return request.build_absolute_uri(obj.cover_image.url)
+        return None
+
     def create(self, validated_data):
-        # Set the created_by field to the current user
+        # If is_active is missing or falsy (empty string, None, etc.), default to True.
+        if not validated_data.get("is_active"):
+            validated_data["is_active"] = True
         validated_data["created_by"] = self.context["request"].user
         return super().create(validated_data)
 
+    def update(self, instance, validated_data):
+        if "is_active" not in validated_data:
+            validated_data["is_active"] = instance.is_active
+        return super().update(instance, validated_data)
+
 
 class ConfidentialNoteSerializer(serializers.ModelSerializer):
-    author_display = serializers.CharField(source="author.display_name", read_only=True)
+    author_display = serializers.SerializerMethodField()
 
     class Meta:
         model = ConfidentialNote
@@ -124,9 +144,9 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "author", "author_display", "timestamp"]
 
-    def get_author_name(self, obj):
+    def get_author_display(self, obj):
         """Returns 'Deleted user' if author is null."""
-        return obj.get_author_display()
+        return obj.author.display_name if obj.author else "Deleted User"
 
 
 class DocumentSerializer(serializers.ModelSerializer):

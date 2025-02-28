@@ -17,7 +17,7 @@ const DeactivateTOTPContent = styled("div")(({ theme }) => ({
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.customShadows.card,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   minHeight: "500px",
 }));
 
@@ -34,7 +34,7 @@ const Button = styled("button")(({ theme }) => ({
   backgroundColor: theme.palette.error.main, // Use error color for deactivation
   color: theme.palette.error.contrastText,
   border: "none",
-  borderRadius: theme.shape.borderRadius.small,
+  borderRadius: theme.shape.borderRadii.small,
   fontSize: theme.typography.button.fontSize,
   fontFamily: theme.typography.fontFamily,
   cursor: "pointer",
