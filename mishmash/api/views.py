@@ -75,6 +75,7 @@ from django.http import JsonResponse
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 import base64
+from allauth.socialaccount.models import SocialAccount
 
 ### Custom permission classes for API access ###
 
@@ -227,10 +228,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ```json
         {
             "title": "Engineering in Germany",
-            "year": "2025", "semester": Fall
-            "faculty_leads": "Dr. Smith",
+            "year": "2025", "semester": "Fall"
+            "faculty_leads": [1, 2],
             "application_open_date": "2025-01-01",
             "application_deadline": "2025-03-15",
+            "essential_document_deadline": "2025-03-15",
             "start_date": "2025-05-01",
             "end_date": "2025-07-31",
             "description": "An amazing program in Germany."
@@ -249,11 +251,35 @@ class ProgramViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Admin only
         """
+        title = request.data.get("title", "").strip()
+        year = request.data.get("year", "").strip()
+        semester = request.data.get("semester", "").strip()
+        description = request.data.get("description", "").strip()
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
+
+        if len(title) > 80:
+            raise ValidationError({"detail": "Title cannot exceed 80 characters."})
+
+        if len(year) > 4:
+            raise ValidationError({"detail": "Year must be a 4-digit number."})
+
+        if len(semester) > 20:
+            raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
+
+        if len(description) > 1000:
+            raise ValidationError({"detail": "Description cannot exceed 1000 characters."})
+
+        if not year.isdigit() or len(year) != 4:
+            raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
+
+        valid_semesters = {"Fall", "Spring", "Summer"}
+        if semester not in valid_semesters:
+            raise ValidationError({"detail": f"Semester must be one of {valid_semesters}."})
+
 
         try:
             application_open_date = datetime.strptime(
@@ -270,7 +296,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         except (TypeError, ValueError):
             raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
 
-        if application_deadline > application_open_date:
+        if application_deadline < application_open_date:
             raise ValidationError(
                 {
                     "detail": "Application open date cannot be after the application deadline."
@@ -661,6 +687,15 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        if "gpa" in data:
+            try:        
+                data["gpa"] = Decimal(data["gpa"])
+            except (ValueError, TypeError):
+                return Response(
+                    {"detail": "Invalid GPA format. It must be a decimal number."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if "status" in data:
             new_status = data["status"]
 
@@ -882,42 +917,23 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing announcements.
 
-    ## Features:
-    - **Public users & students** can:
-      - View active announcements.
-    - **Admins** can:
-      - Create, update, and delete announcements.
-      - View all announcements (including inactive ones).
-
-    ## Served Endpoints:
-    - `GET /api/announcements/` → List active announcements (Public & Students)
-    - `POST /api/announcements/` → Create an announcement (Admins only)
-    - `GET /api/announcements/{id}/` → Retrieve a specific announcement (Public & Students)
-    - `PATCH /api/announcements/{id}/` → Update an announcement (Admins only)
-    - `DELETE /api/announcements/{id}/` → Delete an announcement (Admins only)
-
-    ## Permissions:
-    - **Public & Students:** Can only view active announcements.
-    - **Admins:** Can view, create, edit, and delete announcements.
+    - Public & Students: Can view active announcements.
+    - Admins: Can create, update, delete, and view all announcements.
     """
-
     serializer_class = AnnouncementSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ["created_at", "importance"]
-    ordering = ["-created_at"]
+    ordering_fields = ["created_at", "importance", "pinned"]
+    # Use model ordering: pinned first, then creation date descending
+    ordering = ["-pinned", "-created_at"]
+
+    # Add parsers to support file uploads
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
-        """
-        Returns the list of announcements:
-        - **Admins see all announcements**.
-        - **Public users & students see only active announcements**.
-        """
         queryset = Announcement.objects.all()
-
         if not self.request.user.is_authenticated or not self.request.user.is_admin:
             queryset = queryset.filter(is_active=True)
-
         return queryset
 
 
@@ -928,7 +944,7 @@ class UserViewSet(viewsets.ModelViewSet):
     ## Features:
     - **Regular users**:
       - Retrieve their own details.
-      - Change their password.
+      - Change their password (local users only).
     - **Admins**:
       - View all users.
       - Manage user accounts.
@@ -980,10 +996,35 @@ class UserViewSet(viewsets.ModelViewSet):
             return queryset.none()
 
         return queryset
+    
+    def update(self, request, *args, **kwargs):
+        """
+        Override the default update method to handle special cases:
+        - If a user is promoted to admin, delete their applications.
+        - If a user is demoted from admin, remove them as faculty lead.
+        """
+        user = self.get_object()
+        new_is_admin = request.data.get("is_admin", user.is_admin)
 
-    @action(
-        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
-    )
+        if not user.is_admin and new_is_admin:
+            # User is being promoted to admin, delete applications
+            applications_deleted = Application.objects.filter(student=user).delete()
+            print(f"Deleted {applications_deleted[0]} applications for {user.username}")
+
+        if user.is_admin and not new_is_admin:
+            # User is being demoted from admin, remove them from faculty lead roles
+            programs = Program.objects.filter(faculty_leads=user)
+            for program in programs:
+                program.faculty_leads.remove(user)
+                if program.faculty_leads.count() == 0:
+                    admin_user = User.objects.get(username="admin")
+                    program.faculty_leads.add(admin_user)
+                program.save()
+            print(f"Removed {user.username} from faculty leads of {programs.count()} programs")
+
+        return super().update(request, *args, **kwargs)
+
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -1064,6 +1105,11 @@ class UserViewSet(viewsets.ModelViewSet):
         user = authenticate(request, username=username, password=password)
 
         if user:
+            if user.is_sso:
+                return Response(
+                    {"detail": "Please log in via SSO."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             token, _ = Token.objects.get_or_create(user=user)
             serializer = UserSerializer(user).data
             serializer["token"] = token.key
@@ -1073,9 +1119,7 @@ class UserViewSet(viewsets.ModelViewSet):
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(
-        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def logout(self, request):
         """
         ## User Logout
@@ -1093,11 +1137,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(
-        detail=False,
-        methods=["patch"],
-        permission_classes=[permissions.IsAuthenticated],
-    )
+    @action(detail=False, methods=["patch"], permission_classes=[permissions.IsAuthenticated],)
     def change_password(self, request):
         """
         ## Change Password
@@ -1113,6 +1153,21 @@ class UserViewSet(viewsets.ModelViewSet):
         **Response:** Updated authentication token.
         **Errors:** 400 if passwords do not match.
         """
+        user = request.user
+
+        if user.is_admin and "user_id" in request.data:
+            try:
+                user = User.objects.get(id=request.data["user_id"])
+            except User.DoesNotExist:
+                return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+        if user.is_sso:
+            return Response(
+                {"detail": "SSO users cannot change their password."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
 
@@ -1122,23 +1177,17 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = request.user
         user.set_password(password)
         user.save()
 
-        update_session_auth_hash(request, user)
+        if user == request.user:
+            update_session_auth_hash(request, user)
+            token, _ = Token.objects.get_or_create(user=user)
+            serializer = UserSerializer(user).data
+            serializer["token"] = token.key
+            return Response(serializer, status=status.HTTP_200_OK)
 
-        token, _ = Token.objects.get_or_create(user=user)
-
-        return Response(
-            {
-                "token": token.key,
-                "id": user.id,
-                "username": user.username,
-                "display_name": user.display_name,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": f"Password updated successfully for {user.username}."}, status=status.HTTP_200_OK)
 
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
@@ -1155,6 +1204,22 @@ class UserViewSet(viewsets.ModelViewSet):
         faculty = User.objects.filter(is_admin=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAdminUser])
+    def user_warnings(self, request, pk=None):
+        """
+        Get warnings related to promoting, demoting, or deleting a user.
+        """
+        user = self.get_object()
+        applications_count = Application.objects.filter(student=user).count()
+        faculty_programs = Program.objects.filter(faculty_leads=user)
+
+        warnings = {
+            "applications_count": applications_count,
+            "faculty_programs": [p.title for p in faculty_programs] if faculty_programs.exists() else ["None"],
+        }
+
+        return Response(warnings, status=status.HTTP_200_OK)
 
 
 class ConfidentialNoteViewSet(viewsets.ModelViewSet):

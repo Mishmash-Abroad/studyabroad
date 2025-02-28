@@ -30,8 +30,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY SETTINGS
 # ================
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
-OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET', default='wrong')
+SECRET_KEY = config('SECRET_KEY', default='abcdefghijklmnop')
+OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET', default='QENTkFS6GmDz06UNYPh19j62xuVVuyxx1Y0K6RYSgy7D1x1ygjZHOCdVEiBojRp5_VR6nnkr3zIH9Wjlit4jtQ')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -43,8 +43,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
 
-#should use default site
-SITE_ID = 1
+
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
@@ -75,11 +74,15 @@ INSTALLED_APPS = [
     'corsheaders',                  # CORS handling
     
     #oauth2 setup
+    "django.contrib.sites",
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.openid_connect',
     "allauth.mfa",
+
+    #audit logging
+    'auditlog',
     
     # Local apps
     'api',                         # Main application API
@@ -98,7 +101,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Add the account middleware:
-    "allauth.account.middleware.AccountMiddleware",
+    'allauth.account.middleware.AccountMiddleware',
+
+    'auditlog.middleware.AuditlogMiddleware',
 ]
 
 # URL Configuration
@@ -154,7 +159,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 # OAUTH AUTHEENTICATION
 # ==================
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 AUTHENTICATION_BACKENDS = [
     
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -167,7 +171,20 @@ AUTHENTICATION_BACKENDS = [
 
 
 # Provider specific settings
-SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET = False
+ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/overview/'
+LOGIN_REDIRECT_URL = '/dashboard/overview/'
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
+
+#should use default site
+SITE_ID = 1
+
+# Disable email verification and set the login redirect URL
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_LOGOUT_ON_GET = True
+
+# Enable SSO login
 
 SOCIALACCOUNT_PROVIDERS = {
     "openid_connect": {
@@ -187,6 +204,8 @@ SOCIALACCOUNT_PROVIDERS = {
         ]
     }
 }
+
+SOCIALACCOUNT_ADAPTER = "api.adapters.CustomSocialAccountAdapter"
 
 # Session Settings
 SESSION_COOKIE_AGE = 24 * 60 * 60      # 86400 seconds = 24 hours
@@ -224,6 +243,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',  # Require authentication by default
     ],
+    'COERCE_DECIMAL_TO_STRING': True,
 }
 
 # CORS Configuration for frontend communication
@@ -262,3 +282,39 @@ sentry_sdk.init(
         "continuous_profiling_auto_start": True,
     },
 )
+
+
+#logging settings
+
+import logging
+import os
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "auditlog": {  # Capture audit logs
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

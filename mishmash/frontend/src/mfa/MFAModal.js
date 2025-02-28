@@ -19,7 +19,7 @@ const ModalOverlay = styled("div")(({ theme }) => ({
 
 const ModalContainer = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   padding: "32px",
   width: "100%",
   maxWidth: "400px",
@@ -58,7 +58,7 @@ const ModalForm = styled("form")({
 
 const FormInput = styled("input")(({ theme }) => ({
   padding: "12px 16px",
-  borderRadius: theme.shape.borderRadius.medium,
+  borderRadius: theme.shape.borderRadii.medium,
   border: `1px solid ${theme.palette.border.main}`,
   fontSize: theme.typography.body1.fontSize,
   fontFamily: theme.typography.fontFamily,
@@ -76,7 +76,7 @@ const FormButton = styled("button")(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   border: "none",
-  borderRadius: theme.shape.borderRadius.medium,
+  borderRadius: theme.shape.borderRadii.medium,
   fontSize: theme.typography.button.fontSize,
   fontWeight: theme.typography.button.fontWeight,
   cursor: "pointer",

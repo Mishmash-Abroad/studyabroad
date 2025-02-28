@@ -38,7 +38,7 @@ const ProgramStatusBadge = styled('div')(({ theme, severity }) => {
     top: '10px',
     right: '10px',
     padding: '6px 12px',
-    borderRadius: theme.shape.borderRadius.xl,
+    borderRadius: theme.shape.borderRadii.xl,
     fontSize: theme.typography.caption.fontSize,
     fontWeight: theme.typography.subtitle2.fontWeight,
     fontFamily: theme.typography.fontFamily,
@@ -58,7 +58,7 @@ const ApplicationStatusBadge = styled('div')(({ theme, severity }) => {
     top: '45px',
     right: '10px',
     padding: '6px 12px',
-    borderRadius: theme.shape.borderRadius.xl,
+    borderRadius: theme.shape.borderRadii.xl,
     fontSize: theme.typography.caption.fontSize,
     fontWeight: theme.typography.subtitle2.fontWeight,
     fontFamily: theme.typography.fontFamily,
@@ -93,7 +93,7 @@ const ApplicationButton = styled('button')(({ theme, variant }) => {
   const colors = getColors();
   return {
     padding: '8px 16px',
-    borderRadius: theme.shape.borderRadius.small,
+    borderRadius: theme.shape.borderRadii.small,
     backgroundColor: colors.bg,
     color: colors.color,
     border: 'none',
@@ -112,7 +112,7 @@ const ApplicationButton = styled('button')(({ theme, variant }) => {
 // Main container for the Program Card
 const StyledProgramCard = styled('div')(({ theme, expanded }) => ({
   position: 'relative',
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   overflow: 'hidden',
   backgroundColor: theme.palette.background.card.default,
   cursor: 'pointer',
@@ -206,7 +206,7 @@ const ProgramCard = ({ program, onExpand }) => {
         style={{
           display: 'inline-block',
           padding: theme.spacing(0.5, 1.5),
-          borderRadius: theme.shape.borderRadius.medium,
+          borderRadius: theme.shape.borderRadii.medium,
           backgroundColor: theme.palette.status[info.style]?.background,
           color: theme.palette.status[info.style]?.main,
           fontSize: theme.typography.caption.fontSize,
@@ -317,6 +317,7 @@ const ProgramCard = ({ program, onExpand }) => {
                   fontSize: '1.1em',
                   lineHeight: '1.6',
                   color: theme.palette.text.primary,
+                  whiteSpace: "pre-line",
                 }}
               >
                 {program.description}
@@ -330,7 +331,7 @@ const ProgramCard = ({ program, onExpand }) => {
                 gap: '24px',
                 backgroundColor: theme.palette.grey[50],
                 padding: '24px',
-                borderRadius: theme.shape.borderRadius.large,
+                borderRadius: theme.shape.borderRadii.large,
                 marginBottom: '24px',
                 alignItems: 'start',
               }}

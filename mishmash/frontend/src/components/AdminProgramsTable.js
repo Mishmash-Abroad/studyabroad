@@ -20,7 +20,7 @@ import ProgramForm from "./ProgramForm";
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.shadows.card,
   margin: "20px 0",
   maxHeight: "calc(100vh - 300px)",

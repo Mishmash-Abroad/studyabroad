@@ -40,7 +40,7 @@ const getStatusColors = (theme, severity) => {
 // Styled Components
 const TableWrapper = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
   margin: "20px 0",
   maxHeight: "calc(100vh - 300px)",
@@ -66,7 +66,7 @@ const StatusCell = styled(TableCell)(({ theme, status }) => {
       backgroundColor: colors.bg,
       color: colors.color,
       padding: "4px 8px",
-      borderRadius: theme.shape.borderRadius.small,
+      borderRadius: theme.shape.borderRadii.small,
       display: "inline-block",
       fontSize: theme.typography.caption.fontSize,
       fontWeight: theme.typography.subtitle2.fontWeight,
@@ -97,7 +97,7 @@ const ApplicationButton = styled("button")(({ theme, variant }) => {
   const colors = getColors();
   return {
     padding: "8px 16px",
-    borderRadius: theme.shape.borderRadius.small,
+    borderRadius: theme.shape.borderRadii.small,
     backgroundColor: colors.bg,
     color: colors.color,
     border: "none",
@@ -125,7 +125,7 @@ const DetailBox = styled(Box)(({ theme }) => ({
   margin: theme.spacing(2),
   padding: theme.spacing(2),
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.medium,
+  borderRadius: theme.shape.borderRadii.medium,
   boxShadow: theme.customShadows.z1,
 }));
 

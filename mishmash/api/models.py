@@ -1,6 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
+from allauth.socialaccount.models import SocialAccount
+
+
+from auditlog.registry import auditlog
+
 
 
 class User(AbstractUser):
@@ -20,6 +25,11 @@ class User(AbstractUser):
         blank=True,
         help_text="Specific permissions for this user.",
     )
+
+    @property
+    def is_sso(self):
+        """Check if user logged in via SSO."""
+        return SocialAccount.objects.filter(user=self).exists()
 
 
 class Program(models.Model):
@@ -50,7 +60,11 @@ class Application(models.Model):
         null=True, blank=True
     )  # Allow null to avoid immediate data issues
     gpa = models.DecimalField(
-        max_digits=3, decimal_places=2, null=True, blank=True, default=0.00
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        default=0.000,
     )
     major = models.CharField(max_length=100, default="Undeclared")
     status = models.CharField(
@@ -116,11 +130,6 @@ class ApplicationResponse(models.Model):
 
 
 class Announcement(models.Model):
-    """
-    Model for storing announcements that can be displayed on the homepage and dashboard.
-    Uses a JSON field to store rich text content to avoid security issues with raw HTML.
-    """
-
     IMPORTANCE_LEVELS = [
         ("low", "Low"),
         ("medium", "Medium"),
@@ -132,20 +141,33 @@ class Announcement(models.Model):
     content = models.JSONField(
         help_text="JSON representation of rich text content (compatible with Tiptap/ProseMirror)"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # New fields:
+    cover_image = models.ImageField(
+        upload_to="announcements/",
+        null=True,
+        blank=True,
+        help_text="Optional cover image file for the announcement"
+    )
+    pinned = models.BooleanField(
+        default=False,
+        help_text="If true, this announcement will be pinned to the top of listings."
+    )
     importance = models.CharField(
         max_length=10, choices=IMPORTANCE_LEVELS, default="medium"
     )
     is_active = models.BooleanField(
-        default=True, help_text="If false, announcement won't be displayed"
+        default=True,
+        help_text="If false, the announcement will not be displayed."
     )
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="announcements"
+        "User", on_delete=models.SET_NULL, null=True, related_name="announcements"
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        # Order pinned announcements first, then by creation date descending
+        ordering = ["-pinned", "-created_at"]
         indexes = [
             models.Index(fields=["-created_at"]),
             models.Index(fields=["importance", "-created_at"]),
@@ -173,3 +195,16 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+
+
+
+
+
+
+auditlog.register(User)
+auditlog.register(Program)
+auditlog.register(Application)
+auditlog.register(ApplicationResponse)
+auditlog.register(Announcement)
+auditlog.register(ConfidentialNote)
+auditlog.register(Document)

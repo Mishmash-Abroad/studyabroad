@@ -109,9 +109,18 @@ class Command(BaseCommand):
         if response.status_code >= 400:
             try:
                 error_data = response.json()
-                if "detail" not in error_data or not isinstance(error_data.get("detail"), str):
-                    print(f"WARNING: Expected an 'detail' key in the response, but it was missing or not a string.")
-                    warnings[0] += 1
+                if "detail" in error_data and isinstance(error_data["detail"], str):
+                    error_message = error_data["detail"]
+                    default_errors = {
+                        "Not found.", "Invalid input.", "This field is required.",
+                        "Invalid data.", "Invalid request.", "Authentication credentials were not provided.",
+                        "Invalid token.", "Incorrect authentication credentials.", "You do not have permission to perform this action."
+                    }
+
+                    # Only raise a warning if the error is one of the default messages
+                    if error_message in default_errors:
+                        print(f"WARNING: Received a default error message instead of a custom error message: '{error_message}'")
+                        warnings[0] += 1
             except Exception:
                 print(f"WARNING: Expected JSON error response, but got non-JSON response (likely an HTML error page).")
                 warnings[0] += 1
@@ -265,9 +274,10 @@ class Command(BaseCommand):
             "title": "Bad Program 1",
             "year": "2025", "semester": "Fall",
             "description": "Invalid test case.",
-            "faculty_leads": "Test Faculty",
+            "faculty_leads_ids": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() - timedelta(days=1),  # Invalid: Deadline before open date
+            "essential_document_deadline": now().date(),
             "start_date": now().date(),
             "end_date": now().date() + timedelta(days=10),
         }
@@ -296,21 +306,23 @@ class Command(BaseCommand):
         ### Valid Program Creation ###
 
         # Successfully create a valid program
+
+        # application_open_date <= application_deadline <= essential_document_deadline <= start_date <= end_date
         valid_program_data = {
             "title": "Valid Program",
             "year": "2025", "semester": "Fall",
             "description": "A valid test program.",
-            "faculty_leads": "Test Faculty",
-            "application_open_date": now().date(),
-            "application_deadline": now().date() + timedelta(days=10),
-            "start_date": now().date() + timedelta(days=20),
-            "end_date": now().date() + timedelta(days=30),
+            "faculty_leads_ids": [str(admin.id)],
+            "application_open_date": now().date().strftime("%Y-%m-%d"),
+            "application_deadline": (now().date() + timedelta(days=10)).strftime("%Y-%m-%d"),
+            "essential_document_deadline": (now().date() + timedelta(days=11)).strftime("%Y-%m-%d"),
+            "start_date": (now().date() + timedelta(days=20)).strftime("%Y-%m-%d"),
+            "end_date": (now().date() + timedelta(days=30)).strftime("%Y-%m-%d"),
         }
         response = client.post("/api/programs/", valid_program_data)
         Command.check_response(response, 201, success_message="Program created successfully by admin.",
                             error_message="Program creation failed for admin.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
-
         program_id = response.data["id"]
 
         # Retrieve the created program
@@ -388,7 +400,8 @@ class Command(BaseCommand):
 
         program = Program.objects.create(
             title="Test Program",
-            "year": "2025", "semester": "Fall",
+            year="2025", 
+            semester="Fall",
             description="A program for testing applications.",
             application_open_date=now().date(),
             application_deadline=now().date() + timedelta(days=10),
@@ -516,9 +529,10 @@ class Command(BaseCommand):
             "title": "Test Program for Questions",
             "year": "2025", "semester": "Fall",
             "description": "A program for testing questions.",
-            "faculty_leads": [admin.id],
+            "faculty_leads_ids": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() + timedelta(days=10),
+            "essential_document_deadline": now().date() + timedelta(days=10),
             "start_date": now().date() + timedelta(days=20),
             "end_date": now().date() + timedelta(days=30),
         }
@@ -612,9 +626,10 @@ class Command(BaseCommand):
             "title": "Response Test Program",
             "year": "2025", "semester": "Fall",
             "description": "A program for testing application responses.",
-            "faculty_leads": "Test Faculty",
+            "faculty_leads_ids": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() + timedelta(days=10),
+            "essential_document_deadline": now().date() + timedelta(days=10),
             "start_date": now().date() + timedelta(days=20),
             "end_date": now().date() + timedelta(days=30),
         }
@@ -840,10 +855,12 @@ class Command(BaseCommand):
         admin = User.objects.get(username="admin_user")
         student = User.objects.get(username="student_user")
 
+        program_id = Program.objects.order_by("id").values_list("id", flat=True).first()
+
         # Create a test application
         client.force_authenticate(user=student)
         application_data = {
-            "program": 1,
+            "program": program_id,
             "date_of_birth": "2000-01-01",
             "gpa": 3.8,
             "major": "Computer Science"

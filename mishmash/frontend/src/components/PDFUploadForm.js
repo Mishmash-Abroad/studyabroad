@@ -37,7 +37,7 @@ const DropZone = styled(Box, {
   borderColor: isDragActive ? theme.palette.primary.main 
     : hasFile ? theme.palette.success.main 
     : theme.palette.grey[300],
-  borderRadius: theme.shape.borderRadius.medium,
+  borderRadius: theme.shape.borderRadii.medium,
   padding: theme.spacing(3),
   textAlign: "center",
   backgroundColor: isReadOnly ? theme.palette.action.disabledBackground
@@ -60,7 +60,7 @@ const FileInfo = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2),
   padding: theme.spacing(2),
   backgroundColor: theme.palette.grey[50],
-  borderRadius: theme.shape.borderRadius.small,
+  borderRadius: theme.shape.borderRadii.small,
   border: `1px solid ${theme.palette.grey[200]}`,
 }));
 
