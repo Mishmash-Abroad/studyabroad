@@ -16,7 +16,7 @@ import PDFUploadForm from "../components/PDFUploadForm";
 import DocumentStatusDisplay from "../components/DocumentStatusDisplay";
 
 // -------------------- COMPONENT LOGIC --------------------
-const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) => {
+const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, documents = [] }) => {
   // Show message if application hasn't been created yet
   if (!application_id) {
     return (
@@ -33,11 +33,12 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false}) 
       <>
         <Alert severity="info" sx={{ mb: 3 }}>
           Document submission is currently unavailable. 
-          This could be because the document submission deadline has passed 
-          or your current application status doesn't allow for document modification or submission.
+          This is because your current application status doesn't allow for document modification or submission.
+          You need to be approved or enrolled in the program to submit documents.
         </Alert>
         <DocumentStatusDisplay 
           application_id={application_id} 
+          documents={documents}
           isReadOnly={true}
         />
       </>

@@ -188,10 +188,10 @@ const ApplicationPage = () => {
            existingApp.status !== STATUS.WITHDRAWN);
 
         // Document submission becomes read-only if:
-        // - Past the program's essential document deadline OR
         // - Status is not in DOCUMENT_SUBMISSION_STATUSES
+        // Note: Document deadlines are soft deadlines - documents can be submitted after the deadline
+        // as long as the application status allows document submission
         const isDocumentsReadOnly =
-          new Date() > new Date(programData.essential_document_deadline) ||
           (existingApp && !DOCUMENT_SUBMISSION_STATUSES.includes(existingApp.status));
 
         console.log(existingApp);
@@ -281,6 +281,40 @@ const ApplicationPage = () => {
       return;
     }
 
+    // Check if all responses have been filled out
+    const emptyResponses = responses.filter(response => !response.response_text.trim());
+    if (emptyResponses.length > 0) {
+      updateState({
+        error: `Please answer all program questions. ${emptyResponses.length} question${emptyResponses.length > 1 ? 's' : ''} ${emptyResponses.length > 1 ? 'are' : 'is'} unanswered.`
+      });
+      return;
+    }
+
+    // Check for emojis in text fields
+    const containsEmoji = (text) => {
+      // This regex matches most common emoji characters
+      const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+      return text && emojiRegex.test(text);
+    };
+
+    // Check all text fields for emojis
+    const fieldsWithEmojis = [];
+    if (containsEmoji(application.major)) fieldsWithEmojis.push("Major");
+    
+    // Check response text fields
+    responses.forEach((response, index) => {
+      if (containsEmoji(response.response_text)) {
+        fieldsWithEmojis.push(`Response ${index + 1}`);
+      }
+    });
+
+    if (fieldsWithEmojis.length > 0) {
+      updateState({
+        error: `Please remove emojis from the following fields: ${fieldsWithEmojis.join(", ")}. Our system cannot process emoji characters.`,
+      });
+      return;
+    }
+
     updateState({ loading: true, error: "" });
 
     try {
@@ -326,13 +360,21 @@ const ApplicationPage = () => {
 
       window.location.reload();
     } catch (err) {
-      updateState({
-        error:
-          err.response?.data?.detail ||
-          err.message ||
-          "Failed to submit application",
-        loading: false,
-      });
+      console.error("Application submission error:", err);
+      
+      // Check if the error might be related to emojis
+      const errorMessage = err.response?.data?.detail || err.message;
+      if (err.response?.status === 500) {
+        updateState({
+          error: "Server error occurred. Please ensure no special characters or emojis are used in any field and try again.",
+          loading: false,
+        });
+      } else {
+        updateState({
+          error: errorMessage || "Failed to submit application",
+          loading: false,
+        });
+      }
     }
   };
 
@@ -760,6 +802,7 @@ const ApplicationPage = () => {
             <EssentialDocumentFormSubmission
               application_id={application.id}
               isReadOnly={isDocumentsReadOnly}
+              documents={documents.submitted || []}
             />
           </>
         )}
