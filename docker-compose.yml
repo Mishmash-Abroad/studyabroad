@@ -63,7 +63,6 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
       - SECRET_KEY=hdjakfhsjdkfhaskdjfhskdjfhsadfkjahekjfhsklfdjhlkasdfjhalskdjfhs
-      - OIDC_CLIENT_SECRET=BRUHBRUH
     depends_on:
       db:
         condition: service_healthy  # Ensures database is ready before starting
