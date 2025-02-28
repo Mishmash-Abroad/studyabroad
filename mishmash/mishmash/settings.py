@@ -205,6 +205,8 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+SOCIALACCOUNT_ADAPTER = "api.adapters.CustomSocialAccountAdapter"
+
 # Session Settings
 SESSION_COOKIE_AGE = 24 * 60 * 60      # 86400 seconds = 24 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
