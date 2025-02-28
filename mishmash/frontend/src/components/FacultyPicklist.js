@@ -43,7 +43,7 @@ const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
   },
 }));
 
-const FacultyPicklist = ({ onFacultyChange, initialSelected = [] }) => {
+const FacultyPicklist = ({ onFacultyChange, initialSelected = [], className }) => {
   const [facultyList, setFacultyList] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,6 +125,7 @@ const FacultyPicklist = ({ onFacultyChange, initialSelected = [] }) => {
         })
       }
       isOptionEqualToValue={(option, value) => option.id === value.id}
+      className={className}
     />
   );
 };
