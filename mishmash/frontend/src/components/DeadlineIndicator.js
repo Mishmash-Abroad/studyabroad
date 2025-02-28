@@ -36,19 +36,19 @@ const DeadlineContainer = styled(Box)(({ theme, severity, clickable, size = 'med
   let fontSize, padding, iconSize;
   switch(size) {
     case 'small':
-      fontSize = '0.7rem';
-      padding = '4px 8px';
+      fontSize = '0.75rem';
+      padding = '3px 6px';
       iconSize = 'small';
       break;
     case 'large':
-      fontSize = '0.9rem';
-      padding = '8px 16px';
+      fontSize = '0.95rem';
+      padding = '6px 12px';
       iconSize = 'medium';
       break;
     case 'medium':
     default:
-      fontSize = '0.8rem';
-      padding = '6px 12px';
+      fontSize = '0.85rem';
+      padding = '5px 10px';
       iconSize = 'small';
   }
   
@@ -88,10 +88,10 @@ const ModeIcon = styled(Box)(({ theme, active, color, size = 'medium' }) => {
   // Scale factor based on size
   const getScaleFactor = () => {
     switch(size) {
-      case 'small': return active ? 0.8 : 0.5;
-      case 'large': return active ? 1.1 : 0.7;
+      case 'small': return active ? 0.7 : 0.45;
+      case 'large': return active ? 0.95 : 0.6;
       case 'medium':
-      default: return active ? 1.0 : 0.6;
+      default: return active ? 0.85 : 0.55;
     }
   };
   
@@ -114,12 +114,17 @@ const ModeIcon = styled(Box)(({ theme, active, color, size = 'medium' }) => {
   };
 });
 
-const SwitchIcon = styled(SwapHorizIcon)(({ theme }) => ({
-  fontSize: '0.8rem',
-  margin: 0,
-  padding: 0,
-  opacity: 0.7,
-}));
+const SwitchIcon = styled(SwapHorizIcon)(({ theme, size = 'medium' }) => {
+  const fontSize = size === 'small' ? '0.7rem' : 
+                  size === 'large' ? '0.9rem' : '0.8rem';
+  
+  return {
+    fontSize: fontSize,
+    margin: 0,
+    padding: 0,
+    opacity: 0.7,
+  };
+});
 
 const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultExpanded = false, size = 'medium' }) => {
   const [expanded, setExpanded] = useState(false);
@@ -193,12 +198,12 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
     return expanded ? 
       <>
         {calendarIcon}
-        <SwitchIcon />
+        <SwitchIcon size={size} />
         {timeIcon}
       </> : 
       <>
         {timeIcon}
-        <SwitchIcon />
+        <SwitchIcon size={size} />
         {calendarIcon}
       </>;
   };
@@ -216,7 +221,16 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
       >
         {renderToggleIcons()}
       </ToggleContainer>
-      <Typography component="span" sx={{ whiteSpace: 'nowrap', flex: 1, paddingLeft: 0, marginLeft: 0 }}>
+      <Typography 
+        component="span" 
+        sx={{ 
+          whiteSpace: 'nowrap', 
+          flex: 1, 
+          paddingLeft: 0, 
+          marginLeft: 0,
+          fontSize: 'inherit' 
+        }}
+      >
         {expanded ? (
           `${deadlineType} due: ${deadlineInfo.fullDate}`
         ) : (
