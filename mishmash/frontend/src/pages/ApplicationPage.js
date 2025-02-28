@@ -21,6 +21,9 @@ import {
   READ_ONLY_APPLICATION_STATUSES,
   APPLICATION_ACTION_BUTTON_TEXT,
   DOCUMENT_SUBMISSION_STATUSES,
+  EDITABLE_APPLICATION_STATUSES,
+  STATUS,
+  PROGRAM_STATUS,
 } from "../utils/constants";
 
 // -------------------- STYLED COMPONENTS --------------------
@@ -116,6 +119,7 @@ const ApplicationPage = () => {
   // - documents: Required and submitted document tracking
   const [state, setState] = useState({
     isReadOnly: false,
+    isDocumentsReadOnly: false,
     program: {},
     application: {
       id: null,
@@ -142,6 +146,7 @@ const ApplicationPage = () => {
   // Destructure state for easier access
   const {
     isReadOnly,
+    isDocumentsReadOnly,
     program,
     application,
     questions,
@@ -166,13 +171,6 @@ const ApplicationPage = () => {
         );
         const programData = programRes.data;
 
-        // Application becomes read-only if:
-        // - Past the program's deadline
-        // - Status is one of the read-only statuses
-        const isReadOnly =
-          new Date() > new Date(programData.application_deadline) ||
-          READ_ONLY_APPLICATION_STATUSES.includes(application.status);
-
         // Find student's existing application for this program
         const applicationsRes = await axiosInstance.get(
           `/api/applications/?student=${user.id}`
@@ -180,6 +178,21 @@ const ApplicationPage = () => {
         const existingApp = applicationsRes.data.find(
           (app) => app.program == program_id
         );
+
+        // Application becomes read-only if:
+        // - Past the program's deadline OR
+        // - Status is not in EDITABLE_APPLICATION_STATUSES (and not a new application)
+        const isReadOnly =
+          new Date() > new Date(programData.application_deadline) ||
+          (existingApp && !EDITABLE_APPLICATION_STATUSES.includes(existingApp.status) &&
+           existingApp.status !== STATUS.WITHDRAWN);
+
+        // Document submission becomes read-only if:
+        // - Past the program's essential document deadline OR
+        // - Status is not in DOCUMENT_SUBMISSION_STATUSES
+        const isDocumentsReadOnly =
+          new Date() > new Date(programData.essential_document_deadline) ||
+          (existingApp && !DOCUMENT_SUBMISSION_STATUSES.includes(existingApp.status));
 
         console.log(existingApp);
         // Load program questions and student's responses
@@ -231,6 +244,7 @@ const ApplicationPage = () => {
 
         updateState({
           isReadOnly,
+          isDocumentsReadOnly,
           program: programData,
           application: existingApp || application,
           questions,
@@ -259,7 +273,7 @@ const ApplicationPage = () => {
     e.preventDefault();
     console.log(application.gpa);
     if (
-      isReadOnly ||
+      isApplicationReadOnly() ||
       !application.date_of_birth ||
       !application.gpa ||
       !application.major
@@ -275,7 +289,12 @@ const ApplicationPage = () => {
         date_of_birth: application.date_of_birth,
         gpa: application.gpa,
         major: application.major,
-        ...(application.id ? { status: "Applied" } : { program: program_id }),
+        // For withdrawn applications set status back to Applied when resubmitting
+        // For existing applications set/maintain status as Applied
+        // For new applications, set program ID
+        ...(application.id 
+            ? { status: application.status === STATUS.WITHDRAWN ? STATUS.APPLIED : STATUS.APPLIED } 
+            : { program: program_id }),
       };
 
       const appResponse = application.id
@@ -346,13 +365,26 @@ const ApplicationPage = () => {
   // Helper function to determine submit button text based on application status
   const getSubmitButtonText = () => {
     if (loading) return "Processing...";
-    if (application.status) {
-      return (
-        APPLICATION_ACTION_BUTTON_TEXT[application.status] ||
-        "Submit Application"
-      );
+    let actionText = application.id 
+      ? APPLICATION_ACTION_BUTTON_TEXT[application.status] || "Edit Application" 
+      : "Submit Application";
+    
+    if (application.status === STATUS.WITHDRAWN) {
+      actionText = "Resubmit Application";
     }
-    return "Submit Application";
+    
+    return actionText;
+  };
+
+  // Helper function to determine if the application form should be read-only
+  const isApplicationReadOnly = () => {
+    // If application is withdrawn, allow editing for resubmission
+    if (application.status === STATUS.WITHDRAWN) {
+      return false;
+    }
+    
+    // Otherwise, use the normal isReadOnly state
+    return isReadOnly;
   };
 
   // -------------------- HELPER FUNCTIONS --------------------
@@ -421,22 +453,34 @@ const ApplicationPage = () => {
         {/* Program Details Tab */}
         {activeTab === 0 && (
           <ProgramCard>
-            <DeadlineContainer>
-              <DeadlineIndicator
-                deadline={program.application_deadline}
-                type="application"
-                expanded={true}
-              />
-              <DeadlineIndicator
-                deadline={program.essential_document_deadline}
-                type="document"
-                expanded={true}
-              />
-            </DeadlineContainer>
+            {program.application_deadline && program.essential_document_deadline && (
+              <DeadlineContainer>
+                <DeadlineIndicator 
+                  deadline={program.application_deadline} 
+                  type="application" 
+                />
+                <DeadlineIndicator 
+                  deadline={program.essential_document_deadline} 
+                  type="document" 
+                />
+              </DeadlineContainer>
+            )}
+            <Typography variant="h6" component="h2" gutterBottom color="primary">
+              Program Information
+            </Typography>
+            
             <InfoGrid>
               <Box>
+                <Typography variant="subtitle2">Title</Typography>
+                <Typography variant="body1">{program.title || "Not specified"}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Term</Typography>
+                <Typography variant="body1">{program.year_semester || `${program.semester} ${program.year}` || "Not specified"}</Typography>
+              </Box>
+              <Box>
                 <Typography variant="subtitle2">Faculty Leads</Typography>
-                <Typography>
+                <Typography variant="body1">
                   {Array.isArray(program.faculty_leads) &&
                   program.faculty_leads.length > 0
                     ? program.faculty_leads
@@ -447,7 +491,7 @@ const ApplicationPage = () => {
               </Box>
               <Box>
                 <Typography variant="subtitle2">Program Dates</Typography>
-                <Typography>
+                <Typography variant="body1">
                   {program.start_date && program.end_date
                     ? `${new Date(
                         program.start_date
@@ -458,7 +502,107 @@ const ApplicationPage = () => {
                 </Typography>
               </Box>
             </InfoGrid>
-            <Typography variant="body1">{program.description}</Typography>
+            
+            <Typography variant="h6" component="h2" gutterBottom color="primary" sx={{ mt: 4 }}>
+              Key Deadlines
+            </Typography>
+            
+            <InfoGrid>
+              <Box>
+                <Typography variant="subtitle2">Application Open Date</Typography>
+                <Typography variant="body1">
+                  {program.application_open_date 
+                    ? new Date(program.application_open_date).toLocaleDateString()
+                    : "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Application Deadline</Typography>
+                <Typography variant="body1">
+                  {program.application_deadline 
+                    ? new Date(program.application_deadline).toLocaleDateString()
+                    : "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Document Submission Deadline</Typography>
+                <Typography variant="body1">
+                  {program.essential_document_deadline 
+                    ? new Date(program.essential_document_deadline).toLocaleDateString()
+                    : "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Current Status</Typography>
+                <Typography variant="body1" sx={{ 
+                  color: theme => {
+                    const now = new Date();
+                    if (!program.application_open_date || !program.application_deadline) {
+                      return theme.palette.grey[600]; // No dates set
+                    } else if (now < new Date(program.application_open_date)) {
+                      return theme.palette.info.main; // Will open soon
+                    } else if (now <= new Date(program.application_deadline)) {
+                      return theme.palette.success.main; // Open for applications
+                    } else {
+                      return theme.palette.error.main; // Closed
+                    }
+                  },
+                  fontWeight: 'medium'
+                }}>
+                  {(() => {
+                    const now = new Date();
+                    if (!program.application_open_date || !program.application_deadline) {
+                      return "Status unknown";
+                    } else if (now < new Date(program.application_open_date)) {
+                      return PROGRAM_STATUS.OPENING_SOON;
+                    } else if (now <= new Date(program.application_deadline)) {
+                      return PROGRAM_STATUS.OPEN;
+                    } else {
+                      return PROGRAM_STATUS.CLOSED;
+                    }
+                  })()}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Application Status</Typography>
+                <Typography variant="body1" sx={{ 
+                  color: getStatusColor,
+                  fontWeight: 'medium'
+                }}>
+                  {application.status || "Not Applied"}
+                </Typography>
+              </Box>
+            </InfoGrid>
+            
+            <Typography variant="h6" component="h2" gutterBottom color="primary" sx={{ mt: 4 }}>
+              Program Description
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {program.description || "No description provided for this program."}
+            </Typography>
+            
+            <Box sx={{ mt: 3 }}>
+              {!application.id && (
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  onClick={() => updateState({ activeTab: 1 })}
+                >
+                  Apply Now
+                </Button>
+              )}
+              {application.id && (
+                <Button 
+                  variant="outlined" 
+                  color="primary"
+                  onClick={() => updateState({ activeTab: 1 })}
+                >
+                  {application.status === STATUS.WITHDRAWN 
+                    ? "Resubmit Application" 
+                    : "View Your Application"}
+                </Button>
+              )}
+            </Box>
           </ProgramCard>
         )}
 
@@ -471,7 +615,7 @@ const ApplicationPage = () => {
                 type="application"
               />
             </DeadlineContainer>
-            {isReadOnly && (
+            {isApplicationReadOnly() && (
               <Alert severity="info" sx={{ mb: 3 }}>
                 This application is currently in read-only mode.
               </Alert>
@@ -498,7 +642,7 @@ const ApplicationPage = () => {
                     })
                   }
                   InputLabelProps={{ shrink: true }}
-                  disabled={isReadOnly}
+                  disabled={isApplicationReadOnly()}
                   required
                 />
               </Box>
@@ -519,7 +663,7 @@ const ApplicationPage = () => {
                     console.log(application.gpa);
                   }}
                   inputProps={{ min: "0", max: "4", step: "0.001" }}
-                  disabled={isReadOnly}
+                  disabled={isApplicationReadOnly()}
                   required
                 />
               </Box>
@@ -534,11 +678,11 @@ const ApplicationPage = () => {
                       application: { ...application, major: e.target.value },
                     })
                   }
-                  disabled={isReadOnly}
+                  disabled={isApplicationReadOnly()}
                   required
                 />
               </Box>
-              {isReadOnly && <ReadOnlyOverlay />}
+              {isApplicationReadOnly() && <ReadOnlyOverlay />}
             </FormSection>
 
             {/* Program Questions Section */}
@@ -563,17 +707,17 @@ const ApplicationPage = () => {
                         ),
                       })
                     }
-                    disabled={isReadOnly}
+                    disabled={isApplicationReadOnly()}
                   />
                 </Box>
               ))}
-              {isReadOnly && <ReadOnlyOverlay />}
+              {isApplicationReadOnly() && <ReadOnlyOverlay />}
             </FormSection>
 
             {/* Form Actions */}
             <ButtonContainer>
               <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                {application.status === "Applied" && !isReadOnly && (
+                {application.status === "Applied" && !isApplicationReadOnly() && (
                   <Button
                     variant="outlined"
                     color="error"
@@ -584,7 +728,7 @@ const ApplicationPage = () => {
                     Withdraw Application
                   </Button>
                 )}
-                {!isReadOnly && (
+                {!isApplicationReadOnly() && (
                   <Button
                     type="submit"
                     variant="contained"
@@ -611,7 +755,7 @@ const ApplicationPage = () => {
             </DeadlineContainer>
             <EssentialDocumentFormSubmission
               application_id={application.id}
-              isReadOnly={isReadOnly}
+              isReadOnly={isDocumentsReadOnly}
             />
           </>
         )}

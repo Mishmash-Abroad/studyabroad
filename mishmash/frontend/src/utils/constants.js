@@ -101,17 +101,16 @@ export const SEVERITY_LEVELS = {
     STATUS.ENROLLED
   ];
 
-  export const DOCUMENT_SUBMISSION_STATUSES = [ // Statuses where documents can be submitted.
-    STATUS.ELIGIBLE,
-    STATUS.APPLIED,
-  ];
-  
-  export const EDITABLE_APPLICATION_STATUSES = [ // Application responses are editable only when in these statuses.
+  export const EDITABLE_APPLICATION_STATUSES = [
     STATUS.APPLIED
   ];
-  
-  // Mapping for application action button text.
-  // When an application exists, the text is pulled from here.
+
+  export const DOCUMENT_SUBMISSION_STATUSES = [
+    STATUS.ELIGIBLE,
+    STATUS.APPLIED
+  ];
+
+  // Button text mapping for different status-based actions
   export const APPLICATION_ACTION_BUTTON_TEXT = {
     [STATUS.APPLIED]: 'Edit Application',
     [STATUS.ENROLLED]: 'View Application',

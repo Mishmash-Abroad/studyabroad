@@ -336,9 +336,8 @@ const MyProgramsTable = () => {
                 >
                   View Application Details
                 </ApplicationButton>
-                {["withdrawn", "canceled"].includes(
-                  app.status.toLowerCase()
-                ) &&
+                {/* Only show Re-apply button for withdrawn applications, not canceled ones */}
+                {app.status.toLowerCase() === "withdrawn" &&
                   isProgramOpen(app.program) && (
                     <ApplicationButton
                       variant="success"
