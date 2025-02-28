@@ -17,6 +17,8 @@ services:
   # Django Backend Service
   # Handles API requests, database operations, and business logic
   backend:
+    env_file:
+      - .env
     build: 
       context: ./mishmash
       dockerfile: Dockerfile
@@ -62,7 +64,7 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
-      - SECRET_KEY=hdjakfhsjdkfhaskdjfhskdjfhsadfkjahekjfhsklfdjhlkasdfjhalskdjfhs
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
     depends_on:
       db:
         condition: service_healthy  # Ensures database is ready before starting
