@@ -1,9 +1,7 @@
-import logging
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.utils import user_field
 from django.core.exceptions import ValidationError
 
-logger = logging.getLogger(__name__)
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     """
@@ -13,14 +11,10 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def populate_user(self, request, sociallogin, data):
         """
         Populates user fields based on the actual SSO response.
-        """
-        logger.info(f"SSO response data: {data}")
-        
+        """        
         user = super().populate_user(request, sociallogin, data)
 
         extra_data = sociallogin.account.extra_data
-
-        logger.info(f"SSO extra_data: {extra_data}")
         
         duke_net_id = extra_data.get("dukeNetID")
         full_name = extra_data.get("name")
