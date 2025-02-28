@@ -5,7 +5,9 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
-const DeadlineContainer = styled(Box)(({ theme, severity, clickable, size = 'medium' }) => {
+const DeadlineContainer = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'severity' && prop !== 'clickable' && prop !== 'size'
+})(({ theme, severity, clickable, size = 'medium' }) => {
   const getColors = () => {
     switch (severity) {
       case 'error':
@@ -65,11 +67,11 @@ const DeadlineContainer = styled(Box)(({ theme, severity, clickable, size = 'med
     fontFamily: theme.typography.fontFamily,
     letterSpacing: theme.typography.caption.letterSpacing,
     boxShadow: theme.customShadows.button,
-    cursor: clickable ? 'pointer' : 'default',
+    cursor: Boolean(clickable) ? 'pointer' : 'default',
     transition: theme.transitions.create(['background-color', 'transform', 'box-shadow'], {
       duration: theme.transitions.duration.short,
     }),
-    '&:hover': clickable ? {
+    '&:hover': Boolean(clickable) ? {
       transform: 'translateY(-1px)',
       boxShadow: theme.customShadows.buttonHover,
     } : {},
@@ -84,14 +86,16 @@ const ToggleContainer = styled(Box)(({ theme }) => ({
   cursor: 'pointer',
 }));
 
-const ModeIcon = styled(Box)(({ theme, active, color, size = 'medium' }) => {
+const ModeIcon = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'active' && prop !== 'color' && prop !== 'size'
+})(({ theme, active, color, size = 'medium' }) => {
   // Scale factor based on size
   const getScaleFactor = () => {
     switch(size) {
-      case 'small': return active ? 0.7 : 0.45;
-      case 'large': return active ? 0.95 : 0.6;
+      case 'small': return Boolean(active) ? 0.7 : 0.45;
+      case 'large': return Boolean(active) ? 0.95 : 0.6;
       case 'medium':
-      default: return active ? 0.85 : 0.55;
+      default: return Boolean(active) ? 0.85 : 0.55;
     }
   };
   
@@ -99,8 +103,8 @@ const ModeIcon = styled(Box)(({ theme, active, color, size = 'medium' }) => {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: active ? color : color,
-    opacity: active ? 1 : 0.4,
+    color: Boolean(active) ? color : color,
+    opacity: Boolean(active) ? 1 : 0.4,
     transition: theme.transitions.create(['opacity'], {
       duration: theme.transitions.duration.standard,
     }),
@@ -127,7 +131,7 @@ const SwitchIcon = styled(SwapHorizIcon)(({ theme, size = 'medium' }) => {
 });
 
 const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultExpanded = false, size = 'medium' }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   
   const calculateDeadlineInfo = (deadline) => {
     const today = new Date();

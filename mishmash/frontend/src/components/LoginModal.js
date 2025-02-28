@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -109,10 +109,11 @@ const LoginModal = ({ onClose }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, logout, verifyMFA } = useAuth();
-  const [isMFAEnabled, setIsMFAEnabled] = useState(false);
   const navigate = useNavigate();
+  const [isMFAEnabled, setIsMFAEnabled] = useState(false);
   const [mfaToken, setMfaToken] = useState(null);
   const [mfaUserData, setMfaUserData] = useState(null);
+  const mouseDownInsideModalRef = useRef(false);
 
   // ------------- SSO HANDLING: Check session on mount -------------
   useEffect(() => {
@@ -220,10 +221,36 @@ const LoginModal = ({ onClose }) => {
     }
   };
 
+  const handleOverlayClick = (e) => {
+    // Only close if the click both started and ended outside the modal
+    if (!mouseDownInsideModalRef.current) {
+      onClose();
+    }
+    // Reset the ref for next click
+    mouseDownInsideModalRef.current = false;
+  };
+
+  const handleModalMouseDown = (e) => {
+    // Mark that mouse down happened inside the modal
+    mouseDownInsideModalRef.current = true;
+    e.stopPropagation();
+  };
+
+  const handleOverlayMouseDown = (e) => {
+    // Mark that mouse down happened outside the modal
+    mouseDownInsideModalRef.current = false;
+  };
+
   return (
     <>
-      <ModalOverlay onClick={onClose}>
-        <ModalContainer onClick={(e) => e.stopPropagation()}>
+      <ModalOverlay 
+        onClick={handleOverlayClick} 
+        onMouseDown={handleOverlayMouseDown}
+      >
+        <ModalContainer 
+          onClick={(e) => e.stopPropagation()} 
+          onMouseDown={handleModalMouseDown}
+        >
           <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
           <ModalTitle>Welcome Back</ModalTitle>
           <ModalForm onSubmit={handleSubmitLogin}>
@@ -262,8 +289,14 @@ const LoginModal = ({ onClose }) => {
       </ModalOverlay>
 
       {showSignUpModal && (
-        <ModalOverlay onClick={onClose}>
-          <ModalContainer onClick={(e) => e.stopPropagation()}>
+        <ModalOverlay 
+          onClick={handleOverlayClick}
+          onMouseDown={handleOverlayMouseDown}
+        >
+          <ModalContainer 
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={handleModalMouseDown}
+          >
             <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
             <ModalTitle>Welcome!</ModalTitle>
             <ModalForm onSubmit={handleSubmitSignUp}>
