@@ -210,12 +210,12 @@ function TopNavBar({ onLoginClick }) {
                   "aria-labelledby": "user-menu-button",
                 }}
               >
-                {!user.is_sso_user && (
+                {!user.is_sso && (
                   <MenuItem onClick={handleChangePassword}>
                     Change Password
                   </MenuItem>
                 )}
-                {!user.is_sso_user && (
+                {!user.is_sso && (
                   <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
                 )}
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>

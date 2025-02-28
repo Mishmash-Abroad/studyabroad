@@ -154,7 +154,7 @@ const UserManagement = () => {
                 <TableCell>{user.username}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.is_admin ? "Admin" : "User"}</TableCell>
-                <TableCell>{user.is_sso_user ? "SSO" : "Local"}</TableCell>
+                <TableCell>{user.is_sso ? "SSO" : "Local"}</TableCell>
                 <TableCell>
                   <Box sx={{ display: "flex", gap: 1 }}>
                     {/* Promote/Demote Button */}
@@ -169,7 +169,7 @@ const UserManagement = () => {
                     )}
 
                     {/* Change Password Button (Disabled for SSO) */}
-                    {!user.is_sso_user ? (
+                    {!user.is_sso ? (
                     <Button variant="contained" color="primary" onClick={() => setSelectedUser(user)}>
                       Change Password
                     </Button>
