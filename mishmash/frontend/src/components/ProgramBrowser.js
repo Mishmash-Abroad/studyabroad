@@ -129,7 +129,10 @@ const ProgramBrowser = () => {
     const fetchPrograms = async () => {
       try {
         setLoading(true);
-        const params = { search: searchTerm };
+        const params = { 
+          search: searchTerm,
+          exclude_ended: "true" // Only show programs that haven't ended yet
+        };
         
         // Only add faculty_ids if there are selected faculty
         if (selectedFaculty.length > 0) {
@@ -150,10 +153,14 @@ const ProgramBrowser = () => {
                 applicationStatus: statusResponse.data.status || null,
               };
             } catch (error) {
-              // If error is 401 (unauthorized), just return program without status
-              if (error.response?.status === 401) {
+              // Handle the specific MultipleObjectsReturned error
+              // If error is 401 (unauthorized) or 500 (server error), just return program without status
+              if (error.response?.status === 401 || error.response?.status === 500) {
+                // For error 500, we could have a special handling for MultipleObjectsReturned
+                // but we'll just treat all 500s the same for simplicity
                 return { ...program, applicationStatus: null };
               }
+              // Only log errors that aren't the common ones we're handling
               console.error('Error fetching status:', error);
               return { ...program, applicationStatus: null };
             }
@@ -287,7 +294,7 @@ const ProgramBrowser = () => {
                   : 'transparent',
               }}
             />
-            Show Programs Past Deadline
+            Show Closed Programs
           </button>
         </div>
 

@@ -226,7 +226,10 @@ const MyProgramsTable = () => {
     const fetchApplications = async () => {
       try {
         setLoading(true);
-        const programsResponse = await axiosInstance.get("/api/programs/");
+        // Include both current and past programs
+        const programsResponse = await axiosInstance.get("/api/programs/", {
+          params: { exclude_ended: "false" }
+        });
         const programsWithStatus = await Promise.all(
           programsResponse.data.map(async (program) => {
             try {
