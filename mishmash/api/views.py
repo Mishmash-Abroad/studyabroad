@@ -592,7 +592,11 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         program_id = self.request.query_params.get("program", None)
         if program_id:
             queryset = queryset.filter(program_id=program_id)
-
+            
+        for app in queryset:
+            app.status = "Completed" if (app.program.end_date > datetime.today().date()) else app.status
+            app.save()
+        
         return queryset
 
     def perform_create(self, serializer):
