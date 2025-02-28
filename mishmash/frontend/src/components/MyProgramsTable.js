@@ -133,10 +133,6 @@ const DeadlineBox = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: theme.spacing(2),
   marginBottom: theme.spacing(2),
-  "& .MuiBox-root": {
-    transform: "scale(0.9)",
-    transformOrigin: "left center",
-  },
 }));
 
 const LoadingMessage = styled("div")(({ theme }) => ({
@@ -304,11 +300,13 @@ const MyProgramsTable = () => {
                 deadline={app.program.application_deadline}
                 type="application"
                 expanded
+                size="small"
               />
               <DeadlineIndicator
                 deadline={app.program.essential_document_deadline}
                 type="document"
                 expanded
+                size="small"
               />
             </DeadlineBox>
             <Box sx={{ margin: 2 }}>

@@ -106,8 +106,8 @@ export const SEVERITY_LEVELS = {
   ];
 
   export const DOCUMENT_SUBMISSION_STATUSES = [
-    STATUS.ELIGIBLE,
-    STATUS.APPLIED
+    STATUS.APPROVED,
+    STATUS.ENROLLED
   ];
 
   // Button text mapping for different status-based actions

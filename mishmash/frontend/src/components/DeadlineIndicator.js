@@ -5,7 +5,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
-const DeadlineContainer = styled(Box)(({ theme, severity, clickable }) => {
+const DeadlineContainer = styled(Box)(({ theme, severity, clickable, size = 'medium' }) => {
   const getColors = () => {
     switch (severity) {
       case 'error':
@@ -31,15 +31,36 @@ const DeadlineContainer = styled(Box)(({ theme, severity, clickable }) => {
     }
   };
   const colors = getColors();
+  
+  // Calculate size-based values
+  let fontSize, padding, iconSize;
+  switch(size) {
+    case 'small':
+      fontSize = '0.7rem';
+      padding = '4px 8px';
+      iconSize = 'small';
+      break;
+    case 'large':
+      fontSize = '0.9rem';
+      padding = '8px 16px';
+      iconSize = 'medium';
+      break;
+    case 'medium':
+    default:
+      fontSize = '0.8rem';
+      padding = '6px 12px';
+      iconSize = 'small';
+  }
+  
   return {
     display: 'flex',
     alignItems: 'center',
     gap: 0,
-    padding: '6px 12px',
+    padding: padding,
     borderRadius: theme.shape.borderRadii.xl,
     backgroundColor: colors.bg,
     color: colors.color,
-    fontSize: theme.typography.caption.fontSize,
+    fontSize: fontSize,
     fontWeight: theme.typography.subtitle2.fontWeight,
     fontFamily: theme.typography.fontFamily,
     letterSpacing: theme.typography.caption.letterSpacing,
@@ -63,23 +84,35 @@ const ToggleContainer = styled(Box)(({ theme }) => ({
   cursor: 'pointer',
 }));
 
-const ModeIcon = styled(Box)(({ theme, active, color }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: active ? color : color,
-  opacity: active ? 1 : 0.4,
-  transition: theme.transitions.create(['opacity'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  '& svg': {
-    transform: active ? 'scale(1.0)' : 'scale(0.6)',
-    transformOrigin: 'center',
-    transition: theme.transitions.create(['transform'], {
+const ModeIcon = styled(Box)(({ theme, active, color, size = 'medium' }) => {
+  // Scale factor based on size
+  const getScaleFactor = () => {
+    switch(size) {
+      case 'small': return active ? 0.8 : 0.5;
+      case 'large': return active ? 1.1 : 0.7;
+      case 'medium':
+      default: return active ? 1.0 : 0.6;
+    }
+  };
+  
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: active ? color : color,
+    opacity: active ? 1 : 0.4,
+    transition: theme.transitions.create(['opacity'], {
       duration: theme.transitions.duration.standard,
     }),
-  }
-}));
+    '& svg': {
+      transform: `scale(${getScaleFactor()})`,
+      transformOrigin: 'center',
+      transition: theme.transitions.create(['transform'], {
+        duration: theme.transitions.duration.standard,
+      }),
+    }
+  };
+});
 
 const SwitchIcon = styled(SwapHorizIcon)(({ theme }) => ({
   fontSize: '0.8rem',
@@ -88,7 +121,7 @@ const SwitchIcon = styled(SwapHorizIcon)(({ theme }) => ({
   opacity: 0.7,
 }));
 
-const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultExpanded = false }) => {
+const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultExpanded = false, size = 'medium' }) => {
   const [expanded, setExpanded] = useState(false);
   
   const calculateDeadlineInfo = (deadline) => {
@@ -146,14 +179,14 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
     const iconColor = getIconColor();
     
     const timeIcon = (
-      <ModeIcon active={!expanded} color={iconColor}>
-        <AccessTimeIcon fontSize={!expanded ? "medium" : "small"} />
+      <ModeIcon active={!expanded} color={iconColor} size={size}>
+        <AccessTimeIcon fontSize={size === 'small' ? "small" : "medium"} />
       </ModeIcon>
     );
     
     const calendarIcon = (
-      <ModeIcon active={expanded} color={iconColor}>
-        <CalendarTodayIcon fontSize={expanded ? "medium" : "small"} />
+      <ModeIcon active={expanded} color={iconColor} size={size}>
+        <CalendarTodayIcon fontSize={size === 'small' ? "small" : "medium"} />
       </ModeIcon>
     );
 
@@ -174,6 +207,7 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
     <DeadlineContainer 
       severity={deadlineInfo.severity} 
       clickable={true}
+      size={size}
       onClick={toggleExpanded}
     >
       <ToggleContainer
