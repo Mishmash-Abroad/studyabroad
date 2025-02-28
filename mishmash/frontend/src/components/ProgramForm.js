@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Paper, Typography } from '@mui/material';
+import { Box, TextField, Button, Paper, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
 import ApplicantTable from './ApplicantTable';
@@ -22,6 +22,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   });
 
   const [errorMessage, setErrorMessage] = useState(null);
+  const [systemAdminWarning, setSystemAdminWarning] = useState(false);
 
   useEffect(() => {
     if (editingProgram) {
@@ -45,10 +46,33 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   };
 
   const handleFacultyChange = (selectedFaculty) => {
-    setProgramData({
-      ...programData,
-      faculty_lead_ids: selectedFaculty.map(faculty => faculty.id)
-    });
+    if (selectedFaculty.length === 0) {
+      // Show warning that System Admin will be added as faculty lead
+      setSystemAdminWarning(true);
+      
+      // Get the System Admin user - in a real implementation,
+      // you would either fetch this from the backend or use a known ID
+      axiosInstance.get('/api/users/', {
+        params: { is_system_admin: true }
+      }).then(response => {
+        if (response.data && response.data.length > 0) {
+          const systemAdmin = response.data[0];
+          setProgramData({
+            ...programData,
+            faculty_lead_ids: [systemAdmin.id]
+          });
+        }
+      }).catch(error => {
+        console.error('Error fetching system admin:', error);
+      });
+    } else {
+      // Regular case - user has selected faculty leads
+      setSystemAdminWarning(false);
+      setProgramData({
+        ...programData,
+        faculty_lead_ids: selectedFaculty.map(faculty => faculty.id)
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -94,6 +118,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         <Typography color="error" sx={{ mb: 2 }}>
           {errorMessage}
         </Typography>
+      )}
+
+      {systemAdminWarning && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          System Admin will be added as the faculty lead since you removed all faculty leads.
+        </Alert>
       )}
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
