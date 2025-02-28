@@ -213,7 +213,7 @@ function TopNavBar({ onLoginClick }) {
                 <MenuItem onClick={handleChangePassword}>
                   Change Password
                 </MenuItem>
-                <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
+                {!user.is_sso_user && <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>}
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </StyledMenu>
             </>
