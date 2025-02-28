@@ -153,8 +153,8 @@ function TopNavBar({ onLoginClick }) {
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
-    logout();
-    navigate("/");
+      logout();
+      navigate("/");
     }
   };
 
@@ -210,10 +210,14 @@ function TopNavBar({ onLoginClick }) {
                   "aria-labelledby": "user-menu-button",
                 }}
               >
-                <MenuItem onClick={handleChangePassword}>
-                  Change Password
-                </MenuItem>
-                <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
+                {!user.is_sso_user && (
+                  <MenuItem onClick={handleChangePassword}>
+                    Change Password
+                  </MenuItem>
+                )}
+                {!user.is_sso_user && (
+                  <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
+                )}
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </StyledMenu>
             </>
