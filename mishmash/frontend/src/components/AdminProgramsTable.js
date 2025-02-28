@@ -14,10 +14,24 @@ import {
   MenuItem,
   Button,
   Typography,
+  Tooltip,
+  Paper,
+  Collapse,
+  Chip,
+  Menu,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
+  Popover,
+  Badge,
 } from "@mui/material";
+import FilterListIcon from '@mui/icons-material/FilterList';
+import CloseIcon from '@mui/icons-material/Close';
 import axiosInstance from "../utils/axios";
 import ProgramForm from "./ProgramForm";
 import FacultyPicklist from "./FacultyPicklist";
+import { STATUS, ALL_STATUSES } from "../utils/constants";
+import ApplicantCountsCell from "./ApplicantCountsCell";
 
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
@@ -74,10 +88,29 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   cursor: "pointer",
-  transition: "transform 0.2s ease, background-color 0.2s ease",
+  transition: "transform 0.15s ease, background-color 0.2s ease",
+  borderBottom: `2px solid ${theme.palette.divider}`,
   "&:hover": {
-    backgroundColor: theme.palette.action.hover
+    backgroundColor: theme.palette.action.hover,
+    transform: "scale(1.01)",
+    boxShadow: theme.shadows[1],
+    zIndex: 1,
   },
+}));
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  padding: '4px 8px', // Even more reduced padding for all cells
+  fontSize: '0.875rem', // Slightly smaller font for all cells
+}));
+
+const StyledTableHead = styled(TableHead)(({ theme }) => ({
+  "& .MuiTableRow-root": {
+    backgroundColor: theme.palette.background.default,
+    borderBottom: `3px solid ${theme.palette.divider}`,
+  },
+  "& .MuiTableCell-root": {
+    fontWeight: 'bold',
+  }
 }));
 
 // -------------------- COMPONENT --------------------
@@ -91,7 +124,11 @@ const AdminProgramsTable = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeFilter, setTimeFilter] = useState("current_future");
   const [editingProgram, setEditingProgram] = useState(null);
-  const [selectedFaculty, setSelectedFaculty] = useState([]); // Add this line
+  const [selectedFaculty, setSelectedFaculty] = useState([]);
+  
+  // State for selected statuses (shared between component instances)
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  
   const navigate = useNavigate();
   const { programTitle } = useParams();
   const location = useLocation();
@@ -99,7 +136,7 @@ const AdminProgramsTable = () => {
   useEffect(() => {
     // Fetch programs when component mounts or filters change
     fetchPrograms();
-  }, []);  // Empty dependency array to only fetch on mount
+  }, []); 
   
   // Add debounced fetching for filter changes
   useEffect(() => {
@@ -196,26 +233,80 @@ const AdminProgramsTable = () => {
     p.faculty_leads.map(faculty => faculty.display_name).join(", ").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleRequestSort = (property) => {
+    // If we're already sorting by selected statuses or we click the status filter button
+    // and have statuses selected, use the special combined sort
+    if ((property === "selected_statuses" || 
+         (property === orderBy && property === "selected_statuses")) && 
+        selectedStatuses.length > 0) {
+      const isAsc = orderBy === "selected_statuses" && order === "asc";
+      setOrder(isAsc ? "desc" : "asc");
+      setOrderBy("selected_statuses");
+    } else {
+      const isAsc = orderBy === property && order === "asc";
+      setOrder(isAsc ? "desc" : "asc");
+      setOrderBy(property);
+    }
+  };
+
+  // Set the initial sort order to descending for numeric fields
+  const allStatusKeys = Object.values(STATUS).map(status => status.toLowerCase());
+  
+  useEffect(() => {
+    // Initialize status-related fields to descending order by default
+    if (allStatusKeys.includes(orderBy) || 
+        orderBy === "total_active" || 
+        orderBy === "selected_statuses") {
+      setOrder("desc");
+    }
+  }, [orderBy]);
+
   const sortedPrograms = [...filteredPrograms].sort((a, b) => {
     let aValue, bValue;
   
-    if (["applied", "enrolled", "withdrawn", "canceled", "total_active"].includes(orderBy)) {
+    if (allStatusKeys.includes(orderBy)) {
+      // Single status sorting
       aValue = applicantCounts[a.id]?.[orderBy] || 0;
       bValue = applicantCounts[b.id]?.[orderBy] || 0;
+    } else if (orderBy === "total_active") {
+      // Default total sorting
+      aValue = applicantCounts[a.id]?.[orderBy] || 0;
+      bValue = applicantCounts[b.id]?.[orderBy] || 0;
+    } else if (orderBy === "selected_statuses" && selectedStatuses.length > 0) {
+      // Combined multi-status sorting
+      aValue = selectedStatuses.reduce((sum, status) => {
+        // Add the count for this status to the sum
+        return sum + (applicantCounts[a.id]?.[status] || 0);
+      }, 0);
+      
+      bValue = selectedStatuses.reduce((sum, status) => {
+        // Add the count for this status to the sum
+        return sum + (applicantCounts[b.id]?.[status] || 0);
+      }, 0);
     } else {
+      // Regular column sorting
       aValue = a[orderBy] || "";
       bValue = b[orderBy] || "";
+      
+      // For string comparisons
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return order === "asc" 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+    }
+    
+    // For numeric comparisons - swap comparison logic to get highest numbers first
+    // when sorting in descending order
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return order === "asc" 
+        ? aValue - bValue 
+        : bValue - aValue;
     }
   
+    // Fallback for mixed types
     return order === "asc" ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
   });
-    
-
-  const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
 
   const handleEditProgram = (program) => {
     navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
@@ -242,9 +333,9 @@ const AdminProgramsTable = () => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return ""; // Handle empty values
-    const [year, month, day] = dateString.split("-"); // Split "YYYY-MM-DD"
-    return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY
+    if (!dateString) return ""; 
+    const [year, month, day] = dateString.split("-"); 
+    return `${month}/${day}/${year}`; 
   };
 
   return (
@@ -290,12 +381,11 @@ const AdminProgramsTable = () => {
         </FilterContainer>
 
         <StyledTableContainer>
-          <Table stickyHeader>
-            <TableHead>
+          <Table stickyHeader size="small" padding="none">
+            <StyledTableHead>
               <TableRow>
-                {["title", "year_semester", "faculty_leads", "application_open_date", "application_deadline", "start_date", "end_date",
-                  "applied", "enrolled", "withdrawn", "canceled", "total_active"].map((column) => (
-                  <TableCell key={column}>
+                {["title", "year_semester", "faculty_leads", "application_open_date", "application_deadline", "start_date", "end_date"].map((column) => (
+                  <StyledTableCell key={column}>
                     <TableSortLabel
                       active={orderBy === column}
                       direction={order}
@@ -306,10 +396,29 @@ const AdminProgramsTable = () => {
                         .replace(/\b\w/g, (char) => char.toUpperCase())
                       }
                     </TableSortLabel>
-                  </TableCell>
+                  </StyledTableCell>
                 ))}
+                
+                {/* Applicant Counts Column Header */}
+                <StyledTableCell 
+                  sx={{ 
+                    textAlign: 'center', 
+                    borderLeft: '1px solid rgba(224, 224, 224, 1)',
+                    width: '240px', // Fixed width for the counts column
+                  }}
+                >
+                  {/* Use ApplicantCountsCell for the header */}
+                  <ApplicantCountsCell
+                    orderBy={orderBy} 
+                    order={order}
+                    onRequestSort={handleRequestSort}
+                    selectedStatuses={selectedStatuses}
+                    setSelectedStatuses={setSelectedStatuses}
+                    isHeaderCell={true}
+                  />
+                </StyledTableCell>
               </TableRow>
-            </TableHead>
+            </StyledTableHead>
             <TableBody>
               {sortedPrograms.map((program) => (
                 <StyledTableRow 
@@ -317,18 +426,30 @@ const AdminProgramsTable = () => {
                   onClick={() => handleEditProgram(program)}
                   hover
                 >
-                  <TableCell>
+                  <StyledTableCell>
                     {program.title}
-                  </TableCell>
-                  <TableCell>{program.year_semester}</TableCell>
-                  <TableCell>{program.faculty_leads.map(faculty => faculty.display_name).join(", ")}</TableCell>
-                  <TableCell>{formatDate(program.application_open_date)}</TableCell>
-                  <TableCell>{formatDate(program.application_deadline)}</TableCell>
-                  <TableCell>{formatDate(program.start_date)}</TableCell>
-                  <TableCell>{formatDate(program.end_date)}</TableCell>
-                  {["applied", "enrolled", "withdrawn", "canceled", "total_active"].map((key) => (
-                    <TableCell key={key}>{applicantCounts[program.id]?.[key] || 0}</TableCell>
-                  ))}
+                  </StyledTableCell>
+                  <StyledTableCell>{program.year_semester}</StyledTableCell>
+                  <StyledTableCell>{program.faculty_leads.map(faculty => faculty.display_name).join(", ")}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.application_open_date)}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.application_deadline)}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.start_date)}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.end_date)}</StyledTableCell>
+                  
+                  {/* Use ApplicantCountsCell for the data cell */}
+                  <StyledTableCell sx={{ 
+                    borderLeft: '1px solid rgba(224, 224, 224, 1)',
+                    p: 0.5
+                  }}>
+                    <ApplicantCountsCell
+                      program={program} 
+                      counts={applicantCounts[program.id] || {}}
+                      orderBy={orderBy}
+                      order={order}
+                      onRequestSort={handleRequestSort}
+                      selectedStatuses={selectedStatuses}
+                    />
+                  </StyledTableCell>
                 </StyledTableRow>
               ))}
             </TableBody>
