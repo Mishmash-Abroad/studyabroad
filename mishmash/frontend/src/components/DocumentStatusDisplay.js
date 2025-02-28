@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { styled } from "@mui/material/styles";
-import { Box, Typography, Tooltip, CircularProgress } from '@mui/material';
+import { Box, Typography, Tooltip, CircularProgress, IconButton, Dialog, DialogContent, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import PropTypes from 'prop-types';
 
 const DocumentContainer = styled(Box)(({ theme }) => ({
@@ -59,6 +60,11 @@ const DocumentStatusDisplay = ({
   isLoading = false, 
   error = null 
 }) => {
+  const [open, setOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocUrl, setSelectedDocUrl] = useState(null);
+  const [viewError, setViewError] = useState(null);
+
   // Handle loading state
   if (isLoading) {
     return (
@@ -105,6 +111,36 @@ const DocumentStatusDisplay = ({
       : 'Document needs to be uploaded';
   };
 
+  const handleViewDocument = async (document) => {
+    try {
+      setSelectedDocument(document);
+      setViewError(null);
+      
+      // If the document has a pdf_url property, fetch and display it
+      if (document.pdf_url) {
+        const response = await fetch(document.pdf_url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setSelectedDocUrl(blobUrl);
+      }
+      
+      setOpen(true);
+    } catch (error) {
+      console.error("Error viewing document:", error);
+      setViewError("Unable to load document preview");
+    }
+  };
+
+  const handleClose = () => {
+    if (selectedDocUrl) {
+      URL.revokeObjectURL(selectedDocUrl);
+      setSelectedDocUrl(null);
+    }
+    setOpen(false);
+    setSelectedDocument(null);
+    setViewError(null);
+  };
+
   return (
     <DocumentContainer>
       <Typography variant="subtitle2" gutterBottom>
@@ -112,6 +148,7 @@ const DocumentStatusDisplay = ({
       </Typography>
       {REQUIRED_DOCUMENTS.map(({ type, description }) => {
         const status = getDocumentStatus(type);
+        const document = documents.find(doc => doc.type === type && doc.application === application_id);
         return (
           <Tooltip 
             key={type} 
@@ -125,6 +162,24 @@ const DocumentStatusDisplay = ({
           >
             <DocumentRow>
               <DocumentName>{type}</DocumentName>
+              {status === 'submitted' && document && (
+                <IconButton 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDocument(document);
+                  }}
+                  size="small"
+                  title="View Document"
+                  sx={{ 
+                    padding: '4px',
+                    width: '28px',
+                    height: '28px',
+                    marginRight: '2px'
+                  }}
+                >
+                  <VisibilityIcon fontSize="small" color="primary" sx={{ fontSize: '0.9rem' }} />
+                </IconButton>
+              )}
               <StatusIcon status={status}>
                 {status === 'submitted' ? (
                   <CheckCircleIcon fontSize="small" />
@@ -136,6 +191,44 @@ const DocumentStatusDisplay = ({
           </Tooltip>
         );
       })}
+      
+      <Dialog 
+        open={open} 
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogContent>
+          {viewError && (
+            <Typography color="error" gutterBottom>
+              {viewError}
+            </Typography>
+          )}
+          {selectedDocument && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                {selectedDocument.type}
+              </Typography>
+              
+              {selectedDocUrl ? (
+                <Box sx={{ height: '70vh', overflow: 'auto' }}>
+                  <iframe 
+                    src={selectedDocUrl} 
+                    width="100%" 
+                    height="100%" 
+                    title={selectedDocument.type}
+                    style={{ border: 'none' }}
+                  />
+                </Box>
+              ) : (
+                <Typography>
+                  Document preview not available
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </DocumentContainer>
   );
 };
@@ -144,6 +237,7 @@ DocumentStatusDisplay.propTypes = {
   documents: PropTypes.arrayOf(PropTypes.shape({
     type: PropTypes.string.isRequired,
     application: PropTypes.number.isRequired,
+    pdf_url: PropTypes.string,
   })),
   application_id: PropTypes.number.isRequired,
   isLoading: PropTypes.bool,
