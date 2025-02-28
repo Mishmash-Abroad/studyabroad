@@ -193,7 +193,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
         Retrieve the list of study abroad programs.
 
         ## Filters:
-        - Filters programs where `end_date >= today` (only current and future programs are shown)
+        - Optional exclude_ended parameter (default=false). When true, filters programs where `end_date >= today`
+          (only current and future programs are shown). When false or not specified, all programs are shown including past ones.
         - Optional search filter for `title` or `faculty_leads`
         - Optional faculty_ids filter for specific faculty members
 
@@ -202,11 +203,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         ## Example:
         - `GET /api/programs/?search=engineering&faculty_ids=1,2,3`
+        - `GET /api/programs/?exclude_ended=true` (excludes past programs)
         """
 
-        today = timezone.now().date()
-        queryset = Program.objects.filter(end_date__gte=today)
-
+        # Start with all programs
+        queryset = Program.objects.all()
+        
+        # Filter by end_date if exclude_ended is true
+        exclude_ended = self.request.query_params.get("exclude_ended", "false").lower() == "true"
+        if exclude_ended:
+            today = timezone.now().date()
+            queryset = queryset.filter(end_date__gte=today)
+        
         search = self.request.query_params.get("search", None)
         faculty_ids = self.request.query_params.get("faculty_ids", None)
 

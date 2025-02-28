@@ -129,7 +129,10 @@ const ProgramBrowser = () => {
     const fetchPrograms = async () => {
       try {
         setLoading(true);
-        const params = { search: searchTerm };
+        const params = { 
+          search: searchTerm,
+          exclude_ended: "true" // Only show programs that haven't ended yet
+        };
         
         // Only add faculty_ids if there are selected faculty
         if (selectedFaculty.length > 0) {
@@ -291,7 +294,7 @@ const ProgramBrowser = () => {
                   : 'transparent',
               }}
             />
-            Show Programs Past Deadline
+            Show Closed Programs
           </button>
         </div>
 
