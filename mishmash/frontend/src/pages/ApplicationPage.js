@@ -458,10 +458,12 @@ const ApplicationPage = () => {
                 <DeadlineIndicator 
                   deadline={program.application_deadline} 
                   type="application" 
+                  size="medium"
                 />
                 <DeadlineIndicator 
                   deadline={program.essential_document_deadline} 
                   type="document" 
+                  size="medium"
                 />
               </DeadlineContainer>
             )}
@@ -613,6 +615,7 @@ const ApplicationPage = () => {
               <DeadlineIndicator
                 deadline={program.application_deadline}
                 type="application"
+                size="medium"
               />
             </DeadlineContainer>
             {isApplicationReadOnly() && (
@@ -751,6 +754,7 @@ const ApplicationPage = () => {
               <DeadlineIndicator
                 deadline={program.essential_document_deadline}
                 type="document"
+                size="medium"
               />
             </DeadlineContainer>
             <EssentialDocumentFormSubmission
