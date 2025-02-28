@@ -40,7 +40,7 @@ const ApplicantTable = ({ programId }) => {
   const [error, setError] = useState(null);
   const [orderBy, setOrderBy] = useState('applied_on');
   const [order, setOrder] = useState('desc');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [noteSortType, setNoteSortType] = useState('count'); // 'count' or 'date'
   const [userDetails, setUserDetails] = useState({});
   const [documents, setDocuments] = useState({});
@@ -58,7 +58,7 @@ const ApplicantTable = ({ programId }) => {
     try {
       setLoading(true);
       let url = `/api/applications/?program=${programId}`;
-      if (statusFilter) url += `&status=${statusFilter}`;
+      if (statusFilter !== 'ALL') url += `&status=${statusFilter}`;
 
       const response = await axiosInstance.get(url);
       setApplicants(response.data);
@@ -136,7 +136,7 @@ const ApplicantTable = ({ programId }) => {
   };
 
   const sortedApplicants = applicants
-    .filter(applicant => (statusFilter ? applicant.status === statusFilter : true))
+    .filter(applicant => (statusFilter !== 'ALL' ? applicant.status === statusFilter : true))
     .sort((a, b) => {
       // Special handling for documents and notes columns
       if (orderBy === 'documents') {
@@ -368,7 +368,7 @@ const ApplicantTable = ({ programId }) => {
           size="small"
           sx={{ minWidth: '200px' }}
         >
-          <MenuItem value="">All</MenuItem>
+          <MenuItem value="ALL">All</MenuItem>
           {Object.values(STATUS).map((status) => (
             <MenuItem key={status} value={status}>{getStatusLabel(status)}</MenuItem>
           ))}

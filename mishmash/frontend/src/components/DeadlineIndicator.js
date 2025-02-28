@@ -139,11 +139,11 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
     const diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
     
     let severity, message;
-    if (diffDays < 0) {
-      severity = 'error';
+    if (diffDays <= 0) {
+      severity = type === 'application' ? 'error' : 'warning';
       message = 'Deadline passed';
     } else if (diffDays <= 7) {
-      severity = 'error';
+      severity = type === 'application' ? 'error' : 'warning';
       message = `${diffDays} days left`;
     } else if (diffDays <= 14) {
       severity = 'warning';
@@ -163,6 +163,7 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
 
   const deadlineInfo = calculateDeadlineInfo(deadline);
   const deadlineType = type === 'application' ? 'Application' : 'Documents';
+  const deadlineLabel = 'Deadline';
 
   const toggleExpanded = (e) => {
     if (e) {
@@ -236,11 +237,16 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
         }}
       >
         {expanded ? (
-          `${deadlineType} due: ${deadlineInfo.fullDate}`
+          `${deadlineType} ${deadlineLabel}: ${deadlineInfo.fullDate}`
         ) : (
           `${deadlineType}: ${deadlineInfo.message}`
         )}
       </Typography>
+      {expanded && type === 'documents' && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+          Note: Document deadlines are recommended but submissions are still accepted after the deadline.
+        </Typography>
+      )}
     </DeadlineContainer>
   );
 };

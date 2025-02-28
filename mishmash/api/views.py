@@ -193,7 +193,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
         Retrieve the list of study abroad programs.
 
         ## Filters:
-        - Filters programs where `end_date >= today` (only current and future programs are shown)
+        - Optional exclude_ended parameter (default=false). When true, filters programs where `end_date >= today`
+          (only current and future programs are shown). When false or not specified, all programs are shown including past ones.
         - Optional search filter for `title` or `faculty_leads`
         - Optional faculty_ids filter for specific faculty members
 
@@ -202,11 +203,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         ## Example:
         - `GET /api/programs/?search=engineering&faculty_ids=1,2,3`
+        - `GET /api/programs/?exclude_ended=true` (excludes past programs)
         """
 
-        today = timezone.now().date()
-        queryset = Program.objects.filter(end_date__gte=today)
-
+        # Start with all programs
+        queryset = Program.objects.all()
+        
+        # Filter by end_date if exclude_ended is true
+        exclude_ended = self.request.query_params.get("exclude_ended", "false").lower() == "true"
+        if exclude_ended:
+            today = timezone.now().date()
+            queryset = queryset.filter(end_date__gte=today)
+        
         search = self.request.query_params.get("search", None)
         faculty_ids = self.request.query_params.get("faculty_ids", None)
 
@@ -271,18 +279,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
 
         if len(description) > 1000:
-            raise ValidationError(
-                {"detail": "Description cannot exceed 1000 characters."}
-            )
+            raise ValidationError({"detail": "Description cannot exceed 1000 characters."})
 
         if not year.isdigit() or len(year) != 4:
             raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
 
         valid_semesters = {"Fall", "Spring", "Summer"}
         if semester not in valid_semesters:
-            raise ValidationError(
-                {"detail": f"Semester must be one of {valid_semesters}."}
-            )
+            raise ValidationError({"detail": f"Semester must be one of {valid_semesters}."})
+
 
         try:
             application_open_date = datetime.strptime(
@@ -587,14 +592,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         program_id = self.request.query_params.get("program", None)
         if program_id:
             queryset = queryset.filter(program_id=program_id)
-
-        for app in queryset:
-            app.status = (
-                "Completed"
-                if (app.program.end_date <= datetime.today().date())
-                else app.status
-            )
-            app.save()
 
         return queryset
 
@@ -922,7 +919,6 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     - Public & Students: Can view active announcements.
     - Admins: Can create, update, delete, and view all announcements.
     """
-
     serializer_class = AnnouncementSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.OrderingFilter]
@@ -999,7 +995,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return queryset.none()
 
         return queryset
-
+    
     def update(self, request, *args, **kwargs):
         """
         Override the default update method to handle special cases:
@@ -1023,15 +1019,11 @@ class UserViewSet(viewsets.ModelViewSet):
                     admin_user = User.objects.get(username="admin")
                     program.faculty_leads.add(admin_user)
                 program.save()
-            print(
-                f"Removed {user.username} from faculty leads of {programs.count()} programs"
-            )
+            print(f"Removed {user.username} from faculty leads of {programs.count()} programs")
 
         return super().update(request, *args, **kwargs)
 
-    @action(
-        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -1126,9 +1118,7 @@ class UserViewSet(viewsets.ModelViewSet):
             {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    @action(
-        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def logout(self, request):
         """
         ## User Logout
@@ -1146,11 +1136,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(
-        detail=False,
-        methods=["patch"],
-        permission_classes=[permissions.IsAuthenticated],
-    )
+    @action(detail=False, methods=["patch"], permission_classes=[permissions.IsAuthenticated],)
     def change_password(self, request):
         """
         ## Change Password
@@ -1172,16 +1158,15 @@ class UserViewSet(viewsets.ModelViewSet):
             try:
                 user = User.objects.get(id=request.data["user_id"])
             except User.DoesNotExist:
-                return Response(
-                    {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
-                )
+                return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
         if user.is_sso:
             return Response(
                 {"detail": "SSO users cannot change their password."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
-
+        
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
 
@@ -1201,10 +1186,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer["token"] = token.key
             return Response(serializer, status=status.HTTP_200_OK)
 
-        return Response(
-            {"detail": f"Password updated successfully for {user.username}."},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": f"Password updated successfully for {user.username}."}, status=status.HTTP_200_OK)
 
     @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
@@ -1221,7 +1203,7 @@ class UserViewSet(viewsets.ModelViewSet):
         faculty = User.objects.filter(is_admin=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
-
+    
     @action(detail=True, methods=["get"], permission_classes=[permissions.IsAdminUser])
     def user_warnings(self, request, pk=None):
         """
@@ -1233,11 +1215,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         warnings = {
             "applications_count": applications_count,
-            "faculty_programs": (
-                [p.title for p in faculty_programs]
-                if faculty_programs.exists()
-                else ["None"]
-            ),
+            "faculty_programs": [p.title for p in faculty_programs] if faculty_programs.exists() else ["None"],
         }
 
         return Response(warnings, status=status.HTTP_200_OK)

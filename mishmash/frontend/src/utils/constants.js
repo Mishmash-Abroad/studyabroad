@@ -9,9 +9,9 @@ export const SEVERITY_LEVELS = {
   // Status Enums - Single source of truth for status names
   export const STATUS = {
     APPLIED: 'Applied',
+    APPROVED: 'Approved',
     ENROLLED: 'Enrolled',
     ELIGIBLE: 'Eligible',
-    APPROVED: 'Approved',
     COMPLETED: 'Completed',
     WITHDRAWN: 'Withdrawn',
     CANCELED: 'Canceled'
@@ -28,31 +28,38 @@ export const SEVERITY_LEVELS = {
   export const ALL_STATUSES = {
     [STATUS.APPLIED]: {
       severity: SEVERITY_LEVELS.NORMAL,
-      description: 'Application has been submitted'
-    },
-    [STATUS.ENROLLED]: {
-      severity: SEVERITY_LEVELS.GOOD,
-      description: 'Successfully enrolled in program'
-    },
-    [STATUS.ELIGIBLE]: {
-      severity: SEVERITY_LEVELS.NORMAL,
-      description: 'Eligible for application'
+      description: 'Application has been submitted',
+      abbr: 'APLD'
     },
     [STATUS.APPROVED]: {
       severity: SEVERITY_LEVELS.GOOD,
-      description: 'Application has been approved'
+      description: 'Application has been approved',
+      abbr: 'APRV'
+    },
+    [STATUS.ENROLLED]: {
+      severity: SEVERITY_LEVELS.GOOD,
+      description: 'Successfully enrolled in program',
+      abbr: 'ENRL'
+    },
+    [STATUS.ELIGIBLE]: {
+      severity: SEVERITY_LEVELS.NORMAL,
+      description: 'Eligible for application',
+      abbr: 'ELIG'
     },
     [STATUS.COMPLETED]: {
       severity: SEVERITY_LEVELS.GOOD,
-      description: 'Application process has been completed'
+      description: 'Application process has been completed',
+      abbr: 'CMPL'
     },
     [STATUS.WITHDRAWN]: {
       severity: SEVERITY_LEVELS.WARNING,
-      description: 'Application withdrawn by applicant'
+      description: 'Application withdrawn by applicant',
+      abbr: 'WDRN'
     },
     [STATUS.CANCELED]: {
       severity: SEVERITY_LEVELS.CRITICAL,
-      description: 'Application has been canceled'
+      description: 'Application has been canceled',
+      abbr: 'CNCL'
     }
   };
   

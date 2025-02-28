@@ -13,9 +13,25 @@ import {
   TextField,
   MenuItem,
   Button,
+  Typography,
+  Tooltip,
+  Paper,
+  Collapse,
+  Chip,
+  Menu,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
+  Popover,
+  Badge,
 } from "@mui/material";
+import FilterListIcon from '@mui/icons-material/FilterList';
+import CloseIcon from '@mui/icons-material/Close';
 import axiosInstance from "../utils/axios";
 import ProgramForm from "./ProgramForm";
+import FacultyPicklist from "./FacultyPicklist";
+import { STATUS, ALL_STATUSES } from "../utils/constants";
+import ApplicantCountsCell from "./ApplicantCountsCell";
 
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
@@ -24,24 +40,77 @@ const TableWrapper = styled("div")(({ theme }) => ({
   boxShadow: theme.shadows.card,
   margin: "20px 0",
   maxHeight: "calc(100vh - 300px)",
-  overflow: "auto",
+  overflowY: "auto",
+  overflowX: "hidden",
+  width: "100%",
+  "& .MuiTableContainer-root": {
+    overflowX: "auto",
+    "&::-webkit-scrollbar": {
+      height: "8px",
+      width: "8px",
+    },
+  },
 }));
 
 const FilterContainer = styled(Box)(({ theme }) => ({
   display: "flex",
-  gap: "10px",
-  paddingBottom: "10px",
-  paddingTop: "10px",
-  "& button": { minWidth: "150px" },
-  "& .MuiTextField-root": { minWidth: "200px" },
+  flexDirection: "column",
+  gap: "16px",
+  paddingBottom: "16px",
+  paddingTop: "16px",
+}));
+
+const FilterRow = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "16px",
+  flexWrap: "wrap",
+}));
+
+const StyledFacultyPicklist = styled(FacultyPicklist)(({ theme }) => ({
+  flex: "1 1 auto",
+  maxWidth: "600px",
+}));
+
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  "&::-webkit-scrollbar": {
+    height: "8px",
+    width: "8px",
+  },
+  "&::-webkit-scrollbar-track": {
+    background: theme.palette.background.paper,
+  },
+  "&::-webkit-scrollbar-thumb": {
+    backgroundColor: theme.palette.divider,
+    borderRadius: "4px",
+  },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   cursor: "pointer",
-  transition: "transform 0.2s ease, background-color 0.2s ease",
+  transition: "transform 0.15s ease, background-color 0.2s ease",
+  borderBottom: `2px solid ${theme.palette.divider}`,
   "&:hover": {
-    backgroundColor: theme.palette.action.hover
+    backgroundColor: theme.palette.action.hover,
+    transform: "scale(1.01)",
+    boxShadow: theme.shadows[1],
+    zIndex: 1,
   },
+}));
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  padding: '4px 8px', // Even more reduced padding for all cells
+  fontSize: '0.875rem', // Slightly smaller font for all cells
+}));
+
+const StyledTableHead = styled(TableHead)(({ theme }) => ({
+  "& .MuiTableRow-root": {
+    backgroundColor: theme.palette.background.default,
+    borderBottom: `3px solid ${theme.palette.divider}`,
+  },
+  "& .MuiTableCell-root": {
+    fontWeight: 'bold',
+  }
 }));
 
 // -------------------- COMPONENT --------------------
@@ -55,18 +124,49 @@ const AdminProgramsTable = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeFilter, setTimeFilter] = useState("current_future");
   const [editingProgram, setEditingProgram] = useState(null);
+  const [selectedFaculty, setSelectedFaculty] = useState([]);
+  
+  // State for selected statuses (shared between component instances)
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  
   const navigate = useNavigate();
   const { programTitle } = useParams();
   const location = useLocation();
 
   useEffect(() => {
+    // Fetch programs when component mounts or filters change
     fetchPrograms();
-  }, [timeFilter]);
+  }, []); 
+  
+  // Add debounced fetching for filter changes
+  useEffect(() => {
+    const timeoutId = setTimeout(fetchPrograms, 300);
+    return () => clearTimeout(timeoutId);
+  }, [timeFilter, selectedFaculty, searchQuery]);
 
   const fetchPrograms = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/api/programs/");
+      
+      // Prepare request parameters
+      const params = {};
+      
+      // Only include current/future programs if that's the selected filter
+      if (timeFilter === "current_future") {
+        params.exclude_ended = "true";
+      }
+      
+      // Add faculty filtering if faculty are selected
+      if (selectedFaculty.length > 0) {
+        params.faculty_ids = selectedFaculty.map(f => f.id).join(',');
+      }
+      
+      // Add search query if present
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+      
+      const response = await axiosInstance.get("/api/programs/", { params });
       setPrograms(response.data);
       setError(null);
 
@@ -104,57 +204,109 @@ const AdminProgramsTable = () => {
     }
   }, [programTitle, programs]);
 
-  const today = new Date();
-  const filteredPrograms = programs
-    .filter((p) => {
-      if (!p || !p.start_date || !p.end_date || !p.application_deadline || !p.application_open_date) {
-        return false;
-      }
-
-      const endDate = new Date(p.end_date);
-      const startDate = new Date(p.start_date);
-      const applicationDeadline = new Date(p.application_deadline);
-      const applicationOpenDate = new Date(p.application_open_date);
-
+  const getFilteredPrograms = () => {
+    const today = new Date();
+    
+    return programs.filter((program) => {
+      const startDate = new Date(program.start_date);
+      const endDate = new Date(program.end_date);
+      const applicationDeadline = new Date(program.application_deadline);
+      
       switch (timeFilter) {
         case "current_future":
-          return today <= endDate;
-        case "open_for_applications":
-          return applicationOpenDate <= today && today <= applicationDeadline;
-        case "in_review":
-          return applicationDeadline <= today && today <= startDate;
+          return endDate >= today;
+        case "past":
+          return endDate < today;
+        case "accepting_applications":
+          return applicationDeadline >= today;
         case "running_now":
-          return startDate <= today && today <= endDate;
+          return startDate <= today && endDate >= today;
         case "all":
         default:
           return true;
       }
-    })
-    .filter((p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.faculty_leads.map(faculty => faculty.display_name).join(", ").toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const sortedPrograms = [...filteredPrograms].sort((a, b) => {
-      let aValue, bValue;
-    
-      if (["applied", "enrolled", "withdrawn", "canceled", "total_active"].includes(orderBy)) {
-        aValue = applicantCounts[a.id]?.[orderBy] || 0;
-        bValue = applicantCounts[b.id]?.[orderBy] || 0;
-      } else {
-        aValue = a[orderBy] || "";
-        bValue = b[orderBy] || "";
-      }
-    
-      return order === "asc" ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
     });
-    
+  };
+
+  const filteredPrograms = getFilteredPrograms().filter((p) =>
+    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.faculty_leads.map(faculty => faculty.display_name).join(", ").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+    // If we're already sorting by selected statuses or we click the status filter button
+    // and have statuses selected, use the special combined sort
+    if ((property === "selected_statuses" || 
+         (property === orderBy && property === "selected_statuses")) && 
+        selectedStatuses.length > 0) {
+      const isAsc = orderBy === "selected_statuses" && order === "asc";
+      setOrder(isAsc ? "desc" : "asc");
+      setOrderBy("selected_statuses");
+    } else {
+      const isAsc = orderBy === property && order === "asc";
+      setOrder(isAsc ? "desc" : "asc");
+      setOrderBy(property);
+    }
   };
+
+  // Set the initial sort order to descending for numeric fields
+  const allStatusKeys = Object.values(STATUS).map(status => status.toLowerCase());
+  
+  useEffect(() => {
+    // Initialize status-related fields to descending order by default
+    if (allStatusKeys.includes(orderBy) || 
+        orderBy === "total_active" || 
+        orderBy === "selected_statuses") {
+      setOrder("desc");
+    }
+  }, [orderBy]);
+
+  const sortedPrograms = [...filteredPrograms].sort((a, b) => {
+    let aValue, bValue;
+  
+    if (allStatusKeys.includes(orderBy)) {
+      // Single status sorting
+      aValue = applicantCounts[a.id]?.[orderBy] || 0;
+      bValue = applicantCounts[b.id]?.[orderBy] || 0;
+    } else if (orderBy === "total_active") {
+      // Default total sorting
+      aValue = applicantCounts[a.id]?.[orderBy] || 0;
+      bValue = applicantCounts[b.id]?.[orderBy] || 0;
+    } else if (orderBy === "selected_statuses" && selectedStatuses.length > 0) {
+      // Combined multi-status sorting
+      aValue = selectedStatuses.reduce((sum, status) => {
+        // Add the count for this status to the sum
+        return sum + (applicantCounts[a.id]?.[status] || 0);
+      }, 0);
+      
+      bValue = selectedStatuses.reduce((sum, status) => {
+        // Add the count for this status to the sum
+        return sum + (applicantCounts[b.id]?.[status] || 0);
+      }, 0);
+    } else {
+      // Regular column sorting
+      aValue = a[orderBy] || "";
+      bValue = b[orderBy] || "";
+      
+      // For string comparisons
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return order === "asc" 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+    }
+    
+    // For numeric comparisons - swap comparison logic to get highest numbers first
+    // when sorting in descending order
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return order === "asc" 
+        ? aValue - bValue 
+        : bValue - aValue;
+    }
+  
+    // Fallback for mixed types
+    return order === "asc" ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+  });
 
   const handleEditProgram = (program) => {
     navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
@@ -165,6 +317,10 @@ const AdminProgramsTable = () => {
   };
 
   const isCreatingNewProgram = location.pathname.endsWith("/new-program");
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   if (programTitle || isCreatingNewProgram) {
     return (
@@ -177,85 +333,128 @@ const AdminProgramsTable = () => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return ""; // Handle empty values
-    const [year, month, day] = dateString.split("-"); // Split "YYYY-MM-DD"
-    return `${month}/${day}/${year}`; // Convert to MM/DD/YYYY
+    if (!dateString) return ""; 
+    const [year, month, day] = dateString.split("-"); 
+    return `${month}/${day}/${year}`; 
   };
 
   return (
     <TableWrapper>
       <>
         <FilterContainer>
-          <TextField
-            label="Search"
-            variant="outlined"
-            size="small"
-            fullWidth
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <TextField
-            select
-            label="Filter by Time"
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-            variant="outlined"
-            size="small"
-          >
-            <MenuItem value="current_future">Current & Future</MenuItem>
-            <MenuItem value="open_for_applications">Open for Applications</MenuItem>
-            <MenuItem value="in_review">In Review</MenuItem>
-            <MenuItem value="running_now">Running Now</MenuItem>
-            <MenuItem value="all">All Programs</MenuItem>
-          </TextField>
-          <Button variant="contained" color="primary" onClick={handleNewProgram}>
-            New Program
-          </Button>
+          <FilterRow>
+            <Box sx={{ display: "flex", flexDirection: "column", flex: "1 1 auto", maxWidth: "500px" }}>
+              <StyledFacultyPicklist
+                onFacultyChange={setSelectedFaculty}
+              />
+            </Box>
+            <Box sx={{ flexGrow: 1 }} />
+            <Button variant="contained" color="primary" onClick={handleNewProgram}>
+              New Program
+            </Button>
+          </FilterRow>
+          <FilterRow>
+            <TextField
+              label="Search"
+              variant="outlined"
+              size="small"
+              sx={{ flex: "1 1 auto", minWidth: "300px" }}
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+            <TextField
+              select
+              label="Filter by Time"
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{ width: "200px", flexShrink: 0 }}
+            >
+              <MenuItem value="current_future">Current & Future Programs</MenuItem>
+              <MenuItem value="past">Past Programs</MenuItem>
+              <MenuItem value="accepting_applications">Accepting Applications</MenuItem>
+              <MenuItem value="running_now">Running Now</MenuItem>
+              <MenuItem value="all">All Programs</MenuItem>
+            </TextField>
+          </FilterRow>
         </FilterContainer>
 
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              {["title", "year_semester", "faculty_leads", "application_open_date", "application_deadline", "start_date", "end_date",
-                "applied", "enrolled", "withdrawn", "canceled", "total_active"].map((column) => (
-                <TableCell key={column}>
-                  <TableSortLabel
-                    active={orderBy === column}
-                    direction={order}
-                    onClick={() => handleRequestSort(column)}
-                  >
-                    {column
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (char) => char.toUpperCase())
-                    }
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedPrograms.map((program) => (
-              <StyledTableRow 
-                key={program.id} 
-                onClick={() => handleEditProgram(program)}
-                hover
-              >
-                <TableCell>
-                  {program.title}
-                </TableCell>
-                <TableCell>{program.year_semester}</TableCell>
-                <TableCell>{program.faculty_leads.map(faculty => faculty.display_name).join(", ")}</TableCell>
-                <TableCell>{formatDate(program.application_open_date)}</TableCell>
-                <TableCell>{formatDate(program.application_deadline)}</TableCell>
-                <TableCell>{formatDate(program.start_date)}</TableCell>
-                <TableCell>{formatDate(program.end_date)}</TableCell>
-                {["applied", "enrolled", "withdrawn", "canceled", "total_active"].map((key) => (
-                  <TableCell key={key}>{applicantCounts[program.id]?.[key] || 0}</TableCell>
+        <StyledTableContainer>
+          <Table stickyHeader size="small" padding="none">
+            <StyledTableHead>
+              <TableRow>
+                {["title", "year_semester", "faculty_leads", "application_open_date", "application_deadline", "start_date", "end_date"].map((column) => (
+                  <StyledTableCell key={column}>
+                    <TableSortLabel
+                      active={orderBy === column}
+                      direction={order}
+                      onClick={() => handleRequestSort(column)}
+                    >
+                      {column
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (char) => char.toUpperCase())
+                      }
+                    </TableSortLabel>
+                  </StyledTableCell>
                 ))}
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
+                
+                {/* Applicant Counts Column Header */}
+                <StyledTableCell 
+                  sx={{ 
+                    textAlign: 'center', 
+                    borderLeft: '1px solid rgba(224, 224, 224, 1)',
+                    width: '240px', // Fixed width for the counts column
+                  }}
+                >
+                  {/* Use ApplicantCountsCell for the header */}
+                  <ApplicantCountsCell
+                    orderBy={orderBy} 
+                    order={order}
+                    onRequestSort={handleRequestSort}
+                    selectedStatuses={selectedStatuses}
+                    setSelectedStatuses={setSelectedStatuses}
+                    isHeaderCell={true}
+                  />
+                </StyledTableCell>
+              </TableRow>
+            </StyledTableHead>
+            <TableBody>
+              {sortedPrograms.map((program) => (
+                <StyledTableRow 
+                  key={program.id} 
+                  onClick={() => handleEditProgram(program)}
+                  hover
+                >
+                  <StyledTableCell>
+                    {program.title}
+                  </StyledTableCell>
+                  <StyledTableCell>{program.year_semester}</StyledTableCell>
+                  <StyledTableCell>{program.faculty_leads.map(faculty => faculty.display_name).join(", ")}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.application_open_date)}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.application_deadline)}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.start_date)}</StyledTableCell>
+                  <StyledTableCell>{formatDate(program.end_date)}</StyledTableCell>
+                  
+                  {/* Use ApplicantCountsCell for the data cell */}
+                  <StyledTableCell sx={{ 
+                    borderLeft: '1px solid rgba(224, 224, 224, 1)',
+                    p: 0.5
+                  }}>
+                    <ApplicantCountsCell
+                      program={program} 
+                      counts={applicantCounts[program.id] || {}}
+                      orderBy={orderBy}
+                      order={order}
+                      onRequestSort={handleRequestSort}
+                      selectedStatuses={selectedStatuses}
+                    />
+                  </StyledTableCell>
+                </StyledTableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </StyledTableContainer>
       </>
     </TableWrapper>
   );
