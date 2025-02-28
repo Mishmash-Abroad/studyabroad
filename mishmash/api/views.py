@@ -687,15 +687,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        if "gpa" in data:
-            try:        
-                data["gpa"] = Decimal(data["gpa"])
-            except (ValueError, TypeError):
-                return Response(
-                    {"detail": "Invalid GPA format. It must be a decimal number."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
         if "status" in data:
             new_status = data["status"]
 
