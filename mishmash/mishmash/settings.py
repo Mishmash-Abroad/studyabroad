@@ -171,7 +171,7 @@ AUTHENTICATION_BACKENDS = [
 
 
 # Provider specific settings
-SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET = False
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/overview/'
 LOGIN_REDIRECT_URL = '/dashboard/overview/'
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
