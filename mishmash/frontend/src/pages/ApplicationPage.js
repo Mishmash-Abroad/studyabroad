@@ -535,7 +535,7 @@ const ApplicationPage = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="subtitle2">Current Status</Typography>
+                <Typography variant="subtitle2">Program Status</Typography>
                 <Typography variant="body1" sx={{ 
                   color: theme => {
                     const now = new Date();
@@ -620,7 +620,7 @@ const ApplicationPage = () => {
             </DeadlineContainer>
             {isApplicationReadOnly() && (
               <Alert severity="info" sx={{ mb: 3 }}>
-                This application is currently in read-only mode.
+                This application cannot be edited in the current application status.
               </Alert>
             )}
 
