@@ -301,6 +301,7 @@ export const ApplicantCountsDataCell = ({
               return statusKey || status.toUpperCase();
             }).join(', ')}`}
             arrow
+            disableInteractive
           >
             <Typography variant="caption" fontWeight="bold" sx={{ 
               maxWidth: '70%',
@@ -340,6 +341,7 @@ export const ApplicantCountsDataCell = ({
             title={`${value}: ${count}`}
             placement="top"
             arrow
+            disableInteractive
           >
             <Box
               sx={{
@@ -405,6 +407,7 @@ export const ApplicantCountsDataCell = ({
         title={`Total Active: ${programCounts.total_active || 0}`}
         placement="top"
         arrow
+        disableInteractive
       >
         <Box
           sx={{
