@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -56,6 +56,7 @@ const ModalForm = styled("form")({
   display: "flex",
   flexDirection: "column",
   gap: "16px",
+  padding: "8px 0",
 });
 
 const FormInput = styled("input")(({ theme }) => ({
@@ -123,7 +124,38 @@ const LoginModal = ({ onClose }) => {
   const [mfaUserData, setMfaUserData] = useState(null);
   const mouseDownInsideModalRef = useRef(false);
 
+  // Add ESC key handler to close the modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+      // Add Enter key handling for the login form when it's visible and signup isn't
+      if (e.key === 'Enter' && !showSignUpModal) {
+        // Only if username and password have values
+        if (username && password) {
+          e.preventDefault();
+          handleSubmitLogin(e);
+        }
+      }
+      // Add Enter key handling for the signup form when it's visible
+      else if (e.key === 'Enter' && showSignUpModal) {
+        // Only if all required fields have values
+        if (username && password && confirmPassword && email && displayName) {
+          e.preventDefault();
+          handleSubmitSignUp(e);
+        }
+      }
+    };
 
+    // Add event listener
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, username, password, confirmPassword, email, displayName, showSignUpModal]);
 
   // ------------- EVENT HANDLERS -------------
   const handleSubmitLogin = async (e) => {
@@ -152,7 +184,11 @@ const LoginModal = ({ onClose }) => {
         throw new Error("Invalid Credentials");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid username or password");
+      if (err.response?.status === 403) {
+        setError("Invalid username or password");
+      } else {
+        setError(err.response?.data?.detail || "An error occurred during login");
+      }
     } finally {
       setLoading(false);
     }
@@ -195,7 +231,12 @@ const LoginModal = ({ onClose }) => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid username or password. Username may already exist.");
+      // Handle 400 Bad Request for validation errors
+      if (err.response?.status === 400) {
+        setError(err.response.data.detail || "Please check your input information");
+      } else {
+        setError(err.response?.data?.detail || "Error creating account. Username may already exist.");
+      }
     } finally {
       setLoading(false);
     }
@@ -231,9 +272,8 @@ const LoginModal = ({ onClose }) => {
           onClick={(e) => e.stopPropagation()}
           onMouseDown={handleModalMouseDown}
         >
-          <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
           <ModalForm onSubmit={handleSubmitLogin}>
-            <FormButton type="button" onClick={handleDukeSSOLogin} marginTop="8px">
+            <FormButton type="button" onClick={handleDukeSSOLogin}>
               Login with Duke SSO
             </FormButton>
             <OrText>or</OrText>
@@ -268,7 +308,7 @@ const LoginModal = ({ onClose }) => {
             </FormButton>
           </ModalForm>
         </ModalContainer>
-      </ModalOverlay >
+      </ModalOverlay>
 
       {showSignUpModal && (
         <ModalOverlay
@@ -279,7 +319,6 @@ const LoginModal = ({ onClose }) => {
             onClick={(e) => e.stopPropagation()}
             onMouseDown={handleModalMouseDown}
           >
-            <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
             <ModalTitle>Welcome!</ModalTitle>
             <ModalForm onSubmit={handleSubmitSignUp}>
               <FormInput
@@ -333,8 +372,7 @@ const LoginModal = ({ onClose }) => {
             </ModalForm>
           </ModalContainer>
         </ModalOverlay>
-      )
-      }
+      )}
 
       {
         isMFAEnabled && (

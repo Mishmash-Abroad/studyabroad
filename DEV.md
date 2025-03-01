@@ -222,6 +222,55 @@ Add a new action on the viewset. This will add a new endpoint called {model-name
 ```
 Creates an endpoint /login, that accepts any user, and returns an authentication token when a valid username and password are included as arguments. After creating a new endpoint, be sure to add that endpoint to the testing procedure specified below.
 
+## Database Schema
+
+### Users
+- Fields
+  - display_name = CharField(max_length=100, default="New User")
+  - is_admin = BooleanField(default=False)
+  - is_mfa_enabled = BooleanField(default=False)
+  - is_sso = BooleanField(default=False)
+### Program
+- Fields
+    - title = CharField(max_length=80)
+    - year = CharField(max_length=4)
+    - semester = CharField(max_length=20)
+    - description = TextField(blank=True, default="No description provided.")
+    - faculty_leads = ManyToManyField('User', related_name='led_programs', limit_choices_to={'is_admin': True}, default=[1])
+    - application_open_date = DateField(null=True, blank=True)
+    - application_deadline = DateField(null=True, blank=True)
+    - essential_document_deadline = DateField(null=True, blank=True)
+    - start_date = DateField(null=True, blank=True)
+    - end_date = DateField(null=True, blank=True)
+### Application
+- Fields
+  - student = ForeignKey("User", on_delete=CASCADE)
+  - program = ForeignKey("Program", on_delete=CASCADE)
+  - date_of_birth = DateField(null=True, blank=True)  # Allow null to avoid immediate data issues
+  - gpa = DecimalField(max_digits=4,decimal_places=3,null=True,blank=True,default=0.000,)
+  - major = CharField(max_length=100, default="Undeclared")
+  - status = CharField(
+      max_length=20,
+        choices=[
+            ("Applied", "Applied"),
+            ("Enrolled", "Enrolled"),
+            ("Eligible", "Eligible"),
+            ("Approved", "Approved"),
+            ("Completed", "Completed"),
+            ("Withdrawn", "Withdrawn"),
+            ("Canceled", "Canceled"),
+        ],
+        default="Applied",
+    )
+  - applied_on = DateTimeField(auto_now_add=True)
+### ApplicationQuestion
+### ApplicationResponse
+### Announcement
+### ConfidentialNote
+### Document
+
+
+
 ## Testing, Superusers, and Test Data
 
 ### Testing

@@ -10,10 +10,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import {ALL_ADMIN_EDITABLE_STATUSES} from '../utils/constants'
+import {ALL_ADMIN_EDITABLE_STATUSES, getStatusLabel} from '../utils/constants'
 import DocumentReview from "./DocumentReview";
 import ProgramForm from "./ProgramForm";
 
@@ -32,8 +35,6 @@ const AdminAppView = () => {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState({ newStatus: "", currentStatus: "" });
-
 
   useEffect(() => {
     fetchApplicationDetails();
@@ -87,30 +88,25 @@ const AdminAppView = () => {
   };
 
 
-  const handleStatusSelect = (event) => {
-    const newStatus = event.target.value;
-    if (newStatus === status) return;
-    setPendingStatus({ newStatus, currentStatus: status });
+  const handleStatusChange = async (newStatus) => {
+    setStatus(newStatus);
     setDialogOpen(true);
   };
 
   const confirmStatusChange = async () => {
     try {
-      const updateStatusResponse = await axiosInstance.patch(`/api/applications/${id}/`, { status: pendingStatus.newStatus });
-      setStatus(pendingStatus.newStatus);
-      console.log(updateStatusResponse);
+      await axiosInstance.patch(`/api/applications/${id}/`, { status });
+      setDialogOpen(false);
     } catch (error) {
       console.error("Error updating status:", error);
-      setError("Failed to update status.");
-    } finally {
+      setError("Failed to update application status.");
       setDialogOpen(false);
-      setPendingStatus({ newStatus: "", currentStatus: "" });
     }
   };
 
   const cancelStatusChange = () => {
+    setStatus(application.status); // Reset to original status
     setDialogOpen(false);
-    setPendingStatus({ newStatus: "", currentStatus: "" });
   };
 
   const handleAddNote = async () => {
@@ -247,40 +243,66 @@ const AdminAppView = () => {
           <Button variant="contained" onClick={handleAddNote} disabled={!newNoteContent.trim()}>Add Note</Button>
         </Box>
       </Paper>
-  
-      {/* Status Selection */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h4" sx={{ mb: 2 }}>Actions</Typography>
-        <TextField
-          select
-          value={status}
-          onChange={handleStatusSelect}
-          fullWidth
-          variant="outlined"
-          sx={{ mt: 1 }}
-        >
-          {ALL_ADMIN_EDITABLE_STATUSES.map((option) => (
-            <MenuItem key={option} value={option}>{option}</MenuItem>
-          ))}
-          {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
-            <MenuItem key="current" value={status} disabled>{status}</MenuItem>
-          )}
-        </TextField>
-  
+      
+      {/* Application Status Change - Moved to bottom as primary action */}
+      <Paper sx={{ padding: 3, marginTop: 4, backgroundColor: "#f8f9fa", border: "1px solid #e0e0e0" }}>
+        <Typography variant="h6" gutterBottom>
+          Change Application Status
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          Update the application status to reflect the applicant's current standing in the program.
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl fullWidth>
+            <InputLabel id="status-select-label">Application Status</InputLabel>
+            <Select
+              labelId="status-select-label"
+              id="status-select"
+              value={status}
+              label="Application Status"
+              onChange={(e) => setStatus(e.target.value)}
+              sx={{ minWidth: '250px' }}
+            >
+              {ALL_ADMIN_EDITABLE_STATUSES.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+              {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
+                <MenuItem key="current" value={status} disabled>
+                  {status}
+                </MenuItem>
+              )}
+            </Select>
+          </FormControl>
+          <Button 
+            variant="contained" 
+            color="primary"
+            onClick={() => handleStatusChange(status)}
+            disabled={status === application?.status}
+            sx={{ height: '56px', minWidth: '120px' }}
+          >
+            Update Status
+          </Button>
+        </Box>
         <Button variant="contained" sx={{ mt: 2 }} onClick={() => 
           navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`)
         }>
           Return to Program Detail
         </Button>
       </Paper>
-
+      
+      {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={cancelStatusChange}>
         <DialogTitle>Confirm Status Change</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to change the status from{' '}
-            <strong>{pendingStatus.currentStatus}</strong> to{' '}
-            <strong>{pendingStatus.newStatus}</strong>?
+            Are you sure you want to change the application status from{' '}
+            <strong>{application?.status}</strong> to{' '}
+            <strong>{status}</strong>?
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+            This will update the applicant's status in the system and may trigger notifications.
           </Typography>
         </DialogContent>
         <DialogActions>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Paper, Typography, Alert } from '@mui/material';
+import { Box, TextField, Button, Paper, Typography, Alert, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
+import { SEMESTERS } from '../utils/constants';
 import ApplicantTable from './ApplicantTable';
 import FacultyPicklist from './FacultyPicklist';
 
@@ -141,13 +142,20 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.year} 
           onChange={handleInputChange}
         />
-        <TextField 
-          label="Semester" 
-          name="semester" 
-          fullWidth 
-          value={programData.semester} 
-          onChange={handleInputChange}
-        />
+        <FormControl fullWidth>
+          <InputLabel id="semester-label">Semester</InputLabel>
+          <Select
+            labelId="semester-label"
+            label="Semester"
+            name="semester"
+            value={programData.semester}
+            onChange={handleInputChange}
+          >
+            {SEMESTERS.map(semester => (
+              <MenuItem key={semester} value={semester}>{semester}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FacultyPicklist
           onFacultyChange={handleFacultyChange}
           initialSelected={programData.faculty_lead_ids}
