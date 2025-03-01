@@ -70,6 +70,7 @@ export const ApplicantCountsHeaderCell = ({
     } else {
       onRequestSort("total_active");
     }
+    handleStatusMenuClose(); // Close the menu after clicking the sort button
   };
 
   // Determine if we're currently sorting by any status-related field
@@ -388,8 +389,10 @@ export const ApplicantCountsDataCell = ({
                   justifyContent: 'center',
                   alignItems: 'center',
                   minWidth: '16px',
+                  width: count > 9 ? '20px' : '16px', // Slightly wider for double digits
+                  height: '16px',
                   textAlign: 'center',
-                  lineHeight: 1.2,
+                  lineHeight: 1,
                   fontWeight: count > 0 ? "bold" : "normal"
                 }}
               >
@@ -450,8 +453,10 @@ export const ApplicantCountsDataCell = ({
               justifyContent: 'center',
               alignItems: 'center',
               minWidth: '16px',
+              width: (programCounts.total_active || 0) > 9 ? '20px' : '16px', // Slightly wider for double digits
+              height: '16px',
               textAlign: 'center',
-              lineHeight: 1.2,
+              lineHeight: 1,
               fontWeight: "bold"
             }}
           >
