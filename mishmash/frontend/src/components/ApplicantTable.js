@@ -292,7 +292,7 @@ const ApplicantTable = ({ programId }) => {
   const renderNotesSummary = (notes) => {
     if (!notes || notes.count === 0) {
       return (
-        <Box display="flex" alignItems="left" flexDirection="column">
+        <Box display="flex" alignItems="left">
           <NoteIcon fontSize="small" sx={{ mb: 0.5 }} />
           <Typography variant="body2">0</Typography>
         </Box>
