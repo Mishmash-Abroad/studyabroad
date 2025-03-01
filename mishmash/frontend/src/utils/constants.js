@@ -156,7 +156,7 @@ export const SEVERITY_LEVELS = {
     INACTIVITY_TEXT: '15 minutes',
     ABSOLUTE_TEXT: '24 hours'
   };
-  
+
   // Academic terms
   export const SEMESTERS = [
     "Summer",
