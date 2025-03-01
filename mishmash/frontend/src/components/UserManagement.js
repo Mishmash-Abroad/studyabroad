@@ -198,9 +198,9 @@ const UserManagement = () => {
                 <StyledTableCell>{user.email}</StyledTableCell>
                 <StyledTableCell>
                   <Chip
-                    icon={user.is_sso ? <Link /> : <Storage />}
+                    icon={user.is_sso ? <Link color="secondary" /> : <Storage color="secondary" />}
                     label={user.is_sso ? "SSO" : "Local"}
-                    color={user.is_sso ? "secondary" : "default"}
+                    color="secondary"
                     size="small"
                     variant="outlined"
                   />
@@ -208,9 +208,9 @@ const UserManagement = () => {
                 <StyledTableCell align="center">
                   <Box sx={{ display: "flex", gap: 1, alignItems: "center", justifyContent: "center" }}>
                     <Chip
-                      icon={user.is_admin ? <AdminPanelSettings /> : <Person />}
+                      icon={user.is_admin ? <AdminPanelSettings color="primary" /> : <Person color="primary" />}
                       label={user.is_admin ? "Admin" : "User"}
-                      color={user.is_admin ? "primary" : "default"}
+                      color="primary"
                       size="small"
                       variant="outlined"
                       sx={{ minWidth: '75px' }}
@@ -231,8 +231,8 @@ const UserManagement = () => {
                         <IconButton
                           color={user.is_admin ? "warning" : "success"}
                           onClick={() => user.username !== "admin" && handlePromoteDemote(user)}
-                          size="small"
                           disabled={user.username === "admin"}
+                          size="small"
                         >
                           {user.is_admin ? <ArrowDownward /> : <ArrowUpward />}
                         </IconButton>
@@ -257,20 +257,27 @@ const UserManagement = () => {
                     </Tooltip>
 
                     {/* Delete Button */}
-                    {user.username !== "admin" && (
-                      <Tooltip title={user.is_sso ? "SSO users cannot be deleted" : "Delete User"} disableInteractive>
-                        <span>
-                          <IconButton
-                            color="error"
-                            onClick={() => !user.is_sso && handleDeleteUser(user)}
-                            disabled={user.is_sso}
-                            size="small"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    )}
+                    <Tooltip 
+                      title={
+                        user.username === "admin" 
+                          ? "System admin cannot be deleted" 
+                          : user.is_sso 
+                            ? "SSO users cannot be deleted" 
+                            : "Delete User"
+                      } 
+                      disableInteractive
+                    >
+                      <span>
+                        <IconButton
+                          color="error"
+                          onClick={() => !user.is_sso && user.username !== "admin" && handleDeleteUser(user)}
+                          disabled={user.is_sso || user.username === "admin"}
+                          size="small"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </StyledTableCell>
               </TableRow>
