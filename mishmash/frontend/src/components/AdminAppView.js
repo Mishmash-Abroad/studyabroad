@@ -168,6 +168,8 @@ const AdminAppView = () => {
       {/* Application Details */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>Application Details</Typography>
+
+        <Typography variant="h5" sx={{ mb: 2 }}>Current Status: <strong>{status}</strong></Typography>
         
         {/* Applicant Info */}
         <Box sx={{ mb: 3 }}>
