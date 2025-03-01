@@ -5,13 +5,11 @@ import {
   TextField,
   MenuItem,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
@@ -32,6 +30,9 @@ const AdminAppView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState({ newStatus: "", currentStatus: "" });
+
 
   useEffect(() => {
     fetchApplicationDetails();
@@ -85,13 +86,30 @@ const AdminAppView = () => {
   };
 
 
-  const handleStatusChange = async (newStatus) => {
+  const handleStatusSelect = (event) => {
+    const newStatus = event.target.value;
+    if (newStatus === status) return;
+    setPendingStatus({ newStatus, currentStatus: status });
+    setDialogOpen(true);
+  };
+
+  const confirmStatusChange = async () => {
     try {
-      await axiosInstance.patch(`/api/applications/${id}/`, { status: newStatus });
-      setStatus(newStatus);
+      const updateStatusResponse = await axiosInstance.patch(`/api/applications/${id}/`, { status: pendingStatus.newStatus });
+      setStatus(pendingStatus.newStatus);
+      console.log(updateStatusResponse);
     } catch (error) {
       console.error("Error updating status:", error);
+      setError("Failed to update status.");
+    } finally {
+      setDialogOpen(false);
+      setPendingStatus({ newStatus: "", currentStatus: "" });
     }
+  };
+
+  const cancelStatusChange = () => {
+    setDialogOpen(false);
+    setPendingStatus({ newStatus: "", currentStatus: "" });
   };
 
   const handleAddNote = async () => {
@@ -120,17 +138,16 @@ const AdminAppView = () => {
   if (!application || !user) return null;
 
   return (
-    <Paper sx={{ padding: "20px", marginTop: "20px" }}>
-  
+    <Paper sx={{ padding: 3, mt: 3 }}>
       {/* Program Details - Read-Only */}
       {program && (
-        <Paper sx={{ marginBottom: "10px", marginTop: "50px"}}>
-          <Typography variant="h6">Program Details</Typography>
-          <Box sx={{ marginBottom: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Paper sx={{ p: 3, mt: 6, mb: 3 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>Program Details</Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField label="Title" value={program.title} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Description" value={program.description} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Year & Semester" value={program.year_semester} fullWidth InputProps={{ readOnly: true }} />
-            <TextField label="Faculty Leads" value={program.faculty_leads.map(faculty => faculty.display_name).join(", ")} fullWidth InputProps={{ readOnly: true }} />
+            <TextField label="Faculty Leads" value={program.faculty_leads.map(f => f.display_name).join(", ")} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Open Date" value={program.application_open_date} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Deadline" value={program.application_deadline} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Start Date" value={program.start_date} fullWidth InputProps={{ readOnly: true }} />
@@ -138,65 +155,37 @@ const AdminAppView = () => {
           </Box>
         </Paper>
       )}
-
-      <Typography variant="h5">
-        Application Details
-      </Typography>
   
-      {/* Applicant Info */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Applicant Information</Typography>
-        <Typography><strong>Display Name:</strong> {user.display_name}</Typography>
-        <Typography><strong>Username:</strong> {user.username}</Typography>
-        <Typography><strong>Email:</strong> {user.email}</Typography>
-        <Typography><strong>Date of Birth:</strong> {application.date_of_birth}</Typography>
-        <Typography><strong>GPA:</strong> {application.gpa}</Typography>
-        <Typography><strong>Major:</strong> {application.major}</Typography>
-      </Box>
-
-      {/* Status Selection */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Application Status</Typography>
-        <TextField
-          select
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          fullWidth
-          variant="outlined"
-          sx={{ marginTop: 1 }}
-        >
-          {ALL_ADMIN_EDITABLE_STATUSES.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-          {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
-            <MenuItem key="current" value={status} disabled>
-              {status}
-            </MenuItem>
-          )}
-        </TextField>
-      </Box>
+      {/* Application Details */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Application Details</Typography>
+        
+        {/* Applicant Info */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" sx={{ mb: 2 }}>Applicant Information</Typography>
+          <Typography><strong>Display Name:</strong> {user.display_name}</Typography>
+          <Typography><strong>Username:</strong> {user.username}</Typography>
+          <Typography><strong>Email:</strong> {user.email}</Typography>
+          <Typography><strong>Date of Birth:</strong> {application.date_of_birth}</Typography>
+          <Typography><strong>GPA:</strong> {application.gpa}</Typography>
+          <Typography><strong>Major:</strong> {application.major}</Typography>
+        </Box>
   
-      {/* Application Responses */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Application Responses</Typography>
-        <Paper sx={{ padding: 2, backgroundColor: "white", borderRadius: 2 }}>
+        {/* Application Responses */}
+        <Typography variant="h5" sx={{ mb: 2 }}>Application Responses</Typography>
           {questions.map((question) => {
             const response = responses.find((r) => r.question === question.id);
             return (
-              <Box key={question.id} sx={{ marginBottom: 3 }}>
-                {/* Question */}
+              <Box key={question.id} sx={{ mb: 3 }}>
                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                   {question.text}
                 </Typography>
-
                 <Typography
                   variant="body1"
                   sx={{
-                    padding: "12px",
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: "8px",
+                    p: 2,
+                    bgcolor: "#f5f5f5",
+                    borderRadius: 2,
                     whiteSpace: "pre-line",
                   }}
                 >
@@ -205,49 +194,33 @@ const AdminAppView = () => {
               </Box>
             );
           })}
-        </Paper>
-      </Box>
-
-      {/* Essential Documents Review */}
-      <DocumentReview application_id={id} />
-
+  
+        {/* Essential Documents Review */}
+        <Typography variant="h5" sx={{ mb: 2 }}>Essential Documents Review</Typography>
+        <DocumentReview application_id={id} />
+      </Paper>
+  
       {/* Confidential Notes Section */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Confidential Notes</Typography>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Confidential Notes</Typography>
         {confidentialNotes.length > 0 ? (
           confidentialNotes
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .map((note) => (
-            <Paper key={note.id} sx={{ padding: 2, marginBottom: 2, width: "100%" }}>
-              <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
-                {note.content}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: "block",
-                  marginTop: 1,
-                  textAlign: "right",
-                  fontStyle: "italic",
-                  color: "gray",
-                }}
-              >
-                By {note.author_display} on{" "}
-                {new Date(note.timestamp).toLocaleString()}
-              </Typography>
-            </Paper>
-          ))
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .map((note) => (
+              <Paper key={note.id} sx={{ p: 2, mb: 2, border: "1px solid #ccc", borderRadius: 1 }}>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>{note.content}</Typography>
+                <Typography variant="caption" sx={{ display: "block", mt: 1, textAlign: "right", fontStyle: "italic", color: "gray" }}>
+                  By {note.author_display} on {new Date(note.timestamp).toLocaleString()}
+                </Typography>
+              </Paper>
+            ))
         ) : (
-          <Typography variant="body2" color="textSecondary">
-            No confidential notes yet.
-          </Typography>
+          <Typography variant="body2" color="textSecondary">No confidential notes yet.</Typography>
         )}
-
+  
         {/* Add New Note */}
-        <Box sx={{ marginTop: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Add New Note
-          </Typography>
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>Add New Note</Typography>
           <TextField
             multiline
             rows={4}
@@ -256,19 +229,56 @@ const AdminAppView = () => {
             fullWidth
             variant="outlined"
             placeholder="Enter your note here..."
-            sx={{ marginBottom: 2 }}
+            sx={{ mb: 2 }}
           />
-          <Button
-            variant="contained"
-            onClick={handleAddNote}
-            disabled={!newNoteContent.trim()}
-          >
-            Add Note
-          </Button>
+          <Button variant="contained" onClick={handleAddNote} disabled={!newNoteContent.trim()}>Add Note</Button>
         </Box>
-      </Box>
+      </Paper>
+  
+      {/* Status Selection */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Actions</Typography>
+        <TextField
+          select
+          value={status}
+          onChange={handleStatusSelect}
+          fullWidth
+          variant="outlined"
+          sx={{ mt: 1 }}
+        >
+          {ALL_ADMIN_EDITABLE_STATUSES.map((option) => (
+            <MenuItem key={option} value={option}>{option}</MenuItem>
+          ))}
+          {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
+            <MenuItem key="current" value={status} disabled>{status}</MenuItem>
+          )}
+        </TextField>
+  
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate(-1)}>
+          Return to Program Detail
+        </Button>
+      </Paper>
+
+      <Dialog open={dialogOpen} onClose={cancelStatusChange}>
+        <DialogTitle>Confirm Status Change</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to change the status from{' '}
+            <strong>{pendingStatus.currentStatus}</strong> to{' '}
+            <strong>{pendingStatus.newStatus}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelStatusChange} color="inherit">Cancel</Button>
+          <Button onClick={confirmStatusChange} color="primary" variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
+  
+  
 };
 
 export default AdminAppView;
