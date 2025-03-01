@@ -184,12 +184,17 @@ const HomePage = () => {
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
-
-
 // ------------- SSO HANDLING: Check session on mount -------------
 useEffect(() => {
+  const isAlreadyLoggedIn = !!user;
+  
   async function checkSSO() {
     try {
+      // Skip the check if user is already logged in
+      if (isAlreadyLoggedIn) {
+        return;
+      }
+      
       // Try to get the DRF token using the current session.
       const tokenResponse = await axiosInstance.get("/api/auth/token/");
       if (tokenResponse.data.token) {
@@ -198,6 +203,7 @@ useEffect(() => {
         const userData = userResponse.data;
         // Call the login function in your auth context with MFA not required.
         login(userData, tokenResponse.data.token, true);
+        // Only redirect if this was an SSO login
         navigate("/dashboard");
       }
     } catch (err) {
@@ -206,12 +212,7 @@ useEffect(() => {
     }
   }
   checkSSO();
-}, [login, navigate]);
-
-
-
-
-
+}, [login, navigate, user]);
 
   const features = [
     {
