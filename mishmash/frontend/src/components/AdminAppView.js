@@ -15,6 +15,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import {ALL_ADMIN_EDITABLE_STATUSES} from '../utils/constants'
 import DocumentReview from "./DocumentReview";
+import ProgramForm from "./ProgramForm";
 
 const AdminAppView = () => {
   const { id } = useParams();
@@ -132,6 +133,18 @@ const AdminAppView = () => {
       setError("Failed to add note. Please try again.");
     }
   };
+
+  const handleReturnToProgram = () => {
+    if (program) {
+      navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
+      return (
+        <ProgramForm
+          onClose={() => navigate("/dashboard/admin-programs")}
+          editingProgram={program}
+        />
+      );
+    }
+  }
 
   if (loading) return <Typography>Loading application details...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -254,7 +267,9 @@ const AdminAppView = () => {
           )}
         </TextField>
   
-        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate(-1)}>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => 
+          navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`)
+        }>
           Return to Program Detail
         </Button>
       </Paper>
