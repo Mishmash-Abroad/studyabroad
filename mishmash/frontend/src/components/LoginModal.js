@@ -187,7 +187,7 @@ const LoginModal = ({ onClose }) => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid username or password");
+      setError(err.response?.data?.detail || "Invalid username or password. Username may already exist.");
     } finally {
       setLoading(false);
     }
@@ -241,11 +241,11 @@ const LoginModal = ({ onClose }) => {
               required
             />
             {error && <FormError>{error}</FormError>}
-            <FormButton type="submit" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </FormButton>
             <FormButton type="button" onClick={handleDukeSSOLogin}>
               Login with Duke SSO
+            </FormButton>
+            <FormButton type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </FormButton>
             <FormButton
               type="button"
