@@ -130,7 +130,7 @@ const UserManagement = () => {
         <Table>
           <TableHead>
             <TableRow>
-              {["display_name", "username", "email", "is_admin", "is_sso_user", "actions"].map((column) => (
+              {["display_name", "username", "email", "is_admin", "is_sso", "actions"].map((column) => (
                 <TableCell key={column}>
                   {column !== "actions" ? (
                     <TableSortLabel
@@ -178,7 +178,7 @@ const UserManagement = () => {
                     )}
 
                     {/* Delete Button (Disabled for admin & SSO) */}
-                    {user.username !== "admin" && !user.is_sso_user && (
+                    {user.username !== "admin" && !user.is_sso && (
                       <Button variant="contained" color="error" onClick={() => handleDeleteUser(user)}>
                         Delete
                       </Button>

@@ -604,8 +604,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(program_id=program_id)
             
         for app in queryset:
-            app.status = "Completed" if (app.program.end_date <= datetime.today().date()) else app.status
-            app.save()
+            if (app.program.end_date < datetime.today().date() and app.status == "Enrolled"):
+                app.status = "Completed"
+                app.save()
         
         return queryset
 
@@ -735,7 +736,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "You cannot change the program after applying."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-
         return super().update(request, *args, **kwargs)
 
 
@@ -1036,6 +1036,17 @@ class UserViewSet(viewsets.ModelViewSet):
             print(f"Removed {user.username} from faculty leads of {programs.count()} programs")
 
         return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Prevent SSO users from being deleted.
+        """
+        user = self.get_object()
+
+        if user.is_sso:
+            raise PermissionDenied("SSO users cannot be deleted.")
+
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def current_user(self, request):
@@ -1204,7 +1215,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({"detail": f"Password updated successfully for {user.username}."}, status=status.HTTP_200_OK)
 
-    @action(detail=False, permission_classes=[AllowAny])
+    @action(detail=False, permission_classes=[AllowAny]) 
     def faculty(self, request):
         """
         Retrieve a list of all faculty members (admin users).
