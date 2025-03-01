@@ -76,6 +76,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 import base64
 from allauth.socialaccount.models import SocialAccount
+from django.contrib.auth import logout as django_logout
 
 ### Custom permission classes for API access ###
 
@@ -1132,6 +1133,8 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         try:
             request.auth.delete()
+            django_logout(request) 
+
             return Response(
                 {"detail": "Successfully logged out."}, status=status.HTTP_200_OK
             )
