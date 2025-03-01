@@ -41,6 +41,75 @@ import {
 import axiosInstance from "../utils/axios";
 import ChangePasswordModal from "./ChangePasswordModal";
 
+// Role transition button component
+const RoleTransitionButton = ({ user, isCurrentUser, onClick }) => {
+  const isSystemAdmin = user.username === "admin";
+  const isDisabled = isCurrentUser || isSystemAdmin;
+  
+  // Get appropriate tooltip message
+  const getTooltip = () => {
+    if (isSystemAdmin) return "System admin role cannot be changed";
+    if (isCurrentUser) return "You cannot change your own role";
+    return user.is_admin ? "Demote to User" : "Promote to Admin";
+  };
+  
+  return (
+    <Tooltip title={getTooltip()} disableInteractive>
+      <span>
+        <Box 
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 0.5,
+            border: '1px solid #e0e0e0',
+            borderRadius: 1,
+            opacity: isDisabled ? 0.5 : 1,
+            backgroundColor: isDisabled ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+            cursor: isDisabled ? 'default' : 'pointer',
+            '&:hover': {
+              backgroundColor: isDisabled ? 'rgba(0, 0, 0, 0.04)' : 'rgba(0, 0, 0, 0.08)'
+            }
+          }}
+          onClick={() => !isDisabled && onClick && onClick(user)}
+        >
+          {/* Admin Icon */}
+          <AdminPanelSettings 
+            color={user.is_admin ? "primary" : "disabled"}
+            sx={{ 
+              fontSize: user.is_admin ? 22 : 16,
+              opacity: user.is_admin ? 1 : 0.5
+            }}
+          />
+          
+          {/* Transition Arrow */}
+          {user.is_admin ? (
+            <KeyboardArrowRight 
+              color={isDisabled ? "disabled" : "action"} 
+              sx={{ fontSize: 16, mx: 0.5, opacity: isDisabled ? 0.5 : 1 }} 
+            />
+          ) : (
+            <KeyboardArrowLeft 
+              color={isDisabled ? "disabled" : "action"} 
+              sx={{ fontSize: 16, mx: 0.5, opacity: isDisabled ? 0.5 : 1 }} 
+            />
+          )}
+          
+          {/* User Icon */}
+          <Person 
+            color={!user.is_admin ? "primary" : "disabled"}
+            sx={{ 
+              fontSize: !user.is_admin ? 22 : 16,
+              opacity: !user.is_admin ? 1 : 0.5
+            }}
+          />
+        </Box>
+      </span>
+    </Tooltip>
+  );
+};
+
 // Styled components to match AdminProgramsTable
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   padding: '4px 8px',
@@ -267,125 +336,12 @@ const UserManagement = () => {
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                    {/* Promote/Demote Button - replaced with horizontal transition UI */}
-                    {user.username !== "admin" && !isCurrentUser && (
-                      <Tooltip 
-                        title={
-                          isCurrentUser 
-                            ? "You cannot change your own role" 
-                            : user.is_admin 
-                              ? "Demote to User" 
-                              : "Promote to Admin"
-                        } 
-                        disableInteractive
-                      >
-                        <Box 
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            p: 0.5,
-                            border: '1px solid #e0e0e0',
-                            borderRadius: 1,
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                            }
-                          }}
-                          onClick={() => !isCurrentUser && user.username !== "admin" && handlePromoteDemote(user)}
-                        >
-                          {/* Admin Icon - larger if user is admin */}
-                          <AdminPanelSettings 
-                            color={user.is_admin ? "primary" : "disabled"}
-                            sx={{ 
-                              fontSize: user.is_admin ? 22 : 16,
-                              opacity: user.is_admin ? 1 : 0.5
-                            }}
-                          />
-                          
-                          {/* Transition Arrow */}
-                          {user.is_admin ? (
-                            <KeyboardArrowRight color="action" sx={{ fontSize: 16, mx: 0.5 }} />
-                          ) : (
-                            <KeyboardArrowLeft color="action" sx={{ fontSize: 16, mx: 0.5 }} />
-                          )}
-                          
-                          {/* User Icon - larger if user is not admin */}
-                          <Person 
-                            color={!user.is_admin ? "primary" : "disabled"}
-                            sx={{ 
-                              fontSize: !user.is_admin ? 22 : 16,
-                              opacity: !user.is_admin ? 1 : 0.5
-                            }}
-                          />
-                        </Box>
-                      </Tooltip>
-                    )}
-                    
-                    {user.username === "admin" && (
-                      <Tooltip title="System admin role cannot be changed" disableInteractive>
-                        <span>
-                          <Box 
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              p: 0.5,
-                              border: '1px solid #e0e0e0',
-                              borderRadius: 1,
-                              opacity: 0.5,
-                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                            }}
-                          >
-                            <AdminPanelSettings color="primary" sx={{ fontSize: 22 }} />
-                            <KeyboardArrowRight color="disabled" sx={{ fontSize: 16, mx: 0.5, opacity: 0.5 }} />
-                            <Person color="disabled" sx={{ fontSize: 16, opacity: 0.5 }} />
-                          </Box>
-                        </span>
-                      </Tooltip>
-                    )}
-                    
-                    {isCurrentUser && user.username !== "admin" && (
-                      <Tooltip title="You cannot change your own role" disableInteractive>
-                        <span>
-                          <Box 
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              p: 0.5,
-                              border: '1px solid #e0e0e0',
-                              borderRadius: 1,
-                              opacity: 0.5,
-                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                            }}
-                          >
-                            <AdminPanelSettings 
-                              color={user.is_admin ? "primary" : "disabled"}
-                              sx={{ 
-                                fontSize: user.is_admin ? 22 : 16,
-                                opacity: user.is_admin ? 1 : 0.5
-                              }}
-                            />
-                            {user.is_admin ? (
-                              <KeyboardArrowRight color="disabled" sx={{ fontSize: 16, mx: 0.5, opacity: 0.5 }} />
-                            ) : (
-                              <KeyboardArrowLeft color="disabled" sx={{ fontSize: 16, mx: 0.5, opacity: 0.5 }} />
-                            )}
-                            <Person 
-                              color={!user.is_admin ? "primary" : "disabled"}
-                              sx={{ 
-                                fontSize: !user.is_admin ? 22 : 16,
-                                opacity: !user.is_admin ? 1 : 0.5
-                              }}
-                            />
-                          </Box>
-                        </span>
-                      </Tooltip>
-                    )}
+                    {/* Role transition button */}
+                    <RoleTransitionButton 
+                      user={user}
+                      isCurrentUser={isCurrentUser}
+                      onClick={handlePromoteDemote}
+                    />
 
                     {/* Change Password Button */}
                     <Tooltip title={user.is_sso ? "SSO users use external authentication" : "Change Password"} disableInteractive>
