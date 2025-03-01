@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styled } from '@mui/material/styles';
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import LoginModal from "../components/LoginModal";
 import Typography from '@mui/material/Typography';
+import axiosInstance from "../utils/axios";
+
 import AnnouncementsBrowser from '../components/AnnouncementsBrowser';
 
 // -------------------- STYLES (moved from index.js) --------------------
@@ -179,8 +181,37 @@ const GalleryImage = styled('img')(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const HomePage = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+
+
+
+// ------------- SSO HANDLING: Check session on mount -------------
+useEffect(() => {
+  async function checkSSO() {
+    try {
+      // Try to get the DRF token using the current session.
+      const tokenResponse = await axiosInstance.get("/api/auth/token/");
+      if (tokenResponse.data.token) {
+        // Get user details.
+        const userResponse = await axiosInstance.get("/api/users/current_user/");
+        const userData = userResponse.data;
+        // Call the login function in your auth context with MFA not required.
+        login(userData, tokenResponse.data.token, true);
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      // If no session token is returned, do nothing.
+      console.log("No SSO session detected.", err);
+    }
+  }
+  checkSSO();
+}, [login, navigate]);
+
+
+
+
+
 
   const features = [
     {

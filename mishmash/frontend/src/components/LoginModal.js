@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -115,35 +115,7 @@ const LoginModal = ({ onClose }) => {
   const [mfaUserData, setMfaUserData] = useState(null);
   const mouseDownInsideModalRef = useRef(false);
 
-  // ------------- SSO HANDLING: Check session on mount -------------
-  useEffect(() => {
-    async function checkSSO() {
-      try {
-        // Try to get the DRF token using the current session.
-        const tokenResponse = await axiosInstance.get("/api/auth/token/");
-        if (tokenResponse.data.token) {
-          // Get user details.
-          const userResponse = await axiosInstance.get("/api/users/current_user/");
-          const userData = userResponse.data;
-          // Call the login function in your auth context.
-          login(userData, tokenResponse.data.token, userData.is_mfa_enabled ? false : true);
-          // If MFA is enabled, show the MFA modal.
-          if (userData.is_mfa_enabled) {
-            setIsMFAEnabled(true);
-            setMfaToken(tokenResponse.data.token);
-            setMfaUserData(userData);
-          } else {
-            onClose();
-            navigate("/dashboard");
-          }
-        }
-      } catch (err) {
-        // If no session token is returned, do nothing.
-        console.log("No SSO session detected.", err);
-      }
-    }
-    checkSSO();
-  }, [login, navigate, onClose]);
+
 
   // ------------- EVENT HANDLERS -------------
   const handleSubmitLogin = async (e) => {
