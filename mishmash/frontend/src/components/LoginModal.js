@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -56,6 +56,7 @@ const ModalForm = styled("form")({
   display: "flex",
   flexDirection: "column",
   gap: "16px",
+  padding: "8px 0",
 });
 
 const FormInput = styled("input")(({ theme }) => ({
@@ -73,9 +74,9 @@ const FormInput = styled("input")(({ theme }) => ({
   },
 }));
 
-const FormButton = styled("button")(({ theme }) => ({
-  padding: "12px",
-  backgroundColor: theme.palette.primary.main,
+const FormButton = styled("button")(({ theme, secondary, small, marginTop }) => ({
+  padding: small ? "8px" : "12px",
+  backgroundColor: secondary ? theme.palette.secondary.main : theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   border: "none",
   borderRadius: theme.shape.borderRadii.medium,
@@ -83,8 +84,9 @@ const FormButton = styled("button")(({ theme }) => ({
   fontWeight: theme.typography.button.fontWeight,
   cursor: "pointer",
   transition: theme.transitions.quick,
+  marginTop: marginTop || "0",
   "&:hover": {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: secondary ? theme.palette.secondary.dark : theme.palette.primary.dark,
   },
   "&:disabled": {
     backgroundColor: theme.palette.status.neutral.light,
@@ -96,6 +98,13 @@ const FormError = styled("div")(({ theme }) => ({
   color: theme.palette.status.error.main,
   fontSize: theme.typography.caption.fontSize,
   marginTop: "4px",
+}));
+
+const OrText = styled("div")(({ theme }) => ({
+  textAlign: "center",
+  color: theme.palette.text.secondary,
+  margin: "4px 0", // Decreased margin
+  fontSize: theme.typography.body2.fontSize,
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
@@ -115,35 +124,38 @@ const LoginModal = ({ onClose }) => {
   const [mfaUserData, setMfaUserData] = useState(null);
   const mouseDownInsideModalRef = useRef(false);
 
-  // ------------- SSO HANDLING: Check session on mount -------------
+  // Add ESC key handler to close the modal
   useEffect(() => {
-    async function checkSSO() {
-      try {
-        // Try to get the DRF token using the current session.
-        const tokenResponse = await axiosInstance.get("/api/auth/token/");
-        if (tokenResponse.data.token) {
-          // Get user details.
-          const userResponse = await axiosInstance.get("/api/users/current_user/");
-          const userData = userResponse.data;
-          // Call the login function in your auth context.
-          login(userData, tokenResponse.data.token, userData.is_mfa_enabled ? false : true);
-          // If MFA is enabled, show the MFA modal.
-          if (userData.is_mfa_enabled) {
-            setIsMFAEnabled(true);
-            setMfaToken(tokenResponse.data.token);
-            setMfaUserData(userData);
-          } else {
-            onClose();
-            navigate("/dashboard");
-          }
-        }
-      } catch (err) {
-        // If no session token is returned, do nothing.
-        console.log("No SSO session detected.", err);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
       }
-    }
-    checkSSO();
-  }, [login, navigate, onClose]);
+      // Add Enter key handling for the login form when it's visible and signup isn't
+      if (e.key === 'Enter' && !showSignUpModal) {
+        // Only if username and password have values
+        if (username && password) {
+          e.preventDefault();
+          handleSubmitLogin(e);
+        }
+      }
+      // Add Enter key handling for the signup form when it's visible
+      else if (e.key === 'Enter' && showSignUpModal) {
+        // Only if all required fields have values
+        if (username && password && confirmPassword && email && displayName) {
+          e.preventDefault();
+          handleSubmitSignUp(e);
+        }
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, username, password, confirmPassword, email, displayName, showSignUpModal]);
 
   // ------------- EVENT HANDLERS -------------
   const handleSubmitLogin = async (e) => {
@@ -172,7 +184,11 @@ const LoginModal = ({ onClose }) => {
         throw new Error("Invalid Credentials");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid username or password");
+      if (err.response?.status === 403) {
+        setError("Invalid username or password");
+      } else {
+        setError(err.response?.data?.detail || "An error occurred during login");
+      }
     } finally {
       setLoading(false);
     }
@@ -215,7 +231,12 @@ const LoginModal = ({ onClose }) => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid username or password");
+      // Handle 400 Bad Request for validation errors
+      if (err.response?.status === 400) {
+        setError(err.response.data.detail || "Please check your input information");
+      } else {
+        setError(err.response?.data?.detail || "Error creating account. Username may already exist.");
+      }
     } finally {
       setLoading(false);
     }
@@ -243,17 +264,19 @@ const LoginModal = ({ onClose }) => {
 
   return (
     <>
-      <ModalOverlay 
-        onClick={handleOverlayClick} 
+      <ModalOverlay
+        onClick={handleOverlayClick}
         onMouseDown={handleOverlayMouseDown}
       >
-        <ModalContainer 
-          onClick={(e) => e.stopPropagation()} 
+        <ModalContainer
+          onClick={(e) => e.stopPropagation()}
           onMouseDown={handleModalMouseDown}
         >
-          <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
-          <ModalTitle>Welcome Back</ModalTitle>
           <ModalForm onSubmit={handleSubmitLogin}>
+            <FormButton type="button" onClick={handleDukeSSOLogin}>
+              Login with Duke SSO
+            </FormButton>
+            <OrText>or</OrText>
             <FormInput
               type="text"
               placeholder="Username"
@@ -269,11 +292,8 @@ const LoginModal = ({ onClose }) => {
               required
             />
             {error && <FormError>{error}</FormError>}
-            <FormButton type="submit" disabled={loading}>
+            <FormButton type="submit" disabled={loading} small secondary>
               {loading ? "Logging in..." : "Login"}
-            </FormButton>
-            <FormButton type="button" onClick={handleDukeSSOLogin}>
-              Login with Duke SSO
             </FormButton>
             <FormButton
               type="button"
@@ -281,6 +301,8 @@ const LoginModal = ({ onClose }) => {
                 e.preventDefault();
                 setShowSignUpModal(true);
               }}
+              small
+              secondary
             >
               Don't have an account? Sign Up!
             </FormButton>
@@ -289,15 +311,14 @@ const LoginModal = ({ onClose }) => {
       </ModalOverlay>
 
       {showSignUpModal && (
-        <ModalOverlay 
+        <ModalOverlay
           onClick={handleOverlayClick}
           onMouseDown={handleOverlayMouseDown}
         >
-          <ModalContainer 
+          <ModalContainer
             onClick={(e) => e.stopPropagation()}
             onMouseDown={handleModalMouseDown}
           >
-            <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
             <ModalTitle>Welcome!</ModalTitle>
             <ModalForm onSubmit={handleSubmitSignUp}>
               <FormInput
@@ -353,19 +374,21 @@ const LoginModal = ({ onClose }) => {
         </ModalOverlay>
       )}
 
-      {isMFAEnabled && (
-        <MFALogin
-          onClose={() => {
-            onClose();
-            logout();
-          }}
-          onSuccess={() => {
-            onClose();
-            verifyMFA();
-            navigate("/dashboard");
-          }}
-        />
-      )}
+      {
+        isMFAEnabled && (
+          <MFALogin
+            onClose={() => {
+              onClose();
+              logout();
+            }}
+            onSuccess={() => {
+              onClose();
+              verifyMFA();
+              navigate("/dashboard");
+            }}
+          />
+        )
+      }
     </>
   );
 };
