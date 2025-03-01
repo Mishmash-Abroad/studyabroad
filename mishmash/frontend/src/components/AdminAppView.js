@@ -5,12 +5,6 @@ import {
   TextField,
   MenuItem,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Dialog,
   DialogTitle,
@@ -24,6 +18,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import {ALL_ADMIN_EDITABLE_STATUSES, getStatusLabel} from '../utils/constants'
 import DocumentReview from "./DocumentReview";
+import ProgramForm from "./ProgramForm";
 
 const AdminAppView = () => {
   const { id } = useParams();
@@ -135,22 +130,33 @@ const AdminAppView = () => {
     }
   };
 
+  const handleReturnToProgram = () => {
+    if (program) {
+      navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
+      return (
+        <ProgramForm
+          onClose={() => navigate("/dashboard/admin-programs")}
+          editingProgram={program}
+        />
+      );
+    }
+  }
+
   if (loading) return <Typography>Loading application details...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
   if (!application || !user) return null;
 
   return (
-    <Paper sx={{ padding: "20px", marginTop: "20px" }}>
-  
+    <Paper sx={{ padding: 3, mt: 3 }}>
       {/* Program Details - Read-Only */}
       {program && (
-        <Paper sx={{ marginBottom: "10px", marginTop: "50px"}}>
-          <Typography variant="h6">Program Details</Typography>
-          <Box sx={{ marginBottom: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Paper sx={{ p: 3, mt: 6, mb: 3 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>Program Details</Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField label="Title" value={program.title} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Description" value={program.description} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Year & Semester" value={program.year_semester} fullWidth InputProps={{ readOnly: true }} />
-            <TextField label="Faculty Leads" value={program.faculty_leads.map(faculty => faculty.display_name).join(", ")} fullWidth InputProps={{ readOnly: true }} />
+            <TextField label="Faculty Leads" value={program.faculty_leads.map(f => f.display_name).join(", ")} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Open Date" value={program.application_open_date} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Deadline" value={program.application_deadline} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Start Date" value={program.start_date} fullWidth InputProps={{ readOnly: true }} />
@@ -158,46 +164,39 @@ const AdminAppView = () => {
           </Box>
         </Paper>
       )}
-
-      <Typography variant="h5">
-        Application Details
-      </Typography>
   
-      {/* Applicant Info */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Applicant Information</Typography>
-        <Typography><strong>Display Name:</strong> {user.display_name}</Typography>
-        <Typography><strong>Username:</strong> {user.username}</Typography>
-        <Typography><strong>Email:</strong> {user.email}</Typography>
-        <Typography><strong>Date of Birth:</strong> {application.date_of_birth}</Typography>
-        <Typography><strong>GPA:</strong> {application.gpa}</Typography>
-        <Typography><strong>Major:</strong> {application.major}</Typography>
-      </Box>
+      {/* Application Details */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Application Details</Typography>
 
-      {/* Current Status */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Current Status: <strong>{status}</strong></Typography>
-      </Box>
+        <Typography variant="h5" sx={{ mb: 2 }}>Current Status: <strong>{status}</strong></Typography>
+        
+        {/* Applicant Info */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" sx={{ mb: 2 }}>Applicant Information</Typography>
+          <Typography><strong>Display Name:</strong> {user.display_name}</Typography>
+          <Typography><strong>Username:</strong> {user.username}</Typography>
+          <Typography><strong>Email:</strong> {user.email}</Typography>
+          <Typography><strong>Date of Birth:</strong> {application.date_of_birth}</Typography>
+          <Typography><strong>GPA:</strong> {application.gpa}</Typography>
+          <Typography><strong>Major:</strong> {application.major}</Typography>
+        </Box>
   
-      {/* Application Responses */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Application Responses</Typography>
-        <Paper sx={{ padding: 2, backgroundColor: "white", borderRadius: 2 }}>
+        {/* Application Responses */}
+        <Typography variant="h5" sx={{ mb: 2 }}>Application Responses</Typography>
           {questions.map((question) => {
             const response = responses.find((r) => r.question === question.id);
             return (
-              <Box key={question.id} sx={{ marginBottom: 3 }}>
-                {/* Question */}
+              <Box key={question.id} sx={{ mb: 3 }}>
                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                   {question.text}
                 </Typography>
-
                 <Typography
                   variant="body1"
                   sx={{
-                    padding: "12px",
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: "8px",
+                    p: 2,
+                    bgcolor: "#f5f5f5",
+                    borderRadius: 2,
                     whiteSpace: "pre-line",
                   }}
                 >
@@ -206,49 +205,33 @@ const AdminAppView = () => {
               </Box>
             );
           })}
-        </Paper>
-      </Box>
-
-      {/* Essential Documents Review */}
-      <DocumentReview application_id={id} />
-
+  
+        {/* Essential Documents Review */}
+        <Typography variant="h5" sx={{ mb: 2 }}>Essential Documents Review</Typography>
+        <DocumentReview application_id={id} />
+      </Paper>
+  
       {/* Confidential Notes Section */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Confidential Notes</Typography>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Confidential Notes</Typography>
         {confidentialNotes.length > 0 ? (
           confidentialNotes
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .map((note) => (
-            <Paper key={note.id} sx={{ padding: 2, marginBottom: 2, width: "100%" }}>
-              <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
-                {note.content}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: "block",
-                  marginTop: 1,
-                  textAlign: "right",
-                  fontStyle: "italic",
-                  color: "gray",
-                }}
-              >
-                By {note.author_display} on{" "}
-                {new Date(note.timestamp).toLocaleString()}
-              </Typography>
-            </Paper>
-          ))
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .map((note) => (
+              <Paper key={note.id} sx={{ p: 2, mb: 2, border: "1px solid #ccc", borderRadius: 1 }}>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>{note.content}</Typography>
+                <Typography variant="caption" sx={{ display: "block", mt: 1, textAlign: "right", fontStyle: "italic", color: "gray" }}>
+                  By {note.author_display} on {new Date(note.timestamp).toLocaleString()}
+                </Typography>
+              </Paper>
+            ))
         ) : (
-          <Typography variant="body2" color="textSecondary">
-            No confidential notes yet.
-          </Typography>
+          <Typography variant="body2" color="textSecondary">No confidential notes yet.</Typography>
         )}
-
+  
         {/* Add New Note */}
-        <Box sx={{ marginTop: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Add New Note
-          </Typography>
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>Add New Note</Typography>
           <TextField
             multiline
             rows={4}
@@ -257,17 +240,11 @@ const AdminAppView = () => {
             fullWidth
             variant="outlined"
             placeholder="Enter your note here..."
-            sx={{ marginBottom: 2 }}
+            sx={{ mb: 2 }}
           />
-          <Button
-            variant="contained"
-            onClick={handleAddNote}
-            disabled={!newNoteContent.trim()}
-          >
-            Add Note
-          </Button>
+          <Button variant="contained" onClick={handleAddNote} disabled={!newNoteContent.trim()}>Add Note</Button>
         </Box>
-      </Box>
+      </Paper>
       
       {/* Application Status Change - Moved to bottom as primary action */}
       <Paper sx={{ padding: 3, marginTop: 4, backgroundColor: "#f8f9fa", border: "1px solid #e0e0e0" }}>
@@ -310,6 +287,11 @@ const AdminAppView = () => {
             Update Status
           </Button>
         </Box>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => 
+          navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`)
+        }>
+          Return to Program Detail
+        </Button>
       </Paper>
       
       {/* Confirmation Dialog */}
@@ -334,6 +316,8 @@ const AdminAppView = () => {
       </Dialog>
     </Paper>
   );
+  
+  
 };
 
 export default AdminAppView;
