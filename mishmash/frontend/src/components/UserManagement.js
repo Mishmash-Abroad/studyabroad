@@ -30,7 +30,8 @@ import {
   ArrowUpward,
   ArrowDownward,
   Link,
-  Key
+  Key,
+  AccountCircle
 } from '@mui/icons-material';
 import axiosInstance from "../utils/axios";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -59,10 +60,25 @@ const UserManagement = () => {
     const [order, setOrder] = useState("asc");
     const [confirmDialog, setConfirmDialog] = useState(null);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
   
   useEffect(() => {
     fetchUsers();
+    fetchCurrentUser();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      // Get current user info from localStorage or from API
+      const userData = localStorage.getItem('user') 
+        ? JSON.parse(localStorage.getItem('user')) 
+        : (await axiosInstance.get('/api/users/me/')).data;
+      
+      setCurrentUser(userData);
+    } catch (err) {
+      console.error("Error fetching current user:", err);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -191,9 +207,26 @@ const UserManagement = () => {
             </TableRow>
           </StyledTableHead>
           <TableBody>
-            {sortedUsers.map((user) => (
-              <TableRow key={user.id}>
-                <StyledTableCell>{user.display_name}</StyledTableCell>
+            {sortedUsers.map((user) => {
+              const isCurrentUser = currentUser && (user.id === currentUser.id || user.username === currentUser.username);
+              return (
+              <TableRow 
+                key={user.id}
+                sx={isCurrentUser ? { 
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.08)' }
+                } : {}}
+              >
+                <StyledTableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {isCurrentUser && (
+                      <Tooltip title="Current user" disableInteractive>
+                        <AccountCircle color="primary" sx={{ mr: 1 }} />
+                      </Tooltip>
+                    )}
+                    {user.display_name}
+                  </Box>
+                </StyledTableCell>
                 <StyledTableCell>{user.username}</StyledTableCell>
                 <StyledTableCell>{user.email}</StyledTableCell>
                 <StyledTableCell>
@@ -221,17 +254,19 @@ const UserManagement = () => {
                       title={
                         user.username === "admin" 
                           ? "System admin cannot be demoted" 
-                          : user.is_admin 
-                            ? "Demote to User" 
-                            : "Promote to Admin"
+                          : isCurrentUser 
+                            ? "You cannot demote yourself"
+                            : user.is_admin 
+                              ? "Demote to User" 
+                              : "Promote to Admin"
                       } 
                       disableInteractive
                     >
                       <span>
                         <IconButton
                           color={user.is_admin ? "warning" : "success"}
-                          onClick={() => user.username !== "admin" && handlePromoteDemote(user)}
-                          disabled={user.username === "admin"}
+                          onClick={() => !isCurrentUser && user.username !== "admin" && handlePromoteDemote(user)}
+                          disabled={isCurrentUser || user.username === "admin"}
                           size="small"
                         >
                           {user.is_admin ? <ArrowDownward /> : <ArrowUpward />}
@@ -261,17 +296,19 @@ const UserManagement = () => {
                       title={
                         user.username === "admin" 
                           ? "System admin cannot be deleted" 
-                          : user.is_sso 
-                            ? "SSO users cannot be deleted" 
-                            : "Delete User"
+                          : isCurrentUser
+                            ? "You cannot delete your own account"
+                            : user.is_sso 
+                              ? "SSO users cannot be deleted" 
+                              : "Delete User"
                       } 
                       disableInteractive
                     >
                       <span>
                         <IconButton
                           color="error"
-                          onClick={() => !user.is_sso && user.username !== "admin" && handleDeleteUser(user)}
-                          disabled={user.is_sso || user.username === "admin"}
+                          onClick={() => !isCurrentUser && !user.is_sso && user.username !== "admin" && handleDeleteUser(user)}
+                          disabled={isCurrentUser || user.is_sso || user.username === "admin"}
                           size="small"
                         >
                           <Delete />
@@ -281,7 +318,8 @@ const UserManagement = () => {
                   </Box>
                 </StyledTableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
