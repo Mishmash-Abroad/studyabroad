@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { styled } from "@mui/material/styles";
 import {
   Box,
   Table,
@@ -17,9 +18,38 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
+  Tooltip,
+  Chip
 } from "@mui/material";
+import { 
+  AdminPanelSettings, 
+  Person, 
+  Storage, 
+  Delete,
+  ArrowUpward,
+  ArrowDownward,
+  Link,
+  Key
+} from '@mui/icons-material';
 import axiosInstance from "../utils/axios";
 import ChangePasswordModal from "./ChangePasswordModal";
+
+// Styled components to match AdminProgramsTable
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  padding: '4px 8px',
+  fontSize: '0.875rem',
+}));
+
+const StyledTableHead = styled(TableHead)(({ theme }) => ({
+  "& .MuiTableRow-root": {
+    backgroundColor: theme.palette.background.default,
+    borderBottom: `3px solid ${theme.palette.divider}`,
+  },
+  "& .MuiTableCell-root": {
+    fontWeight: 'bold',
+  }
+}));
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -117,6 +147,16 @@ const UserManagement = () => {
     }
   };
 
+  // Column configuration
+  const columns = [
+    { id: 'display_name', label: 'Name' },
+    { id: 'username', label: 'Username' },
+    { id: 'email', label: 'Email' },
+    { id: 'is_sso', label: 'Type' },
+    { id: 'is_admin', label: 'Role', align: 'center' },
+    { id: 'actions', label: 'Actions', sortable: false, align: 'center' }
+  ];
+
   return (
     <Paper sx={{ padding: "20px", marginTop: "20px" }}>
       <Typography variant="h5" gutterBottom>
@@ -128,63 +168,111 @@ const UserManagement = () => {
 
       <TableContainer>
         <Table>
-          <TableHead>
+          <StyledTableHead>
             <TableRow>
-              {["display_name", "username", "email", "is_admin", "is_sso", "actions"].map((column) => (
-                <TableCell key={column}>
-                  {column !== "actions" ? (
+              {columns.map((column) => (
+                <StyledTableCell 
+                  key={column.id}
+                  align={column.align}
+                >
+                  {column.sortable !== false ? (
                     <TableSortLabel
-                      active={orderBy === column}
-                      direction={orderBy === column ? order : "asc"}
-                      onClick={() => handleRequestSort(column)}
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : "asc"}
+                      onClick={() => handleRequestSort(column.id)}
                     >
-                      {column.replace(/_/g, " ").toUpperCase()}
+                      {column.label}
                     </TableSortLabel>
                   ) : (
-                    column.replace(/_/g, " ").toUpperCase()
+                    column.label
                   )}
-                </TableCell>
+                </StyledTableCell>
               ))}
             </TableRow>
-          </TableHead>
+          </StyledTableHead>
           <TableBody>
             {sortedUsers.map((user) => (
-              <TableRow key={user.id} hover>
-                <TableCell>{user.display_name}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.is_admin ? "Admin" : "User"}</TableCell>
-                <TableCell>{user.is_sso ? "SSO" : "Local"}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", gap: 1 }}>
+              <TableRow key={user.id}>
+                <StyledTableCell>{user.display_name}</StyledTableCell>
+                <StyledTableCell>{user.username}</StyledTableCell>
+                <StyledTableCell>{user.email}</StyledTableCell>
+                <StyledTableCell>
+                  <Chip
+                    icon={user.is_sso ? <Link /> : <Storage />}
+                    label={user.is_sso ? "SSO" : "Local"}
+                    color={user.is_sso ? "secondary" : "default"}
+                    size="small"
+                    variant="outlined"
+                  />
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center", justifyContent: "center" }}>
+                    <Chip
+                      icon={user.is_admin ? <AdminPanelSettings /> : <Person />}
+                      label={user.is_admin ? "Admin" : "User"}
+                      color={user.is_admin ? "primary" : "default"}
+                      size="small"
+                      variant="outlined"
+                      sx={{ minWidth: '75px' }}
+                    />
+                    
                     {/* Promote/Demote Button */}
+                    <Tooltip 
+                      title={
+                        user.username === "admin" 
+                          ? "System admin cannot be demoted" 
+                          : user.is_admin 
+                            ? "Demote to User" 
+                            : "Promote to Admin"
+                      } 
+                      disableInteractive
+                    >
+                      <span>
+                        <IconButton
+                          color={user.is_admin ? "warning" : "success"}
+                          onClick={() => user.username !== "admin" && handlePromoteDemote(user)}
+                          size="small"
+                          disabled={user.username === "admin"}
+                        >
+                          {user.is_admin ? <ArrowDownward /> : <ArrowUpward />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                    {/* Change Password Button */}
+                    <Tooltip title={user.is_sso ? "SSO users use external authentication" : "Change Password"} disableInteractive>
+                      <span>
+                        <IconButton
+                          color="primary"
+                          onClick={() => !user.is_sso && setSelectedUser(user)}
+                          disabled={user.is_sso}
+                          size="small"
+                        >
+                          <Key />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+
+                    {/* Delete Button */}
                     {user.username !== "admin" && (
-                      <Button
-                        variant="contained"
-                        color={user.is_admin ? "secondary" : "primary"}
-                        onClick={() => handlePromoteDemote(user)}
-                      >
-                        {user.is_admin ? "Demote" : "Promote"}
-                      </Button>
-                    )}
-
-                    {/* Change Password Button (Disabled for SSO) */}
-                    {!user.is_sso ? (
-                    <Button variant="contained" color="primary" onClick={() => setSelectedUser(user)}>
-                      Change Password
-                    </Button>
-                    ) : (
-                      <Typography color="textSecondary">SSO User</Typography>
-                    )}
-
-                    {/* Delete Button (Disabled for admin & SSO) */}
-                    {user.username !== "admin" && !user.is_sso && (
-                      <Button variant="contained" color="error" onClick={() => handleDeleteUser(user)}>
-                        Delete
-                      </Button>
+                      <Tooltip title={user.is_sso ? "SSO users cannot be deleted" : "Delete User"} disableInteractive>
+                        <span>
+                          <IconButton
+                            color="error"
+                            onClick={() => !user.is_sso && handleDeleteUser(user)}
+                            disabled={user.is_sso}
+                            size="small"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     )}
                   </Box>
-                </TableCell>
+                </StyledTableCell>
               </TableRow>
             ))}
           </TableBody>
