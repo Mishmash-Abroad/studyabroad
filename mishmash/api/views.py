@@ -1102,7 +1102,7 @@ class UserViewSet(viewsets.ModelViewSet):
         }
         ```
         **Response:** Authentication token and user details on success.
-        **Errors:** 401 if invalid credentials.
+        **Errors:** 403 if invalid credentials.
         """
         username = request.data.get("username")
         password = request.data.get("password")
@@ -1120,7 +1120,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer)
 
         return Response(
-            {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
+            {"detail": "Invalid credentials."}, status=status.HTTP_403_FORBIDDEN
         )
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
