@@ -511,12 +511,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
         applicant_counts = Application.objects.filter(program=program).aggregate(
             applied=Count("id", filter=Q(status="Applied")),
             enrolled=Count("id", filter=Q(status="Enrolled")),
+            eligible=Count("id", filter=Q(status="Eligible")),
+            approved=Count("id", filter=Q(status="Approved")),
+            completed=Count("id", filter=Q(status="Completed")),
             withdrawn=Count("id", filter=Q(status="Withdrawn")),
             canceled=Count("id", filter=Q(status="Canceled")),
         )
 
         applicant_counts["total_active"] = (
-            applicant_counts["applied"] + applicant_counts["enrolled"]
+            applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"] + applicant_counts["completed"]
         )
 
         return Response(applicant_counts)
@@ -595,8 +598,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(program_id=program_id)
             
         for app in queryset:
-            app.status = "Completed" if (app.program.end_date > datetime.today().date()) else app.status
-            app.save()
+            if (app.program.end_date < datetime.today().date() and app.status == "Enrolled"):
+                app.status = "Completed"
+                app.save()
         
         return queryset
 
@@ -726,7 +730,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "You cannot change the program after applying."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-
         return super().update(request, *args, **kwargs)
 
 
