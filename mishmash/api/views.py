@@ -594,7 +594,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(program_id=program_id)
             
         for app in queryset:
-            app.status = "Completed" if (app.program.end_date > datetime.today().date()) else app.status
+            app.status = "Completed" if (app.program.end_date <= datetime.today().date()) else app.status
             app.save()
         
         return queryset
