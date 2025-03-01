@@ -153,13 +153,24 @@ const UserManagement = () => {
         title: "Confirm User Deletion",
         message: `Deleting ${user.display_name} will remove them as faculty lead for ${faculty_programs.length} program(s) and delete their ${applications_count} submitted applications. Proceed?`,
         onConfirm: async () => {
-          await axiosInstance.delete(`/api/users/${user.id}/`);
-          fetchUsers();
-          setConfirmDialog(null);
+          try {
+            await axiosInstance.delete(`/api/users/${user.id}/`);
+            fetchUsers();
+            setConfirmDialog(null);
+          } catch (error) {
+            if (error.response && error.response.status === 403) {
+              setError(error.response.data.detail || "Cannot delete this user. Operation not permitted.");
+            } else {
+              setError("Failed to delete user. Please try again.");
+            }
+            console.error("Error deleting user:", error);
+            setConfirmDialog(null);
+          }
         },
       });
     } catch (err) {
       console.error("Error fetching user warnings:", err);
+      setError("Failed to fetch user information.");
     }
   };
 
@@ -298,15 +309,17 @@ const UserManagement = () => {
                           ? "System admin cannot be deleted" 
                           : isCurrentUser
                             ? "You cannot delete your own account"
-                            : "Delete User"
+                            : user.is_sso 
+                              ? "SSO users cannot be deleted" 
+                              : "Delete User"
                       } 
                       disableInteractive
                     >
                       <span>
                         <IconButton
                           color="error"
-                          onClick={() => !isCurrentUser && user.username !== "admin" && handleDeleteUser(user)}
-                          disabled={isCurrentUser || user.username === "admin"}
+                          onClick={() => !isCurrentUser && user.username !== "admin" && !user.is_sso && handleDeleteUser(user)}
+                          disabled={isCurrentUser || user.is_sso || user.username === "admin"}
                           size="small"
                         >
                           <Delete />
