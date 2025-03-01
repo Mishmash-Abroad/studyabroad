@@ -73,9 +73,9 @@ const FormInput = styled("input")(({ theme }) => ({
   },
 }));
 
-const FormButton = styled("button")(({ theme }) => ({
-  padding: "12px",
-  backgroundColor: theme.palette.primary.main,
+const FormButton = styled("button")(({ theme, secondary, small, marginTop }) => ({
+  padding: small ? "8px" : "12px",
+  backgroundColor: secondary ? theme.palette.secondary.main : theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   border: "none",
   borderRadius: theme.shape.borderRadii.medium,
@@ -83,8 +83,9 @@ const FormButton = styled("button")(({ theme }) => ({
   fontWeight: theme.typography.button.fontWeight,
   cursor: "pointer",
   transition: theme.transitions.quick,
+  marginTop: marginTop || "0",
   "&:hover": {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: secondary ? theme.palette.secondary.dark : theme.palette.primary.dark,
   },
   "&:disabled": {
     backgroundColor: theme.palette.status.neutral.light,
@@ -96,6 +97,13 @@ const FormError = styled("div")(({ theme }) => ({
   color: theme.palette.status.error.main,
   fontSize: theme.typography.caption.fontSize,
   marginTop: "4px",
+}));
+
+const OrText = styled("div")(({ theme }) => ({
+  textAlign: "center",
+  color: theme.palette.text.secondary,
+  margin: "4px 0", // Decreased margin
+  fontSize: theme.typography.body2.fontSize,
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
@@ -187,7 +195,7 @@ const LoginModal = ({ onClose }) => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid username or password");
+      setError(err.response?.data?.detail || "Invalid username or password. Username may already exist.");
     } finally {
       setLoading(false);
     }
@@ -215,17 +223,20 @@ const LoginModal = ({ onClose }) => {
 
   return (
     <>
-      <ModalOverlay 
-        onClick={handleOverlayClick} 
+      <ModalOverlay
+        onClick={handleOverlayClick}
         onMouseDown={handleOverlayMouseDown}
       >
-        <ModalContainer 
-          onClick={(e) => e.stopPropagation()} 
+        <ModalContainer
+          onClick={(e) => e.stopPropagation()}
           onMouseDown={handleModalMouseDown}
         >
           <ModalCloseButton onClick={onClose}>×</ModalCloseButton>
-          <ModalTitle>Welcome Back</ModalTitle>
           <ModalForm onSubmit={handleSubmitLogin}>
+            <FormButton type="button" onClick={handleDukeSSOLogin} marginTop="8px">
+              Login with Duke SSO
+            </FormButton>
+            <OrText>or</OrText>
             <FormInput
               type="text"
               placeholder="Username"
@@ -241,11 +252,8 @@ const LoginModal = ({ onClose }) => {
               required
             />
             {error && <FormError>{error}</FormError>}
-            <FormButton type="submit" disabled={loading}>
+            <FormButton type="submit" disabled={loading} small secondary>
               {loading ? "Logging in..." : "Login"}
-            </FormButton>
-            <FormButton type="button" onClick={handleDukeSSOLogin}>
-              Login with Duke SSO
             </FormButton>
             <FormButton
               type="button"
@@ -253,19 +261,21 @@ const LoginModal = ({ onClose }) => {
                 e.preventDefault();
                 setShowSignUpModal(true);
               }}
+              small
+              secondary
             >
               Don't have an account? Sign Up!
             </FormButton>
           </ModalForm>
         </ModalContainer>
-      </ModalOverlay>
+      </ModalOverlay >
 
       {showSignUpModal && (
-        <ModalOverlay 
+        <ModalOverlay
           onClick={handleOverlayClick}
           onMouseDown={handleOverlayMouseDown}
         >
-          <ModalContainer 
+          <ModalContainer
             onClick={(e) => e.stopPropagation()}
             onMouseDown={handleModalMouseDown}
           >
@@ -323,21 +333,24 @@ const LoginModal = ({ onClose }) => {
             </ModalForm>
           </ModalContainer>
         </ModalOverlay>
-      )}
+      )
+      }
 
-      {isMFAEnabled && (
-        <MFALogin
-          onClose={() => {
-            onClose();
-            logout();
-          }}
-          onSuccess={() => {
-            onClose();
-            verifyMFA();
-            navigate("/dashboard");
-          }}
-        />
-      )}
+      {
+        isMFAEnabled && (
+          <MFALogin
+            onClose={() => {
+              onClose();
+              logout();
+            }}
+            onSuccess={() => {
+              onClose();
+              verifyMFA();
+              navigate("/dashboard");
+            }}
+          />
+        )
+      }
     </>
   );
 };
