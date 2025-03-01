@@ -298,17 +298,15 @@ const UserManagement = () => {
                           ? "System admin cannot be deleted" 
                           : isCurrentUser
                             ? "You cannot delete your own account"
-                            : user.is_sso 
-                              ? "SSO users cannot be deleted" 
-                              : "Delete User"
+                            : "Delete User"
                       } 
                       disableInteractive
                     >
                       <span>
                         <IconButton
                           color="error"
-                          onClick={() => !isCurrentUser && !user.is_sso && user.username !== "admin" && handleDeleteUser(user)}
-                          disabled={isCurrentUser || user.is_sso || user.username === "admin"}
+                          onClick={() => !isCurrentUser && user.username !== "admin" && handleDeleteUser(user)}
+                          disabled={isCurrentUser || user.username === "admin"}
                           size="small"
                         >
                           <Delete />
