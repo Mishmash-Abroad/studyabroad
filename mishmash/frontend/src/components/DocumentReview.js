@@ -103,9 +103,6 @@ const DocumentReview = ({ application_id }) => {
 
   return (
     <Paper sx={{ padding: 2, marginTop: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Essential Documents Review
-      </Typography>
       <TableContainer>
         <Table>
           <TableHead>
