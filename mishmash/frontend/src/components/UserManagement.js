@@ -169,12 +169,10 @@ const UserManagement = () => {
                     )}
 
                     {/* Change Password Button (Disabled for SSO) */}
-                    {!user.is_sso ? (
+                    {!user.is_sso && (
                     <Button variant="contained" color="primary" onClick={() => setSelectedUser(user)}>
                       Change Password
                     </Button>
-                    ) : (
-                      <Typography color="textSecondary">SSO User</Typography>
                     )}
 
                     {/* Delete Button (Disabled for admin & SSO) */}
