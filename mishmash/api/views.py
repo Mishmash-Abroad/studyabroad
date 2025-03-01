@@ -507,16 +507,25 @@ class ProgramViewSet(viewsets.ModelViewSet):
         - Admin only
         """
         program = self.get_object()
+        
+        all_apps = Application.objects.filter(program=program)
+        
+        for app in all_apps:
+            app.status = "Completed" if (app.program.end_date <= datetime.today().date()) else app.status
+            app.save()
 
-        applicant_counts = Application.objects.filter(program=program).aggregate(
+        applicant_counts = all_apps.aggregate(
             applied=Count("id", filter=Q(status="Applied")),
+            eligible=Count("id", filter=Q(status="Eligible")),
+            approved=Count("id", filter=Q(status="Approved")),
             enrolled=Count("id", filter=Q(status="Enrolled")),
+            completed=Count("id", filter=Q(status="Completed")),
             withdrawn=Count("id", filter=Q(status="Withdrawn")),
             canceled=Count("id", filter=Q(status="Canceled")),
         )
 
         applicant_counts["total_active"] = (
-            applicant_counts["applied"] + applicant_counts["enrolled"]
+            applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"]
         )
 
         return Response(applicant_counts)
