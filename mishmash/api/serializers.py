@@ -150,7 +150,7 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    pdf_url = serializers.SerializerMethodField()  # ✅ Add this line
+    pdf_url = serializers.SerializerMethodField()  
 
     class Meta:
         model = Document
@@ -158,7 +158,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def get_pdf_url(self, obj):
         """Generate the absolute URL for the PDF file."""
-        request = self.context.get("request")  # Get the request context
+        request = self.context.get("request")  
         if obj.pdf:
-            return request.build_absolute_uri(obj.pdf.url) if request else obj.pdf.url
+            if request:
+                url = request.build_absolute_uri(obj.pdf.url)
+                # Ensure URL is HTTPS in production environments
+                if url.startswith('http:') and not request.META.get('HTTP_HOST', '').startswith('localhost'):
+                    url = url.replace('http:', 'https:', 1)
+                return url
+            return obj.pdf.url
         return None
