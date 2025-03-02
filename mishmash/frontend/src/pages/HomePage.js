@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styled } from '@mui/material/styles';
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import LoginModal from "../components/LoginModal";
 import Typography from '@mui/material/Typography';
-import AnnouncementsViewer from '../components/AnnouncementsViewer';
+import axiosInstance from "../utils/axios";
+
+import AnnouncementsBrowser from '../components/AnnouncementsBrowser';
 
 // -------------------- STYLES (moved from index.js) --------------------
 const HomeContainer = styled('div')(({ theme }) => ({
@@ -76,7 +79,7 @@ const HeroButton = styled('button')(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   color: theme.palette.primary.main,
   border: 'none',
-  borderRadius: theme.shape.borderRadius.xl,
+  borderRadius: theme.shape.borderRadii.xl,
   cursor: 'pointer',
   transition: theme.transitions.medium,
   boxShadow: theme.customShadows.button,
@@ -111,7 +114,7 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 const FeatureCard = styled('div')(({ theme }) => ({
   padding: '30px',
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
   textAlign: 'center',
   transition: theme.transitions.quick,
@@ -153,7 +156,7 @@ const GalleryItem = styled('div')(({ theme }) => ({
   position: 'relative',
   paddingBottom: '66.67%',
   overflow: 'hidden',
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
   transition: theme.transitions.medium,
   '&:hover': {
@@ -178,7 +181,38 @@ const GalleryImage = styled('img')(({ theme }) => ({
 // -------------------- COMPONENT LOGIC --------------------
 const HomePage = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { user } = useAuth();
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
+
+// ------------- SSO HANDLING: Check session on mount -------------
+useEffect(() => {
+  const isAlreadyLoggedIn = !!user;
+  
+  async function checkSSO() {
+    try {
+      // Skip the check if user is already logged in
+      if (isAlreadyLoggedIn) {
+        return;
+      }
+      
+      // Try to get the DRF token using the current session.
+      const tokenResponse = await axiosInstance.get("/api/auth/token/");
+      if (tokenResponse.data.token) {
+        // Get user details.
+        const userResponse = await axiosInstance.get("/api/users/current_user/");
+        const userData = userResponse.data;
+        // Call the login function in your auth context with MFA not required.
+        login(userData, tokenResponse.data.token, true);
+        // Only redirect if this was an SSO login
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      // If no session token is returned, do nothing.
+      console.log("No SSO session detected.", err);
+    }
+  }
+  checkSSO();
+}, [login, navigate, user]);
 
   const features = [
     {
@@ -210,19 +244,14 @@ const HomePage = () => {
               ? `Welcome back, ${user?.display_name}! Continue your journey with us.`
               : 'Transform your education through global experiences with HCC Study Abroad'}
           </HeroText>
-          {!user && (
-            <HeroButton onClick={() => setShowLoginModal(true)}>
-              Get Started
-            </HeroButton>
-          )}
+          <HeroButton onClick={user ? () => navigate("/dashboard") : () => setShowLoginModal(true)}>
+            {user ? "Go to Dashboard" : "Get Started"}
+          </HeroButton>
         </HeroContent>
       </Hero>
 
       <AnnouncementsSection>
-        <SectionTitle variant="h4">
-          Important Announcements
-        </SectionTitle>
-        <AnnouncementsViewer />
+        <AnnouncementsBrowser />
       </AnnouncementsSection>
 
       <FeaturesContainer>

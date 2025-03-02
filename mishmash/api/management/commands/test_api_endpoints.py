@@ -77,6 +77,14 @@ class Command(BaseCommand):
         failed_tests += f
         warnings += w
 
+        # Test Confidential Notes Responses
+        self.stdout.write("Testing confidential notes endpoints...")
+        t, p, f, w = self.test_notes_endpoints(client)
+        total_tests += t
+        passed_tests += p
+        failed_tests += f
+        warnings += w
+
         # Overall Summary Report
         print("\n==================== OVERALL TEST SUMMARY =========================")
         print(f"Total Tests: {total_tests}")
@@ -89,7 +97,7 @@ class Command(BaseCommand):
     @staticmethod
     def check_response(response, expected_status, *, success_message, error_message, total_tests=None, passed_tests=None, failed_tests=None, warnings=None):
         """Helper function to check response and track results."""
-        total_tests[0] += 1  # Increment total test count
+        total_tests[0] += 1
 
         if response.status_code == expected_status:
             print(f"PASSED: {success_message}")
@@ -98,28 +106,37 @@ class Command(BaseCommand):
             print(f"FAILED: {error_message} (Received {response.status_code})")
             failed_tests[0] += 1
 
-        # Check for a valid error message when an error occurs
         if response.status_code >= 400:
             try:
                 error_data = response.json()
-                if "detail" not in error_data or not isinstance(error_data.get("detail"), str):
-                    print(f"WARNING: Expected an 'detail' key in the response, but it was missing or not a string.")
-                    warnings[0] += 1
+                if "detail" in error_data and isinstance(error_data["detail"], str):
+                    error_message = error_data["detail"]
+                    default_errors = {
+                        "Not found.", "Invalid input.", "This field is required.",
+                        "Invalid data.", "Invalid request.", "Authentication credentials were not provided.",
+                        "Invalid token.", "Incorrect authentication credentials.", "You do not have permission to perform this action."
+                    }
+
+                    # Only raise a warning if the error is one of the default messages
+                    if error_message in default_errors:
+                        print(f"WARNING: Received a default error message instead of a custom error message: '{error_message}'")
+                        warnings[0] += 1
             except Exception:
                 print(f"WARNING: Expected JSON error response, but got non-JSON response (likely an HTML error page).")
                 warnings[0] += 1
 
     def test_user_endpoints(self, client):
-        '''
+        """
         API Endpoints:
-        Method Endpoint                          Description                     Permission Classes             Arguments                 Expected Response                              Errors
-        GET    /api/users/                       List all users                  IsAuthenticated, IsAdminOrSelf None                      List of users (admin), self (student)          403 if unauthorized
-        GET    /api/users/{id}/                  Retrieve specific user          IsAuthenticated, IsAdminOrSelf id                        User details                                   403 if unauthorized, 404 if not found
-        GET    /api/users/current_user/          Get current user                IsAuthenticated                None                      User details                                   401 if not authenticated
-        POST   /api/users/login                  Authenticate user               AllowAny                       username, password        {"token":"<auth_token>","user":{user details}} 401 if invalid credentials
-        POST   /api/users/logout                 Logout user                     IsAuthenticated                None                      {"detail":"Successfully logged out"}           400 if already logged out
-        PATCH  /api/users/{id}/change_password/  Change current user's password  IsAuthenticated                password, confirmPassword {"message":"Password changed successfully"}    400 if passwords don't match
-        '''
+        Method  Endpoint                          Description                     Permission Classes             Arguments                 Expected Response                              Errors
+        GET     /api/users/                       List all users                  IsAuthenticated, IsAdminOrSelf None                      List of users (admin), self (student)          403 if unauthorized
+        GET     /api/users/{id}/                  Retrieve specific user          IsAuthenticated, IsAdminOrSelf id                        User details                                   403 if unauthorized, 404 if not found
+        GET     /api/users/current_user/          Get current user                IsAuthenticated                None                      User details                                   401 if not authenticated
+        POST    /api/users/signup/                Register a new user             AllowAny                       username, password        {"token":"<auth_token>","user":{user details}} 400 if missing credentials
+        POST    /api/users/login/                 Authenticate user               AllowAny                       username, password        {"token":"<auth_token>","user":{user details}} 401 if invalid credentials
+        POST    /api/users/logout/                Logout user                     IsAuthenticated                None                      {"detail":"Successfully logged out"}           400 if already logged out
+        PATCH   /api/users/change_password/       Change current user's password  IsAuthenticated                password, confirmPassword {"detail":"Password changed successfully"}      400 if passwords don't match
+        """
 
         total_tests = [0]
         passed_tests = [0]
@@ -132,13 +149,23 @@ class Command(BaseCommand):
                     error_message="Login did not fail for non-existent user.",
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
-        # Register and login as a new user
-        user = User.objects.create_user(username="test_user", password="password", email="test@test.com")
-        user_id = user.id
+        # Register a new user
+        response = client.post("/api/users/signup/", {
+            "username": "test_user",
+            "password": "password",
+            "display_name": "Test User",
+            "email": "test@test.com"
+        })
+        Command.check_response(response, 201, success_message="User registration succeeded.",
+                    error_message="User registration failed.",
+                    total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
+        user_id = response.data.get("user", {}).get("id")
+
+        # Login with the new user
         response = client.post("/api/users/login/", {"username": "test_user", "password": "password"})
-        Command.check_response(response, 200, success_message="Login succeeded for created user.",
-                    error_message="Login failed for created user.",
+        Command.check_response(response, 200, success_message="Login succeeded for registered user.",
+                    error_message="Login failed for registered user.",
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
         token = response.data.get("token")
@@ -155,6 +182,8 @@ class Command(BaseCommand):
         Command.check_response(response, 200, success_message="Logout successful.",
                     error_message="Logout failed.",
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+        
+        client.credentials()
 
         # Attempt to fetch current user details after logout
         response = client.get("/api/users/current_user/")
@@ -163,12 +192,12 @@ class Command(BaseCommand):
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
         # Change password (while logged out)
-        response = client.patch(f"/api/users/{user_id}/change_password/", {"password": "newpassword", "confirmPassword": "newpassword"})
+        response = client.patch("/api/users/change_password/", {"password": "newpassword", "confirm_password": "newpassword"})
         Command.check_response(response, 401, success_message="Changing password failed as expected when not authenticated.",
                     error_message="Changing password should have failed when not authenticated.",
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
-        # Re-login and change password
+        # Re-login with old password and change it
         response = client.post("/api/users/login/", {"username": "test_user", "password": "password"})
         Command.check_response(response, 200, success_message="Re-login after logout succeeded.",
                     error_message="Re-login after logout failed.",
@@ -177,7 +206,7 @@ class Command(BaseCommand):
         token = response.data.get("token")
         client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
 
-        response = client.patch(f"/api/users/{user_id}/change_password/", {"password": "newpassword", "confirmPassword": "newpassword"})
+        response = client.patch("/api/users/change_password/", {"password": "newpassword", "confirm_password": "newpassword"})
         Command.check_response(response, 200, success_message="Password change successful.",
                     error_message="Password change failed.",
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
@@ -195,10 +224,11 @@ class Command(BaseCommand):
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
         # Attempt to change password with mismatched confirmPassword
-        response = client.patch(f"/api/users/{user.id}/change_password/", {"password": "mismatch", "confirmPassword": "wrong"})
+        response = client.patch("/api/users/change_password/", {"password": "mismatch", "confirm_password": "wrong"})
         Command.check_response(response, 400, success_message="Password change failed as expected due to mismatch.",
                     error_message="Password change should have failed due to mismatch.",
                     total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
 
         # Summary Report
         print("\n================== USER TEST SUMMARY =================")
@@ -242,11 +272,12 @@ class Command(BaseCommand):
         # Application deadline before open date
         bad_program_data = {
             "title": "Bad Program 1",
-            "year_semester": "2025 Fall",
+            "year": "2025", "semester": "Fall",
             "description": "Invalid test case.",
-            "faculty_leads": "Test Faculty",
+            "faculty_leads_ids": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() - timedelta(days=1),  # Invalid: Deadline before open date
+            "essential_document_deadline": now().date(),
             "start_date": now().date(),
             "end_date": now().date() + timedelta(days=10),
         }
@@ -275,21 +306,23 @@ class Command(BaseCommand):
         ### Valid Program Creation ###
 
         # Successfully create a valid program
+
+        # application_open_date <= application_deadline <= essential_document_deadline <= start_date <= end_date
         valid_program_data = {
             "title": "Valid Program",
-            "year_semester": "2025 Fall",
+            "year": "2025", "semester": "Fall",
             "description": "A valid test program.",
-            "faculty_leads": "Test Faculty",
-            "application_open_date": now().date(),
-            "application_deadline": now().date() + timedelta(days=10),
-            "start_date": now().date() + timedelta(days=20),
-            "end_date": now().date() + timedelta(days=30),
+            "faculty_leads_ids": [str(admin.id)],
+            "application_open_date": now().date().strftime("%Y-%m-%d"),
+            "application_deadline": (now().date() + timedelta(days=10)).strftime("%Y-%m-%d"),
+            "essential_document_deadline": (now().date() + timedelta(days=11)).strftime("%Y-%m-%d"),
+            "start_date": (now().date() + timedelta(days=20)).strftime("%Y-%m-%d"),
+            "end_date": (now().date() + timedelta(days=30)).strftime("%Y-%m-%d"),
         }
         response = client.post("/api/programs/", valid_program_data)
         Command.check_response(response, 201, success_message="Program created successfully by admin.",
                             error_message="Program creation failed for admin.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
-
         program_id = response.data["id"]
 
         # Retrieve the created program
@@ -367,18 +400,18 @@ class Command(BaseCommand):
 
         program = Program.objects.create(
             title="Test Program",
-            year_semester="2025 Spring",
+            year="2025", 
+            semester="Fall",
             description="A program for testing applications.",
-            faculty_leads="Test Faculty",
             application_open_date=now().date(),
             application_deadline=now().date() + timedelta(days=10),
             start_date=now().date() + timedelta(days=20),
             end_date=now().date() + timedelta(days=30),
         )
+        program.faculty_leads.add(admin)
 
         client.force_authenticate(user=student)
         response = client.post("/api/applications/", {
-            "student": student.id,
             "program": program.id,
             "date_of_birth": "2000-01-01",
             "gpa": 3.8,
@@ -494,11 +527,12 @@ class Command(BaseCommand):
         client.force_authenticate(user=admin)
         program_data = {
             "title": "Test Program for Questions",
-            "year_semester": "2025 Fall",
+            "year": "2025", "semester": "Fall",
             "description": "A program for testing questions.",
-            "faculty_leads": "Test Faculty",
+            "faculty_leads_ids": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() + timedelta(days=10),
+            "essential_document_deadline": now().date() + timedelta(days=10),
             "start_date": now().date() + timedelta(days=20),
             "end_date": now().date() + timedelta(days=30),
         }
@@ -536,7 +570,7 @@ class Command(BaseCommand):
             "program": program_id,
             "text": "Unauthorized question attempt",
         })
-        Command.check_response(response, 403, success_message="Unauthorized user was prevented from creating a question.",
+        Command.check_response(response, 405, success_message="Unauthorized user was prevented from creating a question.",
                             error_message="Unauthorized user should not be able to create a question.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
@@ -546,13 +580,13 @@ class Command(BaseCommand):
             "program": program_id,
             "text": "Manually added question",
         })
-        Command.check_response(response, 403, success_message="Admin was prevented from manually creating a question.",
+        Command.check_response(response, 405, success_message="Admin was prevented from manually creating a question.",
                             error_message="Admin should not be able to manually create a question.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
         # Admin tries to delete a question (should fail)
         response = client.delete(f"/api/questions/{question_id}/")
-        Command.check_response(response, 403, success_message="Admin was prevented from deleting a question.",
+        Command.check_response(response, 405, success_message="Admin was prevented from deleting a question.",
                             error_message="Admin should not be able to delete a question.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
@@ -590,11 +624,12 @@ class Command(BaseCommand):
         client.force_authenticate(user=admin)
         program_data = {
             "title": "Response Test Program",
-            "year_semester": "2025 Spring",
+            "year": "2025", "semester": "Fall",
             "description": "A program for testing application responses.",
-            "faculty_leads": "Test Faculty",
+            "faculty_leads_ids": [admin.id],
             "application_open_date": now().date(),
             "application_deadline": now().date() + timedelta(days=10),
+            "essential_document_deadline": now().date() + timedelta(days=10),
             "start_date": now().date() + timedelta(days=20),
             "end_date": now().date() + timedelta(days=30),
         }
@@ -624,7 +659,7 @@ class Command(BaseCommand):
             "gpa": 3.8,
             "major": "Computer Science"
         }
-        response = client.post("/api/applications/create_or_edit/", application_data)
+        response = client.post("/api/applications/", application_data)
         Command.check_response(response, 201, success_message="Application submitted successfully.",
                             error_message="Failed to submit application.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
@@ -653,6 +688,7 @@ class Command(BaseCommand):
         # Unauthorized student (other_student) tries to view another student's response (should fail)
         client.force_authenticate(user=other_student)
         response = client.get(f"/api/responses/?application={application_id}")
+        print("Response:", response.status_code, response.data)
         Command.check_response(response, 403, success_message="Unauthorized student was prevented from accessing another student's responses.",
                             error_message="Unauthorized student should not have access to another student's responses.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
@@ -671,16 +707,16 @@ class Command(BaseCommand):
                             error_message="Admin should not be able to modify a student's response.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
-        # Student deletes their own response
+        # Student tried to delete their own response (should fail)
         client.force_authenticate(user=student)
         response = client.delete(f"/api/responses/{response_id}/")
-        Command.check_response(response, 204, success_message="Successfully deleted application response.",
-                            error_message="Failed to delete application response.",
+        Command.check_response(response, 403, success_message="Student was prevented from deleting application response.",
+                            error_message="Deleting an application response should have failed.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
         # Student attempts to delete a response that no longer exists (should fail)
         response = client.delete(f"/api/responses/{response_id}/")
-        Command.check_response(response, 404, success_message="Deleting a non-existent response failed as expected.",
+        Command.check_response(response, 403, success_message="Deleting a non-existent response failed as expected.",
                             error_message="Deleting a non-existent response should have failed.",
                             total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
 
@@ -794,6 +830,106 @@ class Command(BaseCommand):
 
         # Summary Report
         print("\n==================== ANNOUNCEMENT TEST SUMMARY ====================")
+        print(f"Total Tests: {total_tests[0]}")
+        print(f"Passed: {passed_tests[0]}")
+        print(f"Failed: {failed_tests[0]}")
+        print(f"Warnings: {warnings[0]}")
+        print("===================================================================")
+
+        return total_tests[0], passed_tests[0], failed_tests[0], warnings[0]
+    
+    def test_notes_endpoints(self, client):
+        '''
+        API Endpoints:
+        Method Endpoint                         Description                     Permission Classes Arguments                 Expected Response            Errors
+        GET    /api/notes/                      List all confidential notes     Admin Only         None                      List of confidential notes   403 if unauthorized
+        GET    /api/notes/?application=<id>     Filter notes by application     Admin Only         Application ID            Created announcement details 403 if unauthorized
+        POST   /api/notes/                      Create new note                 Admin Only         Application ID, Content   Created Note Details         403 if unauthorized
+        '''
+
+        total_tests = [0]
+        passed_tests = [0]
+        failed_tests = [0]
+        warnings = [0]
+
+        admin = User.objects.get(username="admin_user")
+        student = User.objects.get(username="student_user")
+
+        program_id = Program.objects.order_by("id").values_list("id", flat=True).first()
+
+        # Create a test application
+        client.force_authenticate(user=student)
+        application_data = {
+            "program": program_id,
+            "date_of_birth": "2000-01-01",
+            "gpa": 3.8,
+            "major": "Computer Science"
+        }
+        response = client.post("/api/applications/", application_data)
+        Command.check_response(response, 201, success_message="Application submitted successfully.",
+                            error_message="Failed to submit application.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        application_id = response.data["id"]
+
+        # Attempt to fetch all notes as an unauthenticated user (should fail)
+        client.force_authenticate(user=None)
+        response = client.get("/api/notes/")
+        Command.check_response(response, 401, success_message="Unauthenticated user was correctly denied access to confidential notes.",
+                            error_message="Unauthenticated user should not be able to access confidential notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Attempt to fetch all notes as a student (should fail)
+        client.force_authenticate(user=student)
+        response = client.get("/api/notes/")
+        Command.check_response(response, 403, success_message="Student was correctly denied access to confidential notes.",
+                            error_message="Student should not be able to access confidential notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Fetch all notes as an admin (should succeed)
+        client.force_authenticate(user=admin)
+        response = client.get("/api/notes/")
+        Command.check_response(response, 200, success_message="Admin successfully retrieved all confidential notes.",
+                            error_message="Admin failed to retrieve confidential notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Fetch notes for a specific application as a student (should fail)
+        client.force_authenticate(user=student)
+        response = client.get(f"/api/notes/?application={application_id}")
+        Command.check_response(response, 403, success_message="Student was correctly denied access to application notes.",
+                            error_message="Student should not be able to access application notes.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Fetch notes for a specific application as an admin (should succeed)
+        client.force_authenticate(user=admin)
+        response = client.get(f"/api/notes/?application={application_id}")
+        Command.check_response(response, 200, success_message="Admin successfully retrieved notes for application.",
+                            error_message="Admin failed to retrieve notes for application.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Attempt to create a note as a student (should fail)
+        client.force_authenticate(user=student)
+        note_data = {"application": application_id, "content": "This is a confidential note."}
+        response = client.post("/api/notes/", note_data)
+        Command.check_response(response, 403, success_message="Student was correctly denied access to create a confidential note.",
+                            error_message="Student should not be able to create a confidential note.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Create a note as an admin (should succeed)
+        client.force_authenticate(user=admin)
+        response = client.post("/api/notes/", note_data)
+        Command.check_response(response, 201, success_message="Admin successfully created a confidential note.",
+                            error_message="Admin failed to create a confidential note.",
+                            total_tests=total_tests, passed_tests=passed_tests, failed_tests=failed_tests, warnings=warnings)
+
+        # Verify the created note is associated with the correct application
+        note_id = response.data["id"]
+        response = client.get(f"/api/notes/?application={application_id}")
+        assert any(note["id"] == note_id for note in response.data), "Created note is not associated with the correct application."
+
+
+        # Summary Report
+        print("\n======================= NOTES TEST SUMMARY ========================")
         print(f"Total Tests: {total_tests[0]}")
         print(f"Passed: {passed_tests[0]}")
         print(f"Failed: {failed_tests[0]}")

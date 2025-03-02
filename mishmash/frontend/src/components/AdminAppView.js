@@ -5,16 +5,20 @@ import {
   TextField,
   MenuItem,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
+import {ALL_ADMIN_EDITABLE_STATUSES, getStatusLabel} from '../utils/constants'
+import DocumentReview from "./DocumentReview";
+import ProgramForm from "./ProgramForm";
 
 const AdminAppView = () => {
   const { id } = useParams();
@@ -25,9 +29,12 @@ const AdminAppView = () => {
   const [program, setProgram] = useState(null);
   const [responses, setResponses] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [confidentialNotes, setConfidentialNotes] = useState([]);
+  const [newNoteContent, setNewNoteContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchApplicationDetails();
@@ -58,6 +65,18 @@ const AdminAppView = () => {
       const responsesResponse = await axiosInstance.get(`/api/responses/?application=${id}`);
       setResponses(responsesResponse.data);
 
+      // Fetch confidential notes
+      try {
+        const notesResponse = await axiosInstance.get(`/api/notes/?application=${id}`);
+        setConfidentialNotes(notesResponse.data);
+      } catch (err) {
+        if (err.response && err.response.status === 404) {
+          setConfidentialNotes([]);
+        } else {
+          throw err;
+        }
+      }
+
       setError(null);
     } catch (err) {
       console.error("Error fetching application details:", err);
@@ -69,30 +88,74 @@ const AdminAppView = () => {
 
 
   const handleStatusChange = async (newStatus) => {
+    setStatus(newStatus);
+    setDialogOpen(true);
+  };
+
+  const confirmStatusChange = async () => {
     try {
-      await axiosInstance.patch(`/api/applications/${id}/`, { status: newStatus });
-      setStatus(newStatus);
+      await axiosInstance.patch(`/api/applications/${id}/`, { status });
+      setDialogOpen(false);
     } catch (error) {
       console.error("Error updating status:", error);
+      setError("Failed to update application status.");
+      setDialogOpen(false);
     }
   };
+
+  const cancelStatusChange = () => {
+    setStatus(application.status); // Reset to original status
+    setDialogOpen(false);
+  };
+
+  const handleAddNote = async () => {
+    if (!newNoteContent.trim()) {
+      setError("Note content cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post(`/api/notes/`, {
+        application: id,
+        content: newNoteContent,
+      });
+
+      setConfidentialNotes((prevNotes) => [...prevNotes, response.data]);
+      setNewNoteContent("");
+      setError(null);
+    } catch (err) {
+      console.error("Error adding confidential note:", err);
+      setError("Failed to add note. Please try again.");
+    }
+  };
+
+  const handleReturnToProgram = () => {
+    if (program) {
+      navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`);
+      return (
+        <ProgramForm
+          onClose={() => navigate("/dashboard/admin-programs")}
+          editingProgram={program}
+        />
+      );
+    }
+  }
 
   if (loading) return <Typography>Loading application details...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
   if (!application || !user) return null;
 
   return (
-    <Paper sx={{ padding: "20px", marginTop: "20px" }}>
-  
+    <Paper sx={{ padding: 3, mt: 3 }}>
       {/* Program Details - Read-Only */}
       {program && (
-        <Paper sx={{ marginBottom: "10px", marginTop: "50px"}}>
-          <Typography variant="h6">Program Details</Typography>
-          <Box sx={{ marginBottom: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Paper sx={{ p: 3, mt: 6, mb: 3 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>Program Details</Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField label="Title" value={program.title} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Description" value={program.description} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Year & Semester" value={program.year_semester} fullWidth InputProps={{ readOnly: true }} />
-            <TextField label="Faculty Leads" value={program.faculty_leads} fullWidth InputProps={{ readOnly: true }} />
+            <TextField label="Faculty Leads" value={program.faculty_leads.map(f => f.display_name).join(", ")} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Open Date" value={program.application_open_date} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Application Deadline" value={program.application_deadline} fullWidth InputProps={{ readOnly: true }} />
             <TextField label="Start Date" value={program.start_date} fullWidth InputProps={{ readOnly: true }} />
@@ -100,75 +163,159 @@ const AdminAppView = () => {
           </Box>
         </Paper>
       )}
+  
+      {/* Application Details */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Application Details</Typography>
 
-      <Typography variant="h5">
-        Application Details
-      </Typography>
+        <Typography variant="h5" sx={{ mb: 2 }}>Current Status: <strong>{status}</strong></Typography>
+        
+        {/* Applicant Info */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" sx={{ mb: 2 }}>Applicant Information</Typography>
+          <Typography><strong>Display Name:</strong> {user.display_name}</Typography>
+          <Typography><strong>Username:</strong> {user.username}</Typography>
+          <Typography><strong>Email:</strong> {user.email}</Typography>
+          <Typography><strong>Date of Birth:</strong> {application.date_of_birth}</Typography>
+          <Typography><strong>GPA:</strong> {application.gpa}</Typography>
+          <Typography><strong>Major:</strong> {application.major}</Typography>
+        </Box>
   
-      {/* Applicant Info */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Applicant Information</Typography>
-        <Typography><strong>Display Name:</strong> {user.display_name}</Typography>
-        <Typography><strong>Username:</strong> {user.username}</Typography>
-        <Typography><strong>Email:</strong> {user.email}</Typography>
-        <Typography><strong>Date of Birth:</strong> {application.date_of_birth}</Typography>
-        <Typography><strong>GPA:</strong> {application.gpa}</Typography>
-        <Typography><strong>Major:</strong> {application.major}</Typography>
-      </Box>
+        {/* Application Responses */}
+        <Typography variant="h5" sx={{ mb: 2 }}>Application Responses</Typography>
+          {questions.map((question) => {
+            const response = responses.find((r) => r.question === question.id);
+            return (
+              <Box key={question.id} sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  {question.text}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    p: 2,
+                    bgcolor: "#f5f5f5",
+                    borderRadius: 2,
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {response ? response.response : "No response provided"}
+                </Typography>
+              </Box>
+            );
+          })}
   
-      {/* Application Responses */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Application Responses</Typography>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Question</TableCell>
-                <TableCell>Response</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {questions.map((question) => {
-                const response = responses.find((r) => r.question === question.id);
-                return (
-                  <TableRow key={question.id}>
-                    <TableCell>{question.text}</TableCell>
-                    <TableCell>{response ? response.response : "No response provided"}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+        {/* Essential Documents Review */}
+        <Typography variant="h5" sx={{ mb: 2 }}>Essential Documents Review</Typography>
+        <DocumentReview application_id={id} />
+      </Paper>
   
-      {/* Status Dropdown - Now Appears After Responses */}
-      <Box sx={{ marginBottom: 3, maxWidth: 300 }}>
-        <Typography variant="h6">Application Status</Typography>
-        <TextField
-          select
-          fullWidth
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          variant="outlined"
-        >
-          {application.status === "Withdrawn" && (
-            <MenuItem value="Withdrawn">Withdrawn</MenuItem>
-          )}
-          <MenuItem value="Applied">Applied</MenuItem>
-          <MenuItem value="Enrolled">Enrolled</MenuItem>
-          <MenuItem value="Canceled">Canceled</MenuItem>
-        </TextField>
-      </Box>
+      {/* Confidential Notes Section */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>Confidential Notes</Typography>
+        {confidentialNotes.length > 0 ? (
+          confidentialNotes
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .map((note) => (
+              <Paper key={note.id} sx={{ p: 2, mb: 2, border: "1px solid #ccc", borderRadius: 1 }}>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>{note.content}</Typography>
+                <Typography variant="caption" sx={{ display: "block", mt: 1, textAlign: "right", fontStyle: "italic", color: "gray" }}>
+                  By {note.author_display} on {new Date(note.timestamp).toLocaleString()}
+                </Typography>
+              </Paper>
+            ))
+        ) : (
+          <Typography variant="body2" color="textSecondary">No confidential notes yet.</Typography>
+        )}
   
-      {/* Back Button */}
-      <Box sx={{ marginTop: 2 }}>
-        <Button variant="contained" color="primary" onClick={() => navigate(-1)}>
-          Back to Applicant Table
+        {/* Add New Note */}
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>Add New Note</Typography>
+          <TextField
+            multiline
+            rows={4}
+            value={newNoteContent}
+            onChange={(e) => setNewNoteContent(e.target.value)}
+            fullWidth
+            variant="outlined"
+            placeholder="Enter your note here..."
+            sx={{ mb: 2 }}
+          />
+          <Button variant="contained" onClick={handleAddNote} disabled={!newNoteContent.trim()}>Add Note</Button>
+        </Box>
+      </Paper>
+      
+      {/* Application Status Change - Moved to bottom as primary action */}
+      <Paper sx={{ padding: 3, marginTop: 4, backgroundColor: "#f8f9fa", border: "1px solid #e0e0e0" }}>
+        <Typography variant="h6" gutterBottom>
+          Change Application Status
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          Update the application status to reflect the applicant's current standing in the program.
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl fullWidth>
+            <InputLabel id="status-select-label">Application Status</InputLabel>
+            <Select
+              labelId="status-select-label"
+              id="status-select"
+              value={status}
+              label="Application Status"
+              onChange={(e) => setStatus(e.target.value)}
+              sx={{ minWidth: '250px' }}
+            >
+              {ALL_ADMIN_EDITABLE_STATUSES.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+              {!ALL_ADMIN_EDITABLE_STATUSES.includes(status) && (
+                <MenuItem key="current" value={status} disabled>
+                  {status}
+                </MenuItem>
+              )}
+            </Select>
+          </FormControl>
+          <Button 
+            variant="contained" 
+            color="primary"
+            onClick={() => handleStatusChange(status)}
+            disabled={status === application?.status}
+            sx={{ height: '56px', minWidth: '120px' }}
+          >
+            Update Status
+          </Button>
+        </Box>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => 
+          navigate(`/dashboard/admin-programs/${encodeURIComponent(program.title.replace(/\s+/g, "-"))}`)
+        }>
+          Return to Program Detail
         </Button>
-      </Box>
+      </Paper>
+      
+      {/* Confirmation Dialog */}
+      <Dialog open={dialogOpen} onClose={cancelStatusChange}>
+        <DialogTitle>Confirm Status Change</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to change the application status from{' '}
+            <strong>{application?.status}</strong> to{' '}
+            <strong>{status}</strong>?
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+            This will update the applicant's status in the system and may trigger notifications.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelStatusChange} color="inherit">Cancel</Button>
+          <Button onClick={confirmStatusChange} color="primary" variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
+  
   
 };
 

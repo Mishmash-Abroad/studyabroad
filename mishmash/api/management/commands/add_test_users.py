@@ -40,6 +40,7 @@ class Command(BaseCommand):
         prod_mode = options['prod']
         students_data = [
             ('Emma Wilson', 'EmmaW', 'emma.wilson@hcc.edu', 'guest'),
+            ('bruh', 'bruh', 'bruh.bruh@hcc.edu', 'bruh'),
             ('James Chen', 'JamesC', 'james.chen@hcc.edu', 'guest'),
             ('Maria Garcia', 'MariaG', 'maria.garcia@hcc.edu', 'guest'),
             ('David Kim', 'DavidK', 'david.kim@hcc.edu', 'guest'),
@@ -82,6 +83,60 @@ class Command(BaseCommand):
             is_active=True
         )
         self.stdout.write(f'Created admin user: {admin.username} (Superuser: {admin.is_superuser})')
+
+        # Faculty Users
+        faculty_users = [
+            ('elena.papadopoulos', 'Elena Papadopoulos', 'elena.p@example.com'),
+            ('marcus.wisdom', 'Marcus Wisdom', 'marcus.w@example.com'),
+            ('rachel.ocean', 'Rachel Ocean', 'rachel.o@example.com'),
+            ('james.coral', 'James Coral', 'james.c@example.com'),
+            ('isabella.romano', 'Isabella Romano', 'isabella.r@example.com'),
+            ('robert.art', 'Robert Art', 'robert.a@example.com'),
+            ('samuel.health', 'Samuel Health', 'samuel.h@example.com'),
+            ('nomvula.mbeki', 'Nomvula Mbeki', 'nomvula.m@example.com'),
+            ('marie.laurent', 'Marie Laurent', 'marie.l@example.com'),
+            ('sarah.chen', 'Sarah Chen', 'sarah.c@example.com'),
+            ('hiroshi.tanaka', 'Hiroshi Tanaka', 'hiroshi.t@example.com'),
+            ('erik.anderson', 'Erik Anderson', 'erik.a@example.com'),
+            ('maria.nilsson', 'Maria Nilsson', 'maria.n@example.com'),
+            ('michael.chang', 'Michael Chang', 'michael.c@example.com'),
+            ('lisa.tan', 'Lisa Tan', 'lisa.t@example.com'),
+            ('carlos.verde', 'Carlos Verde', 'carlos.v@example.com'),
+            ('emma.nature', 'Emma Nature', 'emma.n@example.com'),
+            ('giulia.fashion', 'Giulia Fashion', 'giulia.f@example.com'),
+            ('alice.lee', 'Alice Lee', 'alice.l@example.com'),
+            ('alice.garcia', 'Alice Garcia', 'alice.g@example.com'),
+            ('alice.johnson', 'Alice Johnson', 'alice.j@example.com'),
+            ('daniel.garcia', 'Daniel Garcia', 'daniel.g@example.com'),
+            ('daniel.lee', 'Daniel Lee', 'daniel.l@example.com'),
+            ('emily.garcia', 'Emily Garcia', 'emily.g@example.com'),
+            ('alice.brown', 'Alice Brown', 'alice.b@example.com'),
+            ('catherine.taylor', 'Catherine Taylor', 'catherine.t@example.com'),
+            ('alice.smith', 'Alice Smith', 'alice.s@example.com'),
+            ('emily.smith', 'Emily Smith', 'emily.s@example.com'),
+            ('frank.taylor', 'Frank Taylor', 'frank.t@example.com'),
+            ('david.space', 'David Space', 'david.s@example.com'),
+            ('john.astronomy', 'John Astronomy', 'john.a@example.com'),
+            ('sophie.polar', 'Sophie Polar', 'sophie.p@example.com'),
+            ('marco.urban', 'Marco Urban', 'marco.u@example.com'),
+            ('claire.design', 'Claire Design', 'claire.d@example.com'),
+            ('paul.game', 'Paul Game', 'paul.g@example.com'),
+            ('anna.digital', 'Anna Digital', 'anna.d@example.com'),
+            ('james.journalism', 'James Journalism', 'james.j@example.com'),
+            ('maria.media', 'Maria Media', 'maria.m@example.com'),
+            ('thomas.farm', 'Thomas Farm', 'thomas.f@example.com'),
+            ('linda.sustainable', 'Linda Sustainable', 'linda.s@example.com')
+        ]
+
+        for username, display_name, email in faculty_users:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password='faculty123',
+                display_name=display_name,
+                is_admin=True
+            )
+            self.stdout.write(f'Created faculty user: {display_name}')
 
         if prod_mode:
             for display_name, username, email, password in prod_students_data:

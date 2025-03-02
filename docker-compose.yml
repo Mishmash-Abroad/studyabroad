@@ -17,6 +17,8 @@ services:
   # Django Backend Service
   # Handles API requests, database operations, and business logic
   backend:
+    env_file:
+      - .env
     build: 
       context: ./mishmash
       dockerfile: Dockerfile
@@ -44,8 +46,8 @@ services:
              python manage.py migrate api --noinput &&
              python manage.py migrate --noinput && 
              python manage.py flush --no-input &&
-             python manage.py add_test_programs &&
              python manage.py add_test_users &&
+             python manage.py add_test_programs &&
              python manage.py add_test_applications &&
              python manage.py add_test_announcements &&
              python manage.py runserver 0.0.0.0:8000"
@@ -62,6 +64,7 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
     depends_on:
       db:
         condition: service_healthy  # Ensures database is ready before starting
@@ -94,7 +97,7 @@ services:
       - REACT_APP_API_URL=http://localhost:8000/
       - WATCHPACK_POLLING=true        # Enable file watching on Windows
       - CHOKIDAR_USEPOLLING=true     # Enable polling for hot reload
-    command: npm start
+    command: sh -c "chmod -R 777 /app/node_modules && npm start"
     depends_on:
       - backend
 

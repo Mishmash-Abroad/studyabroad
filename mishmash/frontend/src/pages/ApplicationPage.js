@@ -1,495 +1,886 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
-import { TextField, Button, Typography, Box, MenuItem } from "@mui/material";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import Paper from "@mui/material/Paper";
+import {
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Tabs,
+  Tab,
+  Paper,
+  Alert,
+} from "@mui/material";
 import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
+import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
+import DeadlineIndicator from "../components/DeadlineIndicator";
+import {
+  ALL_STATUSES,
+  ALL_ADMIN_EDITABLE_STATUSES,
+  READ_ONLY_APPLICATION_STATUSES,
+  APPLICATION_ACTION_BUTTON_TEXT,
+  DOCUMENT_SUBMISSION_STATUSES,
+  EDITABLE_APPLICATION_STATUSES,
+  STATUS,
+  PROGRAM_STATUS,
+  WITHDRAWABLE_APPLICATION_STATUSES,
+} from "../utils/constants";
 
-// -------------------- STYLES --------------------
-const PageContainer = styled("div")(({ theme }) => ({
-  paddingTop: "72px",
-  minHeight: "100vh",
-  backgroundColor: theme.palette.background.default,
-}));
+// -------------------- STYLED COMPONENTS --------------------
+const StyledComponents = {
+  PageContainer: styled("div")(({ theme }) => ({
+    padding: `${theme.spacing(9)} 0`,
+    minHeight: "100vh",
+    backgroundColor: theme.palette.background.default,
+  })),
 
-const ContentContainer = styled(Paper)(({ theme }) => ({
-  maxWidth: "800px",
-  margin: "0 auto",
-  padding: "24px",
-  borderRadius: theme.shape.borderRadius.large,
-}));
+  ContentContainer: styled(Paper)(({ theme }) => ({
+    maxWidth: "1000px",
+    margin: "0 auto",
+    padding: theme.spacing(4),
+    borderRadius: theme.shape.borderRadii.large,
+  })),
 
-const Header = styled("div")({
-  marginBottom: "16px",
-  textAlign: "center",
-});
+  Header: styled("div")(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+    textAlign: "center",
+  })),
 
-const StyledTabContainer = styled(Box)(({ theme }) => ({
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  marginBottom: "16px",
-}));
+  TabContainer: styled(Box)(({ theme }) => ({
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    marginBottom: theme.spacing(4),
+  })),
 
-// -------------------- COMPONENT LOGIC --------------------
+  ProgramCard: styled(Paper)(({ theme }) => ({
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(4),
+    backgroundColor: theme.palette.grey[50],
+    borderRadius: theme.shape.borderRadii.medium,
+  })),
+
+  InfoGrid: styled(Box)(({ theme }) => ({
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: theme.spacing(3),
+    marginBottom: theme.spacing(4),
+  })),
+
+  FormSection: styled(Box)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+    position: "relative",
+  })),
+
+  ButtonContainer: styled(Box)(({ theme }) => ({
+    display: "flex",
+    gap: theme.spacing(2),
+    marginTop: theme.spacing(4),
+    "& .MuiButton-root": {
+      minWidth: "160px",
+    },
+  })),
+
+  ReadOnlyOverlay: styled(Box)(({ theme }) => ({
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.02)",
+    borderRadius: theme.shape.borderRadii.medium,
+    pointerEvents: "none",
+  })),
+
+  DeadlineContainer: styled(Box)(({ theme }) => ({
+    display: "flex",
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(3),
+  })),
+};
+
+// -------------------- CONSTANTS --------------------
+// List of documents that must be submitted for every application
+// These are matched against uploaded document types to track completion
+const REQUIRED_DOCUMENTS = [
+  "Assumption of risk form",
+  "Acknowledgement of the code of conduct",
+  "Housing questionnaire",
+  "Medical/health history and immunization records",
+];
+
 const ApplicationPage = () => {
   const { program_id } = useParams();
-  const [isApplicationReadOnly, setIsApplicationReadOnly] = useState(false);
-  const [program, setProgram] = useState({
-    application_deadline: "",
-    application_open_date: "",
-    description: "",
-    end_date: "",
-    faculty_leads: "",
-    start_date: "",
-    title: "",
-    year_semester: "",
-  });
   const { user } = useAuth();
-
-  // Tab management
-  const [activeTab, setActiveTab] = useState(0);
-  // Form fields
-  const [applicationData, setApplicationData] = useState({
-    id: 0,
-    program: program_id,
-    status: "",
-    student: user.user_id,
-    date_of_birth: "",
-    gpa: "",
-    major: "",
+  const [tempGPA, setTempGPA] = useState(0);
+  // Consolidated state object managing:
+  // - program: Study abroad program details
+  // - application: Student's application data and status
+  // - questions: Program-specific questions
+  // - responses: Student's answers to questions
+  // - documents: Required and submitted document tracking
+  const [state, setState] = useState({
+    isReadOnly: false,
+    isDocumentsReadOnly: false,
+    program: {},
+    application: {
+      id: null,
+      program: program_id,
+      status: "",
+      date_of_birth: "",
+      gpa: "",
+      major: "",
+    },
+    questions: [],
+    responses: [],
+    documents: {
+      submitted: [],
+      missing: REQUIRED_DOCUMENTS,
+    },
+    error: "",
+    loading: false,
+    activeTab: 0,
   });
-  const [questions, setQuestions] = useState([]);
-  const [questionResponses, setQuestionResponses] = useState([]);
 
-  // State for loading and error
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const updateState = (newState) =>
+    setState((prev) => ({ ...prev, ...newState }));
 
-  const handleInputChange = (e) =>
-    setApplicationData({ ...applicationData, [e.target.name]: e.target.value });
+  // Destructure state for easier access
+  const {
+    isReadOnly,
+    isDocumentsReadOnly,
+    program,
+    application,
+    questions,
+    responses,
+    documents,
+    error,
+    loading,
+    activeTab,
+  } = state;
 
-  const renderWithdrawReapply = () => {
-    if (!applicationData.id) {
-      return null; // No application exists, so no buttons needed
-    }
-
-    const handleWithdraw = async () => {
-      const userConfirmed = window.confirm(
-        "Are you sure you want to withdraw your application?"
-      );
-      if (!userConfirmed) return;
-
-      try {
-        setLoading(true);
-        await axiosInstance.patch(`/api/applications/${applicationData.id}/`, {
-          status: "Withdrawn",
-        });
-
-        setApplicationData({ ...applicationData, status: "Withdrawn" });
-      } catch (err) {
-        setError(`${err} Failed to withdraw application.`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (applicationData.status === "Applied") {
-      return (
-        <Box mt={3} display="flex" justifyContent="space-between">
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleWithdraw}
-            disabled={loading}
-          >
-            Withdraw Application
-          </Button>
-        </Box>
-      );
-    }
-  };
-
-  // Fetch user's applications
+  // -------------------- DATA FETCHING --------------------
   useEffect(() => {
-    const getApplication = async () => {
-      try {
-        const response = await axiosInstance.get(
-          `/api/applications/?student=${user.user_id}`
-        );
+    if (!user) return; // Guard: user may be null during initial render
 
-        const program_response = await axiosInstance.get(
+    const fetchApplicationData = async () => {
+      updateState({ loading: true, error: "" });
+
+      try {
+        // Get program details and determine if application can be edited
+        const programRes = await axiosInstance.get(
           `/api/programs/${program_id}`
         );
+        const programData = programRes.data;
 
-        const application = response.data.find(
-          (application) => application.program == program_id
+        // Find student's existing application for this program
+        const applicationsRes = await axiosInstance.get(
+          `/api/applications/?student=${user.id}`
+        );
+        const existingApp = applicationsRes.data.find(
+          (app) => app.program == program_id
         );
 
-        setProgram(program_response.data);
-        setIsApplicationReadOnly(
-          new Date() > new Date(program_response.data.application_deadline) ||
-          application?.status?.toLowerCase() === "enrolled"
+        // Application becomes read-only if:
+        // - Past the program's deadline OR
+        // - Status is not in EDITABLE_APPLICATION_STATUSES (and not a new application)
+        const isReadOnly =
+          new Date() > new Date(programData.application_deadline) ||
+          (existingApp &&
+            !EDITABLE_APPLICATION_STATUSES.includes(existingApp.status) &&
+            existingApp.status !== STATUS.WITHDRAWN);
+
+        // Document submission becomes read-only if:
+        // - Status is not in DOCUMENT_SUBMISSION_STATUSES
+        // Note: Document deadlines are soft deadlines - documents can be submitted after the deadline
+        // as long as the application status allows document submission
+        const isDocumentsReadOnly =
+          existingApp &&
+          !DOCUMENT_SUBMISSION_STATUSES.includes(existingApp.status);
+
+        // Load program questions and student's responses
+        const questionsRes = await axiosInstance.get(
+          `/api/programs/${program_id}/questions/`
         );
+        const questions = questionsRes.data;
 
-        if (application) {
-          setApplicationData({
-            id: application.id,
-            status: application.status,
-            program: application.program,
-            student: application.student,
-            date_of_birth: application.date_of_birth,
-            gpa: application.gpa,
-            major: application.major,
-          });
-        }
-
-        let newQuestions = await axiosInstance.get(
-          `/api/questions/?program=${program_id}`
-        );
-        newQuestions = newQuestions.data.filter(
-          (question) => question.program == program_id
-        );
-
-        setQuestions(newQuestions);
-
-        const blank_questions_responses = newQuestions.map((question) => ({
-          application: application?.id || null,
-          application: application?.id || null,
-          question_id: question.id,
-          question_text: question.text,
-          response_id: 0,
-          response_text: "",
-        }));
-
-        setQuestionResponses(blank_questions_responses);
-
-        if (application) {
-          const questions_responses_response = await axiosInstance.get(
-            `/api/responses/?application=${application.id}`
+        // Map questions to responses, handling both existing and new applications
+        let responses = [];
+        if (existingApp) {
+          setTempGPA(existingApp.gpa);
+          // For existing applications, fetch and match responses to questions
+          const responsesRes = await axiosInstance.get(
+            `/api/responses/?application=${existingApp.id}`
+          );
+          const responsesMap = new Map(
+            responsesRes.data.map((r) => [r.question, r])
           );
 
-          const newQuestionResponses = questions_responses_response.data || [];
-
-          if (newQuestionResponses.length > 0) {
-            // Create a map for quick lookup
-            const responseMap = new Map(
-              newQuestionResponses.map((questions_response) => [
-                questions_response.question,
-                questions_response.response,
-              ])
-            );
-            if (newQuestionResponses.length > 0) {
-              // Create a map for quick lookup
-              const responseMap = new Map(
-                newQuestionResponses.map((questions_response) => [
-                  questions_response.question,
-                  questions_response.response,
-                ])
-              );
-
-              // Update blank_questions_responses in a single loop
-              blank_questions_responses.forEach((questions_response) => {
-                if (responseMap.has(questions_response.question_id)) {
-                  questions_response.response_text = responseMap.get(
-                    questions_response.question_id
-                  );
-                }
-              });
-              // Update blank_questions_responses in a single loop
-              blank_questions_responses.forEach((questions_response) => {
-                if (responseMap.has(questions_response.question_id)) {
-                  questions_response.response_text = responseMap.get(
-                    questions_response.question_id
-                  );
-                }
-              });
-
-              setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
-            }
-            setQuestionResponses([...blank_questions_responses]); // Spread to trigger state update
-          }
+          responses = questions.map((q) => ({
+            application: existingApp.id,
+            question_id: q.id,
+            question_text: q.text,
+            response_id: responsesMap.get(q.id)?.id || null,
+            response_text: responsesMap.get(q.id)?.response || "",
+          }));
+        } else {
+          // For new applications, create empty response objects
+          responses = questions.map((q) => ({
+            application: null,
+            question_id: q.id,
+            question_text: q.text,
+            response_id: null,
+            response_text: "",
+          }));
         }
+
+        // Track document submission status
+        const documentsRes = await axiosInstance.get("/api/documents/", {
+          params: { application: existingApp?.id },
+        });
+
+        // Compare submitted documents against required documents
+        const submittedDocs = documentsRes.data;
+        const submittedTypes = submittedDocs.map((d) => d.type);
+        const missingDocs = REQUIRED_DOCUMENTS.filter(
+          (doc) => !submittedTypes.includes(doc)
+        );
+
+        updateState({
+          isReadOnly,
+          isDocumentsReadOnly,
+          program: programData,
+          application: existingApp || application,
+          questions,
+          responses,
+          documents: {
+            submitted: submittedDocs,
+            missing: missingDocs,
+          },
+          loading: false,
+        });
       } catch (err) {
-        // Handle errors
-        const errorMessage =
-          err.response?.data?.detail ||
-          err.response?.data?.error ||
-          err.message ||
-          "An error occurred while getting the application.";
-        setError(errorMessage);
+        console.error("Error fetching application data:", err);
+        updateState({
+          error: "Failed to load application data. Please try again.",
+        });
       } finally {
-        setLoading(false); // Reset loading state
+        updateState({ loading: false });
       }
     };
 
-    getApplication();
-  }, []);
+    fetchApplicationData();
+  }, [program_id, user]);
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const handleSubmitApplication = async (e) => {
+  // -------------------- EVENT HANDLERS --------------------
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    if (applicationData.status == "Withdrawn") {
-      const userConfirmed = window.confirm(
-        "Are you sure you want to resubmit your application?"
-      );
-      if (!userConfirmed) {
-        setLoading(false);
-        return;
-      }
+    if (
+      isApplicationReadOnly() ||
+      !application.date_of_birth ||
+      !application.gpa ||
+      !application.major
+    ) {
+      return;
     }
+
+    // Check if all responses have been filled out
+    const emptyResponses = responses.filter(
+      (response) => !response.response_text.trim()
+    );
+    if (emptyResponses.length > 0) {
+      updateState({
+        error: `Please answer all program questions. ${
+          emptyResponses.length
+        } question${emptyResponses.length > 1 ? "s" : ""} ${
+          emptyResponses.length > 1 ? "are" : "is"
+        } unanswered.`,
+      });
+      return;
+    }
+
+    // Check for emojis in text fields
+    const containsEmoji = (text) => {
+      // This regex matches most common emoji characters
+      const emojiRegex =
+        /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+      return text && emojiRegex.test(text);
+    };
+
+    // Check all text fields for emojis
+    const fieldsWithEmojis = [];
+    if (containsEmoji(application.major)) fieldsWithEmojis.push("Major");
+
+    // Check response text fields
+    responses.forEach((response, index) => {
+      if (containsEmoji(response.response_text)) {
+        fieldsWithEmojis.push(`Response ${index + 1}`);
+      }
+    });
+
+    if (fieldsWithEmojis.length > 0) {
+      updateState({
+        error: `Please remove emojis from the following fields: ${fieldsWithEmojis.join(
+          ", "
+        )}. Our system cannot process emoji characters.`,
+      });
+      return;
+    }
+
+    updateState({ loading: true, error: "" });
 
     try {
-      // Ensure all required fields are provided
-      if (
-        !applicationData.date_of_birth ||
-        !applicationData.gpa ||
-        !applicationData.major
-      ) {
-        throw new Error("Please fill out all required fields.");
-      }
+      // Submit or update application
+      const appPayload = {
+        date_of_birth: application.date_of_birth,
+        gpa: application.gpa,
+        major: application.major,
+        // For withdrawn applications set status back to Applied when resubmitting
+        // For existing applications set/maintain status as Applied
+        // For new applications, set program ID
+        ...(application.id
+          ? {
+              status:
+                application.status === STATUS.WITHDRAWN
+                  ? STATUS.APPLIED
+                  : STATUS.APPLIED,
+            }
+          : { program: program_id }),
+      };
 
-      const application_response = await axiosInstance.post(
-        `/api/applications/create_or_edit/`,
-        applicationData
-      );
+      const appResponse = application.id
+        ? await axiosInstance.patch(
+            `/api/applications/${application.id}/`,
+            appPayload
+          )
+        : await axiosInstance.post("/api/applications/", appPayload);
 
-      setQuestionResponses((prevResponses) =>
-        prevResponses.map((prevResponse) => ({
-          ...prevResponse,
-          application: application_response.data.id,
-        }))
-      );
+      const applicationId = application.id || appResponse.data.id;
 
-      setQuestionResponses((prevResponses) =>
-        prevResponses.map((prevResponse) => ({
-          ...prevResponse,
-          application: application_response.data.id,
-        }))
-      );
+      // Submit responses
+      await Promise.all(
+        responses.map(async (response) => {
+          const payload = {
+            application: applicationId,
+            question: response.question_id,
+            response: response.response_text,
+          };
 
-      for (const questionResponse of questionResponses) {
-        try {
-          const questions_response = await axiosInstance.post(
-            `/api/responses/create_or_edit/`,
-            { ...questionResponse, application: application_response.data.id }
-          );
-
-          if (
-            questions_response.status !== 201 &&
-            questions_response.status !== 200
-          ) {
-            throw new Error("Issue with updating question responses");
-          }
-        } catch (error) {
-          throw new Error("Issue with updating question responses");
-        }
-      }
-
-      // Check for successful response
-      if (
-        application_response.status === 201 ||
-        application_response.status === 200
-      ) {
-        window.location.reload();
-      }
-    } catch (err) {
-      // Handle errors
-      const errorMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.error ||
-        err.message ||
-        "An error occurred while submitting the application.";
-      setError(errorMessage);
-    } finally {
-      setLoading(false); // Reset loading state
-    }
-  };
-
-  const renderSubmitButtons = () => {
-    if (isApplicationReadOnly) {
-      return null;
-    }
-
-    if (applicationData.status == "Withdrawn") {
-      return (
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          fullWidth
-        >
-          {loading ? "Resubmitting..." : "Resubmit Application"}
-        </Button>
-      );
-    }
-
-    return applicationData.status != "Applied" ? (
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        fullWidth
-      >
-        {loading ? "Submitting..." : "Submit Application"}
-      </Button>
-    ) : (
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        fullWidth
-      >
-        {loading ? "Updating..." : "Update Application"}
-      </Button>
-    );
-  };
-
-  const renderTabContent = () => {
-    return (
-      <form onSubmit={handleSubmitApplication}>
-        <Box mb={3}>
-          <TextField
-            fullWidth
-            type="date"
-            label="Date of Birth"
-            name="date_of_birth"
-            variant="outlined"
-            InputLabelProps={{ shrink: true }}
-            inputProps={{
-              max: new Date(
-                new Date().setFullYear(new Date().getFullYear() - 10)
+          return response.response_id
+            ? axiosInstance.patch(
+                `/api/responses/${response.response_id}/`,
+                payload
               )
-                .toISOString()
-                .split("T")[0], // Restricts to 10 years ago
-              readOnly: isApplicationReadOnly, // Dynamically set readOnly based on state
-            }}
-            value={applicationData.date_of_birth}
-            onChange={handleInputChange}
-            required
-          />
-        </Box>
+            : axiosInstance.post("/api/responses/", payload);
+        })
+      );
 
-        <Box mb={3}>
-          <TextField
-            fullWidth
-            label="GPA"
-            variant="outlined"
-            name="gpa"
-            type="number"
-            inputProps={{
-              step: "0.01",
-              min: "0",
-              max: "4.0",
-              readOnly: isApplicationReadOnly,
-            }}
-            value={applicationData.gpa}
-            onChange={handleInputChange}
-            required
-          />
-        </Box>
-        <Box mb={3}>
-          <TextField
-            fullWidth
-            label="Major"
-            inputProps={{
-              readOnly: isApplicationReadOnly, // Dynamically set readOnly based on state
-            }}
-            name="major"
-            variant="outlined"
-            value={applicationData.major}
-            onChange={handleInputChange}
-            required
-          />
-        </Box>
-        {questions.map((question, index) => {
-          const responseObj = questionResponses?.find(
-            (questionResponse) => questionResponse.question_id == question.id
-          );
+      window.location.reload();
+    } catch (err) {
+      console.error("Application submission error:", err);
 
-          return (
-            <Box key={index} mb={3}>
-              <TextField
-                fullWidth
-                label={question.text} // Assuming question has a 'text' property
-                variant="outlined"
-                multiline
-                inputProps={{
-                  readOnly: isApplicationReadOnly, // Dynamically set readOnly based on state
-                }}
-                rows={4}
-                value={responseObj?.response_text || ""} // Fixed value retrieval
-                onChange={(e) => {
-                  setQuestionResponses((prevResponses) => {
-                    // Ensure state exists
-                    return prevResponses.map((qr) =>
-                      qr.question_id == question.id
-                        ? { ...qr, response_text: e.target.value } // Update response_text
-                        : qr
-                    );
-                  });
-                }}
-                required
-              />
-            </Box>
-          );
-        })}
-
-        {error && (
-          <Typography color="error" mb={2}>
-            {error}
-          </Typography>
-        )}
-
-        {renderSubmitButtons()}
-      </form>
-    );
+      // Check if the error might be related to emojis
+      const errorMessage = err.response?.data?.detail || err.message;
+      if (err.response?.status === 500) {
+        updateState({
+          error:
+            "Server error occurred. Please ensure no special characters or emojis are used in any field and try again.",
+          loading: false,
+        });
+      } else {
+        updateState({
+          error: errorMessage || "Failed to submit application",
+          loading: false,
+        });
+      }
+    }
   };
 
+  const handleWithdraw = async () => {
+    if (
+      !application.id ||
+      !window.confirm("Withdraw application?")
+    ) {
+      return;
+    }
+
+    updateState({ loading: true });
+    try {
+      await axiosInstance.patch(`/api/applications/${application.id}/`, {
+        status: "Withdrawn",
+      });
+      updateState({
+        application: { ...application, status: "Withdrawn" },
+        loading: false,
+      });
+    } catch (err) {
+      updateState({
+        error: "Failed to withdraw application",
+        loading: false,
+      });
+    }
+  };
+
+  // Helper function to determine submit button text based on application status
+  const getSubmitButtonText = () => {
+    if (loading) return "Processing...";
+    let actionText = application.id
+      ? APPLICATION_ACTION_BUTTON_TEXT[application.status] || "Edit Application"
+      : "Submit Application";
+
+    if (application.status === STATUS.WITHDRAWN) {
+      actionText = "Resubmit Application";
+    }
+
+    return actionText;
+  };
+
+  // Helper function to determine if the application form should be read-only
+  const isApplicationReadOnly = () => {
+    // If application is withdrawn, allow editing for resubmission
+    if (application.status === STATUS.WITHDRAWN) {
+      return false;
+    }
+
+    // Otherwise, use the normal isReadOnly state
+    return isReadOnly;
+  };
+
+  // -------------------- HELPER FUNCTIONS --------------------
+  const getStatusColor = (theme) => {
+    switch (application.status?.toLowerCase()) {
+      case "applied":
+        return theme.palette.info.main;
+      case "enrolled":
+        return theme.palette.success.main;
+      case "withdrawn":
+        return theme.palette.error.main;
+      default:
+        return theme.palette.text.secondary;
+    }
+  };
+
+  const {
+    PageContainer,
+    ContentContainer,
+    Header,
+    TabContainer,
+    ProgramCard,
+    InfoGrid,
+    FormSection,
+    ButtonContainer,
+    ReadOnlyOverlay,
+    DeadlineContainer,
+  } = StyledComponents;
+
+  // -------------------- RENDER COMPONENT --------------------
   return (
     <PageContainer>
       <ContentContainer>
+        {/* Header Section */}
         <Header>
           <Typography variant="h4" color="primary" gutterBottom>
-            Application for {program.title} {program.year_semester}
+            {program.title}
           </Typography>
-          <Typography variant="h4" color="primary" gutterBottom>
-            <b>Current Application Status: {applicationData.status || "Not Submitted"}</b>
+          <Typography variant="h5" gutterBottom>
+            {program.year_semester}
           </Typography>
-          <Typography variant="p" color="primary" gutterBottom>
-            <br />
-            {program.description}
-            <br />
-          </Typography>
-
-          <Typography variant="p" color="primary" gutterBottom>
-            From {program.start_date} to {program.end_date}
-            <br />
-            Submit application by {program.application_deadline}
-            <br />
-            Faculty Leads: {program.faculty_leads}
+          <Typography variant="h6" sx={{ color: getStatusColor }}>
+            Status: {application.status || "Not Applied"}
           </Typography>
         </Header>
 
-        <StyledTabContainer>
-          <Tabs value={activeTab} onChange={handleTabChange} centered>
+        {/* Navigation Tabs */}
+        <TabContainer>
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => updateState({ activeTab: v })}
+          >
+            <Tab label="Program Details" />
             <Tab label="Application Form" />
+            <Tab label="Required Documents" />
           </Tabs>
-        </StyledTabContainer>
+        </TabContainer>
 
-        {renderTabContent()}
+        {/* Error Messages */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-        {!isApplicationReadOnly && renderWithdrawReapply()}
+        {/* Program Details Tab */}
+        {activeTab === 0 && (
+          <ProgramCard>
+            {program.application_deadline &&
+              program.essential_document_deadline && (
+                <DeadlineContainer>
+                  <DeadlineIndicator
+                    deadline={program.application_deadline}
+                    type="application"
+                    size="medium"
+                  />
+                  <DeadlineIndicator
+                    deadline={program.essential_document_deadline}
+                    type="document"
+                    size="medium"
+                  />
+                </DeadlineContainer>
+              )}
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              color="primary"
+            >
+              Program Information
+            </Typography>
+
+            <InfoGrid>
+              <Box>
+                <Typography variant="subtitle2">Title</Typography>
+                <Typography variant="body1">
+                  {program.title || "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Term</Typography>
+                <Typography variant="body1">
+                  {program.year_semester ||
+                    `${program.semester} ${program.year}` ||
+                    "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Faculty Leads</Typography>
+                <Typography variant="body1">
+                  {Array.isArray(program.faculty_leads) &&
+                  program.faculty_leads.length > 0
+                    ? program.faculty_leads
+                        .map((lead) => lead.display_name)
+                        .join(", ")
+                    : "No faculty leads assigned"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Program Dates</Typography>
+                <Typography variant="body1">
+                  {program.start_date && program.end_date
+                    ? `${new Date(
+                        program.start_date
+                      ).toLocaleDateString()} - ${new Date(
+                        program.end_date
+                      ).toLocaleDateString()}`
+                    : "Dates not set"}
+                </Typography>
+              </Box>
+            </InfoGrid>
+
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              color="primary"
+              sx={{ mt: 4 }}
+            >
+              Key Deadlines
+            </Typography>
+
+            <InfoGrid>
+              <Box>
+                <Typography variant="subtitle2">
+                  Application Open Date
+                </Typography>
+                <Typography variant="body1">
+                  {program.application_open_date
+                    ? new Date(
+                        program.application_open_date
+                      ).toLocaleDateString()
+                    : "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">
+                  Application Deadline
+                </Typography>
+                <Typography variant="body1">
+                  {program.application_deadline
+                    ? new Date(
+                        program.application_deadline
+                      ).toLocaleDateString()
+                    : "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">
+                  Document Submission Deadline
+                </Typography>
+                <Typography variant="body1">
+                  {program.essential_document_deadline
+                    ? new Date(
+                        program.essential_document_deadline
+                      ).toLocaleDateString()
+                    : "Not specified"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Program Status</Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: (theme) => {
+                      const now = new Date();
+                      if (
+                        !program.application_open_date ||
+                        !program.application_deadline
+                      ) {
+                        return theme.palette.grey[600]; // No dates set
+                      } else if (
+                        now < new Date(program.application_open_date)
+                      ) {
+                        return theme.palette.info.main; // Will open soon
+                      } else if (
+                        now <= new Date(program.application_deadline)
+                      ) {
+                        return theme.palette.success.main; // Open for applications
+                      } else {
+                        return theme.palette.error.main; // Closed
+                      }
+                    },
+                    fontWeight: "medium",
+                  }}
+                >
+                  {(() => {
+                    const now = new Date();
+                    if (
+                      !program.application_open_date ||
+                      !program.application_deadline
+                    ) {
+                      return "Status unknown";
+                    } else if (now < new Date(program.application_open_date)) {
+                      return PROGRAM_STATUS.OPENING_SOON;
+                    } else if (now <= new Date(program.application_deadline)) {
+                      return PROGRAM_STATUS.OPEN;
+                    } else {
+                      return PROGRAM_STATUS.CLOSED;
+                    }
+                  })()}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2">Application Status</Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: getStatusColor,
+                    fontWeight: "medium",
+                  }}
+                >
+                  {application.status || "Not Applied"}
+                </Typography>
+              </Box>
+            </InfoGrid>
+
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              color="primary"
+              sx={{ mt: 4 }}
+            >
+              Program Description
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {program.description ||
+                "No description provided for this program."}
+            </Typography>
+
+            <Box sx={{ mt: 3 }}>
+              {!application.id && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => updateState({ activeTab: 1 })}
+                >
+                  Apply Now
+                </Button>
+              )}
+              {application.id && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => updateState({ activeTab: 1 })}
+                >
+                  {application.status === STATUS.WITHDRAWN
+                    ? "Resubmit Application"
+                    : "View Your Application"}
+                </Button>
+              )}
+            </Box>
+          </ProgramCard>
+        )}
+
+        {/* Application Form Tab */}
+        {activeTab === 1 && (
+          <form onSubmit={handleSubmit}>
+            <DeadlineContainer>
+              <DeadlineIndicator
+                deadline={program.application_deadline}
+                type="application"
+                size="medium"
+              />
+            </DeadlineContainer>
+            {isApplicationReadOnly() && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                This application cannot be edited in the current application
+                status.
+              </Alert>
+            )}
+
+            {/* Personal Information Section */}
+            <FormSection>
+              <Typography variant="h6" gutterBottom>
+                Personal Information
+              </Typography>
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Date of Birth"
+                  name="date_of_birth"
+                  value={application.date_of_birth}
+                  onChange={(e) =>
+                    updateState({
+                      application: {
+                        ...application,
+                        date_of_birth: e.target.value,
+                      },
+                    })
+                  }
+                  InputLabelProps={{ shrink: true }}
+                  disabled={isApplicationReadOnly()}
+                  required
+                />
+              </Box>
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="GPA"
+                  onWheel={(e) => e.target.blur()}
+                  name="gpa"
+                  value={tempGPA}
+                  onChange={(e) => {
+                    const inputValue = parseFloat(e.target.value);
+                    if (!isNaN(inputValue)) {
+                      updateState({
+                        application: {
+                          ...application,
+                          gpa: parseFloat(inputValue.toFixed(3)), // Truncate to 3 decimals
+                        },
+                      });
+                    }
+                    setTempGPA(e.target.value);
+                  }}
+                  inputProps={{ min: "0", max: "4", step: "any" }}
+                  disabled={isApplicationReadOnly()}
+                  required
+                />
+              </Box>
+              <Box mb={3}>
+                <TextField
+                  fullWidth
+                  label="Major"
+                  name="major"
+                  value={application.major}
+                  onChange={(e) =>
+                    updateState({
+                      application: { ...application, major: e.target.value },
+                    })
+                  }
+                  disabled={isApplicationReadOnly()}
+                  required
+                />
+              </Box>
+              {isApplicationReadOnly() && <ReadOnlyOverlay />}
+            </FormSection>
+
+            {/* Program Questions Section */}
+            <FormSection>
+              <Typography variant="h6" gutterBottom>
+                Program Questions
+              </Typography>
+              {responses.map((response) => (
+                <Box key={response.question_id} mb={3}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label={response.question_text}
+                    value={response.response_text}
+                    onChange={(e) =>
+                      updateState({
+                        responses: responses.map((r) =>
+                          r.question_id === response.question_id
+                            ? { ...r, response_text: e.target.value }
+                            : r
+                        ),
+                      })
+                    }
+                    disabled={isApplicationReadOnly()}
+                  />
+                </Box>
+              ))}
+              {isApplicationReadOnly() && <ReadOnlyOverlay />}
+            </FormSection>
+
+            {/* Form Actions */}
+            <ButtonContainer>
+              <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+                {(WITHDRAWABLE_APPLICATION_STATUSES.includes(application.status) 
+                && (new Date() <= new Date(program.application_deadline))) && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleWithdraw}
+                      disabled={loading}
+                      size="large"
+                    >
+                      Withdraw Application
+                    </Button>
+                  )}
+                {!isApplicationReadOnly() && (
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={loading}
+                    size="large"
+                  >
+                    {getSubmitButtonText()}
+                  </Button>
+                )}
+              </Box>
+            </ButtonContainer>
+          </form>
+        )}
+
+        {/* Required Documents Tab */}
+        {activeTab === 2 && (
+          <>
+            <DeadlineContainer>
+              <DeadlineIndicator
+                deadline={program.essential_document_deadline}
+                type="document"
+                size="medium"
+              />
+            </DeadlineContainer>
+            <EssentialDocumentFormSubmission
+              application_id={application.id}
+              isReadOnly={isDocumentsReadOnly}
+              documents={documents.submitted || []}
+            />
+          </>
+        )}
       </ContentContainer>
     </PageContainer>
   );

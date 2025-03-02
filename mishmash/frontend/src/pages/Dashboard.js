@@ -7,7 +7,8 @@ import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
 import MyProgramsTable from "../components/MyProgramsTable";
 import AnnouncementsManager from "../components/AnnouncementsManager";
-import AnnouncementsViewer from "../components/AnnouncementsViewer";
+import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
+import UserManagement from "../components/UserManagement";
 import Typography from '@mui/material/Typography';
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
@@ -15,6 +16,7 @@ const ADMIN_ROUTES = [
   { path: 'admin-overview', label: 'Overview' },
   { path: 'admin-programs', label: 'Program Management' },
   { path: 'browse', label: 'Browse Programs' },
+  { path: 'user-management', label: 'User Management' },
 ];
 
 const STUDENT_ROUTES = [
@@ -32,12 +34,12 @@ const DashboardContainer = styled("div")(({ theme }) => ({
 }));
 
 const DashboardContent = styled("div")(({ theme }) => ({
-  maxWidth: "1500px",
+  maxWidth: "1800px",
   margin: "0 auto",
   padding: "20px",
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.customShadows.card,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   minHeight: "500px",
 }));
 
@@ -69,7 +71,7 @@ const TabButton = styled("button")(({ theme, active }) => ({
     : theme.palette.background.default,
   border: `1px solid ${theme.palette.border.light}`,
   borderBottom: active ? "none" : `1px solid ${theme.palette.border.light}`,
-  borderRadius: `${theme.shape.borderRadius.small}px ${theme.shape.borderRadius.small}px 0 0`,
+  borderRadius: `${theme.shape.borderRadii.small}px ${theme.shape.borderRadii.small}px 0 0`,
   marginRight: "5px",
   position: "relative",
   top: "1px",
@@ -127,10 +129,7 @@ const StudentOverview = () => (
       </Typography>
     </WelcomeSection>
     <AnnouncementsSection>
-      <Typography variant="h6" gutterBottom>
-        Recent Announcements
-      </Typography>
-      <AnnouncementsViewer />
+      <AnnouncementsBrowser />
     </AnnouncementsSection>
   </>
 );
@@ -141,18 +140,17 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const routes = user?.is_admin ? ADMIN_ROUTES : STUDENT_ROUTES;
-
   // Handle default route
   React.useEffect(() => {
-    if (location.pathname === '/dashboard') {
-      const defaultPath = `/dashboard/${user?.is_admin ? 'admin-overview' : 'overview'}`;
+    // Only adjust the route if user is available
+    if (user && location.pathname === '/dashboard') {
+      const defaultPath = `/dashboard/${user.is_admin ? 'admin-overview' : 'overview'}`;
       // Replace the current history entry instead of adding a new one
       window.history.replaceState(null, '', defaultPath);
       // Force a re-render to show the correct content
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
-  }, [location.pathname, user?.is_admin]);
-
+  }, [location.pathname, user]);
   // Get current active tab from path
   const activeTab = location.pathname.split('/').pop();
 
@@ -193,6 +191,7 @@ const Dashboard = () => {
                 <Route path="admin-programs" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
                 <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
+                <Route path="user-management" element={<UserManagement />} />
               </>
             )}
 

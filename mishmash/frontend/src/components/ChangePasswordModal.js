@@ -12,7 +12,7 @@ const ModalOverlay = styled("div")(({ theme }) => ({
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.4)", //slight darkening mask
+  backgroundColor: "rgba(0, 0, 0, 0.4)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -21,7 +21,7 @@ const ModalOverlay = styled("div")(({ theme }) => ({
 
 const ModalContainer = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius.large,
+  borderRadius: theme.shape.borderRadii.large,
   padding: "32px",
   width: "100%",
   maxWidth: "400px",
@@ -60,7 +60,7 @@ const ModalForm = styled("form")({
 
 const FormInput = styled("input")(({ theme }) => ({
   padding: "12px 16px",
-  borderRadius: theme.shape.borderRadius.medium,
+  borderRadius: theme.shape.borderRadii.medium,
   border: `1px solid ${theme.palette.border.main}`,
   fontSize: theme.typography.body1.fontSize,
   fontFamily: theme.typography.fontFamily,
@@ -78,7 +78,7 @@ const FormButton = styled("button")(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   border: "none",
-  borderRadius: theme.shape.borderRadius.medium,
+  borderRadius: theme.shape.borderRadii.medium,
   fontSize: theme.typography.button.fontSize,
   fontWeight: theme.typography.button.fontWeight,
   cursor: "pointer",
@@ -99,7 +99,7 @@ const FormError = styled("div")(({ theme }) => ({
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
-const ChangePasswordModal = ({ onClose }) => {
+const ChangePasswordModal = ({ onClose, userId }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -117,15 +117,21 @@ const ChangePasswordModal = ({ onClose }) => {
     }
 
     try {
-      const response = await axiosInstance.patch("/api/changepassword/", {
+      const response = await axiosInstance.patch("/api/users/change_password/", {
+        user_id: userId,
         password,
-        confirmPassword,
-      });
+        confirm_password: confirmPassword,
+      })
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
         onClose();
       }
+      
+      if (response.status === 200) {
+        onClose();
+      }
+
     } catch (err) {
       setError(err.response?.data?.detail || "Invalid username or password");
     } finally {
