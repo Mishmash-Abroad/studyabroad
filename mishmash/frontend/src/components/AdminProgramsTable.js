@@ -176,6 +176,7 @@ const AdminProgramsTable = () => {
           try {
             const countResponse = await axiosInstance.get(`/api/programs/${program.id}/applicant_counts/`);
             counts[program.id] = countResponse.data;
+            console.log(countResponse);
           } catch (err) {
             console.error(`Error fetching applicant counts for program ${program.id}:`, err);
           }
@@ -234,10 +235,7 @@ const AdminProgramsTable = () => {
   );
 
   const handleRequestSort = (property) => {
-    // If we're already sorting by selected statuses or we click the status filter button
-    // and have statuses selected, use the special combined sort
-    if ((property === "selected_statuses" || 
-         (property === orderBy && property === "selected_statuses")) && 
+    if (property === "selected_statuses" && 
         selectedStatuses.length > 0) {
       const isAsc = orderBy === "selected_statuses" && order === "asc";
       setOrder(isAsc ? "desc" : "asc");
@@ -249,18 +247,9 @@ const AdminProgramsTable = () => {
     }
   };
 
-  // Set the initial sort order to descending for numeric fields
+  // List all possible status-related sort properties
   const allStatusKeys = Object.values(STATUS).map(status => status.toLowerCase());
   
-  useEffect(() => {
-    // Initialize status-related fields to descending order by default
-    if (allStatusKeys.includes(orderBy) || 
-        orderBy === "total_active" || 
-        orderBy === "selected_statuses") {
-      setOrder("desc");
-    }
-  }, [orderBy]);
-
   const sortedPrograms = [...filteredPrograms].sort((a, b) => {
     let aValue, bValue;
   
@@ -296,8 +285,7 @@ const AdminProgramsTable = () => {
       }
     }
     
-    // For numeric comparisons - swap comparison logic to get highest numbers first
-    // when sorting in descending order
+    // For numeric comparisons
     if (typeof aValue === 'number' && typeof bValue === 'number') {
       return order === "asc" 
         ? aValue - bValue 

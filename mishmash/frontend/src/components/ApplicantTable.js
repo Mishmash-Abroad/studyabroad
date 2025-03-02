@@ -288,73 +288,30 @@ const ApplicantTable = ({ programId }) => {
   };
 
   // Render notes summary
+  // Render notes summary with subscript for last update
   const renderNotesSummary = (notes) => {
     if (!notes || notes.count === 0) {
       return (
-        <Tooltip 
-          title="No confidential notes"
-          PopperProps={{
-            disablePortal: true,
-            modifiers: [
-              {
-                name: 'preventOverflow',
-                enabled: true,
-                options: {
-                  altAxis: true,
-                  altBoundary: true,
-                  tether: true,
-                  rootBoundary: 'document',
-                  padding: 8,
-                },
-              },
-            ],
-          }}
-          disableFocusListener
-          disableTouchListener
-          followCursor
-          leaveDelay={0}
-        >
-          <Box display="flex" alignItems="center">
-            <NoteIcon fontSize="small" sx={{ mr: 0.5 }} />
-            <Typography variant="body2">0</Typography>
-          </Box>
-        </Tooltip>
+        <Box display="flex" alignItems="left">
+          <NoteIcon fontSize="small" sx={{ mb: 0.5 }} />
+          <Typography variant="body2">0</Typography>
+        </Box>
       );
     }
-    
+    const lastUpdatedDate = notes.lastUpdated.split(",")[0];
     return (
-      <Tooltip 
-        title={`Last updated by ${notes.lastAuthor} at ${notes.lastUpdated}`}
-        PopperProps={{
-          disablePortal: true,
-          modifiers: [
-            {
-              name: 'preventOverflow',
-              enabled: true,
-              options: {
-                altAxis: true,
-                altBoundary: true,
-                tether: true,
-                rootBoundary: 'document',
-                padding: 8,
-              },
-            },
-          ],
-        }}
-        disableFocusListener
-        disableTouchListener
-        followCursor
-        leaveDelay={0}
-      >
-        <Box display="flex" alignItems="center">
+      <Box display="flex" alignItems="left" flexDirection="column">
+        <Box display="flex" alignItems="left">
           <NoteIcon fontSize="small" sx={{ mr: 0.5 }} />
-          <Typography variant="body2">
-            {notes.count}
-          </Typography>
+          <Typography variant="body2">{notes.count}</Typography>
         </Box>
-      </Tooltip>
+        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+          {notes.lastAuthor} - {lastUpdatedDate}
+        </Typography>
+      </Box>
     );
   };
+  
 
   return (
     <Paper sx={{ padding: '20px', marginTop: '20px' }}>
@@ -448,8 +405,7 @@ const ApplicantTable = ({ programId }) => {
                       onChange={(e) => handleStatusSelect(e, applicant.id, applicant.status)}
                       onClick={(e) => e.stopPropagation()}
                       sx={{ 
-                        minWidth: '80px', 
-                        maxWidth: '80px',
+                        minWidth: '100px', 
                         '& .MuiSelect-select': {
                           padding: '4px 6px',
                           fontSize: '0.8125rem'
