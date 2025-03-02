@@ -136,12 +136,13 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
   const calculateDeadlineInfo = (deadline) => {
     const today = new Date();
     const deadlineDate = new Date(deadline);
-    const diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+    let diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
     
     let severity, message;
     if (diffDays <= 0) {
       severity = type === 'application' ? 'error' : 'warning';
-      message = 'Deadline passed';
+      diffDays = Math.ceil(Math.abs((deadlineDate - today) / (1000 * 60 * 60 * 24)));
+      message = `${diffDays} days since`;
     } else if (diffDays <= 7) {
       severity = type === 'application' ? 'error' : 'warning';
       message = `${diffDays} days left`;
