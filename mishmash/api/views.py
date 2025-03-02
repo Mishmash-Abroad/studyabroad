@@ -284,6 +284,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
 
+        if not title:
+            raise ValidationError({"detail": "Title must be non-empty."})
+
         if len(title) > 80:
             raise ValidationError({"detail": "Title cannot exceed 80 characters."})
 
