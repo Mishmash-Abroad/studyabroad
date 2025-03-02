@@ -528,9 +528,10 @@ class ProgramViewSet(viewsets.ModelViewSet):
         all_apps = Application.objects.filter(program=program)
         
         for app in all_apps:
-            app.status = "Completed" if (app.program.end_date <= datetime.today().date()) else app.status
-            app.save()
-
+            if (app.program.end_date < datetime.today().date() and app.status == "Enrolled"):
+                app.status = "Completed"
+                app.save()
+            
         applicant_counts = all_apps.aggregate(
             applied=Count("id", filter=Q(status="Applied")),
             eligible=Count("id", filter=Q(status="Eligible")),
