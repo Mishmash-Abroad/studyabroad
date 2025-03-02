@@ -227,6 +227,20 @@ class ProgramViewSet(viewsets.ModelViewSet):
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
 
+        # Check for programs with no faculty leads and add admin user as default
+        for program in queryset:
+            # Check if program has any faculty leads
+            if not program.faculty_leads.exists():
+                # Find admin user
+                try:
+                    admin_user = User.objects.get(username="admin")
+                    # Add admin user as faculty lead
+                    program.faculty_leads.add(admin_user)
+                    program.save()
+                except User.DoesNotExist:
+                    # Handle case where admin user doesn't exist
+                    pass
+
         return queryset.distinct()
 
     def create(self, request, *args, **kwargs):
