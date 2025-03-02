@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Paper, Typography, Alert, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import { Box, TextField, Button, Paper, Typography, Alert, Select, MenuItem, InputLabel, FormControl,
+  Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
 import { SEMESTERS } from '../utils/constants';
@@ -24,6 +25,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const [errorMessage, setErrorMessage] = useState(null);
   const [systemAdminWarning, setSystemAdminWarning] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     if (editingProgram) {
@@ -77,6 +79,19 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   };
 
   const handleSubmit = async () => {
+    // Check if faculty leads is empty before submitting
+    if (programData.faculty_lead_ids.length === 0) {
+      // Show warning dialog about System Admin being added automatically
+      setSystemAdminWarning(true);
+      setDialogOpen(true);
+      return;
+    }
+    
+    // If we have faculty leads, proceed with submission
+    await submitProgram();
+  };
+
+  const submitProgram = async () => {
     try {
       if (editingProgram) {
         await axiosInstance.put(`/api/programs/${editingProgram.id}/`, programData);
@@ -90,6 +105,16 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       console.error('Error saving program:', error);
       setErrorMessage(error.response?.data?.detail || 'Failed to save program. Please check your input.');
     }
+  };
+
+  const handleConfirmSubmit = () => {
+    setDialogOpen(false);
+    submitProgram();
+  };
+
+  const handleCancelSubmit = () => {
+    setDialogOpen(false);
+    // Leave systemAdminWarning true so user still sees the alert
   };
 
   const handleDeleteProgram = async () => {
@@ -123,7 +148,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
       {systemAdminWarning && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          System Admin will be added as the faculty lead since you removed all faculty leads.
+          No faculty leads selected. System Administrator will be automatically assigned as the faculty lead. This ensures all programs have at least one administrator.
         </Alert>
       )}
 
@@ -232,6 +257,25 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       </Box>
 
       {editingProgram && <ApplicantTable programId={editingProgram.id} />}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={dialogOpen} onClose={handleCancelSubmit}>
+        <DialogTitle>No Faculty Leads Selected</DialogTitle>
+        <DialogContent>
+          <Typography>
+            You haven't selected any faculty leads for this program. The System Administrator will be automatically assigned as a faculty lead.
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+            This ensures that all programs have at least one administrator who can manage the program. You can add additional faculty leads later.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelSubmit} color="inherit">Cancel</Button>
+          <Button onClick={handleConfirmSubmit} color="primary" variant="contained">
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

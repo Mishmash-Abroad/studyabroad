@@ -63,17 +63,35 @@ export const ApplicantCountsHeaderCell = ({
     setSelectedStatuses([]);
   };
 
-  // Handle sorting by selected statuses
-  const handleSortBySelected = () => {
-    onRequestSort("selected_statuses");
-    handleStatusMenuClose();
+  // Handle sorting by selected statuses or by total if no statuses selected
+  const handleSortByStatuses = () => {
+    if (selectedStatuses.length > 0) {
+      onRequestSort("selected_statuses");
+    } else {
+      onRequestSort("total_active");
+    }
+    handleStatusMenuClose(); // Close the menu after clicking the sort button
   };
+
+  // Determine if we're currently sorting by any status-related field
+  const isSortingByStatus = orderBy === "selected_statuses" || 
+                          orderBy === "total_active" || 
+                          Object.values(STATUS).some(status => 
+                            orderBy === status.toLowerCase());
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Typography variant="subtitle2" fontWeight="bold">
-        Applicant Counts
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <TableSortLabel
+          active={isSortingByStatus}
+          direction={order}
+          onClick={handleSortByStatuses}
+        >
+          <Typography variant="subtitle2" fontWeight="bold">
+            Applicant Counts
+          </Typography>
+        </TableSortLabel>
+      </Box>
       <Box>
         <Badge
           badgeContent={selectedStatuses.length}
@@ -119,7 +137,7 @@ export const ApplicantCountsHeaderCell = ({
           }}
         >
           <Box sx={{ px: 2, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle2">Sort by Status Counts</Typography>
+            <Typography variant="subtitle2">Filter by Status Counts</Typography>
             <IconButton 
               size="small"
               onClick={handleClearStatusSelection}
@@ -222,13 +240,17 @@ export const ApplicantCountsHeaderCell = ({
           
           <Box sx={{ px: 2, py: 1, mt: 1 }}>
             <Button 
-              variant="contained" 
+              variant={orderBy === "selected_statuses" ? "contained" : "outlined"}
+              color={orderBy === "selected_statuses" ? "primary" : "inherit"}
               size="small" 
               fullWidth
-              onClick={handleSortBySelected}
+              onClick={handleSortByStatuses}
               disabled={selectedStatuses.length === 0}
             >
-              Sort by {selectedStatuses.length} selected {selectedStatuses.length === 1 ? 'status' : 'statuses'}
+              {orderBy === "selected_statuses" 
+                ? `Sorting by ${selectedStatuses.length} selected ${selectedStatuses.length === 1 ? 'status' : 'statuses'}`
+                : `Sort by ${selectedStatuses.length} selected ${selectedStatuses.length === 1 ? 'status' : 'statuses'}`
+              }
             </Button>
           </Box>
         </Menu>
@@ -334,29 +356,12 @@ export const ApplicantCountsDataCell = ({
                 cursor: "pointer",
                 opacity: count > 0 ? 1 : 0.6,
                 width: 'auto',
-                position: 'relative',
                 '&:hover': {
                   bgcolor: isSelected ? 'rgba(25, 118, 210, 0.15)' : 'rgba(0, 0, 0, 0.04)',
                 },
               }}
               onClick={() => {
                 onRequestSort(statusLower);
-              }}
-            >
-              <TableSortLabel
-                active={orderBy === statusLower}
-                direction={order}
-                sx={{ 
-                  '& .MuiTableSortLabel-icon': {
-                    fontSize: '0.7rem'
-                  },
-                  padding: 0,
-                  margin: 0,
-                  marginRight: 0,
-                  '& .MuiTableSortLabel-root': {
-                    padding: 0,
-                    margin: 0
-                  }
               }}
             >
               <Typography 
@@ -370,12 +375,11 @@ export const ApplicantCountsDataCell = ({
               >
                 {abbreviation.charAt(0).toUpperCase() + abbreviation.slice(1).toLowerCase()}
               </Typography>
-              </TableSortLabel>
               <Typography
                 variant="caption"
                 sx={{ 
                   fontSize: "0.7rem", 
-                  ml: 0,
+                  ml: '8px',
                   bgcolor: count > 0 ? 'primary.main' : 'transparent',
                   color: count > 0 ? 'white' : 'text.secondary',
                   px: 0.3,
@@ -385,8 +389,10 @@ export const ApplicantCountsDataCell = ({
                   justifyContent: 'center',
                   alignItems: 'center',
                   minWidth: '16px',
+                  width: count > 9 ? '20px' : '16px', // Slightly wider for double digits
+                  height: '16px',
                   textAlign: 'center',
-                  lineHeight: 1.2,
+                  lineHeight: 1,
                   fontWeight: count > 0 ? "bold" : "normal"
                 }}
               >
@@ -416,28 +422,11 @@ export const ApplicantCountsDataCell = ({
             border: "1px solid rgba(0, 0, 0, 0.12)",
             cursor: "pointer",
             width: 'auto',
-            position: 'relative',
             '&:hover': {
               bgcolor: orderBy === "total_active" ? 'rgba(25, 118, 210, 0.15)' : 'rgba(0, 0, 0, 0.04)',
             }
           }}
           onClick={() => onRequestSort("total_active")}
-        >
-          <TableSortLabel
-            active={orderBy === "total_active"}
-            direction={order}
-            sx={{ 
-              '& .MuiTableSortLabel-icon': {
-                fontSize: '0.7rem'
-              },
-              padding: 0,
-              margin: 0,
-              marginRight: 0,
-              '& .MuiTableSortLabel-root': {
-                padding: 0,
-                margin: 0
-              }
-            }}
         >
           <Typography 
             variant="caption" 
@@ -450,12 +439,11 @@ export const ApplicantCountsDataCell = ({
           >
             Totl
           </Typography>
-          </TableSortLabel>
           <Typography
             variant="caption"
             sx={{ 
               fontSize: "0.7rem", 
-              ml: 0,
+              ml: '8px',
               bgcolor: 'secondary.main',
               color: 'white',
               px: 0.3,
@@ -465,8 +453,10 @@ export const ApplicantCountsDataCell = ({
               justifyContent: 'center',
               alignItems: 'center',
               minWidth: '16px',
+              width: (programCounts.total_active || 0) > 9 ? '20px' : '16px', // Slightly wider for double digits
+              height: '16px',
               textAlign: 'center',
-              lineHeight: 1.2,
+              lineHeight: 1,
               fontWeight: "bold"
             }}
           >
