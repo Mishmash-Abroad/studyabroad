@@ -24,6 +24,7 @@ import {
   EDITABLE_APPLICATION_STATUSES,
   STATUS,
   PROGRAM_STATUS,
+  WITHDRAWABLE_APPLICATION_STATUSES,
 } from "../utils/constants";
 
 // -------------------- STYLED COMPONENTS --------------------
@@ -397,7 +398,6 @@ const ApplicationPage = () => {
   const handleWithdraw = async () => {
     if (
       !application.id ||
-      isReadOnly ||
       !window.confirm("Withdraw application?")
     ) {
       return;
@@ -836,8 +836,8 @@ const ApplicationPage = () => {
             {/* Form Actions */}
             <ButtonContainer>
               <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                {application.status === "Applied" &&
-                  !isApplicationReadOnly() && (
+                {(WITHDRAWABLE_APPLICATION_STATUSES.includes(application.status) 
+                && (new Date() <= new Date(program.application_deadline))) && (
                     <Button
                       variant="outlined"
                       color="error"
