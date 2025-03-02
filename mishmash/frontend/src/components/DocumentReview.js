@@ -47,11 +47,14 @@ const DocumentReview = ({ application_id }) => {
   const handleDownload = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Fetch the file as a blob
-        const response = await axiosInstance.get(doc.pdf_url, {
-          responseType: "blob",
-        });
-        const blob = new Blob([response.data], { type: "application/pdf" });
+        // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
+        const response = await fetch(doc.pdf_url);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to download document: ${response.status} ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
         // Create a temporary link and trigger download
         const link = document.createElement("a");
@@ -63,7 +66,7 @@ const DocumentReview = ({ application_id }) => {
         window.URL.revokeObjectURL(blobUrl);
       } catch (err) {
         console.error("Error downloading document:", err);
-        setError("Failed to download document.");
+        setError(`Failed to download document: ${err.message}`);
       }
     } else {
       setError("Document URL not available.");
@@ -73,17 +76,20 @@ const DocumentReview = ({ application_id }) => {
   const handleView = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Fetch the file as a blob (optional: if you trust the URL, you can directly use it)
-        const response = await axiosInstance.get(doc.pdf_url, {
-          responseType: "blob",
-        });
-        const blob = new Blob([response.data], { type: "application/pdf" });
+        // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
+        const response = await fetch(doc.pdf_url);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to view document: ${response.status} ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
         setSelectedDoc({ ...doc, url: blobUrl });
         setPdfViewerOpen(true);
       } catch (err) {
         console.error("Error viewing document:", err);
-        setError("Failed to view document.");
+        setError(`Failed to view document: ${err.message}`);
       }
     } else {
       setError("Document URL not available.");
