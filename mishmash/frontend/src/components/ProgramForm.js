@@ -120,8 +120,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const handleDeleteProgram = async () => {
     if (!editingProgram) return;
     const countResponse = await axiosInstance.get(`/api/programs/${editingProgram.id}/applicant_counts/`);
-
-    if (!window.confirm(`Are you sure you want to delete this program? This action cannot be undone, and will affect ${countResponse.data.applied} applicants and ${countResponse.data.enrolled} enrolled students.`))
+    if (!window.confirm(`Are you sure you want to delete this program? This action cannot be undone, and will affect ${countResponse.data.total_participants} total participants and ${countResponse.data.enrolled} enrolled students.`))
       return;
 
     try {
