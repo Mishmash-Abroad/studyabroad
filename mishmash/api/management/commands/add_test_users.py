@@ -62,11 +62,6 @@ class Command(BaseCommand):
             ("Jessica Smith", "jessicasmith684", "jessicasmith684@example.com", "JOVMVjjA"),
             ("James Taylor", "jamestaylor844", "jamestaylor844@service.net", "DdukcK85"),
             ("Jessica Smith", "jessicasmith610", "jessicasmith610@mail.com", "b3zCmWYA"),
-            ("Jessica Anderson", "jessicaanderson409", "jessicaanderson409@domain.org", "XKqzZq6l"),
-            ("Ashley Brown", "ashleybrown862", "ashleybrown862@mail.com", "bq1qw1Kj"),
-            ("Emily Bletsch", "emilybletsch943", "emilybletsch943@service.net", "cWdcUokz"),
-            ("Emily Walker", "emilywalker026", "emilywalker026@domain.org", "B366kKuA"),
-            ("Sarah Smith", "sarahsmith682", "sarahsmith682@domain.org", "ye6GGoNf"),
         ]
 
 
@@ -86,57 +81,55 @@ class Command(BaseCommand):
 
         # Faculty Users
         faculty_users = [
-            ('elena.papadopoulos', 'Elena Papadopoulos', 'elena.p@example.com'),
-            ('marcus.wisdom', 'Marcus Wisdom', 'marcus.w@example.com'),
-            ('rachel.ocean', 'Rachel Ocean', 'rachel.o@example.com'),
-            ('james.coral', 'James Coral', 'james.c@example.com'),
-            ('isabella.romano', 'Isabella Romano', 'isabella.r@example.com'),
-            ('robert.art', 'Robert Art', 'robert.a@example.com'),
-            ('samuel.health', 'Samuel Health', 'samuel.h@example.com'),
-            ('nomvula.mbeki', 'Nomvula Mbeki', 'nomvula.m@example.com'),
-            ('marie.laurent', 'Marie Laurent', 'marie.l@example.com'),
-            ('sarah.chen', 'Sarah Chen', 'sarah.c@example.com'),
-            ('hiroshi.tanaka', 'Hiroshi Tanaka', 'hiroshi.t@example.com'),
-            ('erik.anderson', 'Erik Anderson', 'erik.a@example.com'),
-            ('maria.nilsson', 'Maria Nilsson', 'maria.n@example.com'),
-            ('michael.chang', 'Michael Chang', 'michael.c@example.com'),
-            ('lisa.tan', 'Lisa Tan', 'lisa.t@example.com'),
-            ('carlos.verde', 'Carlos Verde', 'carlos.v@example.com'),
-            ('emma.nature', 'Emma Nature', 'emma.n@example.com'),
-            ('giulia.fashion', 'Giulia Fashion', 'giulia.f@example.com'),
-            ('alice.lee', 'Alice Lee', 'alice.l@example.com'),
-            ('alice.garcia', 'Alice Garcia', 'alice.g@example.com'),
-            ('alice.johnson', 'Alice Johnson', 'alice.j@example.com'),
-            ('daniel.garcia', 'Daniel Garcia', 'daniel.g@example.com'),
-            ('daniel.lee', 'Daniel Lee', 'daniel.l@example.com'),
-            ('emily.garcia', 'Emily Garcia', 'emily.g@example.com'),
-            ('alice.brown', 'Alice Brown', 'alice.b@example.com'),
-            ('catherine.taylor', 'Catherine Taylor', 'catherine.t@example.com'),
-            ('alice.smith', 'Alice Smith', 'alice.s@example.com'),
-            ('emily.smith', 'Emily Smith', 'emily.s@example.com'),
-            ('frank.taylor', 'Frank Taylor', 'frank.t@example.com'),
-            ('david.space', 'David Space', 'david.s@example.com'),
-            ('john.astronomy', 'John Astronomy', 'john.a@example.com'),
-            ('sophie.polar', 'Sophie Polar', 'sophie.p@example.com'),
-            ('marco.urban', 'Marco Urban', 'marco.u@example.com'),
-            ('claire.design', 'Claire Design', 'claire.d@example.com'),
-            ('paul.game', 'Paul Game', 'paul.g@example.com'),
-            ('anna.digital', 'Anna Digital', 'anna.d@example.com'),
-            ('james.journalism', 'James Journalism', 'james.j@example.com'),
-            ('maria.media', 'Maria Media', 'maria.m@example.com'),
-            ('thomas.farm', 'Thomas Farm', 'thomas.f@example.com'),
-            ('linda.sustainable', 'Linda Sustainable', 'linda.s@example.com')
+            ('elena.papadopoulos', 'Elena Papadopoulos', 'elena.p@example.com', 'faculty123'),
+            ('marcus.wisdom', 'Marcus Wisdom', 'marcus.w@example.com', 'faculty123'),
+            ('rachel.ocean', 'Rachel Ocean', 'rachel.o@example.com', 'faculty123'),
+            ('james.coral', 'James Coral', 'james.c@example.com', 'faculty123'),
+            ('isabella.romano', 'Isabella Romano', 'isabella.r@example.com', 'faculty123'),
+            ('robert.art', 'Robert Art', 'robert.a@example.com', 'faculty123'),
+            ('samuel.health', 'Samuel Health', 'samuel.h@example.com', 'faculty123'),
+            ('nomvula.mbeki', 'Nomvula Mbeki', 'nomvula.m@example.com', 'faculty123'),
+            ('marie.laurent', 'Marie Laurent', 'marie.l@example.com', 'faculty123'),
+            ('sarah.chen', 'Sarah Chen', 'sarah.c@example.com', 'faculty123'),
+            ('hiroshi.tanaka', 'Hiroshi Tanaka', 'hiroshi.t@example.com', 'faculty123'),
+            ('erik.anderson', 'Erik Anderson', 'erik.a@example.com', 'faculty123'),
+            ('maria.nilsson', 'Maria Nilsson', 'maria.n@example.com', 'faculty123'),
+            ('michael.chang', 'Michael Chang', 'michael.c@example.com', 'faculty123'),
+            ('lisa.tan', 'Lisa Tan', 'lisa.t@example.com', 'faculty123'),
+            ('carlos.verde', 'Carlos Verde', 'carlos.v@example.com', 'faculty123'),
+            ('emma.nature', 'Emma Nature', 'emma.n@example.com', 'faculty123'),
+            ('giulia.fashion', 'Giulia Fashion', 'giulia.f@example.com', 'faculty123'),
+            ('alice.lee', 'Alice Lee', 'alice.l@example.com', 'faculty123'),
+            ('alice.garcia', 'Alice Garcia', 'alice.g@example.com', 'faculty123'),
+            ('alice.johnson', 'Alice Johnson', 'alice.j@example.com', 'faculty123'),
+            ('daniel.garcia', 'Daniel Garcia', 'daniel.g@example.com', 'faculty123'),
+            ('daniel.lee', 'Daniel Lee', 'daniel.l@example.com', 'faculty123'),
+            ('emily.garcia', 'Emily Garcia', 'emily.g@example.com', 'faculty123'),
+            ('alice.brown', 'Alice Brown', 'alice.b@example.com', 'faculty123'),
+            ('catherine.taylor', 'Catherine Taylor', 'catherine.t@example.com', 'faculty123'),
+            ('alice.smith', 'Alice Smith', 'alice.s@example.com', 'faculty123'),
+            ('emily.smith', 'Emily Smith', 'emily.s@example.com', 'faculty123'),
+            ('frank.taylor', 'Frank Taylor', 'frank.t@example.com', 'faculty123'),
+            ('david.space', 'David Space', 'david.s@example.com', 'faculty123'),
+            ('john.astronomy', 'John Astronomy', 'john.a@example.com', 'faculty123'),
+            ('sophie.polar', 'Sophie Polar', 'sophie.p@example.com', 'faculty123'),
+            ('marco.urban', 'Marco Urban', 'marco.u@example.com', 'faculty123'),
+            ('claire.design', 'Claire Design', 'claire.d@example.com', 'faculty123'),
+            ('paul.game', 'Paul Game', 'paul.g@example.com', 'faculty123'),
+            ('anna.digital', 'Anna Digital', 'anna.d@example.com', 'faculty123'),
+            ('james.journalism', 'James Journalism', 'james.j@example.com', 'faculty123'),
+            ('maria.media', 'Maria Media', 'maria.m@example.com', 'faculty123'),
+            ('thomas.farm', 'Thomas Farm', 'thomas.f@example.com', 'faculty123'),
+            ('linda.sustainable', 'Linda Sustainable', 'linda.s@example.com', 'faculty123'),
         ]
 
-        for username, display_name, email in faculty_users:
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password='faculty123',
-                display_name=display_name,
-                is_admin=True
-            )
-            self.stdout.write(f'Created faculty user: {display_name}')
+        prod_faculty_users = [
+            ('jessicaanderson409', 'Jessica Anderson', 'jessicaanderson409@domain.org', 'XKqzZq6l'),
+            ('ashleybrown862', 'Ashley Brown', 'ashleybrown862@mail.com', 'bq1qw1Kj'),
+            ('emilybletsch943', 'Emily Bletsch', 'emilybletsch943@service.net', 'cWdcUokz'),
+            ('emilywalker026', 'Emily Walker', 'emilywalker026@domain.org', 'B366kKuA'),
+            ('sarahsmith682', 'Sarah Smith', 'sarahsmith682@domain.org', 'ye6GGoNf'),
+        ]
 
         if prod_mode:
             for display_name, username, email, password in prod_students_data:
@@ -152,6 +145,15 @@ class Command(BaseCommand):
                 )
             
                 self.stdout.write(f'Created student: {username}')
+            for username, display_name, email, password in prod_faculty_users:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    display_name=display_name,
+                    is_admin=True
+                )
+                self.stdout.write(f'Created faculty user: {display_name}')
         else:
             for display_name, username, email, password in students_data:
                 user = User.objects.create(
@@ -166,3 +168,12 @@ class Command(BaseCommand):
                 )
                 
                 self.stdout.write(f'Created student: {username}')
+            for username, display_name, email, password in faculty_users:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    display_name=display_name,
+                    is_admin=True
+                )
+                self.stdout.write(f'Created faculty user: {display_name}')
