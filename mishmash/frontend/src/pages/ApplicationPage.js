@@ -24,6 +24,7 @@ import {
   EDITABLE_APPLICATION_STATUSES,
   STATUS,
   PROGRAM_STATUS,
+  WITHDRAWABLE_APPLICATION_STATUSES,
 } from "../utils/constants";
 
 // -------------------- STYLED COMPONENTS --------------------
@@ -85,9 +86,9 @@ const StyledComponents = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    backgroundColor: "rgba(0, 0, 0, 0.02)",
     borderRadius: theme.shape.borderRadii.medium,
-    pointerEvents: 'none',
+    pointerEvents: "none",
   })),
 
   DeadlineContainer: styled(Box)(({ theme }) => ({
@@ -110,7 +111,7 @@ const REQUIRED_DOCUMENTS = [
 const ApplicationPage = () => {
   const { program_id } = useParams();
   const { user } = useAuth();
-
+  const [tempGPA, setTempGPA] = useState(0);
   // Consolidated state object managing:
   // - program: Study abroad program details
   // - application: Student's application data and status
@@ -184,17 +185,18 @@ const ApplicationPage = () => {
         // - Status is not in EDITABLE_APPLICATION_STATUSES (and not a new application)
         const isReadOnly =
           new Date() > new Date(programData.application_deadline) ||
-          (existingApp && !EDITABLE_APPLICATION_STATUSES.includes(existingApp.status) &&
-           existingApp.status !== STATUS.WITHDRAWN);
+          (existingApp &&
+            !EDITABLE_APPLICATION_STATUSES.includes(existingApp.status) &&
+            existingApp.status !== STATUS.WITHDRAWN);
 
         // Document submission becomes read-only if:
         // - Status is not in DOCUMENT_SUBMISSION_STATUSES
         // Note: Document deadlines are soft deadlines - documents can be submitted after the deadline
         // as long as the application status allows document submission
         const isDocumentsReadOnly =
-          (existingApp && !DOCUMENT_SUBMISSION_STATUSES.includes(existingApp.status));
+          existingApp &&
+          !DOCUMENT_SUBMISSION_STATUSES.includes(existingApp.status);
 
-        console.log(existingApp);
         // Load program questions and student's responses
         const questionsRes = await axiosInstance.get(
           `/api/programs/${program_id}/questions/`
@@ -204,6 +206,7 @@ const ApplicationPage = () => {
         // Map questions to responses, handling both existing and new applications
         let responses = [];
         if (existingApp) {
+          setTempGPA(existingApp.gpa);
           // For existing applications, fetch and match responses to questions
           const responsesRes = await axiosInstance.get(
             `/api/responses/?application=${existingApp.id}`
@@ -271,7 +274,6 @@ const ApplicationPage = () => {
   // -------------------- EVENT HANDLERS --------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(application.gpa);
     if (
       isApplicationReadOnly() ||
       !application.date_of_birth ||
@@ -282,10 +284,16 @@ const ApplicationPage = () => {
     }
 
     // Check if all responses have been filled out
-    const emptyResponses = responses.filter(response => !response.response_text.trim());
+    const emptyResponses = responses.filter(
+      (response) => !response.response_text.trim()
+    );
     if (emptyResponses.length > 0) {
       updateState({
-        error: `Please answer all program questions. ${emptyResponses.length} question${emptyResponses.length > 1 ? 's' : ''} ${emptyResponses.length > 1 ? 'are' : 'is'} unanswered.`
+        error: `Please answer all program questions. ${
+          emptyResponses.length
+        } question${emptyResponses.length > 1 ? "s" : ""} ${
+          emptyResponses.length > 1 ? "are" : "is"
+        } unanswered.`,
       });
       return;
     }
@@ -293,14 +301,15 @@ const ApplicationPage = () => {
     // Check for emojis in text fields
     const containsEmoji = (text) => {
       // This regex matches most common emoji characters
-      const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+      const emojiRegex =
+        /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
       return text && emojiRegex.test(text);
     };
 
     // Check all text fields for emojis
     const fieldsWithEmojis = [];
     if (containsEmoji(application.major)) fieldsWithEmojis.push("Major");
-    
+
     // Check response text fields
     responses.forEach((response, index) => {
       if (containsEmoji(response.response_text)) {
@@ -310,7 +319,9 @@ const ApplicationPage = () => {
 
     if (fieldsWithEmojis.length > 0) {
       updateState({
-        error: `Please remove emojis from the following fields: ${fieldsWithEmojis.join(", ")}. Our system cannot process emoji characters.`,
+        error: `Please remove emojis from the following fields: ${fieldsWithEmojis.join(
+          ", "
+        )}. Our system cannot process emoji characters.`,
       });
       return;
     }
@@ -326,9 +337,14 @@ const ApplicationPage = () => {
         // For withdrawn applications set status back to Applied when resubmitting
         // For existing applications set/maintain status as Applied
         // For new applications, set program ID
-        ...(application.id 
-            ? { status: application.status === STATUS.WITHDRAWN ? STATUS.APPLIED : STATUS.APPLIED } 
-            : { program: program_id }),
+        ...(application.id
+          ? {
+              status:
+                application.status === STATUS.WITHDRAWN
+                  ? STATUS.APPLIED
+                  : STATUS.APPLIED,
+            }
+          : { program: program_id }),
       };
 
       const appResponse = application.id
@@ -361,12 +377,13 @@ const ApplicationPage = () => {
       window.location.reload();
     } catch (err) {
       console.error("Application submission error:", err);
-      
+
       // Check if the error might be related to emojis
       const errorMessage = err.response?.data?.detail || err.message;
       if (err.response?.status === 500) {
         updateState({
-          error: "Server error occurred. Please ensure no special characters or emojis are used in any field and try again.",
+          error:
+            "Server error occurred. Please ensure no special characters or emojis are used in any field and try again.",
           loading: false,
         });
       } else {
@@ -381,7 +398,6 @@ const ApplicationPage = () => {
   const handleWithdraw = async () => {
     if (
       !application.id ||
-      isReadOnly ||
       !window.confirm("Withdraw application?")
     ) {
       return;
@@ -407,14 +423,14 @@ const ApplicationPage = () => {
   // Helper function to determine submit button text based on application status
   const getSubmitButtonText = () => {
     if (loading) return "Processing...";
-    let actionText = application.id 
-      ? APPLICATION_ACTION_BUTTON_TEXT[application.status] || "Edit Application" 
+    let actionText = application.id
+      ? APPLICATION_ACTION_BUTTON_TEXT[application.status] || "Edit Application"
       : "Submit Application";
-    
+
     if (application.status === STATUS.WITHDRAWN) {
       actionText = "Resubmit Application";
     }
-    
+
     return actionText;
   };
 
@@ -424,7 +440,7 @@ const ApplicationPage = () => {
     if (application.status === STATUS.WITHDRAWN) {
       return false;
     }
-    
+
     // Otherwise, use the normal isReadOnly state
     return isReadOnly;
   };
@@ -495,32 +511,44 @@ const ApplicationPage = () => {
         {/* Program Details Tab */}
         {activeTab === 0 && (
           <ProgramCard>
-            {program.application_deadline && program.essential_document_deadline && (
-              <DeadlineContainer>
-                <DeadlineIndicator 
-                  deadline={program.application_deadline} 
-                  type="application" 
-                  size="medium"
-                />
-                <DeadlineIndicator 
-                  deadline={program.essential_document_deadline} 
-                  type="document" 
-                  size="medium"
-                />
-              </DeadlineContainer>
-            )}
-            <Typography variant="h6" component="h2" gutterBottom color="primary">
+            {program.application_deadline &&
+              program.essential_document_deadline && (
+                <DeadlineContainer>
+                  <DeadlineIndicator
+                    deadline={program.application_deadline}
+                    type="application"
+                    size="medium"
+                  />
+                  <DeadlineIndicator
+                    deadline={program.essential_document_deadline}
+                    type="document"
+                    size="medium"
+                  />
+                </DeadlineContainer>
+              )}
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              color="primary"
+            >
               Program Information
             </Typography>
-            
+
             <InfoGrid>
               <Box>
                 <Typography variant="subtitle2">Title</Typography>
-                <Typography variant="body1">{program.title || "Not specified"}</Typography>
+                <Typography variant="body1">
+                  {program.title || "Not specified"}
+                </Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2">Term</Typography>
-                <Typography variant="body1">{program.year_semester || `${program.semester} ${program.year}` || "Not specified"}</Typography>
+                <Typography variant="body1">
+                  {program.year_semester ||
+                    `${program.semester} ${program.year}` ||
+                    "Not specified"}
+                </Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2">Faculty Leads</Typography>
@@ -546,56 +574,87 @@ const ApplicationPage = () => {
                 </Typography>
               </Box>
             </InfoGrid>
-            
-            <Typography variant="h6" component="h2" gutterBottom color="primary" sx={{ mt: 4 }}>
+
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              color="primary"
+              sx={{ mt: 4 }}
+            >
               Key Deadlines
             </Typography>
-            
+
             <InfoGrid>
               <Box>
-                <Typography variant="subtitle2">Application Open Date</Typography>
+                <Typography variant="subtitle2">
+                  Application Open Date
+                </Typography>
                 <Typography variant="body1">
-                  {program.application_open_date 
-                    ? new Date(program.application_open_date).toLocaleDateString()
+                  {program.application_open_date
+                    ? new Date(
+                        program.application_open_date
+                      ).toLocaleDateString()
                     : "Not specified"}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="subtitle2">Application Deadline</Typography>
+                <Typography variant="subtitle2">
+                  Application Deadline
+                </Typography>
                 <Typography variant="body1">
-                  {program.application_deadline 
-                    ? new Date(program.application_deadline).toLocaleDateString()
+                  {program.application_deadline
+                    ? new Date(
+                        program.application_deadline
+                      ).toLocaleDateString()
                     : "Not specified"}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="subtitle2">Document Submission Deadline</Typography>
+                <Typography variant="subtitle2">
+                  Document Submission Deadline
+                </Typography>
                 <Typography variant="body1">
-                  {program.essential_document_deadline 
-                    ? new Date(program.essential_document_deadline).toLocaleDateString()
+                  {program.essential_document_deadline
+                    ? new Date(
+                        program.essential_document_deadline
+                      ).toLocaleDateString()
                     : "Not specified"}
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2">Program Status</Typography>
-                <Typography variant="body1" sx={{ 
-                  color: theme => {
-                    const now = new Date();
-                    if (!program.application_open_date || !program.application_deadline) {
-                      return theme.palette.grey[600]; // No dates set
-                    } else if (now < new Date(program.application_open_date)) {
-                      return theme.palette.info.main; // Will open soon
-                    } else if (now <= new Date(program.application_deadline)) {
-                      return theme.palette.success.main; // Open for applications
-                    } else {
-                      return theme.palette.error.main; // Closed
-                    }
-                  },
-                  fontWeight: 'medium'
-                }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: (theme) => {
+                      const now = new Date();
+                      if (
+                        !program.application_open_date ||
+                        !program.application_deadline
+                      ) {
+                        return theme.palette.grey[600]; // No dates set
+                      } else if (
+                        now < new Date(program.application_open_date)
+                      ) {
+                        return theme.palette.info.main; // Will open soon
+                      } else if (
+                        now <= new Date(program.application_deadline)
+                      ) {
+                        return theme.palette.success.main; // Open for applications
+                      } else {
+                        return theme.palette.error.main; // Closed
+                      }
+                    },
+                    fontWeight: "medium",
+                  }}
+                >
                   {(() => {
                     const now = new Date();
-                    if (!program.application_open_date || !program.application_deadline) {
+                    if (
+                      !program.application_open_date ||
+                      !program.application_deadline
+                    ) {
                       return "Status unknown";
                     } else if (now < new Date(program.application_open_date)) {
                       return PROGRAM_STATUS.OPENING_SOON;
@@ -609,26 +668,36 @@ const ApplicationPage = () => {
               </Box>
               <Box>
                 <Typography variant="subtitle2">Application Status</Typography>
-                <Typography variant="body1" sx={{ 
-                  color: getStatusColor,
-                  fontWeight: 'medium'
-                }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: getStatusColor,
+                    fontWeight: "medium",
+                  }}
+                >
                   {application.status || "Not Applied"}
                 </Typography>
               </Box>
             </InfoGrid>
-            
-            <Typography variant="h6" component="h2" gutterBottom color="primary" sx={{ mt: 4 }}>
+
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              color="primary"
+              sx={{ mt: 4 }}
+            >
               Program Description
             </Typography>
             <Typography variant="body1" paragraph>
-              {program.description || "No description provided for this program."}
+              {program.description ||
+                "No description provided for this program."}
             </Typography>
-            
+
             <Box sx={{ mt: 3 }}>
               {!application.id && (
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   color="primary"
                   onClick={() => updateState({ activeTab: 1 })}
                 >
@@ -636,13 +705,13 @@ const ApplicationPage = () => {
                 </Button>
               )}
               {application.id && (
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   color="primary"
                   onClick={() => updateState({ activeTab: 1 })}
                 >
-                  {application.status === STATUS.WITHDRAWN 
-                    ? "Resubmit Application" 
+                  {application.status === STATUS.WITHDRAWN
+                    ? "Resubmit Application"
                     : "View Your Application"}
                 </Button>
               )}
@@ -662,7 +731,8 @@ const ApplicationPage = () => {
             </DeadlineContainer>
             {isApplicationReadOnly() && (
               <Alert severity="info" sx={{ mb: 3 }}>
-                This application cannot be edited in the current application status.
+                This application cannot be edited in the current application
+                status.
               </Alert>
             )}
 
@@ -696,18 +766,22 @@ const ApplicationPage = () => {
                   fullWidth
                   type="number"
                   label="GPA"
+                  onWheel={(e) => e.target.blur()}
                   name="gpa"
-                  value={application.gpa}
+                  value={tempGPA}
                   onChange={(e) => {
-                    updateState({
-                      application: {
-                        ...application,
-                        gpa: parseFloat(e.target.value),
-                      },
-                    });
-                    console.log(application.gpa);
+                    const inputValue = parseFloat(e.target.value);
+                    if (!isNaN(inputValue)) {
+                      updateState({
+                        application: {
+                          ...application,
+                          gpa: parseFloat(inputValue.toFixed(3)), // Truncate to 3 decimals
+                        },
+                      });
+                    }
+                    setTempGPA(e.target.value);
                   }}
-                  inputProps={{ min: "0", max: "4", step: "0.001" }}
+                  inputProps={{ min: "0", max: "4", step: "any" }}
                   disabled={isApplicationReadOnly()}
                   required
                 />
@@ -762,17 +836,18 @@ const ApplicationPage = () => {
             {/* Form Actions */}
             <ButtonContainer>
               <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                {application.status === "Applied" && !isApplicationReadOnly() && (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={handleWithdraw}
-                    disabled={loading}
-                    size="large"
-                  >
-                    Withdraw Application
-                  </Button>
-                )}
+                {(WITHDRAWABLE_APPLICATION_STATUSES.includes(application.status) 
+                && (new Date() <= new Date(program.application_deadline))) && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleWithdraw}
+                      disabled={loading}
+                      size="large"
+                    >
+                      Withdraw Application
+                    </Button>
+                  )}
                 {!isApplicationReadOnly() && (
                   <Button
                     type="submit"

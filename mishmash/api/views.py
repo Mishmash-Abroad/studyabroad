@@ -227,6 +227,20 @@ class ProgramViewSet(viewsets.ModelViewSet):
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
 
+        # Check for programs with no faculty leads and add admin user as default
+        for program in queryset:
+            # Check if program has any faculty leads
+            if not program.faculty_leads.exists():
+                # Find admin user
+                try:
+                    admin_user = User.objects.get(username="admin")
+                    # Add admin user as faculty lead
+                    program.faculty_leads.add(admin_user)
+                    program.save()
+                except User.DoesNotExist:
+                    # Handle case where admin user doesn't exist
+                    pass
+
         return queryset.distinct()
 
     def create(self, request, *args, **kwargs):
@@ -269,6 +283,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
         essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
+
+        if not title:
+            raise ValidationError({"detail": "Title must be non-empty."})
 
         if len(title) > 80:
             raise ValidationError({"detail": "Title cannot exceed 80 characters."})
@@ -511,9 +528,10 @@ class ProgramViewSet(viewsets.ModelViewSet):
         all_apps = Application.objects.filter(program=program)
         
         for app in all_apps:
-            app.status = "Completed" if (app.program.end_date <= datetime.today().date()) else app.status
-            app.save()
-
+            if (app.program.end_date < datetime.today().date() and app.status == "Enrolled"):
+                app.status = "Completed"
+                app.save()
+            
         applicant_counts = all_apps.aggregate(
             applied=Count("id", filter=Q(status="Applied")),
             eligible=Count("id", filter=Q(status="Eligible")),
@@ -526,6 +544,10 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         applicant_counts["total_active"] = (
             applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"]
+        )
+        
+        applicant_counts["total_participants"] = (
+            applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"] + applicant_counts["completed"] + applicant_counts["withdrawn"] + applicant_counts["canceled"]
         )
 
         return Response(applicant_counts)
