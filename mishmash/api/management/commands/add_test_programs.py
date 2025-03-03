@@ -329,6 +329,7 @@ class Command(BaseCommand):
                 "description": "Science in Spain: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2024, 12, 1),
                 "application_deadline": datetime(2025, 2, 28),
+                "essential_document_deadline": datetime(2025, 2, 28),
                 "start_date": datetime(2025, 8, 18),
                 "end_date": datetime(2025, 12, 28),
             },
@@ -339,6 +340,7 @@ class Command(BaseCommand):
                 "description": "History in Canada: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2024, 12, 1),
                 "application_deadline": datetime(2025, 2, 28),
+                "essential_document_deadline": datetime(2025, 2, 28),
                 "start_date": datetime(2025, 8, 18),
                 "end_date": datetime(2025, 12, 28),
             },
@@ -348,7 +350,8 @@ class Command(BaseCommand):
                 "semester": "Fall",
                 "description": "Art in Italy: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2023, 12, 1),
-                "application_deadline": datetime(2024, 2, 28),
+                "application_deadline": datetime(2024, 2, 29),
+                "essential_document_deadline": datetime(2024, 2, 29),
                 "start_date": datetime(2024, 8, 19),
                 "end_date": datetime(2024, 12, 29),
             },
@@ -359,6 +362,7 @@ class Command(BaseCommand):
                 "description": "Medicine in India: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2027, 12, 1),
                 "application_deadline": datetime(2028, 2, 29),
+                "essential_document_deadline": datetime(2028, 2, 29),
                 "start_date": datetime(2028, 8, 14),
                 "end_date": datetime(2028, 12, 31),
             },
@@ -369,6 +373,7 @@ class Command(BaseCommand):
                 "description": "Language in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2028, 12, 1),
                 "application_deadline": datetime(2029, 2, 28),
+                "essential_document_deadline": datetime(2029, 2, 28),
                 "start_date": datetime(2029, 8, 20),
                 "end_date": datetime(2029, 12, 30),
             },
@@ -379,6 +384,7 @@ class Command(BaseCommand):
                 "description": "Technology in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2029, 12, 1),
                 "application_deadline": datetime(2030, 2, 28),
+                "essential_document_deadline": datetime(2030, 2, 28),
                 "start_date": datetime(2030, 8, 19),
                 "end_date": datetime(2030, 12, 29),
             },
@@ -389,6 +395,7 @@ class Command(BaseCommand):
                 "description": "Medicine in Canada: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2024, 9, 1),
                 "application_deadline": datetime(2024, 11, 30),
+                "essential_document_deadline": datetime(2024, 11, 30),
                 "start_date": datetime(2025, 1, 6),
                 "end_date": datetime(2025, 5, 4),
             },
@@ -399,6 +406,7 @@ class Command(BaseCommand):
                 "description": "Technology in Australia: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2026, 9, 1),
                 "application_deadline": datetime(2026, 11, 30),
+                "essential_document_deadline": datetime(2026, 11, 30),
                 "start_date": datetime(2027, 1, 4),
                 "end_date": datetime(2027, 5, 2),
             },
@@ -409,6 +417,7 @@ class Command(BaseCommand):
                 "description": "Art in Australia: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2027, 9, 1),
                 "application_deadline": datetime(2027, 11, 30),
+                "essential_document_deadline": datetime(2027, 11, 30),
                 "start_date": datetime(2028, 1, 3),
                 "end_date": datetime(2028, 5, 7),
             },
@@ -419,6 +428,7 @@ class Command(BaseCommand):
                 "description": "Art in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2028, 9, 1),
                 "application_deadline": datetime(2028, 11, 30),
+                "application_deadline": datetime(2028, 11, 30),
                 "start_date": datetime(2029, 1, 8),
                 "end_date": datetime(2029, 5, 6),
             },
@@ -428,6 +438,7 @@ class Command(BaseCommand):
                 "semester": "Summer",
                 "description": "Art in France: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2024, 9, 1),
+                "application_deadline": datetime(2024, 11, 30),
                 "application_deadline": datetime(2024, 11, 30),
                 "start_date": datetime(2025, 5, 19),
                 "end_date": datetime(2025, 8, 17),
@@ -479,12 +490,26 @@ class Command(BaseCommand):
             "Art in France": ["Frank Taylor", "Isabella Romano"],
         }
 
+        prod_faculty_assignments = {
+            "Science in Spain": ["Jessica Anderson"],
+            "History in Canada": ["Emily Bletsch"],
+            "Art in Italy": ["Emily Walker"],
+            "Medicine in India": ["Emily Bletsch"],
+            "Language in Japan": ["Jessica Anderson"],
+            "Technology in Japan": ["Sarah Smith"],
+            "Medicine in Canada": ["Ashley Brown"],
+            "Technology in Australia": ["Emily Bletsch"],
+            "Art in Australia": ["Sarah Smith"],
+            "Art in Japan": ["Emily Bletsch"],
+            "Art in France": ["Jessica Anderson"],
+        }
+
         if prod_mode:
             for program_data in prod_programs_data:
                 program = Program.objects.create(**program_data)
 
                 # Assign faculty leads
-                if program.title in faculty_assignments:
+                if program.title in prod_faculty_assignments:
                     for faculty_name in faculty_assignments[program.title]:
                         if faculty_name in faculty_users:
                             program.faculty_leads.add(faculty_users[faculty_name])
