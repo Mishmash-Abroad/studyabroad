@@ -141,7 +141,6 @@ function TopNavBar({ onLoginClick }) {
 
   // Reset anchorEl when user changes
   useEffect(() => {
-    console.log(user);
     setAnchorEl(null);
   }, [user]);
 

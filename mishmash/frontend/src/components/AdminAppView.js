@@ -69,7 +69,6 @@ const AdminAppView = () => {
       try {
         const notesResponse = await axiosInstance.get(`/api/notes/?application=${id}`);
         setConfidentialNotes(notesResponse.data);
-        console.log(notesResponse);
       } catch (err) {
         if (err.response && err.response.status === 404) {
           setConfidentialNotes([]);

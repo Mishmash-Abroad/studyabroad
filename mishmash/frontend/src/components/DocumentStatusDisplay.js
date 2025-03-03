@@ -118,16 +118,24 @@ const DocumentStatusDisplay = ({
       
       // If the document has a pdf_url property, fetch and display it
       if (document.pdf_url) {
+        // Use the browser's fetch API which respects the protocol of the page
+        // This avoids mixed content issues as it will use the same protocol (HTTP/HTTPS)
         const response = await fetch(document.pdf_url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
+        }
+        
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
         setSelectedDocUrl(blobUrl);
+      } else {
+        setViewError("Document URL not available");
       }
       
       setOpen(true);
     } catch (error) {
       console.error("Error viewing document:", error);
-      setViewError("Unable to load document preview");
+      setViewError(`Unable to load document preview: ${error.message}`);
     }
   };
 
