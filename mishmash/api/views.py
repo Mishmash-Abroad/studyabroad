@@ -545,6 +545,10 @@ class ProgramViewSet(viewsets.ModelViewSet):
         applicant_counts["total_active"] = (
             applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"]
         )
+        
+        applicant_counts["total_participants"] = (
+            applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"] + applicant_counts["completed"] + applicant_counts["withdrawn"] + applicant_counts["canceled"]
+        )
 
         return Response(applicant_counts)
 
