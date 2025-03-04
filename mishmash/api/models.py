@@ -11,6 +11,8 @@ from auditlog.registry import auditlog
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
+    is_faculty = models.BooleanField(default=False)
+    is_reviewer = models.BooleanField(default=False)
     is_mfa_enabled = models.BooleanField(default=False)
     
     groups = models.ManyToManyField(
@@ -30,6 +32,8 @@ class User(AbstractUser):
     def is_sso(self):
         """Check if user logged in via SSO."""
         return SocialAccount.objects.filter(user=self).exists()
+    
+    
 
 
 class Program(models.Model):

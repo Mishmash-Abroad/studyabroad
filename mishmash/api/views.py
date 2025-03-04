@@ -126,6 +126,30 @@ class IsAdmin(permissions.BasePermission):
         return request.user.is_admin
 
 
+class IsFaculty(permissions.BasePermission):
+    """Custom permission to allow only faculty to view or edit views"""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.is_faculty
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_faculty
+    
+
+class IsReviewer(permissions.BasePermission):
+    """Custom permission to allow only faculty to view or edit views"""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.is_reviewer
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_reviewer
+
+
 class AdminCreateAndView(permissions.BasePermission):
     """
     Custom permission to allow only admin users to create and view confidential notes.
@@ -157,6 +181,16 @@ class IsDocumentOwnerOrAdmin(permissions.BasePermission):
         return obj.application.student == request.user
 
 
+class IsProgramFaculty(permissions.BasePermission):
+    """
+    Allows access only to the faculty of the program.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Ensure the object has a 'program' attribute and that the user is a faculty lead
+        return request.user in obj.program.faculty_leads.all()
+
+    
 ### ViewSet classes for the API interface ###
 
 
