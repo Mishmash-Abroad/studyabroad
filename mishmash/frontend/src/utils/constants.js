@@ -187,3 +187,25 @@ export const STATUSES_REVIEWERS_CAN_EDIT = {
   APPLIED: "applied",
   ELIGIBLE: "eligible",
 };
+
+/**
+ * Determines the set of application statuses a user can edit based on their role.
+ * 
+ * - Admins, faculty, and reviewers have specific permissions to edit statuses.
+ * - Students (or users without the specified roles) receive an empty object, 
+ *   meaning they cannot modify application statuses of other students.
+ * 
+ * @param {Object} roles - An object containing user roles as boolean values.
+ * @returns {Object} - The set of statuses the user can edit, or an empty object if unauthorized.
+ */
+export const get_all_available_statuses_to_edit = (roles) => {
+  if (roles.IS_ADMIN) {
+    return STATUSES_ADMINS_CAN_EDIT;
+  } else if (roles.IS_FACULTY) {
+    return STATUSES_FACULTY_CAN_EDIT;
+  } else if (roles.IS_REVIEWER) {
+    return STATUSES_REVIEWERS_CAN_EDIT;
+  }
+
+  return {};
+};
