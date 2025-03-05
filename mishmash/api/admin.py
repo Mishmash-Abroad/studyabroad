@@ -19,11 +19,13 @@ class UserAdmin(admin.ModelAdmin):
         "display_name",
         "email",
         "is_admin",
+        "is_faculty",
+        "is_reviewer",
         "is_active",
         "is_mfa_enabled",
         "is_sso",
     )
-    list_filter = ("is_admin", "is_active")
+    list_filter = ("is_admin", "is_faculty", "is_reviewer", "is_active")
     search_fields = ("username", "email", "display_name")
 
     def is_sso(self, obj):
