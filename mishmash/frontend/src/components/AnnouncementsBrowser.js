@@ -8,9 +8,9 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Tooltip
+  Tooltip,
 } from "@mui/material";
-import SortIcon from '@mui/icons-material/Sort';
+import SortIcon from "@mui/icons-material/Sort";
 import AnnouncementCard from "./AnnouncementCard";
 import AnnouncementDetailModal from "./AnnouncementDetailModal";
 
@@ -29,7 +29,7 @@ const AnnouncementsBrowser = () => {
   const fetchAnnouncements = async () => {
     try {
       const res = await axiosInstance.get("/api/announcements/");
-      const active = res.data.filter(a => a.is_active);
+      const active = res.data.filter((a) => a.is_active);
       setAnnouncements(active);
     } catch (err) {
       console.error("Error fetching announcements", err);
@@ -42,7 +42,7 @@ const AnnouncementsBrowser = () => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     if (a.pinned && b.pinned) return 0;
-    
+
     // Then apply the selected sort criteria
     if (sortBy === "importance") {
       const importanceOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
@@ -52,7 +52,9 @@ const AnnouncementsBrowser = () => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  const displayedAnnouncements = showAll ? sortedAnnouncements : sortedAnnouncements.slice(0, 4);
+  const displayedAnnouncements = showAll
+    ? sortedAnnouncements
+    : sortedAnnouncements.slice(0, 4);
 
   const handleSortMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -73,13 +75,20 @@ const AnnouncementsBrowser = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="h5" component="h2">
           Announcements
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Sort announcements">
-            <IconButton 
+            <IconButton
               size="small"
               onClick={handleSortMenuOpen}
               color={open ? "primary" : "default"}
@@ -87,19 +96,15 @@ const AnnouncementsBrowser = () => {
               <SortIcon />
             </IconButton>
           </Tooltip>
-          
-          <Menu
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleSortMenuClose}
-          >
-            <MenuItem 
+
+          <Menu anchorEl={anchorEl} open={open} onClose={handleSortMenuClose}>
+            <MenuItem
               onClick={() => handleSortChange("recent")}
               selected={sortBy === "recent"}
             >
               Most Recent
             </MenuItem>
-            <MenuItem 
+            <MenuItem
               onClick={() => handleSortChange("importance")}
               selected={sortBy === "importance"}
             >
@@ -110,7 +115,7 @@ const AnnouncementsBrowser = () => {
       </Box>
 
       <Grid container spacing={3}>
-        {displayedAnnouncements.map(ann => (
+        {displayedAnnouncements.map((ann) => (
           <Grid item xs={12} sm={6} md={3} key={ann.id}>
             <AnnouncementCard
               announcement={ann}
@@ -121,16 +126,16 @@ const AnnouncementsBrowser = () => {
       </Grid>
 
       {announcements.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Box sx={{ textAlign: "center", py: 4 }}>
           <Typography color="textSecondary">
             No active announcements available.
           </Typography>
         </Box>
       )}
-      
+
       {announcements.length > 4 && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button 
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+          <Button
             onClick={() => setShowAll(!showAll)}
             size="small"
             variant="outlined"
@@ -149,7 +154,6 @@ const AnnouncementsBrowser = () => {
         />
       )}
     </Box>
-    
   );
 };
 
