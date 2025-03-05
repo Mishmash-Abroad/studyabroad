@@ -7,14 +7,13 @@ from allauth.socialaccount.models import SocialAccount
 from auditlog.registry import auditlog
 
 
-
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
     is_faculty = models.BooleanField(default=False)
     is_reviewer = models.BooleanField(default=False)
     is_mfa_enabled = models.BooleanField(default=False)
-    
+
     groups = models.ManyToManyField(
         "auth.Group",
         related_name="custom_user_set",  # Avoid conflict with 'auth.User.groups'
@@ -32,8 +31,14 @@ class User(AbstractUser):
     def is_sso(self):
         """Check if user logged in via SSO."""
         return SocialAccount.objects.filter(user=self).exists()
-    
-    
+
+    @property
+    def roles_object(self):
+        return {
+            "IS_ADMIN": self.is_admin,
+            "IS_FACULTY": self.is_faculty,
+            "IS_REVIEWER": self.is_reviewer,
+        }
 
 
 class Program(models.Model):
@@ -41,7 +46,12 @@ class Program(models.Model):
     year = models.CharField(max_length=4)
     semester = models.CharField(max_length=20)
     description = models.TextField(blank=True, default="No description provided.")
-    faculty_leads = models.ManyToManyField('User', related_name='led_programs', limit_choices_to={'is_admin': True}, default=[1])
+    faculty_leads = models.ManyToManyField(
+        "User",
+        related_name="led_programs",
+        limit_choices_to={"is_admin": True},
+        default=[1],
+    )
     application_open_date = models.DateField(null=True, blank=True)
     application_deadline = models.DateField(null=True, blank=True)
     essential_document_deadline = models.DateField(null=True, blank=True)
@@ -99,11 +109,22 @@ class ApplicationQuestion(models.Model):
 
     def __str__(self):
         return f"Question for {self.program.title}: {self.text}"
-    
+
+
 class ConfidentialNote(models.Model):
-    author = models.ForeignKey('User', null=True, blank=True, on_delete=models.SET_NULL, related_name='authored_notes')
-    application = models.ForeignKey('Application', on_delete=models.CASCADE, related_name='confidential_notes')
-    content = models.TextField(default="Confidential note text. Only admin accounts will be able to see this content.")
+    author = models.ForeignKey(
+        "User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="authored_notes",
+    )
+    application = models.ForeignKey(
+        "Application", on_delete=models.CASCADE, related_name="confidential_notes"
+    )
+    content = models.TextField(
+        default="Confidential note text. Only admin accounts will be able to see this content."
+    )
     timestamp = models.DateTimeField(default=now, editable=False)
 
     def get_author_display(self):
@@ -150,18 +171,17 @@ class Announcement(models.Model):
         upload_to="announcements/",
         null=True,
         blank=True,
-        help_text="Optional cover image file for the announcement"
+        help_text="Optional cover image file for the announcement",
     )
     pinned = models.BooleanField(
         default=False,
-        help_text="If true, this announcement will be pinned to the top of listings."
+        help_text="If true, this announcement will be pinned to the top of listings.",
     )
     importance = models.CharField(
         max_length=10, choices=IMPORTANCE_LEVELS, default="medium"
     )
     is_active = models.BooleanField(
-        default=True,
-        help_text="If false, the announcement will not be displayed."
+        default=True, help_text="If false, the announcement will not be displayed."
     )
     created_by = models.ForeignKey(
         "User", on_delete=models.SET_NULL, null=True, related_name="announcements"
@@ -184,9 +204,15 @@ class Announcement(models.Model):
 class Document(models.Model):
     TYPES_OF_DOCS = [
         ("Assumption of risk form", "Assumption of risk form"),
-        ("Acknowledgement of the code of conduct", "Acknowledgement of the code of conduct"),
+        (
+            "Acknowledgement of the code of conduct",
+            "Acknowledgement of the code of conduct",
+        ),
         ("Housing questionnaire", "Housing questionnaire"),
-        ("Medical/health history and immunization records", "Medical/health history and immunization records"),
+        (
+            "Medical/health history and immunization records",
+            "Medical/health history and immunization records",
+        ),
     ]
     title = models.CharField(max_length=255)
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
@@ -194,15 +220,11 @@ class Document(models.Model):
     application = models.ForeignKey("Application", on_delete=models.CASCADE)
     type = models.CharField(  # Change TextField to CharField
         max_length=100,  # Set a max_length that fits your longest choice
-        choices=TYPES_OF_DOCS
+        choices=TYPES_OF_DOCS,
     )
 
     def __str__(self):
         return f"{self.title}"
-
-
-
-
 
 
 auditlog.register(User)
