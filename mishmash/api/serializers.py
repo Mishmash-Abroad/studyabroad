@@ -22,6 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
             "display_name",
             "email",
             "is_admin",
+            "is_faculty",
+            "is_reviewer",
             "is_mfa_enabled",
             "is_sso",
         ]
