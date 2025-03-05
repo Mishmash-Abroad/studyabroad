@@ -158,7 +158,6 @@ const Dashboard = () => {
     navigate(path);
   };
 
-  console.log(user);
   return (
     <DashboardContainer>
       <TopNavBar />
