@@ -1,5 +1,12 @@
 import React from "react";
-import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { styled } from "@mui/material/styles";
 import TopNavBar from "../components/TopNavBar";
@@ -9,20 +16,20 @@ import MyProgramsTable from "../components/MyProgramsTable";
 import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
 import UserManagement from "../components/UserManagement";
-import Typography from '@mui/material/Typography';
+import Typography from "@mui/material/Typography";
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
-  { path: 'admin-overview', label: 'Overview' },
-  { path: 'admin-programs', label: 'Program Management' },
-  { path: 'browse', label: 'Browse Programs' },
-  { path: 'user-management', label: 'User Management' },
+  { path: "admin-overview", label: "Overview" },
+  { path: "admin-programs", label: "Program Management" },
+  { path: "browse", label: "Browse Programs" },
+  { path: "user-management", label: "User Management" },
 ];
 
 const STUDENT_ROUTES = [
-  { path: 'overview', label: 'Overview' },
-  { path: 'browse', label: 'Browse Programs' },
-  { path: 'my-programs', label: 'My Programs' },
+  { path: "overview", label: "Overview" },
+  { path: "browse", label: "Browse Programs" },
+  { path: "my-programs", label: "My Programs" },
 ];
 
 // -------------------- STYLES --------------------
@@ -125,7 +132,8 @@ const StudentOverview = () => (
         Welcome to Your Dashboard
       </Typography>
       <Typography variant="body1" color="textSecondary">
-        Stay updated with the latest announcements and manage your program applications.
+        Stay updated with the latest announcements and manage your program
+        applications.
       </Typography>
     </WelcomeSection>
     <AnnouncementsSection>
@@ -139,20 +147,27 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const routes = (user?.is_admin || user?.is_faculty || user?.is_reviewer) ? ADMIN_ROUTES : STUDENT_ROUTES;
+  const routes =
+    user?.is_admin || user?.is_faculty || user?.is_reviewer
+      ? ADMIN_ROUTES
+      : STUDENT_ROUTES;
   // Handle default route
   React.useEffect(() => {
     // Only adjust the route if user is available
-    if (user && location.pathname === '/dashboard') {
-      const defaultPath = `/dashboard/${(user?.is_admin || user?.is_faculty || user?.is_reviewer) ? 'admin-overview' : 'overview'}`;
+    if (user && location.pathname === "/dashboard") {
+      const defaultPath = `/dashboard/${
+        user?.is_admin || user?.is_faculty || user?.is_reviewer
+          ? "admin-overview"
+          : "overview"
+      }`;
       // Replace the current history entry instead of adding a new one
-      window.history.replaceState(null, '', defaultPath);
+      window.history.replaceState(null, "", defaultPath);
       // Force a re-render to show the correct content
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      window.dispatchEvent(new PopStateEvent("popstate"));
     }
   }, [location.pathname, user]);
   // Get current active tab from path
-  const activeTab = location.pathname.split('/').pop();
+  const activeTab = location.pathname.split("/").pop();
 
   const handleTabChange = (path) => {
     navigate(path);
@@ -165,7 +180,9 @@ const Dashboard = () => {
       <DashboardContent>
         <DashboardHeader>
           <DashboardTitle>
-            {(user?.is_admin || user?.is_faculty || user?.is_reviewer) ? "Admin Dashboard" : "Student Dashboard"}
+            {user?.is_admin || user?.is_faculty || user?.is_reviewer
+              ? "Admin Dashboard"
+              : "Student Dashboard"}
           </DashboardTitle>
         </DashboardHeader>
 
@@ -190,8 +207,14 @@ const Dashboard = () => {
               <>
                 <Route path="admin-overview" element={<AdminOverview />} />
                 <Route path="admin-programs" element={<AdminProgramsTable />} />
-                <Route path="admin-programs/new-program" element={<AdminProgramsTable />} />
-                <Route path="admin-programs/:programTitle" element={<AdminProgramsTable />} />
+                <Route
+                  path="admin-programs/new-program"
+                  element={<AdminProgramsTable />}
+                />
+                <Route
+                  path="admin-programs/:programTitle"
+                  element={<AdminProgramsTable />}
+                />
                 <Route path="user-management" element={<UserManagement />} />
               </>
             )}
@@ -207,7 +230,19 @@ const Dashboard = () => {
             {/* Common Routes */}
             <Route path="browse" element={<ProgramBrowser />} />
             <Route path="browse/:programTitle" element={<ProgramBrowser />} />
-            <Route path="*" element={<Navigate to={(user?.is_admin || user?.is_faculty || user?.is_reviewer) ? "admin-overview" : "overview"} replace />} />
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to={
+                    user?.is_admin || user?.is_faculty || user?.is_reviewer
+                      ? "admin-overview"
+                      : "overview"
+                  }
+                  replace
+                />
+              }
+            />
           </Routes>
         </TabContent>
       </DashboardContent>

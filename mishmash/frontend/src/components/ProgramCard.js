@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { styled, useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import axiosInstance from '../utils/axios';
+import React, { useState, useEffect } from "react";
+import { styled, useTheme } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import axiosInstance from "../utils/axios";
 import {
   STATUS,
   PROGRAM_STATUS,
@@ -12,7 +12,7 @@ import {
   EDITABLE_APPLICATION_STATUSES,
   APPLICATION_ACTION_BUTTON_TEXT,
   PROGRAM_ACTION_BUTTON_TEXT,
-} from '../utils/constants';
+} from "../utils/constants";
 
 // Helper to extract colors from the theme for badges
 const getStatusColors = (theme, severity) => {
@@ -31,13 +31,13 @@ const getStatusColors = (theme, severity) => {
 };
 
 // Styled badge for the program status (always displayed)
-const ProgramStatusBadge = styled('div')(({ theme, severity }) => {
+const ProgramStatusBadge = styled("div")(({ theme, severity }) => {
   const colors = getStatusColors(theme, severity);
   return {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    padding: '6px 12px',
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    padding: "6px 12px",
     borderRadius: theme.shape.borderRadii.xl,
     fontSize: theme.typography.caption.fontSize,
     fontWeight: theme.typography.subtitle2.fontWeight,
@@ -51,13 +51,13 @@ const ProgramStatusBadge = styled('div')(({ theme, severity }) => {
 });
 
 // Styled badge for the application status (shown only if in read-only states)
-const ApplicationStatusBadge = styled('div')(({ theme, severity }) => {
+const ApplicationStatusBadge = styled("div")(({ theme, severity }) => {
   const colors = getStatusColors(theme, severity);
   return {
-    position: 'absolute',
-    top: '45px',
-    right: '10px',
-    padding: '6px 12px',
+    position: "absolute",
+    top: "45px",
+    right: "10px",
+    padding: "6px 12px",
     borderRadius: theme.shape.borderRadii.xl,
     fontSize: theme.typography.caption.fontSize,
     fontWeight: theme.typography.subtitle2.fontWeight,
@@ -71,14 +71,14 @@ const ApplicationStatusBadge = styled('div')(({ theme, severity }) => {
 });
 
 // Revert ApplicationButton styling to the previous version (white on green)
-const ApplicationButton = styled('button')(({ theme, variant }) => {
+const ApplicationButton = styled("button")(({ theme, variant }) => {
   const getColors = () => {
-    if (variant === 'success') {
+    if (variant === "success") {
       return {
         bg: theme.palette.status.success.main,
         color: theme.palette.status.success.contrastText,
       };
-    } else if (variant === 'disabled') {
+    } else if (variant === "disabled") {
       return {
         bg: theme.palette.status.neutral.light,
         color: theme.palette.status.neutral.contrastText,
@@ -92,39 +92,39 @@ const ApplicationButton = styled('button')(({ theme, variant }) => {
   };
   const colors = getColors();
   return {
-    padding: '8px 16px',
+    padding: "8px 16px",
     borderRadius: theme.shape.borderRadii.small,
     backgroundColor: colors.bg,
     color: colors.color,
-    border: 'none',
-    cursor: variant === 'disabled' ? 'not-allowed' : 'pointer',
+    border: "none",
+    cursor: variant === "disabled" ? "not-allowed" : "pointer",
     transition: theme.transitions.quick,
     fontSize: theme.typography.button.fontSize,
     fontWeight: theme.typography.button.fontWeight,
     fontFamily: theme.typography.button.fontFamily,
     letterSpacing: theme.typography.button.letterSpacing,
-    '&:hover': {
-      filter: variant !== 'disabled' ? 'brightness(0.9)' : 'none',
+    "&:hover": {
+      filter: variant !== "disabled" ? "brightness(0.9)" : "none",
     },
   };
 });
 
 // Main container for the Program Card
-const StyledProgramCard = styled('div')(({ theme, expanded }) => ({
-  position: 'relative',
+const StyledProgramCard = styled("div")(({ theme, expanded }) => ({
+  position: "relative",
   borderRadius: theme.shape.borderRadii.large,
-  overflow: 'hidden',
+  overflow: "hidden",
   backgroundColor: theme.palette.background.card.default,
-  cursor: 'pointer',
-  transition: theme.transitions.create(['transform'], {
+  cursor: "pointer",
+  transition: theme.transitions.create(["transform"], {
     duration: theme.transitions.duration.standard,
     easing: theme.transitions.easing.easeInOut,
   }),
-  height: expanded ? 'auto' : '200px',
+  height: expanded ? "auto" : "200px",
   border: `1px solid ${theme.palette.border.light}`,
-  '&:hover': {
+  "&:hover": {
     backgroundColor: theme.palette.background.card.hover,
-    transform: expanded ? 'scale(1.01)' : 'scale(1.02)',
+    transform: expanded ? "scale(1.01)" : "scale(1.02)",
   },
 }));
 
@@ -132,10 +132,13 @@ const StyledProgramCard = styled('div')(({ theme, expanded }) => ({
 const getDeadlineInfo = (today, openDate, deadline) => {
   const diffOpen = Math.ceil((openDate - today) / (1000 * 60 * 60 * 24));
   const diffClose = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
-  const pickStyle = (days) => (days <= 7 ? 'error' : days <= 14 ? 'warning' : 'info');
+  const pickStyle = (days) =>
+    days <= 7 ? "error" : days <= 14 ? "warning" : "info";
 
-  if (diffOpen > 0) return { text: `Opens in ${diffOpen} days`, style: pickStyle(diffOpen) };
-  if (diffClose > 0) return { text: `Closes in ${diffClose} days`, style: pickStyle(diffClose) };
+  if (diffOpen > 0)
+    return { text: `Opens in ${diffOpen} days`, style: pickStyle(diffOpen) };
+  if (diffClose > 0)
+    return { text: `Closes in ${diffClose} days`, style: pickStyle(diffClose) };
   return null;
 };
 
@@ -153,10 +156,12 @@ const ProgramCard = ({ program, onExpand }) => {
   useEffect(() => {
     const fetchApplicationStatus = async () => {
       try {
-        const response = await axiosInstance.get(`/api/programs/${program.id}/application_status/`);
+        const response = await axiosInstance.get(
+          `/api/programs/${program.id}/application_status/`
+        );
         setApplicationStatus(response.data.status);
       } catch (error) {
-        console.error('Error fetching application status:', error);
+        console.error("Error fetching application status:", error);
       }
     };
     fetchApplicationStatus();
@@ -173,14 +178,19 @@ const ProgramCard = ({ program, onExpand }) => {
   // Render the program badge based on program status.
   const renderProgramBadge = () => {
     const progStatus = getProgramStatus();
-    const severity = PROGRAM_STATUSES[progStatus]?.severity || 'neutral';
-    return <ProgramStatusBadge severity={severity}>{progStatus}</ProgramStatusBadge>;
+    const severity = PROGRAM_STATUSES[progStatus]?.severity || "neutral";
+    return (
+      <ProgramStatusBadge severity={severity}>{progStatus}</ProgramStatusBadge>
+    );
   };
 
   // Render the application badge only if the user's application is in a read-only state.
   const renderApplicationBadge = () =>
-    applicationStatus && READ_ONLY_APPLICATION_STATUSES.includes(applicationStatus) ? (
-      <ApplicationStatusBadge severity={ALL_STATUSES[applicationStatus]?.severity || 'neutral'}>
+    applicationStatus &&
+    READ_ONLY_APPLICATION_STATUSES.includes(applicationStatus) ? (
+      <ApplicationStatusBadge
+        severity={ALL_STATUSES[applicationStatus]?.severity || "neutral"}
+      >
         {applicationStatus}
       </ApplicationStatusBadge>
     ) : null;
@@ -188,9 +198,11 @@ const ProgramCard = ({ program, onExpand }) => {
   // Get the action button text from constants.
   const getButtonText = () => {
     if (applicationStatus) {
-      return APPLICATION_ACTION_BUTTON_TEXT[applicationStatus] || 'View Application';
+      return (
+        APPLICATION_ACTION_BUTTON_TEXT[applicationStatus] || "View Application"
+      );
     }
-    return PROGRAM_ACTION_BUTTON_TEXT[getProgramStatus()] || '';
+    return PROGRAM_ACTION_BUTTON_TEXT[getProgramStatus()] || "";
   };
 
   // Get the button click handler.
@@ -199,12 +211,16 @@ const ProgramCard = ({ program, onExpand }) => {
   // Render a deadline indicator (only when no application exists).
   const renderDeadlineIndicator = () => {
     if (applicationStatus) return null;
-    const info = getDeadlineInfo(today, applicationOpenDate, applicationDeadline);
+    const info = getDeadlineInfo(
+      today,
+      applicationOpenDate,
+      applicationDeadline
+    );
     if (!info) return null;
     return (
       <div
         style={{
-          display: 'inline-block',
+          display: "inline-block",
           padding: theme.spacing(0.5, 1.5),
           borderRadius: theme.shape.borderRadii.medium,
           backgroundColor: theme.palette.status[info.style]?.background,
@@ -222,14 +238,15 @@ const ProgramCard = ({ program, onExpand }) => {
   // Render the action button.
   const renderActionButton = () => {
     const currentProgramStatus = getProgramStatus();
-    const isDisabledButton = currentProgramStatus === PROGRAM_STATUS.OPENING_SOON ||
-                             currentProgramStatus === PROGRAM_STATUS.CLOSED ||
-                             user?.is_admin;
+    const isDisabledButton =
+      currentProgramStatus === PROGRAM_STATUS.OPENING_SOON ||
+      currentProgramStatus === PROGRAM_STATUS.CLOSED ||
+      user?.is_admin;
     return (
       <ApplicationButton
         onClick={!isDisabledButton ? getButtonHandler() : undefined}
         disabled={isDisabledButton}
-        variant={isDisabledButton ? 'disabled' : 'success'}
+        variant={isDisabledButton ? "disabled" : "success"}
       >
         {getButtonText()}
       </ApplicationButton>
@@ -243,11 +260,11 @@ const ProgramCard = ({ program, onExpand }) => {
         setExpanded(!expanded);
         if (onExpand) onExpand(!expanded);
       }}
-      className={expanded ? 'expanded-card' : 'program-card'}
+      className={expanded ? "expanded-card" : "program-card"}
     >
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           left: 0,
           right: 0,
@@ -267,19 +284,19 @@ const ProgramCard = ({ program, onExpand }) => {
       {/* Program Title */}
       <div
         style={{
-          position: 'absolute',
-          bottom: expanded ? 'auto' : '20px',
-          left: '20px',
-          right: '20px',
-          padding: '10px',
-          paddingRight: expanded ? '60px' : '20px',
+          position: "absolute",
+          bottom: expanded ? "auto" : "20px",
+          left: "20px",
+          right: "20px",
+          padding: "10px",
+          paddingRight: expanded ? "60px" : "20px",
           zIndex: 1,
         }}
       >
         <h3
           style={{
-            margin: '0 0 8px 0',
-            fontSize: '24px',
+            margin: "0 0 8px 0",
+            fontSize: "24px",
             color: theme.palette.primary.dark,
             textShadow: theme.textShadows.light,
           }}
@@ -292,30 +309,31 @@ const ProgramCard = ({ program, onExpand }) => {
       {expanded && (
         <div
           style={{
-            padding: '30px',
-            marginTop: '100px',
+            padding: "30px",
+            marginTop: "100px",
             backgroundColor: theme.palette.background.paper,
             borderTop: `1px solid ${theme.palette.divider}`,
-            position: 'relative',
+            position: "relative",
             zIndex: 1,
           }}
         >
-          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '24px' }}>
+          <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+            <div style={{ marginBottom: "24px" }}>
               <p
                 style={{
                   color: theme.palette.grey[600],
-                  margin: '0 0 16px 0',
-                  fontSize: '1.1em',
+                  margin: "0 0 16px 0",
+                  fontSize: "1.1em",
                 }}
               >
-                {program.year_semester} • Led by {program.faculty_leads.map(f => f.display_name).join(', ')}
+                {program.year_semester} • Led by{" "}
+                {program.faculty_leads.map((f) => f.display_name).join(", ")}
               </p>
               <p
                 style={{
-                  margin: '0',
-                  fontSize: '1.1em',
-                  lineHeight: '1.6',
+                  margin: "0",
+                  fontSize: "1.1em",
+                  lineHeight: "1.6",
                   color: theme.palette.text.primary,
                   whiteSpace: "pre-line",
                 }}
@@ -326,14 +344,14 @@ const ProgramCard = ({ program, onExpand }) => {
 
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr auto',
-                gap: '24px',
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr auto",
+                gap: "24px",
                 backgroundColor: theme.palette.grey[50],
-                padding: '24px',
+                padding: "24px",
                 borderRadius: theme.shape.borderRadii.large,
-                marginBottom: '24px',
-                alignItems: 'start',
+                marginBottom: "24px",
+                alignItems: "start",
               }}
             >
               <div>
@@ -348,12 +366,13 @@ const ProgramCard = ({ program, onExpand }) => {
                 </strong>
                 <div
                   style={{
-                    marginTop: '8px',
+                    marginTop: "8px",
                     fontSize: theme.typography.body1.fontSize,
                     color: theme.palette.text.secondary,
                   }}
                 >
-                  {program.application_open_date} – {program.application_deadline}
+                  {program.application_open_date} –{" "}
+                  {program.application_deadline}
                 </div>
               </div>
               <div>
@@ -368,7 +387,7 @@ const ProgramCard = ({ program, onExpand }) => {
                 </strong>
                 <div
                   style={{
-                    marginTop: '8px',
+                    marginTop: "8px",
                     fontSize: theme.typography.body1.fontSize,
                     color: theme.palette.text.secondary,
                   }}
@@ -378,13 +397,13 @@ const ProgramCard = ({ program, onExpand }) => {
               </div>
               <div
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  justifyContent: 'flex-end',
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  justifyContent: "flex-end",
                   gap: theme.spacing(1),
-                  minWidth: '200px',
-                  height: '100%',
+                  minWidth: "200px",
+                  height: "100%",
                 }}
               >
                 {renderDeadlineIndicator()}

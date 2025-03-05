@@ -11,6 +11,7 @@ from .models import (
 )
 from allauth.socialaccount.models import SocialAccount
 
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
@@ -31,7 +32,7 @@ class UserAdmin(admin.ModelAdmin):
     def is_sso(self, obj):
         """Check if user logged in via SSO."""
         return obj.is_sso
-    
+
     is_sso.boolean = True
     is_sso.short_description = "SSO User"
 
@@ -42,7 +43,7 @@ class UserAdmin(admin.ModelAdmin):
         - Prevent admin from removing their own admin status
         """
         fields = ["password"]
-        
+
         if obj and obj.username == "admin":
             fields.append("is_admin")
 

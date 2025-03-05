@@ -17,109 +17,118 @@
  * - Admin interface for program management
  */
 
-import React, { useState, useEffect } from 'react';
-import { styled, useTheme } from '@mui/material/styles';
-import { InputBase } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import axiosInstance from '../utils/axios';
-import ProgramCard from './ProgramCard';
-import FacultyPicklist from './FacultyPicklist';
+import React, { useState, useEffect } from "react";
+import { styled, useTheme } from "@mui/material/styles";
+import { InputBase } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import axiosInstance from "../utils/axios";
+import ProgramCard from "./ProgramCard";
+import FacultyPicklist from "./FacultyPicklist";
 
 // -------------------- STYLES --------------------
-const PageContainer = styled('div')(({ theme }) => ({
-  padding: '20px',
+const PageContainer = styled("div")(({ theme }) => ({
+  padding: "20px",
   backgroundColor: theme.palette.background.paper,
 }));
 
-const ContentContainer = styled('div')(({ theme }) => ({
+const ContentContainer = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  padding: '24px',
+  padding: "24px",
   borderRadius: theme.shape.borderRadii.large,
   boxShadow: theme.customShadows.card,
-  marginBottom: '24px',
+  marginBottom: "24px",
   elevation: 0,
 }));
 
-const SearchSection = styled('div')(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '16px',
-  maxWidth: '600px',
-  margin: '0 auto 20px',
+const SearchSection = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  maxWidth: "600px",
+  margin: "0 auto 20px",
 }));
 
 const SearchInput = styled(InputBase)(({ theme }) => ({
-  width: '100%',
+  width: "100%",
   fontFamily: theme.typography.fontFamily,
-  '& .MuiInputBase-input': {
-    padding: '12px 48px 12px 48px',
+  "& .MuiInputBase-input": {
+    padding: "12px 48px 12px 48px",
     fontSize: theme.typography.body1.fontSize,
     fontWeight: theme.typography.body1.fontWeight,
     border: `2px solid ${theme.palette.border.light}`,
     borderRadius: theme.shape.borderRadii.xl,
     transition: theme.transitions.quick,
-    '&:focus': {
+    "&:focus": {
       borderColor: theme.palette.primary.main,
       boxShadow: `0 0 0 3px ${theme.palette.primary.light}1a`,
     },
   },
 }));
 
-const FilterButton = styled('button')(({ theme, active }) => ({
-  padding: '8px 16px',
-  backgroundColor: active ? theme.palette.primary.main : theme.palette.background.paper,
-  color: active ? theme.palette.primary.contrastText : theme.palette.primary.main,
-  border: `1px solid ${active ? theme.palette.primary.main : theme.palette.border.main}`,
+const FilterButton = styled("button")(({ theme, active }) => ({
+  padding: "8px 16px",
+  backgroundColor: active
+    ? theme.palette.primary.main
+    : theme.palette.background.paper,
+  color: active
+    ? theme.palette.primary.contrastText
+    : theme.palette.primary.main,
+  border: `1px solid ${
+    active ? theme.palette.primary.main : theme.palette.border.main
+  }`,
   borderRadius: theme.shape.borderRadii.xl,
-  cursor: 'pointer',
-  margin: '0 8px',
+  cursor: "pointer",
+  margin: "0 8px",
   transition: theme.transitions.quick,
   fontSize: theme.typography.button.fontSize,
-  fontWeight: active ? theme.typography.button.fontWeight : theme.typography.body1.fontWeight,
+  fontWeight: active
+    ? theme.typography.button.fontWeight
+    : theme.typography.body1.fontWeight,
   fontFamily: theme.typography.fontFamily,
   letterSpacing: theme.typography.button.letterSpacing,
-  '&:hover': {
-    backgroundColor: active ? theme.palette.primary.dark : theme.palette.background.card.hover,
+  "&:hover": {
+    backgroundColor: active
+      ? theme.palette.primary.dark
+      : theme.palette.background.card.hover,
   },
 }));
 
-const ProgramGrid = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '24px',
-  padding: '20px 0',
-  maxWidth: '1200px',
-  margin: '0 auto',
-  '& .expanded-card': {
-    gridColumn: '1 / -1', // Span all columns
+const ProgramGrid = styled("div")(({ theme }) => ({
+  display: "grid",
+  gridTemplateColumns: "repeat(2, 1fr)",
+  gap: "24px",
+  padding: "20px 0",
+  maxWidth: "1200px",
+  margin: "0 auto",
+  "& .expanded-card": {
+    gridColumn: "1 / -1", // Span all columns
   },
-  '& .program-card': {
-  }
+  "& .program-card": {},
 }));
 
-const NoResults = styled('div')(({ theme }) => ({
-  textAlign: 'center',
-  padding: '40px',
+const NoResults = styled("div")(({ theme }) => ({
+  textAlign: "center",
+  padding: "40px",
   color: theme.palette.text.secondary,
   backgroundColor: theme.palette.background.default,
   borderRadius: theme.shape.borderRadii.large,
-  margin: '20px 0',
-  '& h3': {
+  margin: "20px 0",
+  "& h3": {
     color: theme.palette.text.primary,
     marginBottom: theme.spacing(1),
   },
-  '& p': {
+  "& p": {
     fontSize: theme.typography.body1.fontSize,
-  }
+  },
 }));
 
 // -------------------- COMPONENT --------------------
 const ProgramBrowser = () => {
   const [programs, setPrograms] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
   const [showPastPrograms, setShowPastPrograms] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
 
@@ -129,17 +138,17 @@ const ProgramBrowser = () => {
     const fetchPrograms = async () => {
       try {
         setLoading(true);
-        const params = { 
+        const params = {
           search: searchTerm,
-          exclude_ended: "true" // Only show programs that haven't ended yet
+          exclude_ended: "true", // Only show programs that haven't ended yet
         };
-        
+
         // Only add faculty_ids if there are selected faculty
         if (selectedFaculty.length > 0) {
-          params.faculty_ids = selectedFaculty.map(f => f.id).join(',');
+          params.faculty_ids = selectedFaculty.map((f) => f.id).join(",");
         }
-        
-        const response = await axiosInstance.get('/api/programs/', { params });
+
+        const response = await axiosInstance.get("/api/programs/", { params });
 
         // Also fetch application status for each program
         const programsWithStatus = await Promise.all(
@@ -155,13 +164,16 @@ const ProgramBrowser = () => {
             } catch (error) {
               // Handle the specific MultipleObjectsReturned error
               // If error is 401 (unauthorized) or 500 (server error), just return program without status
-              if (error.response?.status === 401 || error.response?.status === 500) {
+              if (
+                error.response?.status === 401 ||
+                error.response?.status === 500
+              ) {
                 // For error 500, we could have a special handling for MultipleObjectsReturned
                 // but we'll just treat all 500s the same for simplicity
                 return { ...program, applicationStatus: null };
               }
               // Only log errors that aren't the common ones we're handling
-              console.error('Error fetching status:', error);
+              console.error("Error fetching status:", error);
               return { ...program, applicationStatus: null };
             }
           })
@@ -170,8 +182,8 @@ const ProgramBrowser = () => {
         setPrograms(programsWithStatus);
         setError(null);
       } catch (error) {
-        console.error('Error fetching programs:', error);
-        setError('Failed to load programs. Please try again later.');
+        console.error("Error fetching programs:", error);
+        setError("Failed to load programs. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -195,19 +207,21 @@ const ProgramBrowser = () => {
       }
 
       switch (filter) {
-        case 'open':
+        case "open":
           return today >= openDate && today <= deadline;
-        case 'applied':
+        case "applied":
           return (
             program.applicationStatus &&
-            ['applied', 'withdrawn', 'canceled'].includes(program.applicationStatus.toLowerCase())
+            ["applied", "withdrawn", "canceled"].includes(
+              program.applicationStatus.toLowerCase()
+            )
           );
-        case 'enrolled':
+        case "enrolled":
           return (
             program.applicationStatus &&
-            program.applicationStatus.toLowerCase() === 'enrolled'
+            program.applicationStatus.toLowerCase() === "enrolled"
           );
-        case 'all':
+        case "all":
         default:
           return true;
       }
@@ -227,10 +241,10 @@ const ProgramBrowser = () => {
             startAdornment={
               <SearchIcon
                 sx={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
+                  position: "absolute",
+                  left: "16px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
                   color: theme.palette.text.secondary,
                 }}
               />
@@ -242,56 +256,74 @@ const ProgramBrowser = () => {
         {/* Filter Buttons */}
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: '8px',
-            marginTop: '20px',
+            display: "flex",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: "8px",
+            marginTop: "20px",
           }}
         >
-          <FilterButton active={filter === 'all'} onClick={() => setFilter('all')}>
+          <FilterButton
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
             All Programs
           </FilterButton>
-          <FilterButton active={filter === 'open'} onClick={() => setFilter('open')}>
+          <FilterButton
+            active={filter === "open"}
+            onClick={() => setFilter("open")}
+          >
             Currently Open
           </FilterButton>
-          <FilterButton active={filter === 'applied'} onClick={() => setFilter('applied')}>
+          <FilterButton
+            active={filter === "applied"}
+            onClick={() => setFilter("applied")}
+          >
             Applied
           </FilterButton>
-          <FilterButton active={filter === 'enrolled'} onClick={() => setFilter('enrolled')}>
+          <FilterButton
+            active={filter === "enrolled"}
+            onClick={() => setFilter("enrolled")}
+          >
             Enrolled
           </FilterButton>
         </div>
 
         {/* Show Past Deadline Programs toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "12px",
+          }}
+        >
           <button
             onClick={() => setShowPastPrograms(!showPastPrograms)}
             style={{
-              padding: '8px 16px',
+              padding: "8px 16px",
               backgroundColor: showPastPrograms
                 ? theme.palette.grey[100]
                 : theme.palette.common.white,
               color: theme.palette.grey[700],
               border: `1px solid ${theme.palette.grey[300]}`,
-              borderRadius: '20px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
+              borderRadius: "20px",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
             <span
               style={{
-                display: 'inline-block',
-                width: '16px',
-                height: '16px',
+                display: "inline-block",
+                width: "16px",
+                height: "16px",
                 border: `1px solid ${theme.palette.grey[700]}`,
-                borderRadius: '3px',
+                borderRadius: "3px",
                 backgroundColor: showPastPrograms
                   ? theme.palette.grey[700]
-                  : 'transparent',
+                  : "transparent",
               }}
             />
             Show Closed Programs
@@ -300,14 +332,14 @@ const ProgramBrowser = () => {
 
         {/* Programs Grid */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: "center", padding: "40px" }}>
             Loading programs...
           </div>
         ) : error ? (
           <div
             style={{
-              textAlign: 'center',
-              padding: '40px',
+              textAlign: "center",
+              padding: "40px",
               color: theme.palette.status.error.light,
             }}
           >
@@ -317,25 +349,25 @@ const ProgramBrowser = () => {
           <ProgramGrid>
             {getFilteredPrograms().length > 0 ? (
               getFilteredPrograms().map((program) => (
-                <ProgramCard 
-                  key={program.id} 
-                  program={program} 
-                  isInAppliedSection={filter === 'applied'}
+                <ProgramCard
+                  key={program.id}
+                  program={program}
+                  isInAppliedSection={filter === "applied"}
                   onExpand={(expanded) => {
                     // Force a re-render to handle grid layout changes
-                    setPrograms(prev => [...prev]);
+                    setPrograms((prev) => [...prev]);
                   }}
                 />
               ))
             ) : (
-              <NoResults style={{ gridColumn: '1 / -1' }}>
+              <NoResults style={{ gridColumn: "1 / -1" }}>
                 <h3>No Programs Found</h3>
                 <p>
-                  {searchTerm 
+                  {searchTerm
                     ? `No programs match your search "${searchTerm}". Try adjusting your search terms.`
-                    : filter !== 'all'
+                    : filter !== "all"
                     ? `No programs found with the current filter "${filter}". Try changing the filter.`
-                    : 'No programs available at this time.'}
+                    : "No programs available at this time."}
                 </p>
               </NoResults>
             )}

@@ -49,11 +49,13 @@ const DocumentReview = ({ application_id }) => {
       try {
         // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
         const response = await fetch(doc.pdf_url);
-        
+
         if (!response.ok) {
-          throw new Error(`Failed to download document: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Failed to download document: ${response.status} ${response.statusText}`
+          );
         }
-        
+
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
         // Create a temporary link and trigger download
@@ -78,11 +80,13 @@ const DocumentReview = ({ application_id }) => {
       try {
         // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
         const response = await fetch(doc.pdf_url);
-        
+
         if (!response.ok) {
-          throw new Error(`Failed to view document: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Failed to view document: ${response.status} ${response.statusText}`
+          );
         }
-        
+
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
         setSelectedDoc({ ...doc, url: blobUrl });
@@ -134,15 +138,11 @@ const DocumentReview = ({ application_id }) => {
                     {doc ? (
                       <Typography color="success.main">Submitted</Typography>
                     ) : (
-                      <Typography color="error.main">
-                        Not Submitted
-                      </Typography>
+                      <Typography color="error.main">Not Submitted</Typography>
                     )}
                   </TableCell>
                   <TableCell>
-                    {doc
-                      ? new Date(doc.uploaded_at).toLocaleString()
-                      : "N/A"}
+                    {doc ? new Date(doc.uploaded_at).toLocaleString() : "N/A"}
                   </TableCell>
                   <TableCell>
                     {doc && (
