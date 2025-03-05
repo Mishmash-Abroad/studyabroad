@@ -173,7 +173,15 @@ const getComparator = (order, orderBy, theme) => {
 // Compare helper: supports nested properties (e.g., inside program) and dates.
 const compareValues = (a, b, orderBy) => {
   let valueA, valueB;
-  if (["title", "year_semester", "application_deadline", "start_date", "end_date"].includes(orderBy)) {
+  if (
+    [
+      "title",
+      "year_semester",
+      "application_deadline",
+      "start_date",
+      "end_date",
+    ].includes(orderBy)
+  ) {
     valueA = a.program[orderBy];
     valueB = b.program[orderBy];
   } else if (orderBy === "faculty_leads") {
@@ -228,7 +236,7 @@ const MyProgramsTable = () => {
         setLoading(true);
         // Include both current and past programs
         const programsResponse = await axiosInstance.get("/api/programs/", {
-          params: { exclude_ended: "false" }
+          params: { exclude_ended: "false" },
         });
         const programsWithStatus = await Promise.all(
           programsResponse.data.map(async (program) => {
@@ -258,9 +266,10 @@ const MyProgramsTable = () => {
         );
 
         // Instead of hardcoding status strings, use the union of editable and read-only statuses.
-        const validStatuses = [...EDITABLE_APPLICATION_STATUSES, ...READ_ONLY_APPLICATION_STATUSES].map(
-          (s) => s.toLowerCase()
-        );
+        const validStatuses = [
+          ...EDITABLE_APPLICATION_STATUSES,
+          ...READ_ONLY_APPLICATION_STATUSES,
+        ].map((s) => s.toLowerCase());
         const relevantApplications = programsWithStatus.filter(
           (app) =>
             app &&
@@ -366,19 +375,25 @@ const MyProgramsTable = () => {
     { id: "title", label: "Program Title", sortable: true },
     { id: "year_semester", label: "Year & Semester", sortable: true },
     { id: "faculty_leads", label: "Faculty Lead(s)", sortable: true },
-    { id: "application_deadline", label: "Application Deadline", sortable: true },
+    {
+      id: "application_deadline",
+      label: "Application Deadline",
+      sortable: true,
+    },
     { id: "start_date", label: "Program Start", sortable: true },
     { id: "end_date", label: "Program End", sortable: true },
     { id: "status", label: "Application Status", sortable: true },
     { id: "documents", label: "Documents", sortable: true },
   ];
 
-  if (loading) return <LoadingMessage>Loading your applications...</LoadingMessage>;
+  if (loading)
+    return <LoadingMessage>Loading your applications...</LoadingMessage>;
   if (error) return <ErrorMessage>{error}</ErrorMessage>;
   if (applications.length === 0)
     return (
       <LoadingMessage>
-        You haven't applied to any programs yet. Browse available programs to get started!
+        You haven't applied to any programs yet. Browse available programs to
+        get started!
       </LoadingMessage>
     );
 
@@ -415,7 +430,9 @@ const MyProgramsTable = () => {
                 <StyledTableCell>{app.program.title}</StyledTableCell>
                 <StyledTableCell>{app.program.year_semester}</StyledTableCell>
                 <StyledTableCell>
-                  {app.program.faculty_leads.map((f) => f.display_name).join(", ")}
+                  {app.program.faculty_leads
+                    .map((f) => f.display_name)
+                    .join(", ")}
                 </StyledTableCell>
                 <StyledTableCell>
                   {formatDate(app.program.application_deadline)}
@@ -431,7 +448,7 @@ const MyProgramsTable = () => {
                 </StatusCell>
                 <StyledTableCell>
                   <span className="status-badge">
-                    {(app.documents?.length || 0)}/4 Documents
+                    {app.documents?.length || 0}/4 Documents
                   </span>
                 </StyledTableCell>
               </TableRow>

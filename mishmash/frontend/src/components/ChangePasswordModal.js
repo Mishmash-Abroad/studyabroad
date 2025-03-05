@@ -117,21 +117,23 @@ const ChangePasswordModal = ({ onClose, userId }) => {
     }
 
     try {
-      const response = await axiosInstance.patch("/api/users/change_password/", {
-        user_id: userId,
-        password,
-        confirm_password: confirmPassword,
-      })
+      const response = await axiosInstance.patch(
+        "/api/users/change_password/",
+        {
+          user_id: userId,
+          password,
+          confirm_password: confirmPassword,
+        }
+      );
 
       if (response.data.token) {
         const { token, ...userData } = response.data;
         onClose();
       }
-      
+
       if (response.status === 200) {
         onClose();
       }
-
     } catch (err) {
       setError(err.response?.data?.detail || "Invalid username or password");
     } finally {

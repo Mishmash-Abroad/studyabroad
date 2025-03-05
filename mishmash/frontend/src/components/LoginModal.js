@@ -74,25 +74,31 @@ const FormInput = styled("input")(({ theme }) => ({
   },
 }));
 
-const FormButton = styled("button")(({ theme, secondary, small, marginTop }) => ({
-  padding: small ? "8px" : "12px",
-  backgroundColor: secondary ? theme.palette.secondary.main : theme.palette.primary.main,
-  color: theme.palette.primary.contrastText,
-  border: "none",
-  borderRadius: theme.shape.borderRadii.medium,
-  fontSize: theme.typography.button.fontSize,
-  fontWeight: theme.typography.button.fontWeight,
-  cursor: "pointer",
-  transition: theme.transitions.quick,
-  marginTop: marginTop || "0",
-  "&:hover": {
-    backgroundColor: secondary ? theme.palette.secondary.dark : theme.palette.primary.dark,
-  },
-  "&:disabled": {
-    backgroundColor: theme.palette.status.neutral.light,
-    cursor: "not-allowed",
-  },
-}));
+const FormButton = styled("button")(
+  ({ theme, secondary, small, marginTop }) => ({
+    padding: small ? "8px" : "12px",
+    backgroundColor: secondary
+      ? theme.palette.secondary.main
+      : theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    border: "none",
+    borderRadius: theme.shape.borderRadii.medium,
+    fontSize: theme.typography.button.fontSize,
+    fontWeight: theme.typography.button.fontWeight,
+    cursor: "pointer",
+    transition: theme.transitions.quick,
+    marginTop: marginTop || "0",
+    "&:hover": {
+      backgroundColor: secondary
+        ? theme.palette.secondary.dark
+        : theme.palette.primary.dark,
+    },
+    "&:disabled": {
+      backgroundColor: theme.palette.status.neutral.light,
+      cursor: "not-allowed",
+    },
+  })
+);
 
 const FormError = styled("div")(({ theme }) => ({
   color: theme.palette.status.error.main,
@@ -127,11 +133,11 @@ const LoginModal = ({ onClose }) => {
   // Add ESC key handler to close the modal
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose();
       }
       // Add Enter key handling for the login form when it's visible and signup isn't
-      if (e.key === 'Enter' && !showSignUpModal) {
+      if (e.key === "Enter" && !showSignUpModal) {
         // Only if username and password have values
         if (username && password) {
           e.preventDefault();
@@ -139,7 +145,7 @@ const LoginModal = ({ onClose }) => {
         }
       }
       // Add Enter key handling for the signup form when it's visible
-      else if (e.key === 'Enter' && showSignUpModal) {
+      else if (e.key === "Enter" && showSignUpModal) {
         // Only if all required fields have values
         if (username && password && confirmPassword && email && displayName) {
           e.preventDefault();
@@ -149,13 +155,21 @@ const LoginModal = ({ onClose }) => {
     };
 
     // Add event listener
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     // Clean up
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose, username, password, confirmPassword, email, displayName, showSignUpModal]);
+  }, [
+    onClose,
+    username,
+    password,
+    confirmPassword,
+    email,
+    displayName,
+    showSignUpModal,
+  ]);
 
   // ------------- EVENT HANDLERS -------------
   const handleSubmitLogin = async (e) => {
@@ -187,7 +201,9 @@ const LoginModal = ({ onClose }) => {
       if (err.response?.status === 403) {
         setError("Invalid username or password");
       } else {
-        setError(err.response?.data?.detail || "An error occurred during login");
+        setError(
+          err.response?.data?.detail || "An error occurred during login"
+        );
       }
     } finally {
       setLoading(false);
@@ -233,9 +249,14 @@ const LoginModal = ({ onClose }) => {
     } catch (err) {
       // Handle 400 Bad Request for validation errors
       if (err.response?.status === 400) {
-        setError(err.response.data.detail || "Please check your input information");
+        setError(
+          err.response.data.detail || "Please check your input information"
+        );
       } else {
-        setError(err.response?.data?.detail || "Error creating account. Username may already exist.");
+        setError(
+          err.response?.data?.detail ||
+            "Error creating account. Username may already exist."
+        );
       }
     } finally {
       setLoading(false);
@@ -374,21 +395,19 @@ const LoginModal = ({ onClose }) => {
         </ModalOverlay>
       )}
 
-      {
-        isMFAEnabled && (
-          <MFALogin
-            onClose={() => {
-              onClose();
-              logout();
-            }}
-            onSuccess={() => {
-              onClose();
-              verifyMFA();
-              navigate("/dashboard");
-            }}
-          />
-        )
-      }
+      {isMFAEnabled && (
+        <MFALogin
+          onClose={() => {
+            onClose();
+            logout();
+          }}
+          onSuccess={() => {
+            onClose();
+            verifyMFA();
+            navigate("/dashboard");
+          }}
+        />
+      )}
     </>
   );
 };
