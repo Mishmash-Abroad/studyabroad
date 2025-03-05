@@ -16,13 +16,18 @@ import PDFUploadForm from "../components/PDFUploadForm";
 import DocumentStatusDisplay from "../components/DocumentStatusDisplay";
 
 // -------------------- COMPONENT LOGIC --------------------
-const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, documents = [] }) => {
+const EssentialDocumentFormSubmission = ({
+  application_id,
+  isReadOnly = false,
+  documents = [],
+}) => {
   // Show message if application hasn't been created yet
   if (!application_id) {
     return (
       <Alert severity="info" sx={{ mb: 3 }}>
-        Please submit your application first before uploading documents. 
-        Once your application is submitted, you'll be able to upload the required documents here.
+        Please submit your application first before uploading documents. Once
+        your application is submitted, you'll be able to upload the required
+        documents here.
       </Alert>
     );
   }
@@ -32,12 +37,13 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
     return (
       <>
         <Alert severity="info" sx={{ mb: 3 }}>
-          Document submission is currently unavailable. 
-          This is because your current application status doesn't allow for document modification or submission.
-          You need to be approved or enrolled in the program to submit documents.
+          Document submission is currently unavailable. This is because your
+          current application status doesn't allow for document modification or
+          submission. You need to be approved or enrolled in the program to
+          submit documents.
         </Alert>
-        <DocumentStatusDisplay 
-          application_id={application_id} 
+        <DocumentStatusDisplay
+          application_id={application_id}
           documents={documents}
           isReadOnly={true}
         />
@@ -65,8 +71,8 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Acknowledgement of the code of conduct: A document reviewing the code of
-          conduct, and attesting to student's understanding and commitment to
+          Acknowledgement of the code of conduct: A document reviewing the code
+          of conduct, and attesting to student's understanding and commitment to
           abide by same. The student must sign this to participate.
         </DocumentDescription>
       </DocumentSection>
@@ -93,10 +99,10 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Medical/health history and immunization records: A high-level summary of
-          health status and attestation regarding immunizations. This document in
-          particular is covered by HIPAA (definition 11). The student must fill
-          out and sign this.
+          Medical/health history and immunization records: A high-level summary
+          of health status and attestation regarding immunizations. This
+          document in particular is covered by HIPAA (definition 11). The
+          student must fill out and sign this.
         </DocumentDescription>
       </DocumentSection>
 
@@ -108,8 +114,9 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Assumption of risk form: A document waiving HCC's liability for student
-          participation in the program. The student must sign this to participate.
+          Assumption of risk form: A document waiving HCC's liability for
+          student participation in the program. The student must sign this to
+          participate.
         </DocumentDescription>
       </DocumentSection>
     </>

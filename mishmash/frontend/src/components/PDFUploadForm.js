@@ -30,25 +30,34 @@ const Container = styled(Paper)(({ theme }) => ({
 const DropZone = styled(Box, {
   shouldComponentUpdate: true,
   // Filter out custom props so they don't get passed to the DOM
-  shouldForwardProp: (prop) => 
-    !['isDragActive', 'hasFile', 'isReadOnly'].includes(prop)
+  shouldForwardProp: (prop) =>
+    !["isDragActive", "hasFile", "isReadOnly"].includes(prop),
 })(({ theme, isDragActive, hasFile, isReadOnly }) => ({
-  border: '2px dashed',
-  borderColor: isDragActive ? theme.palette.primary.main 
-    : hasFile ? theme.palette.success.main 
+  border: "2px dashed",
+  borderColor: isDragActive
+    ? theme.palette.primary.main
+    : hasFile
+    ? theme.palette.success.main
     : theme.palette.grey[300],
   borderRadius: theme.shape.borderRadii.medium,
   padding: theme.spacing(3),
   textAlign: "center",
-  backgroundColor: isReadOnly ? theme.palette.action.disabledBackground
-    : isDragActive ? theme.palette.primary.light
-    : hasFile ? theme.palette.success.light
+  backgroundColor: isReadOnly
+    ? theme.palette.action.disabledBackground
+    : isDragActive
+    ? theme.palette.primary.light
+    : hasFile
+    ? theme.palette.success.light
     : theme.palette.grey[50],
   cursor: isReadOnly ? "not-allowed" : "pointer",
   transition: "all 0.3s ease",
   "&:hover": {
-    backgroundColor: isReadOnly ? theme.palette.action.disabledBackground : theme.palette.grey[100],
-    borderColor: isReadOnly ? theme.palette.grey[300] : theme.palette.primary.main,
+    backgroundColor: isReadOnly
+      ? theme.palette.action.disabledBackground
+      : theme.palette.grey[100],
+    borderColor: isReadOnly
+      ? theme.palette.grey[300]
+      : theme.palette.primary.main,
   },
 }));
 
@@ -99,18 +108,19 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
     selectedDocUrl: null,
   });
 
-  const { 
-    file, 
-    error, 
-    success, 
-    loading, 
-    isDragActive, 
-    existingDoc, 
-    pdfViewerOpen, 
-    selectedDocUrl 
+  const {
+    file,
+    error,
+    success,
+    loading,
+    isDragActive,
+    existingDoc,
+    pdfViewerOpen,
+    selectedDocUrl,
   } = state;
-  
-  const updateState = (newState) => setState(prev => ({ ...prev, ...newState }));
+
+  const updateState = (newState) =>
+    setState((prev) => ({ ...prev, ...newState }));
 
   // -------------------- DATA FETCHING --------------------
   // Fetch any existing document for this user/program/type combination
@@ -122,16 +132,16 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
         );
         const doc = response.data.find((d) => d.type === doc_type);
         if (doc) {
-          updateState({ 
-            existingDoc: doc, 
-            success: "Document already uploaded" 
+          updateState({
+            existingDoc: doc,
+            success: "Document already uploaded",
           });
         }
       } catch (err) {
         console.error("Error fetching document:", err);
       }
     };
-  
+
     fetchExistingDocument();
   }, [application_id, doc_type]);
 
@@ -140,30 +150,36 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
   // 1. Form is not in read-only mode
   // 2. No existing document (or file is being replaced)
   // 3. File is PDF format
-  const handleFile = useCallback((newFile) => {
-    if (isReadOnly) return;
-    
-    if (existingDoc && !file) {
-      updateState({ error: "Please remove the existing document first" });
-      return;
-    }
+  const handleFile = useCallback(
+    (newFile) => {
+      if (isReadOnly) return;
 
-    if (newFile?.type === "application/pdf") {
-      updateState({ 
-        file: newFile, 
-        error: "", 
-        success: "" 
-      });
-    } else {
-      updateState({ error: "Please select a PDF file." });
-    }
-  }, [existingDoc, file, isReadOnly]);
+      if (existingDoc && !file) {
+        updateState({ error: "Please remove the existing document first" });
+        return;
+      }
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    updateState({ isDragActive: false });
-    handleFile(e.dataTransfer.files[0]);
-  }, [handleFile]);
+      if (newFile?.type === "application/pdf") {
+        updateState({
+          file: newFile,
+          error: "",
+          success: "",
+        });
+      } else {
+        updateState({ error: "Please select a PDF file." });
+      }
+    },
+    [existingDoc, file, isReadOnly]
+  );
+
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      updateState({ isDragActive: false });
+      handleFile(e.dataTransfer.files[0]);
+    },
+    [handleFile]
+  );
 
   const handleFileChange = (e) => handleFile(e.target.files[0]);
 
@@ -175,16 +191,16 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
     try {
       updateState({ loading: true });
       await axiosInstance.delete(`/api/documents/${existingDoc.id}/`);
-      updateState({ 
-        existingDoc: null, 
-        success: "", 
-        error: "", 
-        loading: false 
+      updateState({
+        existingDoc: null,
+        success: "",
+        error: "",
+        loading: false,
       });
     } catch (err) {
-      updateState({ 
-        error: "Failed to remove document.", 
-        loading: false 
+      updateState({
+        error: "Failed to remove document.",
+        loading: false,
       });
     }
   };
@@ -203,11 +219,11 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
 
     try {
       updateState({ loading: true });
-      const endpoint = existingDoc 
+      const endpoint = existingDoc
         ? `/api/documents/${existingDoc.id}/`
         : "/api/documents/";
       const method = existingDoc ? "patch" : "post";
-      
+
       const response = await axiosInstance[method](endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -218,13 +234,13 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
           file: null,
           existingDoc: response.data,
           error: "",
-          loading: false
+          loading: false,
         });
       }
     } catch (err) {
       updateState({
         error: "Failed to upload document.",
-        loading: false
+        loading: false,
       });
     }
   };
@@ -239,17 +255,19 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
       // Use the browser's native fetch API instead of axios
       // This respects the same protocol (HTTP/HTTPS) as the current page
       const response = await fetch(existingDoc.pdf_url);
-      
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch document: ${response.status} ${response.statusText}`
+        );
       }
-      
+
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      updateState({ 
+      updateState({
         selectedDocUrl: blobUrl,
         pdfViewerOpen: true,
-        error: "" 
+        error: "",
       });
     } catch (err) {
       console.error("Error viewing document:", err);
@@ -261,9 +279,9 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
     if (selectedDocUrl) {
       URL.revokeObjectURL(selectedDocUrl);
     }
-    updateState({ 
+    updateState({
       selectedDocUrl: null,
-      pdfViewerOpen: false 
+      pdfViewerOpen: false,
     });
   };
 
@@ -273,8 +291,16 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
         {doc_type}
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       {existingDoc ? (
         <FileInfo>
