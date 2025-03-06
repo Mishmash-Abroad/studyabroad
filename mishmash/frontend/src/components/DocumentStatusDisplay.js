@@ -13,7 +13,10 @@ import {
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import DownloadIcon from "@mui/icons-material/Download";
 import PropTypes from "prop-types";
+import { DOCUMENTS } from "../utils/constants";
+import axiosInstance from "../utils/axios";
 
 const DocumentContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -43,26 +46,6 @@ const StatusIcon = styled(Box)(({ theme, status }) => ({
         : theme.palette.error.main,
   },
 }));
-
-const REQUIRED_DOCUMENTS = [
-  {
-    type: "Acknowledgement of the code of conduct",
-    description:
-      "Attestation to understanding and commitment to the code of conduct",
-  },
-  {
-    type: "Housing questionnaire",
-    description: "Housing preferences questionnaire",
-  },
-  {
-    type: "Medical/health history and immunization records",
-    description: "Health status and immunization records (HIPAA protected)",
-  },
-  {
-    type: "Assumption of risk form",
-    description: "A document waiving liability for student participation",
-  },
-];
 
 const DocumentStatusDisplay = ({
   documents = [],
@@ -104,7 +87,6 @@ const DocumentStatusDisplay = ({
   }
 
   const getDocumentStatus = (type) => {
-    // Handle case where documents is undefined/null
     if (!documents) {
       return "missing";
     }
@@ -127,18 +109,13 @@ const DocumentStatusDisplay = ({
       setSelectedDocument(document);
       setViewError(null);
 
-      // If the document has a pdf_url property, fetch and display it
       if (document.pdf_url) {
-        // Use the browser's fetch API which respects the protocol of the page
-        // This avoids mixed content issues as it will use the same protocol (HTTP/HTTPS)
-        const response = await fetch(document.pdf_url);
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch document: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const blob = await response.blob();
+        // use axiosInstance which includes authentication token
+        const response = await axiosInstance.get(document.pdf_url, {
+          responseType: 'blob',
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = URL.createObjectURL(blob);
         setSelectedDocUrl(blobUrl);
       } else {
@@ -152,6 +129,35 @@ const DocumentStatusDisplay = ({
     }
   };
 
+  const handleDownloadDocument = async (document) => {
+    try {
+      if (document.pdf_url) {
+        // use axiosInstance which includes authentication token
+        const response = await axiosInstance.get(document.pdf_url, {
+          responseType: 'blob',
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // create a temporary link and trigger download
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.setAttribute("download", `${document.title || document.type}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // clean up the blob URL
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        console.error("Document URL not available");
+      }
+    } catch (error) {
+      console.error("Error downloading document:", error);
+    }
+  };
+
   const handleClose = () => {
     if (selectedDocUrl) {
       URL.revokeObjectURL(selectedDocUrl);
@@ -162,12 +168,18 @@ const DocumentStatusDisplay = ({
     setViewError(null);
   };
 
+  // convert DOCUMENTS object to array for mapping
+  const documentTypes = Object.values(DOCUMENTS).map((doc) => ({
+    type: doc.name,
+    description: doc.description,
+  }));
+
   return (
     <DocumentContainer>
       <Typography variant="subtitle2" gutterBottom>
         Required Documents Status
       </Typography>
-      {REQUIRED_DOCUMENTS.map(({ type, description }) => {
+      {documentTypes.map(({ type, description }) => {
         const status = getDocumentStatus(type);
         const document = documents.find(
           (doc) => doc.type === type && doc.application === application_id
@@ -201,6 +213,28 @@ const DocumentStatusDisplay = ({
                   }}
                 >
                   <VisibilityIcon
+                    fontSize="small"
+                    color="primary"
+                    sx={{ fontSize: "0.9rem" }}
+                  />
+                </IconButton>
+              )}
+              {status === "submitted" && document && (
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadDocument(document);
+                  }}
+                  size="small"
+                  title="Download Document"
+                  sx={{
+                    padding: "4px",
+                    width: "28px",
+                    height: "28px",
+                    marginRight: "2px",
+                  }}
+                >
+                  <DownloadIcon
                     fontSize="small"
                     color="primary"
                     sx={{ fontSize: "0.9rem" }}
