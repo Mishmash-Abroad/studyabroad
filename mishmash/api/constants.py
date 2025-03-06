@@ -17,6 +17,19 @@ ALL_ADMIN_EDITABLE_STATUSES = [
     "Canceled",
 ]
 
+ALL_FACULTY_EDITABLE_STATUSES = [
+    "Applied",
+    "Eligible",
+    "Approved",
+]
+
+
+ALL_REVIEWER_EDITABLE_STATUSES = [
+    "Applied",
+    "Eligible",
+]
+
+
 SEMESTERS = [
     "Summer",
     "Fall",

@@ -39,7 +39,7 @@ const AdminAppView = () => {
   const [status, setStatus] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
-  const ALL_AVAILABLE_STATUSES = Object.keys(
+  const ALL_AVAILABLE_STATUSES = Object.values(
     get_all_available_statuses_to_edit(user.roles_object)
   );
 

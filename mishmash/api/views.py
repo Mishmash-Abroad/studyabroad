@@ -65,7 +65,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
-from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
+from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_FACULTY_EDITABLE_STATUSES, ALL_REVIEWER_EDITABLE_STATUSES, ALL_STATUSES
 import re
 from .constants import SEMESTERS
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -873,7 +873,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         if "status" in data:
             new_status = data["status"]
 
-            if not user.is_admin:
+            if not (user.is_admin or user.is_faculty or user.is_reviewer):
                 if new_status not in ["Applied", "Withdrawn"]:
                     return Response(
                         {
@@ -883,10 +883,24 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
+                if user.is_admin and new_status not in ALL_ADMIN_EDITABLE_STATUSES:
                     return Response(
                         {
                             "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                elif user.is_faculty and new_status not in ALL_FACULTY_EDITABLE_STATUSES:
+                    return Response(
+                        {
+                            "detail": "Invalid status update. Faculty can set status to 'Enrolled' or 'Canceled'."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                elif user.is_reviewer and new_status not in ALL_REVIEWER_EDITABLE_STATUSES:
+                    return Response(
+                        {
+                            "detail": "Invalid status update. Reviewer can set status to 'Enrolled' or 'Canceled'."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
