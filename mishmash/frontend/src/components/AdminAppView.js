@@ -22,7 +22,7 @@ import {
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
 import ProgramForm from "./ProgramForm";
-import useAuth from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 const AdminAppView = () => {
   const { id } = useParams();
@@ -39,9 +39,11 @@ const AdminAppView = () => {
   const [status, setStatus] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
-  const ALL_AVAILABLE_STATUSES = get_all_available_statuses_to_edit(
-    user.roles_object
+  const ALL_AVAILABLE_STATUSES = Object.keys(
+    get_all_available_statuses_to_edit(user.roles_object)
   );
+
+  console.log(ALL_AVAILABLE_STATUSES);
 
   useEffect(() => {
     fetchApplicationDetails();

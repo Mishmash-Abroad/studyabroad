@@ -97,6 +97,20 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         return obj.student == request.user or request.user.is_admin
 
 
+class IsOwnerOrFaculty(permissions.BasePermission):
+    """Custom permission to allow only the owner or an faculty to edit/view."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.student == request.user or request.user.is_faculty
+
+
+class IsOwnerOrReviewer(permissions.BasePermission):
+    """Custom permission to allow only the owner or an reviewer to edit/view."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.student == request.user or request.user.is_reviewer
+
+
 class IsAdminOrSelf(permissions.BasePermission):
     """Custom permission to allow users to access their own data, while admins can access any user's data."""
 
@@ -104,11 +118,44 @@ class IsAdminOrSelf(permissions.BasePermission):
         return request.user.is_admin or obj.id == request.user.id
 
 
+class IsFacultyOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while faculty can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_faculty or obj.id == request.user.id
+
+
+class IsReviewerOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while reviewers can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_reviewer or obj.id == request.user.id
+
+
 class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+
+        return obj.application.student == request.user
+
+class IsApplicationResponseOwnerOrFaculty(permissions.BasePermission):
+    """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_faculty:
+            return request.method in permissions.SAFE_METHODS
+
+        return obj.application.student == request.user
+
+
+class IsApplicationResponseOwnerOrReviewer(permissions.BasePermission):
+    """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_reviewer:
             return request.method in permissions.SAFE_METHODS
 
         return obj.application.student == request.user
@@ -161,6 +208,40 @@ class AdminCreateAndView(permissions.BasePermission):
             return False
         if request.method in ["GET", "POST"]:
             return request.user.is_admin
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS
+
+
+class FacultyCreateAndView(permissions.BasePermission):
+    """
+    Custom permission to allow only faculty users to create and view confidential notes.
+    Updates and deletions are always forbidden.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ["GET", "POST"]:
+            return request.user.is_faculty
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS
+
+
+class ReviewerCreateAndView(permissions.BasePermission):
+    """
+    Custom permission to allow only reviewer users to create and view confidential notes.
+    Updates and deletions are always forbidden.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ["GET", "POST"]:
+            return request.user.is_reviewer
         return False
 
     def has_object_permission(self, request, view, obj):
@@ -649,7 +730,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsOwnerOrAdmin | IsOwnerOrFaculty | IsOwnerOrReviewer,
+    ]
 
     def get_queryset(self):
         """
@@ -888,7 +972,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationResponseSerializer
     permission_classes = [
         permissions.IsAuthenticated,
-        IsApplicationResponseOwnerOrAdmin,
+        IsApplicationResponseOwnerOrAdmin | IsApplicationResponseOwnerOrFaculty | IsApplicationResponseOwnerOrReviewer
     ]
 
     def get_queryset(self):
@@ -917,7 +1001,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
                 raise NotFound(detail="Application not found.")
 
             if (
-                not self.request.user.is_admin
+                not (self.request.user.is_admin or self.request.user.is_faculty or self.request.user.is_reviewer)
                 and application.student != self.request.user
             ):
                 raise PermissionDenied(
@@ -1059,7 +1143,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrSelf]
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminOrSelf | IsFacultyOrSelf | IsReviewerOrSelf,
+    ]
     filter_backends = [filters.SearchFilter]
     search_fields = ["username", "display_name", "email"]
 
@@ -1082,7 +1169,11 @@ class UserViewSet(viewsets.ModelViewSet):
             return queryset.filter(is_admin=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access
-        if self.action == "list" and not self.request.user.is_admin:
+        if self.action == "list" and not (
+            self.request.user.is_admin
+            or self.request.user.is_faculty
+            or self.request.user.is_reviewer
+        ):
             return queryset.none()
 
         return queryset
@@ -1322,7 +1413,11 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAdminUser])
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[permissions.IsAdminUser],
+    )
     def user_warnings(self, request, pk=None):
         """
         Get warnings related to promoting, demoting, or deleting a user.
@@ -1369,7 +1464,10 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
 
     queryset = ConfidentialNote.objects.all().order_by("-timestamp")
     serializer_class = ConfidentialNoteSerializer
-    permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        AdminCreateAndView | FacultyCreateAndView | ReviewerCreateAndView,
+    ]
 
     def get_queryset(self):
         """

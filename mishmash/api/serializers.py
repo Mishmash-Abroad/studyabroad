@@ -14,6 +14,7 @@ from allauth.socialaccount.models import SocialAccount
 
 class UserSerializer(serializers.ModelSerializer):
     is_sso = serializers.ReadOnlyField()
+
     class Meta:
         model = User
         fields = [
@@ -26,6 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_reviewer",
             "is_mfa_enabled",
             "is_sso",
+            "roles_object",
         ]
 
 
@@ -66,8 +68,10 @@ class ApplicationQuestionSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(read_only=True)
-    gpa = serializers.DecimalField(max_digits=4, decimal_places=3, coerce_to_string=True)
-    
+    gpa = serializers.DecimalField(
+        max_digits=4, decimal_places=3, coerce_to_string=True
+    )
+
     class Meta:
         model = Application
         fields = [
@@ -100,7 +104,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
-            "cover_image",      # Accept the uploaded file
+            "cover_image",  # Accept the uploaded file
             "cover_image_url",  # For retrieving the image URL
             "pinned",
             "importance",
@@ -152,7 +156,7 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    pdf_url = serializers.SerializerMethodField()  
+    pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -160,13 +164,15 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def get_pdf_url(self, obj):
         """Generate the absolute URL for the PDF file."""
-        request = self.context.get("request")  
+        request = self.context.get("request")
         if obj.pdf:
             if request:
                 url = request.build_absolute_uri(obj.pdf.url)
                 # Ensure URL is HTTPS in production environments
-                if url.startswith('http:') and not request.META.get('HTTP_HOST', '').startswith('localhost'):
-                    url = url.replace('http:', 'https:', 1)
+                if url.startswith("http:") and not request.META.get(
+                    "HTTP_HOST", ""
+                ).startswith("localhost"):
+                    url = url.replace("http:", "https:", 1)
                 return url
             return obj.pdf.url
         return None
