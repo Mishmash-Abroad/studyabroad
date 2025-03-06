@@ -175,6 +175,6 @@ class Command(BaseCommand):
                     email=email,
                     password=password,
                     display_name=display_name,
-                    is_admin=True
+                    is_faculty=True,
                 )
                 self.stdout.write(f'Created faculty user: {display_name}')

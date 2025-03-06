@@ -143,7 +143,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setDialogOpen(false);
     // Leave systemAdminWarning true so user still sees the alert
   };
-
+  
   const handleDeleteProgram = async () => {
     if (!editingProgram) return;
     const countResponse = await axiosInstance.get(
@@ -316,7 +316,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         (user.is_admin ||
           user.is_reviewer ||
           (user.is_faculty &&
-            editingProgram.faculty_lead_ids.includes(user.id))) && (
+            programData.faculty_lead_ids.includes(user.id))) && (
           <ApplicantTable programId={editingProgram.id} />
         )}
 
