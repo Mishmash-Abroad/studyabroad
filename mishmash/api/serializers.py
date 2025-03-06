@@ -35,7 +35,7 @@ class ProgramSerializer(serializers.ModelSerializer):
     faculty_leads = UserSerializer(many=True, read_only=True)
     faculty_lead_ids = serializers.PrimaryKeyRelatedField(
         source="faculty_leads",
-        queryset=User.objects.filter(is_admin=True),
+        queryset=User.objects.filter(is_faculty=True),
         many=True,
         write_only=True,
         required=False,
