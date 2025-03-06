@@ -14,6 +14,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PropTypes from "prop-types";
+import { DOCUMENTS } from "../utils/constants";
 
 const DocumentContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -43,26 +44,6 @@ const StatusIcon = styled(Box)(({ theme, status }) => ({
         : theme.palette.error.main,
   },
 }));
-
-const REQUIRED_DOCUMENTS = [
-  {
-    type: "Acknowledgement of the code of conduct",
-    description:
-      "Attestation to understanding and commitment to the code of conduct",
-  },
-  {
-    type: "Housing questionnaire",
-    description: "Housing preferences questionnaire",
-  },
-  {
-    type: "Medical/health history and immunization records",
-    description: "Health status and immunization records (HIPAA protected)",
-  },
-  {
-    type: "Assumption of risk form",
-    description: "A document waiving liability for student participation",
-  },
-];
 
 const DocumentStatusDisplay = ({
   documents = [],
@@ -162,12 +143,18 @@ const DocumentStatusDisplay = ({
     setViewError(null);
   };
 
+  // Convert DOCUMENTS object to array for mapping
+  const documentTypes = Object.values(DOCUMENTS).map((doc) => ({
+    type: doc.name,
+    description: doc.description,
+  }));
+
   return (
     <DocumentContainer>
       <Typography variant="subtitle2" gutterBottom>
         Required Documents Status
       </Typography>
-      {REQUIRED_DOCUMENTS.map(({ type, description }) => {
+      {documentTypes.map(({ type, description }) => {
         const status = getDocumentStatus(type);
         const document = documents.find(
           (doc) => doc.type === type && doc.application === application_id

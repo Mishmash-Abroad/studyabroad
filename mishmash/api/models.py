@@ -204,15 +204,9 @@ class Announcement(models.Model):
 class Document(models.Model):
     TYPES_OF_DOCS = [
         ("Assumption of risk form", "Assumption of risk form"),
-        (
-            "Acknowledgement of the code of conduct",
-            "Acknowledgement of the code of conduct",
-        ),
+        ("Acknowledgement of the code of conduct", "Acknowledgement of the code of conduct",), 
         ("Housing questionnaire", "Housing questionnaire"),
-        (
-            "Medical/health history and immunization records",
-            "Medical/health history and immunization records",
-        ),
+        ("Medical/health history and immunization records","Medical/health history and immunization records",),
     ]
     title = models.CharField(max_length=255)
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
