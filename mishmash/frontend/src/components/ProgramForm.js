@@ -20,9 +20,11 @@ import axiosInstance from "../utils/axios";
 import { SEMESTERS } from "../utils/constants";
 import ApplicantTable from "./ApplicantTable";
 import FacultyPicklist from "./FacultyPicklist";
+import { useAuth } from "../context/AuthContext";
 
 const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [programData, setProgramData] = useState({
     title: "",
@@ -141,7 +143,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setDialogOpen(false);
     // Leave systemAdminWarning true so user still sees the alert
   };
-
+  
   const handleDeleteProgram = async () => {
     if (!editingProgram) return;
     const countResponse = await axiosInstance.get(
@@ -191,6 +193,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           label="Title"
           name="title"
           fullWidth
+          disabled={!user.is_admin}
           value={programData.title}
           onChange={handleInputChange}
         />
@@ -198,6 +201,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           label="Year"
           name="year"
           fullWidth
+          disabled={!user.is_admin}
           value={programData.year}
           onChange={handleInputChange}
         />
@@ -207,6 +211,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             labelId="semester-label"
             label="Semester"
             name="semester"
+            disabled={!user.is_admin}
             value={programData.semester}
             onChange={handleInputChange}
           >
@@ -220,6 +225,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         <FacultyPicklist
           onFacultyChange={handleFacultyChange}
           initialSelected={programData.faculty_lead_ids}
+          is_admin={user.is_admin}
         />
         <TextField
           label="Description"
@@ -227,6 +233,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           multiline
           rows={3}
           fullWidth
+          disabled={!user.is_admin}
           value={programData.description}
           onChange={handleInputChange}
         />
@@ -235,6 +242,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           type="date"
           name="application_open_date"
           fullWidth
+          disabled={!user.is_admin}
           InputLabelProps={{ shrink: true }}
           value={programData.application_open_date}
           onChange={handleInputChange}
@@ -244,6 +252,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           type="date"
           name="application_deadline"
           fullWidth
+          disabled={!user.is_admin}
           InputLabelProps={{ shrink: true }}
           value={programData.application_deadline}
           onChange={handleInputChange}
@@ -253,6 +262,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           type="date"
           name="essential_document_deadline"
           fullWidth
+          disabled={!user.is_admin}
           InputLabelProps={{ shrink: true }}
           value={programData.essential_document_deadline}
           onChange={handleInputChange}
@@ -262,6 +272,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           type="date"
           name="start_date"
           fullWidth
+          disabled={!user.is_admin}
           InputLabelProps={{ shrink: true }}
           value={programData.start_date}
           onChange={handleInputChange}
@@ -271,35 +282,44 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           type="date"
           name="end_date"
           fullWidth
+          disabled={!user.is_admin}
           InputLabelProps={{ shrink: true }}
           value={programData.end_date}
           onChange={handleInputChange}
         />
 
-        <Box
-          sx={{
-            display: "flex",
-            gap: "10px",
-            justifyContent: "flex-end",
-            mt: 2,
-          }}
-        >
-          {editingProgram && (
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={handleDeleteProgram}
-            >
-              Delete Program
+        {user.is_admin && (
+          <Box
+            sx={{
+              display: "flex",
+              gap: "10px",
+              justifyContent: "flex-end",
+              mt: 2,
+            }}
+          >
+            {editingProgram && (
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleDeleteProgram}
+              >
+                Delete Program
+              </Button>
+            )}
+            <Button variant="contained" onClick={handleSubmit}>
+              {editingProgram ? "Update Program" : "Create Program"}
             </Button>
-          )}
-          <Button variant="contained" onClick={handleSubmit}>
-            {editingProgram ? "Update Program" : "Create Program"}
-          </Button>
-        </Box>
+          </Box>
+        )}
       </Box>
 
-      {editingProgram && <ApplicantTable programId={editingProgram.id} />}
+      {editingProgram &&
+        (user.is_admin ||
+          user.is_reviewer ||
+          (user.is_faculty &&
+            programData.faculty_lead_ids.includes(user.id))) && (
+          <ApplicantTable programId={editingProgram.id} />
+        )}
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={handleCancelSubmit}>

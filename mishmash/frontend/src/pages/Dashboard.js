@@ -173,7 +173,6 @@ const Dashboard = () => {
     navigate(path);
   };
 
-  console.log(user);
   return (
     <DashboardContainer>
       <TopNavBar />
@@ -187,16 +186,20 @@ const Dashboard = () => {
         </DashboardHeader>
 
         {/* Navigation Tabs */}
+        {/* Prevent Non-admins from seeing user management */}
         <TabContainer>
-          {routes.map(({ path, label }) => (
-            <TabButton
-              key={path}
-              active={activeTab === path}
-              onClick={() => handleTabChange(path)}
-            >
-              {label}
-            </TabButton>
-          ))}
+          {routes.map(
+            ({ path, label }) =>
+              (label != "User Management" || user.is_admin) && (
+                <TabButton
+                  key={path}
+                  active={activeTab === path}
+                  onClick={() => handleTabChange(path)}
+                >
+                  {label}
+                </TabButton>
+              )
+          )}
         </TabContainer>
 
         {/* Routes */}
@@ -215,8 +218,11 @@ const Dashboard = () => {
                   path="admin-programs/:programTitle"
                   element={<AdminProgramsTable />}
                 />
-                <Route path="user-management" element={<UserManagement />} />
               </>
+            )}
+
+            {user?.is_admin && (
+              <Route path="user-management" element={<UserManagement />} />
             )}
 
             {/* Student Routes */}

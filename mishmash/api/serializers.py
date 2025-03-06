@@ -14,6 +14,7 @@ from allauth.socialaccount.models import SocialAccount
 
 class UserSerializer(serializers.ModelSerializer):
     is_sso = serializers.ReadOnlyField()
+
     class Meta:
         model = User
         fields = [
@@ -26,6 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_reviewer",
             "is_mfa_enabled",
             "is_sso",
+            "roles_object",
         ]
 
 
@@ -33,7 +35,7 @@ class ProgramSerializer(serializers.ModelSerializer):
     faculty_leads = UserSerializer(many=True, read_only=True)
     faculty_lead_ids = serializers.PrimaryKeyRelatedField(
         source="faculty_leads",
-        queryset=User.objects.filter(is_admin=True),
+        queryset=User.objects.filter(is_faculty=True),
         many=True,
         write_only=True,
         required=False,
@@ -66,8 +68,10 @@ class ApplicationQuestionSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(read_only=True)
-    gpa = serializers.DecimalField(max_digits=4, decimal_places=3, coerce_to_string=True)
-    
+    gpa = serializers.DecimalField(
+        max_digits=4, decimal_places=3, coerce_to_string=True
+    )
+
     class Meta:
         model = Application
         fields = [
@@ -100,7 +104,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
-            "cover_image",      # Accept the uploaded file
+            "cover_image",  # Accept the uploaded file
             "cover_image_url",  # For retrieving the image URL
             "pinned",
             "importance",
@@ -152,7 +156,7 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    pdf_url = serializers.SerializerMethodField()  
+    pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -160,7 +164,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def get_pdf_url(self, obj):
         """Generate the URL for securely accessing the PDF file."""
-        # Return only the relative path which will be combined with the baseURL by axios
+        # return only the relative path which will be combined with the baseURL by axios
         if obj.pdf:
             return f'/api/documents/{obj.id}/secure_file/'
         return None

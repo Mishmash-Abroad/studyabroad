@@ -49,7 +49,7 @@ class Program(models.Model):
     faculty_leads = models.ManyToManyField(
         "User",
         related_name="led_programs",
-        limit_choices_to={"is_admin": True},
+        limit_choices_to={"is_faculty": True},
         default=[1],
     )
     application_open_date = models.DateField(null=True, blank=True)
