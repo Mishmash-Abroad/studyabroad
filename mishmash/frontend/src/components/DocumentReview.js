@@ -47,16 +47,11 @@ const DocumentReview = ({ application_id }) => {
   const handleDownload = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
-        const response = await fetch(doc.pdf_url);
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to download document: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const blob = await response.blob();
+        const response = await axiosInstance.get(doc.pdf_url, {
+          responseType: 'blob',
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
         // Create a temporary link and trigger download
         const link = document.createElement("a");
@@ -78,16 +73,12 @@ const DocumentReview = ({ application_id }) => {
   const handleView = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
-        const response = await fetch(doc.pdf_url);
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to view document: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const blob = await response.blob();
+        // Use axiosInstance which includes authentication token
+        const response = await axiosInstance.get(doc.pdf_url, {
+          responseType: 'blob',
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
         setSelectedDoc({ ...doc, url: blobUrl });
         setPdfViewerOpen(true);

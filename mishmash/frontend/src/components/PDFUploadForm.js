@@ -246,23 +246,17 @@ const PDFUploadForm = ({ doc_type, application_id, isReadOnly = false }) => {
   };
 
   const handleView = async () => {
-    if (!existingDoc?.pdf_url) {
-      updateState({ error: "Document URL not available." });
+    if (!existingDoc || !existingDoc.pdf_url) {
+      updateState({ error: "Document URL not available" });
       return;
     }
 
     try {
-      // Use the browser's native fetch API instead of axios
-      // This respects the same protocol (HTTP/HTTPS) as the current page
-      const response = await fetch(existingDoc.pdf_url);
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch document: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const blob = await response.blob();
+      const response = await axiosInstance.get(existingDoc.pdf_url, {
+        responseType: 'blob',
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const blobUrl = window.URL.createObjectURL(blob);
       updateState({
         selectedDocUrl: blobUrl,

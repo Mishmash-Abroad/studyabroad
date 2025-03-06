@@ -61,6 +61,10 @@ from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
 from datetime import datetime, timedelta
+from decimal import Decimal
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from django.http import JsonResponse, FileResponse
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -71,12 +75,12 @@ from .constants import SEMESTERS
 from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
-from django.http import JsonResponse
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 import base64
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import logout as django_logout
+import os
 
 ### Custom permission classes for API access ###
 
@@ -1501,6 +1505,54 @@ class DocumentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(application=application_id)
 
         return queryset
+
+    @action(detail=True, methods=['get'])
+    def secure_file(self, request, pk=None):
+        """
+        Securely serve document files with proper authorization checks.
+        
+        Only the document owner (student who submitted) or an admin can access the file.
+        This prevents direct access to files via URL and adds an authorization layer.
+        
+        Returns:
+            FileResponse: The requested PDF file if authorization passes
+            Response: 403 Forbidden if unauthorized
+            Response: 404 Not Found if the document doesn't exist
+        """
+        try:
+            document = self.get_object()
+            
+            # Check if user is authorized (already handled by permission_classes)
+            # But we do an extra check here for clarity
+            application = document.application
+            user = request.user
+            
+            if not (user.is_admin or application.student == user):
+                return Response(
+                    {"detail": "You do not have permission to access this document."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            # If we get here, user is authorized to view this document
+            file_path = document.pdf.path
+            
+            if not os.path.exists(file_path):
+                return Response(
+                    {"detail": "File not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            # Create a FileResponse for the file
+            response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{document.title}"'
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving document: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class MFAViewSet(viewsets.ViewSet):

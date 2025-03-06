@@ -159,14 +159,8 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "pdf", "uploaded_at", "application", "type", "pdf_url"]
 
     def get_pdf_url(self, obj):
-        """Generate the absolute URL for the PDF file."""
-        request = self.context.get("request")  
+        """Generate the URL for securely accessing the PDF file."""
+        # Return only the relative path which will be combined with the baseURL by axios
         if obj.pdf:
-            if request:
-                url = request.build_absolute_uri(obj.pdf.url)
-                # Ensure URL is HTTPS in production environments
-                if url.startswith('http:') and not request.META.get('HTTP_HOST', '').startswith('localhost'):
-                    url = url.replace('http:', 'https:', 1)
-                return url
-            return obj.pdf.url
+            return f'/api/documents/{obj.id}/secure_file/'
         return None
