@@ -55,12 +55,10 @@ const TemplateLink = styled(Link)(({ theme }) => ({
 
 // -------------------- HELPER FUNCTIONS --------------------
 const handleDownloadTemplate = (path, filename) => {
-  // Create a temporary link element
   const link = document.createElement("a");
   link.href = path;
   link.setAttribute("download", filename);
   
-  // Append to body, click, and remove
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

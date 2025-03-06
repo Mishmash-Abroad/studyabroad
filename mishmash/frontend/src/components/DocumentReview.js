@@ -53,7 +53,7 @@ const DocumentReview = ({ application_id }) => {
         
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
-        // Create a temporary link and trigger download
+        // create a temporary link and trigger download
         const link = document.createElement("a");
         link.href = blobUrl;
         link.setAttribute("download", `${doc.type}.pdf`);
@@ -73,7 +73,7 @@ const DocumentReview = ({ application_id }) => {
   const handleView = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Use axiosInstance which includes authentication token
+        // use axiosInstance which includes authentication token
         const response = await axiosInstance.get(doc.pdf_url, {
           responseType: 'blob',
         });
@@ -171,7 +171,6 @@ const DocumentReview = ({ application_id }) => {
         <DialogContent>
           {selectedDoc && (
             <Box sx={{ height: "80vh" }}>
-              {/* Using iframe for better PDF display */}
               <iframe
                 src={selectedDoc.url}
                 width="100%"

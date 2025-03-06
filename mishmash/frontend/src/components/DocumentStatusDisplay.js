@@ -87,7 +87,6 @@ const DocumentStatusDisplay = ({
   }
 
   const getDocumentStatus = (type) => {
-    // Handle case where documents is undefined/null
     if (!documents) {
       return "missing";
     }
@@ -110,9 +109,8 @@ const DocumentStatusDisplay = ({
       setSelectedDocument(document);
       setViewError(null);
 
-      // If the document has a pdf_url property, fetch and display it
       if (document.pdf_url) {
-        // Use axiosInstance which includes authentication token
+        // use axiosInstance which includes authentication token
         const response = await axiosInstance.get(document.pdf_url, {
           responseType: 'blob',
         });
@@ -133,9 +131,8 @@ const DocumentStatusDisplay = ({
 
   const handleDownloadDocument = async (document) => {
     try {
-      // If the document has a pdf_url property, fetch and download it
       if (document.pdf_url) {
-        // Use axiosInstance which includes authentication token
+        // use axiosInstance which includes authentication token
         const response = await axiosInstance.get(document.pdf_url, {
           responseType: 'blob',
         });
@@ -143,7 +140,7 @@ const DocumentStatusDisplay = ({
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = URL.createObjectURL(blob);
         
-        // Create a temporary link and trigger download
+        // create a temporary link and trigger download
         const link = document.createElement("a");
         link.href = blobUrl;
         link.setAttribute("download", `${document.title || document.type}.pdf`);
@@ -151,7 +148,7 @@ const DocumentStatusDisplay = ({
         link.click();
         document.body.removeChild(link);
         
-        // Clean up the blob URL
+        // clean up the blob URL
         URL.revokeObjectURL(blobUrl);
       } else {
         console.error("Document URL not available");
@@ -171,7 +168,7 @@ const DocumentStatusDisplay = ({
     setViewError(null);
   };
 
-  // Convert DOCUMENTS object to array for mapping
+  // convert DOCUMENTS object to array for mapping
   const documentTypes = Object.values(DOCUMENTS).map((doc) => ({
     type: doc.name,
     description: doc.description,
