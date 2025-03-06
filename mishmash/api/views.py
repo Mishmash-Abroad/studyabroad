@@ -1166,7 +1166,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # If requesting faculty list, filter to only show faculty
         if self.action == "list" and self.request.query_params.get("is_faculty"):
-            return queryset.filter(is_admin=True).order_by("display_name")
+            return queryset.filter(is_faculty=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access
         if self.action == "list" and not (
@@ -1409,7 +1409,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Public access (any user can view faculty list)
         """
-        faculty = User.objects.filter(is_admin=True).order_by("display_name")
+        faculty = User.objects.filter(is_faculty=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
 

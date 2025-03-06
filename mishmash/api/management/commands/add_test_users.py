@@ -73,6 +73,7 @@ class Command(BaseCommand):
             password=make_password('hcc_admin'),
             display_name='System Administrator',
             is_admin=True,
+            is_faculty=True,
             is_staff=True,  # Allows access to Django admin interface
             is_superuser=not prod_mode,  # Denies system access to admin in prod mode
             is_active=True
