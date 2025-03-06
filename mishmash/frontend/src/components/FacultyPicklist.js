@@ -60,6 +60,8 @@ const FacultyPicklist = ({
         const response = await axiosInstance.get("/api/users/", {
           params: { is_faculty: true },
         });
+        console.log(response.data);
+        
         setFacultyList(response.data);
         setError(null);
       } catch (err) {
