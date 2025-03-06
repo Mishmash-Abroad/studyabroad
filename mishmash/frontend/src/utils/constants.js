@@ -170,22 +170,22 @@ export const SESSION_TIMEOUTS = {
 export const SEMESTERS = ["Summer", "Fall", "Spring"];
 
 export const STATUSES_ADMINS_CAN_EDIT = {
-  APPLIED: "applied",
-  ELIGIBLE: "eligible",
-  APPROVED: "approved",
-  ENROLLED: "enrolled",
-  CANCELED: "canceled",
+  APPLIED: "Applied",
+  ELIGIBLE: "Eligible",
+  APPROVED: "Approved",
+  ENROLLED: "Enrolled",
+  CANCELED: "Canceled",
 };
 
 export const STATUSES_FACULTY_CAN_EDIT = {
-  APPLIED: "applied",
-  ELIGIBLE: "eligible",
-  APPROVED: "approved",
+  APPLIED: "Applied",
+  ELIGIBLE: "Eligible",
+  APPROVED: "Approved",
 };
 
 export const STATUSES_REVIEWERS_CAN_EDIT = {
-  APPLIED: "applied",
-  ELIGIBLE: "eligible",
+  APPLIED: "Applied",
+  ELIGIBLE: "Eligible",
 };
 
 /**

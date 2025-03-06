@@ -42,7 +42,7 @@ import axiosInstance from "../utils/axios";
 import ChangePasswordModal from "./ChangePasswordModal";
 
 // Role transition button component
-const RoleTransitionButton = ({ user, isCurrentUser, onClick }) => {
+const AdminRoleTransitionButton = ({ user, isCurrentUser, onClick }) => {
   const isSystemAdmin = user.username === "admin";
   const isDisabled = isCurrentUser || isSystemAdmin;
 
@@ -104,6 +104,146 @@ const RoleTransitionButton = ({ user, isCurrentUser, onClick }) => {
             sx={{
               fontSize: !user.is_admin ? 22 : 16,
               opacity: !user.is_admin ? 1 : 0.5,
+            }}
+          />
+        </Box>
+      </span>
+    </Tooltip>
+  );
+};
+
+const FacultyRoleTransitionButton = ({ user, isCurrentUser, onClick }) => {
+  const isSystemAdmin = user.username === "admin";
+  const isDisabled = isCurrentUser || isSystemAdmin;
+
+  // Get appropriate tooltip message
+  const getTooltip = () => {
+    if (isSystemAdmin) return "System admin role cannot be changed";
+    if (isCurrentUser) return "You cannot change your own role";
+    return user.is_faculty ? "Demote to User" : "Promote to Faculty";
+  };
+
+  return (
+    <Tooltip title={getTooltip()} disableInteractive>
+      <span>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 0.5,
+            border: "1px solid #e0e0e0",
+            borderRadius: 1,
+            opacity: isDisabled ? 0.5 : 1,
+            backgroundColor: isDisabled ? "rgba(0, 0, 0, 0.04)" : "transparent",
+            cursor: isDisabled ? "default" : "pointer",
+            "&:hover": {
+              backgroundColor: isDisabled
+                ? "rgba(0, 0, 0, 0.04)"
+                : "rgba(0, 0, 0, 0.08)",
+            },
+          }}
+          onClick={() => !isDisabled && onClick && onClick(user)}
+        >
+          {/* Admin Icon */}
+          <AdminPanelSettings
+            color={user.is_faculty ? "primary" : "disabled"}
+            sx={{
+              fontSize: user.is_faculty ? 22 : 16,
+              opacity: user.is_faculty ? 1 : 0.5,
+            }}
+          />
+
+          {/* Transition Arrow */}
+          {user.is_faculty ? (
+            <KeyboardArrowRight
+              color={isDisabled ? "disabled" : "action"}
+              sx={{ fontSize: 16, mx: 0.5, opacity: isDisabled ? 0.5 : 1 }}
+            />
+          ) : (
+            <KeyboardArrowLeft
+              color={isDisabled ? "disabled" : "action"}
+              sx={{ fontSize: 16, mx: 0.5, opacity: isDisabled ? 0.5 : 1 }}
+            />
+          )}
+
+          {/* User Icon */}
+          <Person
+            color={!user.is_faculty ? "primary" : "disabled"}
+            sx={{
+              fontSize: !user.is_faculty ? 22 : 16,
+              opacity: !user.is_faculty ? 1 : 0.5,
+            }}
+          />
+        </Box>
+      </span>
+    </Tooltip>
+  );
+};
+
+const ReviewerRoleTransitionButton = ({ user, isCurrentUser, onClick }) => {
+  const isSystemAdmin = user.username === "admin";
+  const isDisabled = isCurrentUser || isSystemAdmin;
+
+  // Get appropriate tooltip message
+  const getTooltip = () => {
+    if (isSystemAdmin) return "System admin role cannot be changed";
+    if (isCurrentUser) return "You cannot change your own role";
+    return user.is_reviewer ? "Demote to User" : "Promote to Reviewer";
+  };
+
+  return (
+    <Tooltip title={getTooltip()} disableInteractive>
+      <span>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 0.5,
+            border: "1px solid #e0e0e0",
+            borderRadius: 1,
+            opacity: isDisabled ? 0.5 : 1,
+            backgroundColor: isDisabled ? "rgba(0, 0, 0, 0.04)" : "transparent",
+            cursor: isDisabled ? "default" : "pointer",
+            "&:hover": {
+              backgroundColor: isDisabled
+                ? "rgba(0, 0, 0, 0.04)"
+                : "rgba(0, 0, 0, 0.08)",
+            },
+          }}
+          onClick={() => !isDisabled && onClick && onClick(user)}
+        >
+          {/* Admin Icon */}
+          <AdminPanelSettings
+            color={user.is_reviewer ? "primary" : "disabled"}
+            sx={{
+              fontSize: user.is_reviewer ? 22 : 16,
+              opacity: user.is_reviewer ? 1 : 0.5,
+            }}
+          />
+
+          {/* Transition Arrow */}
+          {user.is_reviewer ? (
+            <KeyboardArrowRight
+              color={isDisabled ? "disabled" : "action"}
+              sx={{ fontSize: 16, mx: 0.5, opacity: isDisabled ? 0.5 : 1 }}
+            />
+          ) : (
+            <KeyboardArrowLeft
+              color={isDisabled ? "disabled" : "action"}
+              sx={{ fontSize: 16, mx: 0.5, opacity: isDisabled ? 0.5 : 1 }}
+            />
+          )}
+
+          {/* User Icon */}
+          <Person
+            color={!user.is_reviewer ? "primary" : "disabled"}
+            sx={{
+              fontSize: !user.is_reviewer ? 22 : 16,
+              opacity: !user.is_reviewer ? 1 : 0.5,
             }}
           />
         </Box>
@@ -184,7 +324,7 @@ const UserManagement = () => {
       : valueB.localeCompare(valueA);
   });
 
-  const handlePromoteDemote = async (user) => {
+  const handlePromoteDemoteToAdmin = async (user) => {
     try {
       const warningResponse = await axiosInstance.get(
         `/api/users/${user.id}/user_warnings/`
@@ -216,6 +356,102 @@ const UserManagement = () => {
           onConfirm: async () => {
             await axiosInstance.patch(`/api/users/${user.id}/`, {
               is_admin: false,
+            });
+            // await Promise.all(
+            //   faculty_programs.map((program) =>
+            //     axiosInstance.patch(`/api/programs/${program.id}/`, { faculty_lead: "admin" })
+            //   )
+            // );
+            fetchUsers();
+            setConfirmDialog(null);
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching user warnings:", err);
+    }
+  };
+
+  const handlePromoteDemoteToFaculty = async (user) => {
+    try {
+      const warningResponse = await axiosInstance.get(
+        `/api/users/${user.id}/user_warnings/`
+      );
+      const { applications_count, faculty_programs } = warningResponse.data;
+
+      if (!user.is_faculty) {
+        // Promoting to faculty: Applications will be deleted
+        setConfirmDialog({
+          title: "Warning: Promote to Faculty",
+          message: `Promoting ${user.display_name} to faculty will delete their ${applications_count} submitted applications. Do you wish to proceed?`,
+          onConfirm: async () => {
+            await axiosInstance.patch(`/api/users/${user.id}/`, {
+              is_faculty: true,
+            });
+            fetchUsers();
+            setConfirmDialog(null);
+          },
+        });
+      } else {
+        // Demoting from Admin: Remove faculty lead roles
+        setConfirmDialog({
+          title: "Warning: Demote from Admin",
+          message: `Demoting ${
+            user.display_name
+          } from admin will remove them as faculty lead for the following programs: ${faculty_programs.join(
+            ", "
+          )}.`,
+          onConfirm: async () => {
+            await axiosInstance.patch(`/api/users/${user.id}/`, {
+              is_faculty: false,
+            });
+            // await Promise.all(
+            //   faculty_programs.map((program) =>
+            //     axiosInstance.patch(`/api/programs/${program.id}/`, { faculty_lead: "admin" })
+            //   )
+            // );
+            fetchUsers();
+            setConfirmDialog(null);
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching user warnings:", err);
+    }
+  };
+
+  const handlePromoteDemoteToReviewer = async (user) => {
+    try {
+      const warningResponse = await axiosInstance.get(
+        `/api/users/${user.id}/user_warnings/`
+      );
+      const { applications_count, faculty_programs } = warningResponse.data;
+
+      if (!user.is_faculty) {
+        // Promoting to faculty: Applications will be deleted
+        setConfirmDialog({
+          title: "Warning: Promote to reviewer",
+          message: `Promoting ${user.display_name} to reviewer will delete their ${applications_count} submitted applications. Do you wish to proceed?`,
+          onConfirm: async () => {
+            await axiosInstance.patch(`/api/users/${user.id}/`, {
+              is_reviewer: true,
+            });
+            fetchUsers();
+            setConfirmDialog(null);
+          },
+        });
+      } else {
+        // Demoting from Admin: Remove reviewer lead roles
+        setConfirmDialog({
+          title: "Warning: Demote from Admin",
+          message: `Demoting ${
+            user.display_name
+          } from reviewer will remove them as faculty lead for the following programs: ${faculty_programs.join(
+            ", "
+          )}.`,
+          onConfirm: async () => {
+            await axiosInstance.patch(`/api/users/${user.id}/`, {
+              is_reviewer: false,
             });
             // await Promise.all(
             //   faculty_programs.map((program) =>
@@ -377,10 +613,22 @@ const UserManagement = () => {
                       sx={{ display: "flex", gap: 1, justifyContent: "center" }}
                     >
                       {/* Role transition button */}
-                      <RoleTransitionButton
+                      <AdminRoleTransitionButton
                         user={user}
                         isCurrentUser={isCurrentUser}
-                        onClick={handlePromoteDemote}
+                        onClick={handlePromoteDemoteToAdmin}
+                      />
+
+                      <FacultyRoleTransitionButton
+                        user={user}
+                        isCurrentUser={isCurrentUser}
+                        onClick={handlePromoteDemoteToFaculty}
+                      />
+
+                      <ReviewerRoleTransitionButton
+                        user={user}
+                        isCurrentUser={isCurrentUser}
+                        onClick={handlePromoteDemoteToReviewer}
                       />
 
                       {/* Change Password Button */}
