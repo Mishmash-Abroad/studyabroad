@@ -13,8 +13,10 @@ import {
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import DownloadIcon from "@mui/icons-material/Download";
 import PropTypes from "prop-types";
 import { DOCUMENTS } from "../utils/constants";
+import axiosInstance from "../utils/axios";
 
 const DocumentContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -110,16 +112,12 @@ const DocumentStatusDisplay = ({
 
       // If the document has a pdf_url property, fetch and display it
       if (document.pdf_url) {
-        // Use the browser's fetch API which respects the protocol of the page
-        // This avoids mixed content issues as it will use the same protocol (HTTP/HTTPS)
-        const response = await fetch(document.pdf_url);
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch document: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const blob = await response.blob();
+        // Use axiosInstance which includes authentication token
+        const response = await axiosInstance.get(document.pdf_url, {
+          responseType: 'blob',
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = URL.createObjectURL(blob);
         setSelectedDocUrl(blobUrl);
       } else {
@@ -130,6 +128,36 @@ const DocumentStatusDisplay = ({
     } catch (error) {
       console.error("Error viewing document:", error);
       setViewError(`Unable to load document preview: ${error.message}`);
+    }
+  };
+
+  const handleDownloadDocument = async (document) => {
+    try {
+      // If the document has a pdf_url property, fetch and download it
+      if (document.pdf_url) {
+        // Use axiosInstance which includes authentication token
+        const response = await axiosInstance.get(document.pdf_url, {
+          responseType: 'blob',
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.setAttribute("download", `${document.title || document.type}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the blob URL
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        console.error("Document URL not available");
+      }
+    } catch (error) {
+      console.error("Error downloading document:", error);
     }
   };
 
@@ -188,6 +216,28 @@ const DocumentStatusDisplay = ({
                   }}
                 >
                   <VisibilityIcon
+                    fontSize="small"
+                    color="primary"
+                    sx={{ fontSize: "0.9rem" }}
+                  />
+                </IconButton>
+              )}
+              {status === "submitted" && document && (
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadDocument(document);
+                  }}
+                  size="small"
+                  title="Download Document"
+                  sx={{
+                    padding: "4px",
+                    width: "28px",
+                    height: "28px",
+                    marginRight: "2px",
+                  }}
+                >
+                  <DownloadIcon
                     fontSize="small"
                     color="primary"
                     sx={{ fontSize: "0.9rem" }}
