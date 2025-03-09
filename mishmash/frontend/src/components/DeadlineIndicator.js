@@ -1,26 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, Typography } from '@mui/material';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { Box, Typography } from "@mui/material";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 
 const DeadlineContainer = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'severity' && prop !== 'clickable' && prop !== 'size'
-})(({ theme, severity, clickable, size = 'medium' }) => {
+  shouldForwardProp: (prop) =>
+    prop !== "severity" && prop !== "clickable" && prop !== "size",
+})(({ theme, severity, clickable, size = "medium" }) => {
   const getColors = () => {
     switch (severity) {
-      case 'error':
+      case "error":
         return {
           bg: theme.palette.status.error.background,
           color: theme.palette.status.error.main,
         };
-      case 'warning':
+      case "warning":
         return {
           bg: theme.palette.status.warning.background,
           color: theme.palette.status.warning.main,
         };
-      case 'success':
+      case "success":
         return {
           bg: theme.palette.status.success.background,
           color: theme.palette.status.success.main,
@@ -33,30 +34,30 @@ const DeadlineContainer = styled(Box, {
     }
   };
   const colors = getColors();
-  
+
   // Calculate size-based values
   let fontSize, padding, iconSize;
-  switch(size) {
-    case 'small':
-      fontSize = '0.75rem';
-      padding = '3px 6px';
-      iconSize = 'small';
+  switch (size) {
+    case "small":
+      fontSize = "0.75rem";
+      padding = "3px 6px";
+      iconSize = "small";
       break;
-    case 'large':
-      fontSize = '0.95rem';
-      padding = '6px 12px';
-      iconSize = 'medium';
+    case "large":
+      fontSize = "0.95rem";
+      padding = "6px 12px";
+      iconSize = "medium";
       break;
-    case 'medium':
+    case "medium":
     default:
-      fontSize = '0.85rem';
-      padding = '5px 10px';
-      iconSize = 'small';
+      fontSize = "0.85rem";
+      padding = "5px 10px";
+      iconSize = "small";
   }
-  
+
   return {
-    display: 'flex',
-    alignItems: 'center',
+    display: "flex",
+    alignItems: "center",
     gap: 0,
     padding: padding,
     borderRadius: theme.shape.borderRadii.xl,
@@ -67,61 +68,70 @@ const DeadlineContainer = styled(Box, {
     fontFamily: theme.typography.fontFamily,
     letterSpacing: theme.typography.caption.letterSpacing,
     boxShadow: theme.customShadows.button,
-    cursor: Boolean(clickable) ? 'pointer' : 'default',
-    transition: theme.transitions.create(['background-color', 'transform', 'box-shadow'], {
-      duration: theme.transitions.duration.short,
-    }),
-    '&:hover': Boolean(clickable) ? {
-      transform: 'translateY(-1px)',
-      boxShadow: theme.customShadows.buttonHover,
-    } : {},
+    cursor: Boolean(clickable) ? "pointer" : "default",
+    transition: theme.transitions.create(
+      ["background-color", "transform", "box-shadow"],
+      {
+        duration: theme.transitions.duration.short,
+      }
+    ),
+    "&:hover": Boolean(clickable)
+      ? {
+          transform: "translateY(-1px)",
+          boxShadow: theme.customShadows.buttonHover,
+        }
+      : {},
   };
 });
 
 const ToggleContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
+  display: "flex",
+  alignItems: "center",
   padding: 0,
   margin: 0,
-  cursor: 'pointer',
+  cursor: "pointer",
 }));
 
 const ModeIcon = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'active' && prop !== 'color' && prop !== 'size'
-})(({ theme, active, color, size = 'medium' }) => {
+  shouldForwardProp: (prop) =>
+    prop !== "active" && prop !== "color" && prop !== "size",
+})(({ theme, active, color, size = "medium" }) => {
   // Scale factor based on size
   const getScaleFactor = () => {
-    switch(size) {
-      case 'small': return Boolean(active) ? 0.7 : 0.45;
-      case 'large': return Boolean(active) ? 0.95 : 0.6;
-      case 'medium':
-      default: return Boolean(active) ? 0.85 : 0.55;
+    switch (size) {
+      case "small":
+        return Boolean(active) ? 0.7 : 0.45;
+      case "large":
+        return Boolean(active) ? 0.95 : 0.6;
+      case "medium":
+      default:
+        return Boolean(active) ? 0.85 : 0.55;
     }
   };
-  
+
   return {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     color: Boolean(active) ? color : color,
     opacity: Boolean(active) ? 1 : 0.4,
-    transition: theme.transitions.create(['opacity'], {
+    transition: theme.transitions.create(["opacity"], {
       duration: theme.transitions.duration.standard,
     }),
-    '& svg': {
+    "& svg": {
       transform: `scale(${getScaleFactor()})`,
-      transformOrigin: 'center',
-      transition: theme.transitions.create(['transform'], {
+      transformOrigin: "center",
+      transition: theme.transitions.create(["transform"], {
         duration: theme.transitions.duration.standard,
       }),
-    }
+    },
   };
 });
 
-const SwitchIcon = styled(SwapHorizIcon)(({ theme, size = 'medium' }) => {
-  const fontSize = size === 'small' ? '0.7rem' : 
-                  size === 'large' ? '0.9rem' : '0.8rem';
-  
+const SwitchIcon = styled(SwapHorizIcon)(({ theme, size = "medium" }) => {
+  const fontSize =
+    size === "small" ? "0.7rem" : size === "large" ? "0.9rem" : "0.8rem";
+
   return {
     fontSize: fontSize,
     margin: 0,
@@ -130,41 +140,48 @@ const SwitchIcon = styled(SwapHorizIcon)(({ theme, size = 'medium' }) => {
   };
 });
 
-const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultExpanded = false, size = 'medium' }) => {
+const DeadlineIndicator = ({
+  deadline,
+  type = "application",
+  expanded: defaultExpanded = false,
+  size = "medium",
+}) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  
+
   const calculateDeadlineInfo = (deadline) => {
     const today = new Date();
     const deadlineDate = new Date(deadline);
     let diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
-    
+
     let severity, message;
     if (diffDays <= 0) {
-      severity = type === 'application' ? 'error' : 'warning';
-      diffDays = Math.ceil(Math.abs((deadlineDate - today) / (1000 * 60 * 60 * 24)));
+      severity = type === "application" ? "error" : "warning";
+      diffDays = Math.ceil(
+        Math.abs((deadlineDate - today) / (1000 * 60 * 60 * 24))
+      );
       message = `${diffDays} days since`;
     } else if (diffDays <= 7) {
-      severity = type === 'application' ? 'error' : 'warning';
+      severity = type === "application" ? "error" : "warning";
       message = `${diffDays} days left`;
     } else if (diffDays <= 14) {
-      severity = 'warning';
+      severity = "warning";
       message = `${diffDays} days left`;
     } else {
-      severity = 'info';
+      severity = "info";
       message = `${diffDays} days left`;
     }
-    
+
     return {
       severity,
       message,
       fullDate: deadlineDate.toLocaleDateString(),
-      daysLeft: diffDays
+      daysLeft: diffDays,
     };
   };
 
   const deadlineInfo = calculateDeadlineInfo(deadline);
-  const deadlineType = type === 'application' ? 'Application' : 'Documents';
-  const deadlineLabel = 'Deadline';
+  const deadlineType = type === "application" ? "Application" : "Documents";
+  const deadlineLabel = "Deadline";
 
   const toggleExpanded = (e) => {
     if (e) {
@@ -175,77 +192,86 @@ const DeadlineIndicator = ({ deadline, type = 'application', expanded: defaultEx
 
   const getIconColor = () => {
     switch (deadlineInfo.severity) {
-      case 'error':
-        return 'var(--mui-palette-status-error-main)';
-      case 'warning':
-        return 'var(--mui-palette-status-warning-main)';
-      case 'success':
-        return 'var(--mui-palette-status-success-main)';
+      case "error":
+        return "var(--mui-palette-status-error-main)";
+      case "warning":
+        return "var(--mui-palette-status-warning-main)";
+      case "success":
+        return "var(--mui-palette-status-success-main)";
       default:
-        return 'var(--mui-palette-status-info-main)';
+        return "var(--mui-palette-status-info-main)";
     }
   };
 
   const renderToggleIcons = () => {
     const iconColor = getIconColor();
-    
+
     const timeIcon = (
       <ModeIcon active={!expanded} color={iconColor} size={size}>
-        <AccessTimeIcon fontSize={size === 'small' ? "small" : "medium"} />
-      </ModeIcon>
-    );
-    
-    const calendarIcon = (
-      <ModeIcon active={expanded} color={iconColor} size={size}>
-        <CalendarTodayIcon fontSize={size === 'small' ? "small" : "medium"} />
+        <AccessTimeIcon fontSize={size === "small" ? "small" : "medium"} />
       </ModeIcon>
     );
 
-    return expanded ? 
+    const calendarIcon = (
+      <ModeIcon active={expanded} color={iconColor} size={size}>
+        <CalendarTodayIcon fontSize={size === "small" ? "small" : "medium"} />
+      </ModeIcon>
+    );
+
+    return expanded ? (
       <>
         {calendarIcon}
         <SwitchIcon size={size} />
         {timeIcon}
-      </> : 
+      </>
+    ) : (
       <>
         {timeIcon}
         <SwitchIcon size={size} />
         {calendarIcon}
-      </>;
+      </>
+    );
   };
 
   return (
-    <DeadlineContainer 
-      severity={deadlineInfo.severity} 
+    <DeadlineContainer
+      severity={deadlineInfo.severity}
       clickable={true}
       size={size}
       onClick={toggleExpanded}
     >
       <ToggleContainer
         onClick={toggleExpanded}
-        aria-label={expanded ? "Switch to days remaining view" : "Switch to calendar date view"}
+        aria-label={
+          expanded
+            ? "Switch to days remaining view"
+            : "Switch to calendar date view"
+        }
       >
         {renderToggleIcons()}
       </ToggleContainer>
-      <Typography 
-        component="span" 
-        sx={{ 
-          whiteSpace: 'nowrap', 
-          flex: 1, 
-          paddingLeft: 0, 
+      <Typography
+        component="span"
+        sx={{
+          whiteSpace: "nowrap",
+          flex: 1,
+          paddingLeft: 0,
           marginLeft: 0,
-          fontSize: 'inherit' 
+          fontSize: "inherit",
         }}
       >
-        {expanded ? (
-          `${deadlineType} ${deadlineLabel}: ${deadlineInfo.fullDate}`
-        ) : (
-          `${deadlineType}: ${deadlineInfo.message}`
-        )}
+        {expanded
+          ? `${deadlineType} ${deadlineLabel}: ${deadlineInfo.fullDate}`
+          : `${deadlineType}: ${deadlineInfo.message}`}
       </Typography>
-      {expanded && type === 'documents' && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Note: Document deadlines are recommended but submissions are still accepted after the deadline.
+      {expanded && type === "documents" && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 0.5, display: "block" }}
+        >
+          Note: Document deadlines are recommended but submissions are still
+          accepted after the deadline.
         </Typography>
       )}
     </DeadlineContainer>
