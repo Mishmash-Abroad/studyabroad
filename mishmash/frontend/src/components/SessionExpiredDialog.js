@@ -1,12 +1,12 @@
 /**
  * Study Abroad Program - Session Expired Dialog
  * =========================================
- * 
+ *
  * A dialog component that appears when the user's session has expired,
  * either due to inactivity or reaching the maximum session duration.
  */
 
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,35 +16,35 @@ import {
   Button,
   Typography,
   Box,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import { SESSION_TIMEOUTS } from '../utils/constants';
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { SESSION_TIMEOUTS } from "../utils/constants";
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
-  '& .MuiDialog-paper': {
+  "& .MuiDialog-paper": {
     borderRadius: theme.shape.borderRadii.large,
     padding: theme.spacing(2),
-    maxWidth: 400
-  }
+    maxWidth: 400,
+  },
 }));
 
 const IconWrapper = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'center',
+  display: "flex",
+  justifyContent: "center",
   marginBottom: theme.spacing(2),
-  '& .MuiSvgIcon-root': {
+  "& .MuiSvgIcon-root": {
     fontSize: 48,
-    color: theme.palette.warning.main
-  }
+    color: theme.palette.warning.main,
+  },
 }));
 
 const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
-  textAlign: 'center',
+  textAlign: "center",
   color: theme.palette.error.main,
-  fontWeight: 600
+  fontWeight: 600,
 }));
 
 const SessionExpiredDialog = ({ open, reason, onClose }) => {
@@ -54,16 +54,16 @@ const SessionExpiredDialog = ({ open, reason, onClose }) => {
   const handleLogin = () => {
     logout();
     onClose();
-    navigate('/login');
+    navigate("/login");
   };
 
   const getExpirationMessage = () => {
-    if (reason === 'inactivity') {
+    if (reason === "inactivity") {
       return `Your session has expired due to ${SESSION_TIMEOUTS.INACTIVITY_TEXT} of inactivity.`;
-    } else if (reason === 'absolute') {
+    } else if (reason === "absolute") {
       return `Your session has expired as it reached the ${SESSION_TIMEOUTS.ABSOLUTE_TEXT} limit.`;
     }
-    return 'Your session has expired. Please log in again to continue.';
+    return "Your session has expired. Please log in again to continue.";
   };
 
   return (
@@ -77,38 +77,38 @@ const SessionExpiredDialog = ({ open, reason, onClose }) => {
       <IconWrapper>
         <AccessTimeIcon />
       </IconWrapper>
-      
+
       <StyledDialogTitle id="session-expired-dialog-title">
         Session Expired
       </StyledDialogTitle>
-      
+
       <DialogContent>
-        <DialogContentText 
+        <DialogContentText
           id="session-expired-dialog-description"
-          sx={{ textAlign: 'center', mb: 2 }}
+          sx={{ textAlign: "center", mb: 2 }}
         >
           {getExpirationMessage()}
         </DialogContentText>
-        
-        <Typography 
-          variant="body2" 
+
+        <Typography
+          variant="body2"
           color="text.secondary"
-          sx={{ textAlign: 'center' }}
+          sx={{ textAlign: "center" }}
         >
-          For your security, you have been automatically logged out.
-          Please log in again to continue your session.
+          For your security, you have been automatically logged out. Please log
+          in again to continue your session.
         </Typography>
       </DialogContent>
-      
-      <DialogActions sx={{ justifyContent: 'center', pt: 2 }}>
-        <Button 
-          onClick={handleLogin} 
-          variant="contained" 
-          color="primary" 
+
+      <DialogActions sx={{ justifyContent: "center", pt: 2 }}>
+        <Button
+          onClick={handleLogin}
+          variant="contained"
+          color="primary"
           autoFocus
-          sx={{ 
+          sx={{
             minWidth: 120,
-            borderRadius: 'borderRadius.medium'
+            borderRadius: "borderRadius.medium",
           }}
         >
           Log In Again

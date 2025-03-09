@@ -61,22 +61,26 @@ from api.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import update_session_auth_hash
 from datetime import datetime, timedelta
+from decimal import Decimal
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from django.http import JsonResponse, FileResponse
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
-from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_STATUSES
+from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_FACULTY_EDITABLE_STATUSES, ALL_REVIEWER_EDITABLE_STATUSES, ALL_STATUSES
 import re
 from .constants import SEMESTERS
 from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
-from django.http import JsonResponse
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.util import random_hex
 import base64
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import logout as django_logout
+import os
 
 ### Custom permission classes for API access ###
 
@@ -97,6 +101,20 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         return obj.student == request.user or request.user.is_admin
 
 
+class IsOwnerOrFaculty(permissions.BasePermission):
+    """Custom permission to allow only the owner or an faculty to edit/view."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.student == request.user or request.user.is_faculty
+
+
+class IsOwnerOrReviewer(permissions.BasePermission):
+    """Custom permission to allow only the owner or an reviewer to edit/view."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.student == request.user or request.user.is_reviewer
+
+
 class IsAdminOrSelf(permissions.BasePermission):
     """Custom permission to allow users to access their own data, while admins can access any user's data."""
 
@@ -104,11 +122,44 @@ class IsAdminOrSelf(permissions.BasePermission):
         return request.user.is_admin or obj.id == request.user.id
 
 
+class IsFacultyOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while faculty can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_faculty or obj.id == request.user.id
+
+
+class IsReviewerOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while reviewers can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_reviewer or obj.id == request.user.id
+
+
 class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_admin:
+            return request.method in permissions.SAFE_METHODS
+
+        return obj.application.student == request.user
+
+class IsApplicationResponseOwnerOrFaculty(permissions.BasePermission):
+    """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_faculty:
+            return request.method in permissions.SAFE_METHODS
+
+        return obj.application.student == request.user
+
+
+class IsApplicationResponseOwnerOrReviewer(permissions.BasePermission):
+    """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_reviewer:
             return request.method in permissions.SAFE_METHODS
 
         return obj.application.student == request.user
@@ -124,6 +175,30 @@ class IsAdmin(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         return request.user.is_admin
+
+
+class IsFaculty(permissions.BasePermission):
+    """Custom permission to allow only faculty to view or edit views"""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.is_faculty
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_faculty
+
+
+class IsReviewer(permissions.BasePermission):
+    """Custom permission to allow only faculty to view or edit views"""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.is_reviewer
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_reviewer
 
 
 class AdminCreateAndView(permissions.BasePermission):
@@ -143,6 +218,40 @@ class AdminCreateAndView(permissions.BasePermission):
         return request.method in permissions.SAFE_METHODS
 
 
+class FacultyCreateAndView(permissions.BasePermission):
+    """
+    Custom permission to allow only faculty users to create and view confidential notes.
+    Updates and deletions are always forbidden.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ["GET", "POST"]:
+            return request.user.is_faculty
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS
+
+
+class ReviewerCreateAndView(permissions.BasePermission):
+    """
+    Custom permission to allow only reviewer users to create and view confidential notes.
+    Updates and deletions are always forbidden.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ["GET", "POST"]:
+            return request.user.is_reviewer
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        return request.method in permissions.SAFE_METHODS
+
+
 class IsDocumentOwnerOrAdmin(permissions.BasePermission):
     """
     Allows access only to the owner of the document.
@@ -155,6 +264,16 @@ class IsDocumentOwnerOrAdmin(permissions.BasePermission):
             return request.method in permissions.SAFE_METHODS
         # Otherwise, only the document's owner can modify it.
         return obj.application.student == request.user
+
+
+class IsProgramFaculty(permissions.BasePermission):
+    """
+    Allows access only to the faculty of the program.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Ensure the object has a 'program' attribute and that the user is a faculty lead
+        return request.user in obj.program.faculty_leads.all()
 
 
 ### ViewSet classes for the API interface ###
@@ -209,13 +328,15 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         # Start with all programs
         queryset = Program.objects.all()
-        
+
         # Filter by end_date if exclude_ended is true
-        exclude_ended = self.request.query_params.get("exclude_ended", "false").lower() == "true"
+        exclude_ended = (
+            self.request.query_params.get("exclude_ended", "false").lower() == "true"
+        )
         if exclude_ended:
             today = timezone.now().date()
             queryset = queryset.filter(end_date__gte=today)
-        
+
         search = self.request.query_params.get("search", None)
         faculty_ids = self.request.query_params.get("faculty_ids", None)
 
@@ -297,15 +418,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
 
         if len(description) > 1000:
-            raise ValidationError({"detail": "Description cannot exceed 1000 characters."})
+            raise ValidationError(
+                {"detail": "Description cannot exceed 1000 characters."}
+            )
 
         if not year.isdigit() or len(year) != 4:
             raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
 
         valid_semesters = {"Fall", "Spring", "Summer"}
         if semester not in valid_semesters:
-            raise ValidationError({"detail": f"Semester must be one of {valid_semesters}."})
-
+            raise ValidationError(
+                {"detail": f"Semester must be one of {valid_semesters}."}
+            )
 
         try:
             application_open_date = datetime.strptime(
@@ -524,14 +648,17 @@ class ProgramViewSet(viewsets.ModelViewSet):
         - Admin only
         """
         program = self.get_object()
-        
+
         all_apps = Application.objects.filter(program=program)
-        
+
         for app in all_apps:
-            if (app.program.end_date < datetime.today().date() and app.status == "Enrolled"):
+            if (
+                app.program.end_date < datetime.today().date()
+                and app.status == "Enrolled"
+            ):
                 app.status = "Completed"
                 app.save()
-            
+
         applicant_counts = all_apps.aggregate(
             applied=Count("id", filter=Q(status="Applied")),
             eligible=Count("id", filter=Q(status="Eligible")),
@@ -543,11 +670,20 @@ class ProgramViewSet(viewsets.ModelViewSet):
         )
 
         applicant_counts["total_active"] = (
-            applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"]
+            applicant_counts["applied"]
+            + applicant_counts["enrolled"]
+            + applicant_counts["eligible"]
+            + applicant_counts["approved"]
         )
-        
+
         applicant_counts["total_participants"] = (
-            applicant_counts["applied"] + applicant_counts["enrolled"] + applicant_counts["eligible"] + applicant_counts["approved"] + applicant_counts["completed"] + applicant_counts["withdrawn"] + applicant_counts["canceled"]
+            applicant_counts["applied"]
+            + applicant_counts["enrolled"]
+            + applicant_counts["eligible"]
+            + applicant_counts["approved"]
+            + applicant_counts["completed"]
+            + applicant_counts["withdrawn"]
+            + applicant_counts["canceled"]
         )
 
         return Response(applicant_counts)
@@ -598,7 +734,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsOwnerOrAdmin | IsOwnerOrFaculty | IsOwnerOrReviewer,
+    ]
 
     def get_queryset(self):
         """
@@ -624,12 +763,15 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         program_id = self.request.query_params.get("program", None)
         if program_id:
             queryset = queryset.filter(program_id=program_id)
-            
+
         for app in queryset:
-            if (app.program.end_date < datetime.today().date() and app.status == "Enrolled"):
+            if (
+                app.program.end_date < datetime.today().date()
+                and app.status == "Enrolled"
+            ):
                 app.status = "Completed"
                 app.save()
-        
+
         return queryset
 
     def perform_create(self, serializer):
@@ -735,7 +877,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         if "status" in data:
             new_status = data["status"]
 
-            if not user.is_admin:
+            if not (user.is_admin or user.is_faculty or user.is_reviewer):
                 if new_status not in ["Applied", "Withdrawn"]:
                     return Response(
                         {
@@ -745,10 +887,24 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
+                if user.is_admin and new_status not in ALL_ADMIN_EDITABLE_STATUSES:
                     return Response(
                         {
                             "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                elif user.is_faculty and new_status not in ALL_FACULTY_EDITABLE_STATUSES:
+                    return Response(
+                        {
+                            "detail": "Invalid status update. Faculty can set status to 'Enrolled' or 'Canceled'."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                elif user.is_reviewer and new_status not in ALL_REVIEWER_EDITABLE_STATUSES:
+                    return Response(
+                        {
+                            "detail": "Invalid status update. Reviewer can set status to 'Enrolled' or 'Canceled'."
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -834,7 +990,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationResponseSerializer
     permission_classes = [
         permissions.IsAuthenticated,
-        IsApplicationResponseOwnerOrAdmin,
+        IsApplicationResponseOwnerOrAdmin | IsApplicationResponseOwnerOrFaculty | IsApplicationResponseOwnerOrReviewer
     ]
 
     def get_queryset(self):
@@ -863,7 +1019,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
                 raise NotFound(detail="Application not found.")
 
             if (
-                not self.request.user.is_admin
+                not (self.request.user.is_admin or self.request.user.is_faculty or self.request.user.is_reviewer)
                 and application.student != self.request.user
             ):
                 raise PermissionDenied(
@@ -955,6 +1111,7 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     - Public & Students: Can view active announcements.
     - Admins: Can create, update, delete, and view all announcements.
     """
+
     serializer_class = AnnouncementSerializer
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.OrderingFilter]
@@ -1004,7 +1161,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrSelf]
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminOrReadOnly | IsFacultyOrSelf | IsReviewerOrSelf,
+    ]
     filter_backends = [filters.SearchFilter]
     search_fields = ["username", "display_name", "email"]
 
@@ -1024,14 +1184,18 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # If requesting faculty list, filter to only show faculty
         if self.action == "list" and self.request.query_params.get("is_faculty"):
-            return queryset.filter(is_admin=True).order_by("display_name")
+            return queryset.filter(is_faculty=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access
-        if self.action == "list" and not self.request.user.is_admin:
+        if self.action == "list" and not (
+            self.request.user.is_admin
+            or self.request.user.is_faculty
+            or self.request.user.is_reviewer
+        ):
             return queryset.none()
 
         return queryset
-    
+
     def update(self, request, *args, **kwargs):
         """
         Override the default update method to handle special cases:
@@ -1055,10 +1219,12 @@ class UserViewSet(viewsets.ModelViewSet):
                     admin_user = User.objects.get(username="admin")
                     program.faculty_leads.add(admin_user)
                 program.save()
-            print(f"Removed {user.username} from faculty leads of {programs.count()} programs")
+            print(
+                f"Removed {user.username} from faculty leads of {programs.count()} programs"
+            )
 
         return super().update(request, *args, **kwargs)
-    
+
     def destroy(self, request, *args, **kwargs):
         """
         Prevent SSO users from being deleted.
@@ -1070,7 +1236,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return super().destroy(request, *args, **kwargs)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
     def current_user(self, request):
         """
         ## Retrieve Current User's Details
@@ -1165,7 +1333,9 @@ class UserViewSet(viewsets.ModelViewSet):
             {"detail": "Invalid credentials."}, status=status.HTTP_403_FORBIDDEN
         )
 
-    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
+    )
     def logout(self, request):
         """
         ## User Logout
@@ -1175,7 +1345,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         try:
             request.auth.delete()
-            django_logout(request) 
+            django_logout(request)
 
             return Response(
                 {"detail": "Successfully logged out."}, status=status.HTTP_200_OK
@@ -1185,7 +1355,11 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"detail": "Not logged in."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=["patch"], permission_classes=[permissions.IsAuthenticated],)
+    @action(
+        detail=False,
+        methods=["patch"],
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def change_password(self, request):
         """
         ## Change Password
@@ -1207,15 +1381,16 @@ class UserViewSet(viewsets.ModelViewSet):
             try:
                 user = User.objects.get(id=request.data["user_id"])
             except User.DoesNotExist:
-                return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
+                return Response(
+                    {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                )
 
         if user.is_sso:
             return Response(
                 {"detail": "SSO users cannot change their password."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
 
@@ -1235,9 +1410,12 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer["token"] = token.key
             return Response(serializer, status=status.HTTP_200_OK)
 
-        return Response({"detail": f"Password updated successfully for {user.username}."}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": f"Password updated successfully for {user.username}."},
+            status=status.HTTP_200_OK,
+        )
 
-    @action(detail=False, permission_classes=[AllowAny]) 
+    @action(detail=False, permission_classes=[AllowAny])
     def faculty(self, request):
         """
         Retrieve a list of all faculty members (admin users).
@@ -1249,11 +1427,15 @@ class UserViewSet(viewsets.ModelViewSet):
         ## Permissions:
         - Public access (any user can view faculty list)
         """
-        faculty = User.objects.filter(is_admin=True).order_by("display_name")
+        faculty = User.objects.filter(is_faculty=True).order_by("display_name")
         serializer = UserSerializer(faculty, many=True)
         return Response(serializer.data)
-    
-    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAdminUser])
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[permissions.IsAdminUser],
+    )
     def user_warnings(self, request, pk=None):
         """
         Get warnings related to promoting, demoting, or deleting a user.
@@ -1264,7 +1446,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
         warnings = {
             "applications_count": applications_count,
-            "faculty_programs": [p.title for p in faculty_programs] if faculty_programs.exists() else ["None"],
+            "faculty_programs": (
+                [p.title for p in faculty_programs]
+                if faculty_programs.exists()
+                else ["None"]
+            ),
         }
 
         return Response(warnings, status=status.HTTP_200_OK)
@@ -1296,7 +1482,10 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
 
     queryset = ConfidentialNote.objects.all().order_by("-timestamp")
     serializer_class = ConfidentialNoteSerializer
-    permission_classes = [permissions.IsAuthenticated, AdminCreateAndView]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        AdminCreateAndView | FacultyCreateAndView | ReviewerCreateAndView,
+    ]
 
     def get_queryset(self):
         """
@@ -1428,6 +1617,54 @@ class DocumentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(application=application_id)
 
         return queryset
+
+    @action(detail=True, methods=['get'])
+    def secure_file(self, request, pk=None):
+        """
+        Securely serve document files with proper authorization checks.
+        
+        Only the document owner (student who submitted) or an admin can access the file.
+        This prevents direct access to files via URL and adds an authorization layer.
+        
+        Returns:
+            FileResponse: The requested PDF file if authorization passes
+            Response: 403 Forbidden if unauthorized
+            Response: 404 Not Found if the document doesn't exist
+        """
+        try:
+            document = self.get_object()
+            
+            # Check if user is authorized (already handled by permission_classes)
+            # But we do an extra check here for clarity
+            application = document.application
+            user = request.user
+            
+            if not (user.is_admin or application.student == user):
+                return Response(
+                    {"detail": "You do not have permission to access this document."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            # If we get here, user is authorized to view this document
+            file_path = document.pdf.path
+            
+            if not os.path.exists(file_path):
+                return Response(
+                    {"detail": "File not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            # Create a FileResponse for the file
+            response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{document.title}"'
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving document: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class MFAViewSet(viewsets.ViewSet):

@@ -49,6 +49,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
     'https://dev-mishmash.colab.duke.edu',
+    'https://test-mishmash.colab.duke.edu',
     'https://mishmash.colab.duke.edu',
     'http://localhost',
     'http://127.0.0.1'

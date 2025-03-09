@@ -46,7 +46,7 @@ class Command(BaseCommand):
         # Get faculty users
         faculty_users = {
             user.display_name: user
-            for user in User.objects.filter(is_admin=True).exclude(username="admin")
+            for user in User.objects.filter(is_faculty=True).exclude(username="admin")
         }
 
         programs_data = [
