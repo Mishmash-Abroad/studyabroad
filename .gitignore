@@ -31,9 +31,8 @@ db.sqlite3
 
 # Docker files
 *.pid
-.DS_Store
-.DS_Store
-.github/.DS_Store
-mishmash/.DS_Store
-.github/.DS_Store
+
 mishmash/frontend/.sentryclirc
+
+# .DS_Store files
+.DS_Store
