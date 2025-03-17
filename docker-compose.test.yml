@@ -83,6 +83,35 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  netdata:
+    image: netdata/netdata:edge
+    container_name: netdata
+    pid: host
+    network_mode: host
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /:/host/root:ro,rslave
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /var/log:/host/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/dbus:/run/dbus:ro
+    environment:
+      - NETDATA_CLAIM_TOKEN=Witi4VmoGYmI7CIO7aWKA11dhTxUlzdpc6upuFEdpnX_IilZYPQIceKYF4f32nnuLcHVACNfgPjBokgfPSpNg3DMHmMT-9WcpWMtmgQJWq9Lu3v1H23rB35tLSz-4_d3r6Vk2cw
+      - NETDATA_CLAIM_URL=https://app.netdata.cloud
+      - NETDATA_CLAIM_ROOMS=346ba341-6133-4757-909e-0747200b43f4
 
 volumes:
   mysql_data:
@@ -90,3 +119,6 @@ volumes:
   media_volume:
   frontend_build:
   nginx_logs:
+  netdataconfig:
+  netdatalib:
+  netdatacache:
