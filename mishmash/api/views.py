@@ -913,31 +913,12 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
-class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for retrieving application questions associated with study abroad programs.
-
-    ## Features:
-    - **Retrieve all application questions** (`GET /api/questions/`)
-    - **Retrieve questions for a specific program** (`GET /api/questions/?program=<id>`)
-    - **Retrieve a single question** (`GET /api/questions/{id}/`)
-
-    ## Permissions:
-    - **All users (authenticated or not)** can list and retrieve application questions.
-    - **No one (not even admins)** can create, update, or delete questions, as they are auto-generated when a program is created.
-
-    ## Expected Inputs:
-    - **Query Parameter** (Optional): `?program=<id>` → Filter questions by a specific program.
-
-    ## Expected Outputs:
-    - **200 OK** → Returns a list of application questions or a single question.
-    - **404 Not Found** → If a requested question or program ID does not exist.
-    """
+class ApplicationQuestionViewSet(viewsets.ModelViewSet):
 
     queryset = ApplicationQuestion.objects.all()
 
     serializer_class = ApplicationQuestionSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
         """
