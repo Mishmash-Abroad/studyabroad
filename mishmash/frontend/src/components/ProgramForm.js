@@ -172,28 +172,28 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     try {
       if (editingProgram) {
         await axiosInstance.put(
-          `/api/programs/${editingProgram.id}/`,
-          {
-          ...programData,
-          questions: questions.map((q) => q.text),
+          `/api/programs/${editingProgram.id}/`, programData );
+          
+          for (const question of newQuestions) {
+            await axiosInstance.post(`/api/questions/`, {
+              program: editingProgram.id,
+              text: question.text,
+            });
           }
-        );
+          for (const question of editQuestions) {
+            await axiosInstance.patch(`/api/questions/${question.id}/`, {
+              text: question.text,
+            });
+          }
+          for (const questionId of deletedQuestions) {
+            await axiosInstance.delete(`/api/questions/${questionId}/`);
+          }
       } else {
         await axiosInstance.post("/api/programs/", 
           {
           ...programData,
           questions: questions.map((q) => q.text),
         });
-      }
-
-      for (const question of editQuestions) {
-        await axiosInstance.patch(`/api/questions/${question.id}/`, {
-          text: question.text,
-        });
-      }
-
-      for (const questionId of deletedQuestions) {
-        await axiosInstance.delete(`/api/questions/${questionId}/`);
       }
 
       refreshPrograms();
