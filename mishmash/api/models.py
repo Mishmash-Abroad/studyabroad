@@ -57,6 +57,10 @@ class Program(models.Model):
     essential_document_deadline = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    image_url = models.URLField(
+        max_length=500, blank=True, null=True,
+        help_text="URL to the program image"
+    )
 
     @property
     def year_semester(self):

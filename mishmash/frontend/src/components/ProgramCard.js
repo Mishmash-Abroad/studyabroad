@@ -110,11 +110,15 @@ const ApplicationButton = styled("button")(({ theme, variant }) => {
 });
 
 // Main container for the Program Card
-const StyledProgramCard = styled("div")(({ theme, expanded }) => ({
+// Update the StyledProgramCard to accept an imageUrl prop
+const StyledProgramCard = styled("div")(({ theme, expanded, imageUrl }) => ({
   position: "relative",
   borderRadius: theme.shape.borderRadii.large,
   overflow: "hidden",
   backgroundColor: theme.palette.background.card.default,
+  backgroundImage: imageUrl ? `url(${imageUrl})` : "none",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
   cursor: "pointer",
   transition: theme.transitions.create(["transform"], {
     duration: theme.transitions.duration.standard,
@@ -123,7 +127,6 @@ const StyledProgramCard = styled("div")(({ theme, expanded }) => ({
   height: expanded ? "auto" : "200px",
   border: `1px solid ${theme.palette.border.light}`,
   "&:hover": {
-    backgroundColor: theme.palette.background.card.hover,
     transform: expanded ? "scale(1.01)" : "scale(1.02)",
   },
 }));
@@ -256,26 +259,29 @@ const ProgramCard = ({ program, onExpand }) => {
   return (
     <StyledProgramCard
       expanded={expanded}
+      imageUrl={program.imageUrl} // Pass the image URL here
       onClick={() => {
         setExpanded(!expanded);
         if (onExpand) onExpand(!expanded);
       }}
       className={expanded ? "expanded-card" : "program-card"}
     >
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: expanded
-            ? `linear-gradient(180deg, ${theme.palette.grey[100]} 0%, ${theme.palette.grey[50]} 30%, ${theme.palette.common.white} 100%)`
-            : theme.palette.grey[100],
-          opacity: 0.8,
-          zIndex: 0,
-        }}
-      />
+      {/* Optional overlay: If an image is present, add a semi-transparent overlay for readability */}
+      {program.imageUrl && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: expanded
+              ? `linear-gradient(180deg, ${theme.palette.grey[100]} 0%, ${theme.palette.grey[50]} 30%, ${theme.palette.common.white} 100%)`
+              : "rgba(0, 0, 0, 0.4)",
+            zIndex: 0,
+          }}
+        />
+      )}
 
       {/* Render separate badges */}
       {renderProgramBadge()}
