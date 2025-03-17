@@ -109,8 +109,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   };
 
   const confirmDelete = (index) => {
-    setQuestionToDelete(index);
-    setDeleteConfirmOpen(true);
+    if (editingProgram) {
+      setQuestionToDelete(index);
+      setDeleteConfirmOpen(true);
+    } else {
+      handleDeleteQuestion(index);
+    }
   };
 
   const handleConfirmDelete = () => {
