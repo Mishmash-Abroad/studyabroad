@@ -97,7 +97,7 @@ const FacultyPicklist = ({
   return (
     <StyledAutocomplete
       multiple
-      disabled={!is_admin}
+      /* disabled={!is_admin} */
       options={facultyList}
       value={selectedFaculty}
       onChange={handleFacultyChange}
