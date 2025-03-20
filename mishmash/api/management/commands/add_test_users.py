@@ -150,7 +150,7 @@ class Command(BaseCommand):
                 user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password=password,
+                    password=make_password(password),
                     display_name=display_name,
                     is_admin=True
                 )
@@ -173,7 +173,7 @@ class Command(BaseCommand):
                 user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password=password,
+                    password=make_password(password),
                     display_name=display_name,
                     is_faculty=True,
                 )
