@@ -85,6 +85,9 @@ INSTALLED_APPS = [
     #audit logging
     'auditlog',
     
+    # backups
+    'django_archive',
+    
     # Local apps
     'api',                         # Main application API
 ]
@@ -321,3 +324,7 @@ LOGGING = {
         },
     },
 }
+
+
+# Add this line to define the backup directory (archive directory)
+ARCHIVE_DIRECTORY = BASE_DIR / 'backups'
