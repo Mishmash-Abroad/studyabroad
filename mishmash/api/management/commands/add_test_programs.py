@@ -512,7 +512,7 @@ class Command(BaseCommand):
                 if program.title in prod_faculty_assignments:
                     for faculty_name in faculty_assignments[program.title]:
                         if faculty_name in faculty_users:
-                            program.faculty_leads.add(faculty_users[faculty_name])
+                            program.faculty_leads.add(User.objects.get(display_name=faculty_name))
                         else:
                             self.stdout.write(
                                 f"Warning: Faculty {faculty_name} not found"
@@ -537,7 +537,7 @@ class Command(BaseCommand):
                 if program.title in faculty_assignments:
                     for faculty_name in faculty_assignments[program.title]:
                         if faculty_name in faculty_users:
-                            program.faculty_leads.add(faculty_users[faculty_name])
+                            program.faculty_leads.add(User.objects.get(display_name=faculty_name))
                         else:
                             self.stdout.write(
                                 f"Warning: Faculty {faculty_name} not found"

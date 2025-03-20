@@ -209,3 +209,33 @@ export const get_all_available_statuses_to_edit = (roles) => {
 
   return {};
 };
+
+export const DOCUMENT_TEMPLATES = {
+  "Acknowledgement of the code of conduct": "/templates/Code_of_Conduct.pdf",
+  "Housing questionnaire": "/templates/Housing_Questionnaire.pdf",
+  "Medical/health history and immunization records": "/templates/Medical_History_and_Immunizations.pdf",
+  "Assumption of risk form": "/templates/Assumption_of_Risk.pdf"
+}
+
+export const DOCUMENTS = {
+  CODE_OF_CONDUCT: {
+    name: "Acknowledgement of the code of conduct",
+    path: "/templates/Code_of_Conduct.pdf",
+    description: "Acknowledgement of the code of conduct: A document reviewing the code of conduct, and attesting to student's understanding and commitment to abide by same. The student must sign this to participate.",
+  },
+  HOUSING_QUESTIONNAIRE: {
+    name: "Housing questionnaire",
+    path: "/templates/Housing_Questionnaire.pdf",
+    description: "Housing questionnaire: A set of questions about housing preferences to be reviewed by the faculty lead(s) to help with assigning housing. The student must fill this out.",
+  },
+  MEDICAL_HISTORY: {
+    name: "Medical/health history and immunization records",
+    path: "/templates/Medical_History_and_Immunizations.pdf",
+    description: "Medical/health history and immunization records: A high-level summary of health status and attestation regarding immunizations. This document in particular is covered by HIPAA (definition 11). The student must fill out and sign this.",
+  },
+  ASSUMPTION_OF_RISK: {
+    name: "Assumption of risk form",
+    path: "/templates/Assumption_of_Risk.pdf",
+    description: "Assumption of risk form: A document waiving HCC's liability for student participation in the program. The student must sign this to participate.",
+  },
+}
