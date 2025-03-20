@@ -404,6 +404,10 @@ class ProgramViewSet(viewsets.ModelViewSet):
         essential_document_deadline = request.data.get("essential_document_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
+        questions = request.data.get("questions", [])
+
+        if not isinstance(questions, list):
+            raise ValidationError({"detail": "Questions must be a list."})
 
         if not title:
             raise ValidationError({"detail": "Title must be non-empty."})
@@ -473,15 +477,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         response = super().create(request, *args, **kwargs)
         program_instance = Program.objects.get(id=response.data.get("id"))
 
-        default_questions = [
-            "Why do you want to participate in this study abroad program?",
-            "How does this program align with your academic or career goals?",
-            "What challenges do you anticipate during this experience, and how will you address them?",
-            "Describe a time you adapted to a new or unfamiliar environment.",
-            "What unique perspective or contribution will you bring to the group?",
-        ]
-
-        for question_text in default_questions:
+        for question_text in questions:
             ApplicationQuestion.objects.create(
                 program=program_instance, text=question_text
             )
@@ -917,31 +913,12 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
-class ApplicationQuestionViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for retrieving application questions associated with study abroad programs.
-
-    ## Features:
-    - **Retrieve all application questions** (`GET /api/questions/`)
-    - **Retrieve questions for a specific program** (`GET /api/questions/?program=<id>`)
-    - **Retrieve a single question** (`GET /api/questions/{id}/`)
-
-    ## Permissions:
-    - **All users (authenticated or not)** can list and retrieve application questions.
-    - **No one (not even admins)** can create, update, or delete questions, as they are auto-generated when a program is created.
-
-    ## Expected Inputs:
-    - **Query Parameter** (Optional): `?program=<id>` → Filter questions by a specific program.
-
-    ## Expected Outputs:
-    - **200 OK** → Returns a list of application questions or a single question.
-    - **404 Not Found** → If a requested question or program ID does not exist.
-    """
+class ApplicationQuestionViewSet(viewsets.ModelViewSet):
 
     queryset = ApplicationQuestion.objects.all()
 
     serializer_class = ApplicationQuestionSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
         """
