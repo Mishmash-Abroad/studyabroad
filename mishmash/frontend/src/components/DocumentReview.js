@@ -47,16 +47,13 @@ const DocumentReview = ({ application_id }) => {
   const handleDownload = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
-        const response = await fetch(doc.pdf_url);
+        const response = await axiosInstance.get(doc.pdf_url, {
+          responseType: 'blob',
+        });
         
-        if (!response.ok) {
-          throw new Error(`Failed to download document: ${response.status} ${response.statusText}`);
-        }
-        
-        const blob = await response.blob();
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
-        // Create a temporary link and trigger download
+        // create a temporary link and trigger download
         const link = document.createElement("a");
         link.href = blobUrl;
         link.setAttribute("download", `${doc.type}.pdf`);
@@ -76,14 +73,12 @@ const DocumentReview = ({ application_id }) => {
   const handleView = async (doc) => {
     if (doc.pdf_url) {
       try {
-        // Use native fetch API to respect the same protocol (HTTP/HTTPS) as the current page
-        const response = await fetch(doc.pdf_url);
+        // use axiosInstance which includes authentication token
+        const response = await axiosInstance.get(doc.pdf_url, {
+          responseType: 'blob',
+        });
         
-        if (!response.ok) {
-          throw new Error(`Failed to view document: ${response.status} ${response.statusText}`);
-        }
-        
-        const blob = await response.blob();
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
         setSelectedDoc({ ...doc, url: blobUrl });
         setPdfViewerOpen(true);
@@ -134,15 +129,11 @@ const DocumentReview = ({ application_id }) => {
                     {doc ? (
                       <Typography color="success.main">Submitted</Typography>
                     ) : (
-                      <Typography color="error.main">
-                        Not Submitted
-                      </Typography>
+                      <Typography color="error.main">Not Submitted</Typography>
                     )}
                   </TableCell>
                   <TableCell>
-                    {doc
-                      ? new Date(doc.uploaded_at).toLocaleString()
-                      : "N/A"}
+                    {doc ? new Date(doc.uploaded_at).toLocaleString() : "N/A"}
                   </TableCell>
                   <TableCell>
                     {doc && (
@@ -180,7 +171,6 @@ const DocumentReview = ({ application_id }) => {
         <DialogContent>
           {selectedDoc && (
             <Box sx={{ height: "80vh" }}>
-              {/* Using iframe for better PDF display */}
               <iframe
                 src={selectedDoc.url}
                 width="100%"

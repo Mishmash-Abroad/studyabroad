@@ -30,12 +30,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('accounts/', include('allauth.urls')),
     path('api/accounts/', include('allauth.socialaccount.urls')),
-
-
-
-
 ]
 
-
-
-urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
+# Remove direct media access, this will be handled by a secure view
+# urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
