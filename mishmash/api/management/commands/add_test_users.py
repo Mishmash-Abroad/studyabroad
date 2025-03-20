@@ -139,15 +139,11 @@ class Command(BaseCommand):
                     password=make_password(password),
                     display_name=display_name,
                     email=email,
-                    is_admin=False,
-                    is_staff=False,
-                    is_superuser=False,
-                    is_active=True
                 )
             
                 self.stdout.write(f'Created student: {username}')
             for username, display_name, email, password in prod_faculty_users:
-                user = User.objects.create_user(
+                user = User.objects.create(
                     username=username,
                     email=email,
                     password=make_password(password),
@@ -162,15 +158,11 @@ class Command(BaseCommand):
                     password=make_password(password),
                     display_name=display_name,
                     email=email,
-                    is_admin=False,
-                    is_staff=False,
-                    is_superuser=False,
-                    is_active=True
                 )
                 
                 self.stdout.write(f'Created student: {username}')
             for username, display_name, email, password in faculty_users:
-                user = User.objects.create_user(
+                user = User.objects.create(
                     username=username,
                     email=email,
                     password=make_password(password),
