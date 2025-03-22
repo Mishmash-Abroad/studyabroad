@@ -298,11 +298,13 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             ))}
           </Select>
         </FormControl>
-        <FacultyPicklist
-          onFacultyChange={handleFacultyChange}
-          initialSelected={programData.faculty_lead_ids}
-          is_admin={user.is_admin}
-        />
+        <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
+          <FacultyPicklist
+            onFacultyChange={handleFacultyChange}
+            initialSelected={programData.faculty_lead_ids}
+            is_admin={user.is_admin}
+          />
+        </Box>
         <TextField
           label="Description"
           name="description"
@@ -370,16 +372,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           {questions.map((q, index) => (
             <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
               <TextField
+                disabled={!user.is_admin}
                 fullWidth
                 value={q.text}
                 onChange={(e) => handleQuestionChange(index, e.target.value)}
               />
-              <IconButton onClick={() => confirmDelete(index)}>
+              <IconButton disabled={!user.is_admin} onClick={() => confirmDelete(index)}>
                 <Delete />
               </IconButton>
             </Box>
           ))}
-          <Button startIcon={<Add />} onClick={handleAddQuestion}>
+          <Button disabled={!user.is_admin} startIcon={<Add />} onClick={handleAddQuestion}>
             Add Question
           </Button>
         </Box>
