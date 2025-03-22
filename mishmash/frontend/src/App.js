@@ -14,6 +14,7 @@ import TopNavBar from "./components/TopNavBar";
 import LoginModal from "./components/LoginModal";
 import ApplicationPage from "./pages/ApplicationPage";
 import AdminAppView from "./components/AdminAppView";
+import LetterUploadPage from "./pages/LetterUploadPage";
 import MFAOverview from "./mfa/MFAOverview";
 import ActivateTOTP from "./mfa/ActivateTOTP";
 import DeactivateTOTP from "./mfa/DeactivateTOTP";
@@ -30,6 +31,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/apply/:program_id" element={<ApplicationPage />} />
           <Route path="/applications/:id" element={<AdminAppView />} />
+          <Route path="/letters/:id" element={<LetterUploadPage />} />
 
           {/* Protected Dashboard Route */}
           <Route

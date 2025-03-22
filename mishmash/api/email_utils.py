@@ -7,8 +7,8 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 # Get settings from environment variables
-SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
-DEFAULT_FROM_EMAIL = config('SENDGRID_DEFAULT_FROM', default='hccabroad@gmail.com')
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "SG.idk")
+DEFAULT_FROM_EMAIL = os.getenv("SENDGRID_DEFAULT_FROM", "hccabroad@gmail.com")
 
 def send_email(to_email, subject, html_content=None):
     """
