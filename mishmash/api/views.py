@@ -85,7 +85,6 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import logout as django_logout
 import os
 from .email_utils import send_recommendation_request_email, send_recommendation_retraction_email
-from .permissions import IsDocumentOwnerOrAdmin, IsLetterRequestorOrStaff
 
 ### Custom permission classes for API access ###
 

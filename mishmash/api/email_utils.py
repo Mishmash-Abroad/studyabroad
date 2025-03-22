@@ -45,6 +45,13 @@ def send_email(to_email, subject, plain_text_content, html_content=None):
         return response.status_code >= 200 and response.status_code < 300
     except Exception as e:
         logger.error(f"Error sending email: {str(e)}")
+        print(f"Error sending email: {str(e)}")
+        
+        # Add more detailed debugging
+        print(f"API Key length: {len(SENDGRID_API_KEY)}")
+        print(f"From email: {DEFAULT_FROM_EMAIL}")
+        print(f"To email: {to_email}")
+        
         return False
 
 def send_recommendation_request_email(letter_obj, base_url):
