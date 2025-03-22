@@ -8,6 +8,7 @@ from .models import (
     Announcement,
     Document,
     ConfidentialNote,
+    LetterOfRecommendation,
 )
 from allauth.socialaccount.models import SocialAccount
 
@@ -168,3 +169,59 @@ class DocumentSerializer(serializers.ModelSerializer):
         if obj.pdf:
             return f'/api/documents/{obj.id}/secure_file/'
         return None
+
+
+class LetterOfRecommendationSerializer(serializers.ModelSerializer):
+    pdf_url = serializers.SerializerMethodField()
+    is_fulfilled = serializers.ReadOnlyField()
+    student_name = serializers.SerializerMethodField()
+    program_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LetterOfRecommendation
+        fields = [
+            "id",
+            "application",
+            "writer_name",
+            "writer_email",
+            "pdf",
+            "letter_timestamp",
+            "token",
+            "created_at",
+            "updated_at",
+            "pdf_url",
+            "is_fulfilled",
+            "student_name",
+            "program_title"
+        ]
+        read_only_fields = [
+            "id",
+            "application",
+            "pdf",
+            "letter_timestamp",
+            "token",
+            "created_at",
+            "updated_at",
+            "pdf_url",
+            "is_fulfilled",
+            "student_name",
+            "program_title"
+        ]
+
+    def get_pdf_url(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            user = request.user
+            if user.is_admin or user.is_faculty or user.is_reviewer:
+                if obj.pdf and obj.is_fulfilled:
+                    return f'/api/letters/{obj.id}/secure_file/'
+        return None
+    
+    def get_student_name(self, obj):
+        return obj.application.student.display_name
+    
+    def get_program_title(self, obj):
+        return obj.application.program.title
+    
+    def get_is_fulfilled(self, obj):
+        return obj.is_fulfilled
