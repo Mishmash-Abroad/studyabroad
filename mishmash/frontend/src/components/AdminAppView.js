@@ -22,7 +22,6 @@ import {
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
 import ProgramForm from "./ProgramForm";
-import AdminLettersSection from "./AdminLettersSection";
 import { useAuth } from "../context/AuthContext";
 
 const AdminAppView = () => {
@@ -297,11 +296,6 @@ const AdminAppView = () => {
           Essential Documents Review
         </Typography>
         <DocumentReview application_id={id} />
-      </Paper>
-
-      {/* Letters of Recommendation Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <AdminLettersSection applicationId={id} />
       </Paper>
 
       {/* Confidential Notes Section */}

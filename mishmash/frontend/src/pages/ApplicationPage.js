@@ -15,7 +15,6 @@ import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
 import DeadlineIndicator from "../components/DeadlineIndicator";
-import LettersOfRecManager from "../components/LettersOfRecManager";
 import {
   ALL_STATUSES,
   ALL_ADMIN_EDITABLE_STATUSES,
@@ -499,7 +498,6 @@ const ApplicationPage = () => {
             <Tab label="Program Details" />
             <Tab label="Application Form" />
             <Tab label="Required Documents" />
-            <Tab label="Letters of Rec" />
           </Tabs>
         </TabContainer>
 
@@ -882,11 +880,6 @@ const ApplicationPage = () => {
               documents={documents.submitted || []}
             />
           </>
-        )}
-
-        {/* Letters of Rec Tab */}
-        {activeTab === 3 && (
-          <LettersOfRecManager applicationId={application.id} isReadOnly={isApplicationReadOnly()} />
         )}
       </ContentContainer>
     </PageContainer>
