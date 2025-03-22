@@ -1,12 +1,14 @@
 import os
 import logging
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content, HtmlContent
+from sendgrid.helpers.mail import Mail, Content, HtmlContent
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
-DEFAULT_FROM_EMAIL = os.getenv("SENDGRID_DEFAULT_FROM", "noreply@studyabroad.example.com")
+# Get settings from Django configuration instead of environment variables directly
+SENDGRID_API_KEY = getattr(settings, 'SENDGRID_API_KEY', '')
+DEFAULT_FROM_EMAIL = getattr(settings, 'SENDGRID_DEFAULT_FROM', 'noreply@studyabroad.example.com')
 
 def send_email(to_email, subject, plain_text_content, html_content=None):
     """
@@ -23,24 +25,29 @@ def send_email(to_email, subject, plain_text_content, html_content=None):
     """
     if not SENDGRID_API_KEY:
         logger.warning("SENDGRID_API_KEY not set. Email not sent.")
+        print("SENDGRID_API_KEY not set. Email not sent.")
         return False
     
-    message = Mail(
-        from_email=Email(DEFAULT_FROM_EMAIL),
-        to_emails=To(to_email),
-        subject=subject,
-        plain_text_content=Content("text/plain", plain_text_content)
-    )
-    
+    # Use the actual SendGrid-recommended format
     if html_content:
-        message.content = [
-            Content("text/plain", plain_text_content),
-            HtmlContent(html_content)
-        ]
+        message = Mail(
+            from_email=DEFAULT_FROM_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            html_content=html_content)
+    else:
+        message = Mail(
+            from_email=DEFAULT_FROM_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            plain_text_content=plain_text_content)
     
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
+        print(f"SendGrid status code: {response.status_code}")
+        # Print the first 100 chars of the body for debugging
+        print(f"Response body excerpt: {str(response.body)[:100]}")
         logger.info(f"Email sent to {to_email}, status code: {response.status_code}")
         return response.status_code >= 200 and response.status_code < 300
     except Exception as e:
