@@ -1411,7 +1411,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["get"],
-        permission_classes=[permissions.IsAdminUser],
+        permission_classes=[IsAdmin],
     )
     def user_warnings(self, request, pk=None):
         """
