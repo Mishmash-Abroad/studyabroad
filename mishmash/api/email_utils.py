@@ -6,11 +6,11 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# Get settings from Django configuration instead of environment variables directly
-SENDGRID_API_KEY = getattr(settings, 'SENDGRID_API_KEY', '')
-DEFAULT_FROM_EMAIL = getattr(settings, 'SENDGRID_DEFAULT_FROM', 'noreply@studyabroad.example.com')
+# Get settings from environment variables
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
+DEFAULT_FROM_EMAIL = config('SENDGRID_DEFAULT_FROM', default='hccabroad@gmail.com')
 
-def send_email(to_email, subject, plain_text_content, html_content=None):
+def send_email(to_email, subject, html_content=None):
     """
     Send an email using SendGrid API
     
@@ -28,20 +28,11 @@ def send_email(to_email, subject, plain_text_content, html_content=None):
         print("SENDGRID_API_KEY not set. Email not sent.")
         return False
     
-    # Use the actual SendGrid-recommended format
-    if html_content:
-        message = Mail(
-            from_email=DEFAULT_FROM_EMAIL,
-            to_emails=to_email,
-            subject=subject,
-            html_content=html_content)
-    else:
-        message = Mail(
-            from_email=DEFAULT_FROM_EMAIL,
-            to_emails=to_email,
-            subject=subject,
-            plain_text_content=plain_text_content)
-    
+    message = Mail(
+        from_email=DEFAULT_FROM_EMAIL,
+        to_emails=to_email,
+        subject=subject,
+        html_content=html_content)
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
@@ -80,22 +71,6 @@ def send_recommendation_request_email(letter_obj, base_url):
     
     subject = f"Request for Letter of Recommendation - {student_name}"
     
-    plain_text = f"""
-Hello {letter_obj.writer_name},
-
-{student_name} is applying to the {program_title} study abroad program and has requested your recommendation.
-
-Please submit your letter of recommendation by clicking the link below or copying it to your browser:
-{upload_url}
-
-This link contains a unique token that allows you to securely upload your letter without needing to create an account.
-
-Thank you for your assistance!
-
-Best regards,
-Study Abroad Program Administration
-"""
-    
     html_content = f"""
 <html>
 <body>
@@ -105,12 +80,12 @@ Study Abroad Program Administration
     <p><a href="{upload_url}">Upload your recommendation letter</a></p>
     <p>This link contains a unique token that allows you to securely upload your letter without needing to create an account.</p>
     <p>Thank you for your assistance!</p>
-    <p>Best regards,<br>Study Abroad Program Administration</p>
+    <p>Best regards,<br>HCC Study Abroad Program</p>
 </body>
 </html>
 """
     
-    return send_email(letter_obj.writer_email, subject, plain_text, html_content)
+    return send_email(letter_obj.writer_email, subject, html_content)
 
 def send_recommendation_retraction_email(letter_obj):
     """
@@ -127,19 +102,6 @@ def send_recommendation_retraction_email(letter_obj):
     
     subject = f"Letter of Recommendation Request Retracted - {student_name}"
     
-    plain_text = f"""
-Hello {letter_obj.writer_name},
-
-We want to inform you that {student_name} has retracted their request for a letter of recommendation for the {program_title} study abroad program.
-
-The previously sent link is no longer valid. You do not need to take any further action.
-
-Thank you for your understanding.
-
-Best regards,
-Study Abroad Program Administration
-"""
-    
     html_content = f"""
 <html>
 <body>
@@ -147,9 +109,9 @@ Study Abroad Program Administration
     <p>We want to inform you that {student_name} has retracted their request for a letter of recommendation for the <strong>{program_title}</strong> study abroad program.</p>
     <p>The previously sent link is no longer valid. You do not need to take any further action.</p>
     <p>Thank you for your understanding.</p>
-    <p>Best regards,<br>Study Abroad Program Administration</p>
+    <p>Best regards,<br>HCC Study Abroad Program</p>
 </body>
 </html>
 """
     
-    return send_email(letter_obj.writer_email, subject, plain_text, html_content)
+    return send_email(letter_obj.writer_email, subject, html_content)
