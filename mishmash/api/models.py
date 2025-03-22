@@ -42,7 +42,7 @@ class User(AbstractUser):
 
 
 class Program(models.Model):
-    title = models.CharField(max_length=80)
+    title = models.CharField(max_length=200)
     year = models.CharField(max_length=4)
     semester = models.CharField(max_length=20)
     description = models.TextField(blank=True, default="No description provided.")

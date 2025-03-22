@@ -313,7 +313,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           label="Description"
           name="description"
           multiline
-          rows={3}
+          rows={25}
           fullWidth
           disabled={!user.is_admin}
           value={programData.description}
