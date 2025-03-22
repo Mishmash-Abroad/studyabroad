@@ -412,7 +412,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if not title:
             raise ValidationError({"detail": "Title must be non-empty."})
 
-        if len(title) > 80:
+        if len(title) > 200:
             raise ValidationError({"detail": "Title cannot exceed 80 characters."})
 
         if len(year) > 4:
@@ -421,10 +421,10 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if len(semester) > 20:
             raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
 
-        if len(description) > 1000:
-            raise ValidationError(
-                {"detail": "Description cannot exceed 1000 characters."}
-            )
+        # if len(description) > 1000:
+        #     raise ValidationError(
+        #         {"detail": "Description cannot exceed 1000 characters."}
+        #     )
 
         if not year.isdigit() or len(year) != 4:
             raise ValidationError({"detail": "Year must be a 4-digit numeric value."})

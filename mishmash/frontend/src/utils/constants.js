@@ -239,3 +239,11 @@ export const DOCUMENTS = {
     description: "Assumption of risk form: A document waiving HCC's liability for student participation in the program. The student must sign this to participate.",
   },
 }
+
+export const DEFAULT_QUESTIONS = [
+  "Why do you want to participate in this study abroad program?",
+  "How does this program align with your academic or career goals?",
+  "What challenges do you anticipate during this experience, and how will you address them?",
+  "Describe a time you adapted to a new or unfamiliar environment.",
+  "What unique perspective or contribution will you bring to the group?",
+]
