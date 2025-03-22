@@ -128,27 +128,31 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleFacultyChange = (selectedFaculty) => {
     if (selectedFaculty.length === 0) {
+      setProgramData({
+        ...programData,
+        faculty_lead_ids: [],
+      });
       // Show warning that System Admin will be added as faculty lead
-      setSystemAdminWarning(true);
+      // setSystemAdminWarning(true);
 
       // Get the System Admin user - in a real implementation,
       // you would either fetch this from the backend or use a known ID
-      axiosInstance
-        .get("/api/users/", {
-          params: { is_system_admin: true },
-        })
-        .then((response) => {
-          if (response.data && response.data.length > 0) {
-            const systemAdmin = response.data[0];
-            setProgramData({
-              ...programData,
-              faculty_lead_ids: [systemAdmin.id],
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching system admin:", error);
-        });
+      // axiosInstance
+      //   .get("/api/users/", {
+      //     params: { is_system_admin: true },
+      //   })
+      //   .then((response) => {
+      //     if (response.data && response.data.length > 0) {
+      //       const systemAdmin = response.data[0];
+      //       setProgramData({
+      //         ...programData,
+      //         faculty_lead_ids: [systemAdmin.id],
+      //       });
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     console.error("Error fetching system admin:", error);
+      //   });
     } else {
       // Regular case - user has selected faculty leads
       setSystemAdminWarning(false);
