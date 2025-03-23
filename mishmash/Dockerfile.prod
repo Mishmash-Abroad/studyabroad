@@ -60,12 +60,21 @@ RUN chmod o+x /app
 RUN chmod u+rwx /app/backups
 RUN chown www-data /app/backups 
 
-RUN service cron start
-
-USER www-data
-
-# Expose port
 EXPOSE 8000
 
-# Start cron and run Gunicorn
-CMD gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application
+# Create entrypoint script
+RUN echo '#!/usr/bin/bash\n\
+# Start cron as root\n\
+service cron start\n\
+\n\
+# Switch to www-data and run gunicorn\n\
+exec su -s /bin/bash www-data -c "gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application"\n\
+' > /app/entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
+
+# Remove the USER directive
+# USER www-data
+
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
