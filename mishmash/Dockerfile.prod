@@ -11,6 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Set work directory
 WORKDIR /app
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -48,23 +49,17 @@ RUN touch /var/log/cron.log && chmod 777 /var/log/cron.log
 
 # Create a script that will be executed by cron with the proper environment
 COPY run_backup.sh /app/run_backup.sh
-
 RUN chmod ugo+x /app/run_backup.sh
 
 # Set up crontab to use the script
 RUN echo "* * * * * root /app/run_backup.sh" > /etc/crontab
 
-# Create an entrypoint.prod script that properly starts services
-COPY entrypoint.prod.sh /app/entrypoint.prod.sh
-
-RUN chmod ugo+rwx /app/entrypoint.prod.sh
-
-# Switch to non-root user
-USER www-data
-
-# Expose port
-EXPOSE 8000
-
-
-# Use the entrypoint script
-ENTRYPOINT ["/app/entrypoint.prod.sh"]
+# Start cron and run Gunicorn
+CMD service cron start && \
+    if pgrep cron > /dev/null; then \
+        echo "Cron is running successfully"; \
+    else \
+        echo "Failed to start cron"; \
+        exit 1; \
+    fi && \
+    gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application

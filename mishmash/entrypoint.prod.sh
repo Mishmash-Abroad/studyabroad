@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-set -m
 
 # Wait for database to be ready
 echo "Waiting for MySQL to be ready..."
