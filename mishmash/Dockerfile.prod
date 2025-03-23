@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y \
     procps \
     bash \
     curl \
-    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
@@ -63,19 +62,19 @@ RUN chown www-data /app/backups
 
 EXPOSE 8000
 
-# Create entrypoint script with gosu for proper privilege handling
+# Create entrypoint script
 RUN echo '#!/usr/bin/bash\n\
 # Start cron as root\n\
 service cron start\n\
 \n\
 # Switch to www-data and run gunicorn\n\
-exec gosu www-data gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application\n\
+exec su -s /bin/bash www-data -c "gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application"\n\
 ' > /app/entrypoint.sh
 
 RUN chmod +x /app/entrypoint.sh
 
-# Set the default user to www-data
-USER www-data
+# Remove the USER directive
+# USER www-data
 
-# Use the entrypoint script with proper privilege escalation
-ENTRYPOINT ["bash", "-c", "su root -c '/app/entrypoint.sh'"]
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
