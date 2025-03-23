@@ -60,17 +60,12 @@ RUN chmod o+x /app
 RUN chmod u+rwx /app/backups
 RUN chown www-data /app/backups 
 
-RUN touch /var/run/crond.pid && chmod 777 /var/run/crond.pid
+RUN service cron start
 
 USER www-data
 
+# Expose port
+EXPOSE 8000
 
 # Start cron and run Gunicorn
-CMD service cron start && \
-    if pgrep cron > /dev/null; then \
-        echo "Cron is running successfully"; \
-    else \
-        echo "Failed to start cron"; \
-        exit 1; \
-    fi && \
-    gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application
+CMD gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application
