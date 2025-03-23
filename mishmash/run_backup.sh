@@ -7,6 +7,7 @@ export DATABASE_PASSWORD=${DATABASE_PASSWORD}
 export DATABASE_PORT=3306
 export DEBUG=1
 
+
 if /usr/local/bin/python /app/manage.py backup_db --aes-key=a51922bf09f5c1399607f061d23ea401f86e297bcf1a7a6460c627399eb767a9 >> /var/log/cron.log 2>&1; then
     echo "Exit code of 0, success" >> /var/log/cron.log
 else
