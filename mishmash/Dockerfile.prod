@@ -51,10 +51,12 @@ RUN touch /var/log/cron.log && chmod 777 /var/log/cron.log
 COPY run_backup.sh /app/run_backup.sh
 RUN chmod ugo+x /app/run_backup.sh
 
-USER www-data
-
 # Set up crontab to use the script
 RUN echo "* * * * * www-data /app/run_backup.sh" > /etc/crontab
+
+
+USER www-data
+
 
 # Start cron and run Gunicorn
 CMD service cron start && \
