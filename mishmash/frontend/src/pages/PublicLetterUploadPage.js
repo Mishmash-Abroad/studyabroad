@@ -74,15 +74,26 @@ const InfoValue = styled(Typography)(({ theme }) => ({
   flex: 1,
 }));
 
-const SuccessBox = styled(Box)(({ theme, flashSuccess }) => ({
+const SuccessBox = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  backgroundColor: flashSuccess ? theme.palette.success.light : theme.palette.background.paper,
-  color: flashSuccess ? theme.palette.success.dark : theme.palette.text.primary,
   padding: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
   marginBottom: theme.spacing(3),
   border: `1px solid ${theme.palette.success.main}`,
+  transition: 'all 0.25s ease-in-out',
+  animation: 'flash-success 1s ease-in-out',
+  '@keyframes flash-success': {
+    '0%': {
+      backgroundColor: 'transparent',
+    },
+    '20%': {
+      backgroundColor: theme.palette.success.light,
+    },
+    '100%': {
+      backgroundColor: 'transparent',
+    }
+  }
 }));
 
 const SuccessIcon = styled(CheckCircleIcon)(({ theme }) => ({
@@ -162,7 +173,6 @@ const PublicLetterUploadPage = () => {
     pdfViewerOpen: false,
     existingDoc: null,
     reuploadExpanded: false,
-    flashSuccess: false,
   });
 
   const {
@@ -177,7 +187,6 @@ const PublicLetterUploadPage = () => {
     pdfViewerOpen,
     existingDoc,
     reuploadExpanded,
-    flashSuccess,
   } = state;
 
   const updateState = (newState) => 
@@ -272,14 +281,8 @@ const PublicLetterUploadPage = () => {
             filename: file.name,
           },
           file: null,
-          reuploadExpanded: false,
-          flashSuccess: true,
+          reuploadExpanded: true
         });
-        
-        // After 3 seconds, set flashSuccess to false for a more subtle appearance
-        setTimeout(() => {
-          updateState({ flashSuccess: false });
-        }, 3000);
       }
     } catch (err) {
       console.error("Error uploading letter:", err);
@@ -377,41 +380,99 @@ const PublicLetterUploadPage = () => {
     );
   }
 
-  if (success && !file) {
+  // If we have letterInfo and either success or existingDoc, show the main screen
+  if (success || existingDoc) {
     return (
       <PageContainer>
         <ContentWrapper>
           <Container>
-            <SuccessBox flashSuccess={flashSuccess}>
-              <SuccessIcon />
-              <Typography variant="h6">
-                Your letter has been successfully uploaded. Thank you!
+            <HeaderRow>
+              <Typography variant="h5">
+                Upload Recommendation Letter
+                {(existingDoc || success) && (
+                  <StatusChip 
+                    label="Letter Received" 
+                    color="success" 
+                    icon={<CheckCircleIcon />} 
+                    variant="outlined"
+                  />
+                )}
               </Typography>
+            </HeaderRow>
+
+            <InfoSection>
+              <InfoRow>
+                <InfoLabel variant="body1">For Student:</InfoLabel>
+                <InfoValue variant="body1">{letterInfo?.student_name}</InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel variant="body1">Program:</InfoLabel>
+                <InfoValue variant="body1">{letterInfo?.program_title}</InfoValue>
+              </InfoRow>
+            </InfoSection>
+
+            <SuccessBox>
+              <SuccessIcon />
+              <Box>
+                <Typography variant="h6">
+                  Letter successfully uploaded
+                </Typography>
+                <Typography variant="body2">
+                  Your recommendation letter has been received.
+                </Typography>
+              </Box>
             </SuccessBox>
             
-            <Typography variant="h5" gutterBottom>
-              Your Recommendation Letter for {letterInfo?.student_name}
-            </Typography>
-            
-            {existingDoc && (
-              <FileInfo>
-                <FileDetails>
-                  <Typography variant="subtitle1">
-                    {existingDoc.filename}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Your letter has been received and will be reviewed by the program administrators.
-                  </Typography>
-                </FileDetails>
-              </FileInfo>
-            )}
+            <Accordion expanded={reuploadExpanded} onChange={handleToggleReupload}>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="reupload-content"
+                id="reupload-header"
+              >
+                <Typography>Replace with updated letter (optional)</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  If you need to provide an updated version of your letter, you can upload a new file below.
+                  This will replace your previously submitted letter.
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                {renderUploadSection()}
+              </AccordionDetails>
+            </Accordion>
+
+            {/* PDF Viewer Dialog */}
+            <Dialog
+              open={pdfViewerOpen}
+              onClose={handleCloseViewer}
+              maxWidth="lg"
+              fullWidth
+            >
+              <DialogContent sx={{ p: 0, height: "80vh" }}>
+                {selectedDocUrl ? (
+                  <iframe
+                    src={selectedDocUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: "none" }}
+                    title="Letter PDF Viewer"
+                  />
+                ) : (
+                  <Box p={3}>
+                    <CircularProgress />
+                    <Typography>Loading document...</Typography>
+                  </Box>
+                )}
+              </DialogContent>
+            </Dialog>
           </Container>
         </ContentWrapper>
       </PageContainer>
     );
   }
 
-  // If we get here, letterInfo is loaded and valid
+  // If we get here, letterInfo is loaded and valid but no letter has been uploaded yet
   return (
     <PageContainer>
       <ContentWrapper>
@@ -419,14 +480,6 @@ const PublicLetterUploadPage = () => {
           <HeaderRow>
             <Typography variant="h5">
               Upload Recommendation Letter
-              {existingDoc && (
-                <StatusChip 
-                  label="Letter Received" 
-                  color="success" 
-                  icon={<CheckCircleIcon />} 
-                  variant="outlined"
-                />
-              )}
             </Typography>
           </HeaderRow>
 
@@ -441,66 +494,7 @@ const PublicLetterUploadPage = () => {
             </InfoRow>
           </InfoSection>
 
-          {existingDoc && (
-            <>
-              <SuccessBox flashSuccess={flashSuccess}>
-                <SuccessIcon />
-                <Box>
-                  <Typography variant="h6">
-                    Letter successfully uploaded
-                  </Typography>
-                  <Typography variant="body2">
-                    Your recommendation letter has been received.
-                  </Typography>
-                </Box>
-              </SuccessBox>
-              
-              <Accordion expanded={reuploadExpanded} onChange={handleToggleReupload}>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls="reupload-content"
-                  id="reupload-header"
-                >
-                  <Typography>Replace with updated letter (optional)</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                    If you need to provide an updated version of your letter, you can upload a new file below.
-                    This will replace your previously submitted letter.
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  
-                  {renderUploadSection()}
-                </AccordionDetails>
-              </Accordion>
-            </>
-          )}
-
-          {!existingDoc && renderUploadSection()}
-
-          {/* PDF Viewer Dialog */}
-          <Dialog
-            open={pdfViewerOpen}
-            onClose={handleCloseViewer}
-            maxWidth="lg"
-            fullWidth
-          >
-            <DialogContent sx={{ p: 0, height: "80vh" }}>
-              {selectedDocUrl ? (
-                <iframe
-                  src={selectedDocUrl}
-                  width="100%"
-                  height="100%"
-                  style={{ border: "none" }}
-                  title="Letter PDF Viewer"
-                />
-              ) : (
-                <Box p={3}>
-                  <Typography>Loading PDF...</Typography>
-                </Box>
-              )}
-            </DialogContent>
-          </Dialog>
+          {renderUploadSection()}
         </Container>
       </ContentWrapper>
     </PageContainer>
@@ -578,7 +572,7 @@ const PublicLetterUploadPage = () => {
                 disabled={uploading}
                 startIcon={uploading ? <CircularProgress size={20} /> : null}
               >
-                {uploading ? "Uploading..." : existingDoc ? "Replace Letter" : "Upload Letter"}
+                {uploading ? "Uploading..." : "Upload Letter"}
               </Button>
             </Box>
           </>

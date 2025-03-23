@@ -886,7 +886,12 @@ const ApplicationPage = () => {
         
         {/* Letters of Recommendation Tab */}
         {activeTab === 3 && (
-          <StudentLetterRequests application_id={application.id} />
+          <StudentLetterRequests 
+            application_id={application.id} 
+            applicationStatus={application.status}
+            programDeadline={program.application_deadline}
+            isReadOnly={isReadOnly}
+          />
         )}
       </ContentContainer>
     </PageContainer>
