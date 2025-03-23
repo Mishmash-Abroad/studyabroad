@@ -64,4 +64,4 @@ EXPOSE 8000
 
 
 # Use the entrypoint script
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.prod.sh"]
