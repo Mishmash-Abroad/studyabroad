@@ -40,13 +40,6 @@ RUN mkdir -p /app/static /app/media /app/api/migrations && \
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Switch to non-root user
-USER www-data
-
-# Expose port
-EXPOSE 8000
-
-
 # Ensure cron log file exists and is writable
 RUN touch /var/log/cron.log && chmod 666 /var/log/cron.log
 
@@ -62,6 +55,13 @@ RUN echo "* * * * * root /app/run_backup.sh" > /etc/crontab
 COPY entrypoint.prod.sh /app/entrypoint.prod.sh
 
 RUN chmod +x /app/entrypoint.prod.sh
+
+# Switch to non-root user
+USER www-data
+
+# Expose port
+EXPOSE 8000
+
 
 # Use the entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]

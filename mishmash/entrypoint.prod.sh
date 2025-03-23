@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 set -m
-# Start Django server in background
-python manage.py runserver 0.0.0.0:8000 &
+# Start Gunicorn server
+exec gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application &
 # Wait for database to be ready
 echo "Waiting for MySQL to be ready..."
 COUNTER=0
@@ -26,5 +26,4 @@ else
     exit 1
 fi
 
-# Start Gunicorn server
-exec gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application
+fg
