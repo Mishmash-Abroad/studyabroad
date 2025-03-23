@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
+    cron \
+    procps \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
