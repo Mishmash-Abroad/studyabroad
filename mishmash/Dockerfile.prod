@@ -49,10 +49,10 @@ RUN touch /var/log/cron.log && chmod 666 /var/log/cron.log
 # Create a script that will be executed by cron with the proper environment
 COPY run_backup.sh /app/run_backup.sh
 
-RUN chmod +x /app/run_backup.sh
+RUN chmod ugo+x /app/run_backup.sh
 
 # Set up crontab to use the script
-RUN echo "* * * * * root /app/run_backup.sh" > /etc/crontab
+RUN echo "* * * * * /app/run_backup.sh" > /etc/crontab
 
 # Create an entrypoint.prod script that properly starts services
 COPY entrypoint.prod.sh /app/entrypoint.prod.sh
