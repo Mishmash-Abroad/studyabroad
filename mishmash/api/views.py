@@ -451,7 +451,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
         #     )
 
         if not year.isdigit() or len(year) != 4:
-            raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
+            raise ValidationError({"detail": "Year must be a four-digit number (e.g., 2025)."}
+            )
 
         valid_semesters = {"Fall", "Spring", "Summer"}
         if semester not in valid_semesters:
@@ -1764,8 +1765,16 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
         )
         
         # Send email to the writer
-        base_url = request.build_absolute_uri('/').rstrip('/')
-        send_recommendation_request_email(letter_obj, base_url)
+        backend_url = request.build_absolute_uri('/').rstrip('/')
+        # Use frontend URL instead of backend URL
+        if 'localhost' in backend_url:
+            # Development environment
+            frontend_url = backend_url.replace('8000', '3000')
+        else:
+            # Production - assuming frontend and backend are on same domain with different paths
+            frontend_url = backend_url
+        
+        send_recommendation_request_email(letter_obj, frontend_url)
         
         serializer = self.get_serializer(letter_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -67,7 +67,7 @@ def send_recommendation_request_email(letter_obj, base_url):
     program_title = letter_obj.application.program.title
     
     # Build the unique URL with token for writer to upload letter
-    upload_url = f"{base_url}/api/letters/{letter_obj.id}/public_info/?token={letter_obj.token}"
+    upload_url = f"{base_url}/letters/{letter_obj.id}?token={letter_obj.token}"
     
     subject = f"Request for Letter of Recommendation - {student_name}"
     

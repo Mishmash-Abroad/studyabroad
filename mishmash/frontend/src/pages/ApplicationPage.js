@@ -15,6 +15,7 @@ import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
 import DeadlineIndicator from "../components/DeadlineIndicator";
+import StudentLetterRequests from "../components/StudentLetterRequests";
 import {
   ALL_STATUSES,
   ALL_ADMIN_EDITABLE_STATUSES,
@@ -498,6 +499,7 @@ const ApplicationPage = () => {
             <Tab label="Program Details" />
             <Tab label="Application Form" />
             <Tab label="Required Documents" />
+            <Tab label="Letters of Recommendation" />
           </Tabs>
         </TabContainer>
 
@@ -880,6 +882,11 @@ const ApplicationPage = () => {
               documents={documents.submitted || []}
             />
           </>
+        )}
+        
+        {/* Letters of Recommendation Tab */}
+        {activeTab === 3 && (
+          <StudentLetterRequests application_id={application.id} />
         )}
       </ContentContainer>
     </PageContainer>

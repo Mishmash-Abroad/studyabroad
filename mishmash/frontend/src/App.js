@@ -17,6 +17,7 @@ import AdminAppView from "./components/AdminAppView";
 import MFAOverview from "./mfa/MFAOverview";
 import ActivateTOTP from "./mfa/ActivateTOTP";
 import DeactivateTOTP from "./mfa/DeactivateTOTP";
+import PublicLetterUploadPage from "./pages/PublicLetterUploadPage";
 
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -30,6 +31,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/apply/:program_id" element={<ApplicationPage />} />
           <Route path="/applications/:id" element={<AdminAppView />} />
+          <Route path="/letters/:id" element={<PublicLetterUploadPage />} />
 
           {/* Protected Dashboard Route */}
           <Route
