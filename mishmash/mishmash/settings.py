@@ -328,3 +328,4 @@ LOGGING = {
 
 # Add this line to define the backup directory (archive directory)
 ARCHIVE_DIRECTORY = BASE_DIR / 'backups'
+ARCHIVE_FILENAME = '%Y-%m-%d--%H-%M'
