@@ -11,11 +11,19 @@ import {
   IconButton,
   Dialog,
   DialogContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Divider,
+  Chip,
+  CheckCircleOutlineIcon,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import axiosInstance from "../utils/axios";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 // -------------------- STYLED COMPONENTS --------------------
 const PageContainer = styled('div')(({ theme }) => ({
@@ -64,6 +72,23 @@ const InfoLabel = styled(Typography)(({ theme }) => ({
 
 const InfoValue = styled(Typography)(({ theme }) => ({
   flex: 1,
+}));
+
+const SuccessBox = styled(Box)(({ theme, flashSuccess }) => ({
+  display: "flex",
+  alignItems: "center",
+  backgroundColor: flashSuccess ? theme.palette.success.light : theme.palette.background.paper,
+  color: flashSuccess ? theme.palette.success.dark : theme.palette.text.primary,
+  padding: theme.spacing(2),
+  borderRadius: theme.shape.borderRadius,
+  marginBottom: theme.spacing(3),
+  border: `1px solid ${theme.palette.success.main}`,
+}));
+
+const SuccessIcon = styled(CheckCircleIcon)(({ theme }) => ({
+  marginRight: theme.spacing(2),
+  fontSize: '2rem',
+  color: theme.palette.success.main,
 }));
 
 // DropZone handles visual feedback for drag & drop and file states
@@ -117,6 +142,10 @@ const ActionButtons = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
 }));
 
+const StatusChip = styled(Chip)(({ theme }) => ({
+  marginLeft: theme.spacing(2),
+}));
+
 const PublicLetterUploadPage = () => {
   const { id } = useParams(); 
   const location = useLocation();
@@ -132,6 +161,8 @@ const PublicLetterUploadPage = () => {
     selectedDocUrl: null,
     pdfViewerOpen: false,
     existingDoc: null,
+    reuploadExpanded: false,
+    flashSuccess: false,
   });
 
   const {
@@ -145,6 +176,8 @@ const PublicLetterUploadPage = () => {
     selectedDocUrl,
     pdfViewerOpen,
     existingDoc,
+    reuploadExpanded,
+    flashSuccess,
   } = state;
 
   const updateState = (newState) => 
@@ -176,7 +209,6 @@ const PublicLetterUploadPage = () => {
           letterInfo: response.data,
           existingDoc: response.data.is_fulfilled ? { 
             filename: "Recommendation Letter.pdf",
-            upload_date: response.data.letter_timestamp,
           } : null,
         });
       } else {
@@ -238,10 +270,16 @@ const PublicLetterUploadPage = () => {
           success: true,
           existingDoc: {
             filename: file.name,
-            upload_date: new Date().toISOString(),
           },
           file: null,
+          reuploadExpanded: false,
+          flashSuccess: true,
         });
+        
+        // After 3 seconds, set flashSuccess to false for a more subtle appearance
+        setTimeout(() => {
+          updateState({ flashSuccess: false });
+        }, 3000);
       }
     } catch (err) {
       console.error("Error uploading letter:", err);
@@ -255,26 +293,6 @@ const PublicLetterUploadPage = () => {
 
   const handleDeleteFile = () => {
     updateState({ file: null });
-  };
-
-  const handleRemoveDoc = async () => {
-    if (!window.confirm("Are you sure you want to remove your previously uploaded letter? You can upload a new one.")) {
-      return;
-    }
-    
-    try {
-      updateState({ uploading: true, error: "" });
-      await axiosInstance.delete(`/api/letters/${id}/remove_letter/?token=${token}`);
-      updateState({ 
-        existingDoc: null,
-        success: false,
-      });
-    } catch (err) {
-      console.error("Error removing letter:", err);
-      updateState({ error: "Failed to remove existing letter." });
-    } finally {
-      updateState({ uploading: false });
-    }
   };
 
   const handleViewPdf = async () => {
@@ -302,6 +320,32 @@ const PublicLetterUploadPage = () => {
     }
   };
 
+  const handlePreviewPdf = async () => {
+    if (!file) {
+      updateState({ error: "Please select a PDF file first." });
+      return;
+    }
+    try {
+      updateState({ loading: true, error: "" });
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        const blobUrl = fileReader.result;
+        updateState({
+          selectedDocUrl: blobUrl,
+          pdfViewerOpen: true,
+          loading: false,
+        });
+      };
+      fileReader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Error previewing PDF:", err);
+      updateState({ 
+        error: "Failed to preview the PDF document.",
+        loading: false,
+      });
+    }
+  };
+
   const handleCloseViewer = () => {
     if (selectedDocUrl) {
       URL.revokeObjectURL(selectedDocUrl);
@@ -312,14 +356,8 @@ const PublicLetterUploadPage = () => {
     });
   };
 
-  // Helper function to format dates consistently
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'numeric', 
-      day: 'numeric', 
-      year: '2-digit'
-    });
+  const handleToggleReupload = () => {
+    updateState({ reuploadExpanded: !reuploadExpanded });
   };
 
   if (loading) {
@@ -341,44 +379,35 @@ const PublicLetterUploadPage = () => {
 
   if (success && !file) {
     return (
-      <Container>
-        <Alert severity="success" sx={{ mb: 4 }}>
-          Your letter has been successfully uploaded. Thank you!
-        </Alert>
-        
-        <Typography variant="h5" gutterBottom>
-          Your Recommendation Letter
-        </Typography>
-        
-        {existingDoc && (
-          <FileInfo>
-            <FileDetails>
-              <Typography variant="subtitle1">
-                {existingDoc.filename}
+      <PageContainer>
+        <ContentWrapper>
+          <Container>
+            <SuccessBox flashSuccess={flashSuccess}>
+              <SuccessIcon />
+              <Typography variant="h6">
+                Your letter has been successfully uploaded. Thank you!
               </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Uploaded: {formatDate(existingDoc.upload_date)}
-              </Typography>
-            </FileDetails>
-            <ActionButtons>
-              <IconButton
-                color="primary"
-                onClick={handleViewPdf}
-                title="View PDF"
-              >
-                <VisibilityIcon />
-              </IconButton>
-              <IconButton
-                color="error"
-                onClick={handleRemoveDoc}
-                title="Remove and upload a different letter"
-              >
-                <DeleteIcon />
-              </IconButton>
-            </ActionButtons>
-          </FileInfo>
-        )}
-      </Container>
+            </SuccessBox>
+            
+            <Typography variant="h5" gutterBottom>
+              Your Recommendation Letter for {letterInfo?.student_name}
+            </Typography>
+            
+            {existingDoc && (
+              <FileInfo>
+                <FileDetails>
+                  <Typography variant="subtitle1">
+                    {existingDoc.filename}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Your letter has been received and will be reviewed by the program administrators.
+                  </Typography>
+                </FileDetails>
+              </FileInfo>
+            )}
+          </Container>
+        </ContentWrapper>
+      </PageContainer>
     );
   }
 
@@ -388,7 +417,17 @@ const PublicLetterUploadPage = () => {
       <ContentWrapper>
         <Container>
           <HeaderRow>
-            <Typography variant="h5">Upload Recommendation Letter</Typography>
+            <Typography variant="h5">
+              Upload Recommendation Letter
+              {existingDoc && (
+                <StatusChip 
+                  label="Letter Received" 
+                  color="success" 
+                  icon={<CheckCircleIcon />} 
+                  variant="outlined"
+                />
+              )}
+            </Typography>
           </HeaderRow>
 
           <InfoSection>
@@ -403,107 +442,41 @@ const PublicLetterUploadPage = () => {
           </InfoSection>
 
           {existingDoc && (
-            <Box mb={4}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                You have already uploaded a letter. You can view it below or upload a new one to replace it.
-              </Alert>
-              
-              <FileInfo>
-                <FileDetails>
-                  <Typography variant="subtitle1">
-                    Recommendation Letter
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Uploaded: {formatDate(existingDoc.upload_date)}
-                  </Typography>
-                </FileDetails>
-                <ActionButtons>
-                  <IconButton
-                    color="primary"
-                    onClick={handleViewPdf}
-                    title="View PDF"
-                  >
-                    <VisibilityIcon />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={handleRemoveDoc}
-                    title="Remove and upload a different letter"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ActionButtons>
-              </FileInfo>
-            </Box>
-          )}
-
-          <Typography variant="h6" gutterBottom>
-            {file ? "Selected File" : "Select PDF File to Upload"}
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {!file ? (
-            <DropZone
-              isDragActive={isDragActive}
-              hasFile={false}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onClick={() => document.getElementById("pdfInput").click()}
-            >
-              <input
-                id="pdfInput"
-                type="file"
-                accept="application/pdf"
-                style={{ display: "none" }}
-                onChange={(e) => handleFile(e.target.files[0])}
-              />
-              <CloudUploadIcon fontSize="large" color="primary" />
-              <Typography variant="body1" sx={{ mt: 2 }}>
-                Drag and drop a PDF file here, or click to select
-              </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                Only PDF files are accepted
-              </Typography>
-            </DropZone>
-          ) : (
             <>
-              <FileInfo>
-                <FileDetails>
-                  <Typography variant="subtitle1">{file.name}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Size: {(file.size / 1024).toFixed(1)} KB
+              <SuccessBox flashSuccess={flashSuccess}>
+                <SuccessIcon />
+                <Box>
+                  <Typography variant="h6">
+                    Letter successfully uploaded
                   </Typography>
-                </FileDetails>
-                <ActionButtons>
-                  <IconButton
-                    color="error"
-                    onClick={handleDeleteFile}
-                    title="Remove file"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ActionButtons>
-              </FileInfo>
-
-              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  startIcon={uploading ? <CircularProgress size={20} /> : null}
+                  <Typography variant="body2">
+                    Your recommendation letter has been received.
+                  </Typography>
+                </Box>
+              </SuccessBox>
+              
+              <Accordion expanded={reuploadExpanded} onChange={handleToggleReupload}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="reupload-content"
+                  id="reupload-header"
                 >
-                  {uploading ? "Uploading..." : "Upload Letter"}
-                </Button>
-              </Box>
+                  <Typography>Replace with updated letter (optional)</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    If you need to provide an updated version of your letter, you can upload a new file below.
+                    This will replace your previously submitted letter.
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  
+                  {renderUploadSection()}
+                </AccordionDetails>
+              </Accordion>
             </>
           )}
+
+          {!existingDoc && renderUploadSection()}
 
           {/* PDF Viewer Dialog */}
           <Dialog
@@ -532,6 +505,87 @@ const PublicLetterUploadPage = () => {
       </ContentWrapper>
     </PageContainer>
   );
+  
+  function renderUploadSection() {
+    return (
+      <>
+        <Typography variant="h6" gutterBottom>
+          {file ? "Selected File" : "Select PDF File to Upload"}
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {!file ? (
+          <DropZone
+            isDragActive={isDragActive}
+            hasFile={false}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => document.getElementById("pdfInput").click()}
+          >
+            <input
+              id="pdfInput"
+              type="file"
+              accept="application/pdf"
+              style={{ display: "none" }}
+              onChange={(e) => handleFile(e.target.files[0])}
+            />
+            <CloudUploadIcon fontSize="large" color="primary" />
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Drag and drop a PDF file here, or click to select
+            </Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              Only PDF files are accepted
+            </Typography>
+          </DropZone>
+        ) : (
+          <>
+            <FileInfo>
+              <FileDetails>
+                <Typography variant="subtitle1">{file.name}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Size: {(file.size / 1024).toFixed(1)} KB
+                </Typography>
+              </FileDetails>
+              <ActionButtons>
+                <IconButton
+                  color="primary"
+                  onClick={handlePreviewPdf}
+                  title="Preview file"
+                >
+                  <VisibilityIcon />
+                </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={handleDeleteFile}
+                  title="Remove file"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </ActionButtons>
+            </FileInfo>
+
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleUpload}
+                disabled={uploading}
+                startIcon={uploading ? <CircularProgress size={20} /> : null}
+              >
+                {uploading ? "Uploading..." : existingDoc ? "Replace Letter" : "Upload Letter"}
+              </Button>
+            </Box>
+          </>
+        )}
+      </>
+    );
+  }
 };
 
 export default PublicLetterUploadPage;
