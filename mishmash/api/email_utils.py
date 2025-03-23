@@ -72,15 +72,67 @@ def send_recommendation_request_email(letter_obj, base_url):
     subject = f"Request for Letter of Recommendation - {student_name}"
     
     html_content = f"""
+<!DOCTYPE html>
 <html>
-<body>
-    <p>Hello {letter_obj.writer_name},</p>
-    <p>{student_name} is applying to the <strong>{program_title}</strong> study abroad program and has requested your recommendation.</p>
-    <p>Please submit your letter of recommendation by clicking the link below:</p>
-    <p><a href="{upload_url}">Upload your recommendation letter</a></p>
-    <p>This link contains a unique token that allows you to securely upload your letter without needing to create an account.</p>
-    <p>Thank you for your assistance!</p>
-    <p>Best regards,<br>HCC Study Abroad Program</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter of Recommendation Request</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif; background-color: #f5f5f5; color: #212121;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <!-- Header with logo -->
+        <tr>
+            <td style="padding: 20px 0; text-align: center; background-color: #1a237e;">
+                <img src="images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
+            </td>
+        </tr>
+        
+        <!-- Main content -->
+        <tr>
+            <td style="padding: 30px 40px;">
+                <h2 style="color: #1a237e; margin-top: 0; margin-bottom: 20px; font-weight: 600;">Letter of Recommendation Request</h2>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Hello {letter_obj.writer_name},</p>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                    {student_name} is applying to the <strong>{program_title}</strong> study abroad program and has requested your recommendation.
+                </p>
+                
+                <div style="background-color: #e8f5e9; border-left: 4px solid #2e7d32; padding: 15px; margin: 25px 0; border-radius: 4px;">
+                    <p style="font-size: 16px; line-height: 1.6; margin: 0 0 10px 0;">
+                        Please submit your letter of recommendation by clicking the button below:
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="{upload_url}" style="display: inline-block; background-color: #0277bd; color: #ffffff; font-weight: 500; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;">Upload Recommendation Letter</a>
+                    </div>
+                    <p style="font-size: 14px; color: #616161; margin: 10px 0 0 0;">
+                        This link contains a unique token that allows you to securely upload your letter without needing to create an account.
+                    </p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                    Thank you for your assistance!
+                </p>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 5px;">
+                    Best regards,
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin-top: 0;">
+                    <strong>HCC Study Abroad Program</strong>
+                </p>
+            </td>
+        </tr>
+        
+        <!-- Footer -->
+        <tr>
+            <td style="padding: 20px 40px; background-color: #f5f5f5; text-align: center; border-top: 1px solid #e0e0e0;">
+                <p style="font-size: 14px; color: #757575; margin: 0;">
+                    &copy; 2025 HCC Study Abroad Program. All rights reserved.
+                </p>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 """
@@ -103,13 +155,61 @@ def send_recommendation_retraction_email(letter_obj):
     subject = f"Letter of Recommendation Request Retracted - {student_name}"
     
     html_content = f"""
+<!DOCTYPE html>
 <html>
-<body>
-    <p>Hello {letter_obj.writer_name},</p>
-    <p>We want to inform you that {student_name} has retracted their request for a letter of recommendation for the <strong>{program_title}</strong> study abroad program.</p>
-    <p>The previously sent link is no longer valid. You do not need to take any further action.</p>
-    <p>Thank you for your understanding.</p>
-    <p>Best regards,<br>HCC Study Abroad Program</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter of Recommendation Request Retracted</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif; background-color: #f5f5f5; color: #212121;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <!-- Header with logo -->
+        <tr>
+            <td style="padding: 20px 0; text-align: center; background-color: #1a237e;">
+                <img src="{letter_obj.application.program.base_url}/images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
+            </td>
+        </tr>
+        
+        <!-- Main content -->
+        <tr>
+            <td style="padding: 30px 40px;">
+                <h2 style="color: #1a237e; margin-top: 0; margin-bottom: 20px; font-weight: 600;">Letter Request Retracted</h2>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Hello {letter_obj.writer_name},</p>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                    We want to inform you that {student_name} has retracted their request for a letter of recommendation for the <strong>{program_title}</strong> study abroad program.
+                </p>
+                
+                <div style="background-color: #fff3e0; border-left: 4px solid #f57c00; padding: 15px; margin: 25px 0; border-radius: 4px;">
+                    <p style="font-size: 16px; line-height: 1.6; margin: 0;">
+                        The previously sent link is no longer valid. You do not need to take any further action.
+                    </p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                    Thank you for your understanding.
+                </p>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 5px;">
+                    Best regards,
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; margin-top: 0;">
+                    <strong>HCC Study Abroad Program</strong>
+                </p>
+            </td>
+        </tr>
+        
+        <!-- Footer -->
+        <tr>
+            <td style="padding: 20px 40px; background-color: #f5f5f5; text-align: center; border-top: 1px solid #e0e0e0;">
+                <p style="font-size: 14px; color: #757575; margin: 0;">
+                    &copy; 2025 HCC Study Abroad Program. All rights reserved.
+                </p>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 """
