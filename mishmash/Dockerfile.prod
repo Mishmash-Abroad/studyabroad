@@ -54,7 +54,7 @@ RUN echo "* * * * * root /app/run_backup.sh" > /etc/crontab
 # Create an entrypoint.prod script that properly starts services
 COPY entrypoint.prod.sh /app/entrypoint.prod.sh
 
-RUN chmod ugo+x /app/entrypoint.prod.sh
+RUN chmod ugo+rwx /app/entrypoint.prod.sh
 
 # Switch to non-root user
 USER www-data
