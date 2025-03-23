@@ -73,7 +73,12 @@ class Command(BaseCommand):
             self._clean_old_backups(backup_path)
 
             # Construct the command for database backup
+            # In the backup_db command, modify the subprocess.run line:
+            env = os.environ.copy()  # Get current environment
             command = ["/usr/local/bin/python", "/app/manage.py", "archive"]
+            # Add other command arguments...
+            subprocess.run(command, check=True, env=env)  # Pass the environment
+            
             if database:
                 command.extend(["--database", database])
             if not compress:
