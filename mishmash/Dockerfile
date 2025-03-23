@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     cron \
     procps \
     bash \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 # Ensure cron directory exists
