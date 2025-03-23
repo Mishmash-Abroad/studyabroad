@@ -60,6 +60,8 @@ RUN chmod o+x /app
 RUN chmod u+rwx /app/backups
 RUN chown www-data /app/backups 
 
+RUN touch /var/run/crond.pid && chmod 777 /var/run/crond.pid
+
 USER www-data
 
 
