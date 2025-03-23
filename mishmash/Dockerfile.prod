@@ -54,7 +54,7 @@ RUN chmod ugo+x /app/run_backup.sh
 USER www-data
 
 # Set up crontab to use the script
-RUN echo "* * * * * /app/run_backup.sh" > /etc/crontab
+RUN echo "* * * * * www-data /app/run_backup.sh" > /etc/crontab
 
 # Start cron and run Gunicorn
 CMD service cron start && \
