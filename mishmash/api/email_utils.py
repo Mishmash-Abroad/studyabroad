@@ -84,7 +84,7 @@ def send_recommendation_request_email(letter_obj, base_url):
         <!-- Header with logo -->
         <tr>
             <td style="padding: 20px 0; text-align: center; background-color: #1a237e;">
-                <img src="images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
+                <img src="{base_url}/images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
             </td>
         </tr>
         
@@ -152,6 +152,10 @@ def send_recommendation_retraction_email(letter_obj):
     student_name = letter_obj.application.student.display_name
     program_title = letter_obj.application.program.title
     
+    # Get the base URL from the request context or use a default
+    # This is needed because we don't have base_url passed to this function
+    base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
     subject = f"Letter of Recommendation Request Retracted - {student_name}"
     
     html_content = f"""
@@ -167,7 +171,7 @@ def send_recommendation_retraction_email(letter_obj):
         <!-- Header with logo -->
         <tr>
             <td style="padding: 20px 0; text-align: center; background-color: #1a237e;">
-                <img src="{letter_obj.application.program.base_url}/images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
+                <img src="{base_url}/images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
             </td>
         </tr>
         
