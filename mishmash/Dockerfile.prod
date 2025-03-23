@@ -46,5 +46,22 @@ USER www-data
 # Expose port
 EXPOSE 8000
 
-# Start gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "4", "mishmash.wsgi:application"]
+
+# Ensure cron log file exists and is writable
+RUN touch /var/log/cron.log && chmod 666 /var/log/cron.log
+
+# Create a script that will be executed by cron with the proper environment
+COPY run_backup.sh /app/run_backup.sh
+
+RUN chmod +x /app/run_backup.sh
+
+# Set up crontab to use the script
+RUN echo "* * * * * root /app/run_backup.sh" > /etc/crontab
+
+# Create an entrypoint.prod script that properly starts services
+COPY entrypoint.prod.sh /app/entrypoint.prod.sh
+
+RUN chmod +x /app/entrypoint.prod.sh
+
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
