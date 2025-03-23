@@ -54,6 +54,9 @@ RUN chmod ugo+x /app/run_backup.sh
 # Set up crontab to use the script
 RUN echo "* * * * * www-data /app/run_backup.sh" > /etc/crontab
 
+RUN chmod o+x /app
+RUN chmod u+rwx /app/backups
+RUN chown www-data /app/backups 
 
 USER www-data
 
