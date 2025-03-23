@@ -3,7 +3,6 @@ cd /app
 export DATABASE_HOST=db
 export DATABASE_NAME=mishmash
 export DATABASE_USER=root
-export DATABASE_PASSWORD=root
 export DATABASE_PORT=3306
 export DEBUG=1
 
