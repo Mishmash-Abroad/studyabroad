@@ -127,7 +127,7 @@ class Command(BaseCommand):
     def _clean_old_backups(self, backup_path):
         """Removes all old backups in the backup directory, keeping only the latest one."""
         backup_files = sorted(
-            Path(backup_path).glob("*"), key=lambda f: f.stat().st_mtime
+            Path(backup_path).glob("*.enc") + Path(backup_path).glob("*.bz2"), key=lambda f: f.stat().st_mtime
         )
 
         for old_backup in backup_files:  # Keep only the latest
