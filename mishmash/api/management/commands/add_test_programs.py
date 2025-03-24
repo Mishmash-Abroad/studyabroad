@@ -451,43 +451,43 @@ class Command(BaseCommand):
 
         # Faculty assignments for each program
         faculty_assignments = {
-            "Ancient Philosophy in Athens": ["Elena Papadopoulos", "Marcus Wisdom"],
-            "Digital Innovation in Silicon Valley": ["Anna Digital", "Sarah Chen"],
+            "Ancient Philosophy in Athens": ["Emily Garcia", "Daniel Garcia"],
+            "Digital Innovation in Silicon Valley": ["Anna Digital"],
             "Sustainable Agriculture in New Zealand": [
                 "Thomas Farm",
                 "Linda Sustainable",
             ],
             "Journalism in New York City": ["James Journalism", "Maria Media"],
-            "European Politics Tour": ["Marco Urban", "Maria Nilsson"],
-            "Wildlife Conservation in Kenya": ["Carlos Verde", "Emma Nature"],
-            "Film Production in Los Angeles": ["Claire Design", "Robert Art"],
-            "Robotics Research in Seoul": ["Hiroshi Tanaka", "Sarah Chen"],
-            "Marine Biology in Great Barrier Reef": ["Rachel Ocean", "James Coral"],
-            "Art and Architecture in Florence": ["Isabella Romano", "Robert Art"],
-            "Global Health in Cape Town": ["Samuel Health", "Nomvula Mbeki"],
-            "Culinary Arts in Paris": ["Marie Laurent", "Frank Taylor"],
+            "European Politics Tour": ["Marco Urban", "Alice Brown"],
+            "Wildlife Conservation in Kenya": ["Emma Nature"],
+            "Film Production in Los Angeles": ["Claire Design"],
+            "Robotics Research in Seoul": ["Catherine Taylor"],
+            "Marine Biology in Great Barrier Reef": ["Emily Smith", "Alice Smith"],
+            "Art and Architecture in Florence": ["David Space", "Frank Taylor"],
+            "Global Health in Cape Town": ["John Astronomy"],
+            "Culinary Arts in Paris": ["Sophie Polar", "Frank Taylor"],
             "Music Performance in Vienna": ["Alice Smith", "Emily Smith"],
-            "Technology Innovation in Tokyo": ["Sarah Chen", "Hiroshi Tanaka"],
-            "Sustainable Engineering in Stockholm": ["Erik Anderson", "Maria Nilsson"],
-            "Global Business in Singapore": ["Michael Chang", "Lisa Tan"],
-            "Psychology Research in Copenhagen": ["Alice Brown", "Samuel Health"],
+            "Technology Innovation in Tokyo": ["Marco Urban"],
+            "Sustainable Engineering in Stockholm": ["Claire Design"],
+            "Global Business in Singapore": ["Paul Game"],
+            "Psychology Research in Copenhagen": ["Alice Brown"],
             "Urban Design in Barcelona": ["Marco Urban", "Claire Design"],
             "Antarctic Research Expedition": ["Sophie Polar", "John Astronomy"],
-            "Environmental Science in Costa Rica": ["Carlos Verde", "Emma Nature"],
-            "Fashion Design in Milan": ["Giulia Fashion", "Isabella Romano"],
+            "Environmental Science in Costa Rica": ["Emma Nature"],
+            "Fashion Design in Milan": ["Giulia Fashion"],
             "Space Science in Houston": ["David Space", "John Astronomy"],
             "Game Design in Montreal": ["Paul Game", "Anna Digital"],
-            "Science in Spain": ["Alice Lee", "Sarah Chen"],
+            "Science in Spain": ["Alice Lee"],
             "History in Canada": ["Alice Garcia", "Maria Media"],
-            "Art in Italy": ["Alice Johnson", "Robert Art"],
-            "Medicine in India": ["Daniel Garcia", "Samuel Health"],
-            "Language in Japan": ["Daniel Lee", "Hiroshi Tanaka"],
-            "Technology in Japan": ["Emily Garcia", "Sarah Chen"],
-            "Medicine in Canada": ["Alice Brown", "Samuel Health"],
+            "Art in Italy": ["Alice Johnson"],
+            "Medicine in India": ["Daniel Garcia", "Anna Digital"],
+            "Language in Japan": ["Daniel Lee", "James Journalism"],
+            "Technology in Japan": ["Emily Garcia", "Maria Media"],
+            "Medicine in Canada": ["Alice Brown", "Thomas Farm"],
             "Technology in Australia": ["Catherine Taylor", "Anna Digital"],
-            "Art in Australia": ["Alice Smith", "Isabella Romano"],
-            "Art in Japan": ["Emily Smith", "Hiroshi Tanaka"],
-            "Art in France": ["Frank Taylor", "Isabella Romano"],
+            "Art in Australia": ["Alice Smith", "Linda Sustainable"],
+            "Art in Japan": ["Emily Smith"],
+            "Art in France": ["Frank Taylor"],
         }
 
         prod_faculty_assignments = {
@@ -510,6 +510,7 @@ class Command(BaseCommand):
 
                 # Assign faculty leads
                 if program.title in prod_faculty_assignments:
+                    program.faculty_leads.remove(User.objects.get(display_name="System Administrator"))
                     for faculty_name in faculty_assignments[program.title]:
                         if faculty_name in faculty_users:
                             program.faculty_leads.add(User.objects.get(display_name=faculty_name))
@@ -535,6 +536,7 @@ class Command(BaseCommand):
 
                 # Assign faculty leads
                 if program.title in faculty_assignments:
+                    program.faculty_leads.remove(User.objects.get(display_name="System Administrator"))
                     for faculty_name in faculty_assignments[program.title]:
                         if faculty_name in faculty_users:
                             program.faculty_leads.add(User.objects.get(display_name=faculty_name))

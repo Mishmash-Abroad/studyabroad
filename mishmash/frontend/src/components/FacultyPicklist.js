@@ -134,6 +134,12 @@ const FacultyPicklist = ({
       }
       isOptionEqualToValue={(option, value) => option.id === value.id}
       className={className}
+      sx={{
+        width: "100%",
+        alignSelf: "flex-start",
+        margin: 0,
+        justifyContent: "flex-start",
+      }}
     />
   );
 };
