@@ -84,8 +84,6 @@ class Command(BaseCommand):
             if not compress:
                 command.append("--no-compress")
 
-            # Execute the backup command
-            subprocess.run(command, check=True)
             if encrypt:
                 self._encrypt_backup(backup_filepath, encrypted_filepath, aes_key)
 
