@@ -67,6 +67,8 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_DEFAULT_FROM=${SENDGRID_DEFAULT_FROM}
     depends_on:
       db:
         condition: service_healthy  # Ensures database is ready before starting
