@@ -32,6 +32,8 @@ import ProgramForm from "./ProgramForm";
 import FacultyPicklist from "./FacultyPicklist";
 import { STATUS, ALL_STATUSES } from "../utils/constants";
 import ApplicantCountsCell from "./ApplicantCountsCell";
+// Import the auth hook to get the logged-in user
+import { useAuth } from "../context/AuthContext";
 
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
@@ -99,8 +101,8 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  padding: "4px 8px", // Even more reduced padding for all cells
-  fontSize: "0.875rem", // Slightly smaller font for all cells
+  padding: "4px 8px",
+  fontSize: "0.875rem",
 }));
 
 const StyledTableHead = styled(TableHead)(({ theme }) => ({
@@ -115,6 +117,7 @@ const StyledTableHead = styled(TableHead)(({ theme }) => ({
 
 // -------------------- COMPONENT --------------------
 const AdminProgramsTable = () => {
+  const { user } = useAuth(); // Get the logged-in user
   const [programs, setPrograms] = useState([]);
   const [applicantCounts, setApplicantCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -125,9 +128,10 @@ const AdminProgramsTable = () => {
   const [timeFilter, setTimeFilter] = useState("current_future");
   const [editingProgram, setEditingProgram] = useState(null);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
-
   // State for selected statuses (shared between component instances)
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  // NEW STATE: Toggle for showing only programs for which the logged-in faculty is a lead
+  const [showMyPrograms, setShowMyPrograms] = useState(false);
 
   const navigate = useNavigate();
   const { programTitle } = useParams();
@@ -147,25 +151,20 @@ const AdminProgramsTable = () => {
   const fetchPrograms = async () => {
     try {
       setLoading(true);
-
       // Prepare request parameters
       const params = {};
-
       // Only include current/future programs if that's the selected filter
       if (timeFilter === "current_future") {
         params.exclude_ended = "true";
       }
-
       // Add faculty filtering if faculty are selected
       if (selectedFaculty.length > 0) {
         params.faculty_ids = selectedFaculty.map((f) => f.id).join(",");
       }
-
       // Add search query if present
       if (searchQuery) {
         params.search = searchQuery;
       }
-
       const response = await axiosInstance.get("/api/programs/", { params });
       setPrograms(response.data);
       setError(null);
@@ -187,7 +186,6 @@ const AdminProgramsTable = () => {
           }
         })
       );
-
       setApplicantCounts(counts);
     } catch (err) {
       setError("Failed to load programs.");
@@ -199,25 +197,22 @@ const AdminProgramsTable = () => {
   useEffect(() => {
     if (programTitle && programTitle !== "new-program") {
       const decodedTitle = decodeURIComponent(programTitle);
-
       const selectedProgram = programs.find(
         (p) => p.title.replace(/\s+/g, "-") === decodedTitle
       );
-
       setEditingProgram(selectedProgram || null);
     } else {
       setEditingProgram(null);
     }
   }, [programTitle, programs]);
 
+  // UPDATED: Add filtering for "Show Only My Programs" if toggle is active and user is faculty
   const getFilteredPrograms = () => {
     const today = new Date();
-
-    return programs.filter((program) => {
+    let filtered = programs.filter((program) => {
       const startDate = new Date(program.start_date);
       const endDate = new Date(program.end_date);
       const applicationDeadline = new Date(program.application_deadline);
-
       switch (timeFilter) {
         case "current_future":
           return endDate >= today;
@@ -232,6 +227,14 @@ const AdminProgramsTable = () => {
           return true;
       }
     });
+    // If the toggle is enabled and the user is a faculty member,
+    // only include programs where the user is listed as a faculty lead.
+    if (showMyPrograms && user?.is_faculty) {
+      filtered = filtered.filter((program) =>
+        program.faculty_leads.some((faculty) => faculty.id === user.id)
+      );
+    }
+    return filtered;
   };
 
   const filteredPrograms = getFilteredPrograms().filter(
@@ -263,7 +266,6 @@ const AdminProgramsTable = () => {
 
   const sortedPrograms = [...filteredPrograms].sort((a, b) => {
     let aValue, bValue;
-
     if (allStatusKeys.includes(orderBy)) {
       // Single status sorting
       aValue = applicantCounts[a.id]?.[orderBy] || 0;
@@ -275,33 +277,24 @@ const AdminProgramsTable = () => {
     } else if (orderBy === "selected_statuses" && selectedStatuses.length > 0) {
       // Combined multi-status sorting
       aValue = selectedStatuses.reduce((sum, status) => {
-        // Add the count for this status to the sum
         return sum + (applicantCounts[a.id]?.[status] || 0);
       }, 0);
-
       bValue = selectedStatuses.reduce((sum, status) => {
-        // Add the count for this status to the sum
         return sum + (applicantCounts[b.id]?.[status] || 0);
       }, 0);
     } else {
       // Regular column sorting
       aValue = a[orderBy] || "";
       bValue = b[orderBy] || "";
-
-      // For string comparisons
       if (typeof aValue === "string" && typeof bValue === "string") {
         return order === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
     }
-
-    // For numeric comparisons
     if (typeof aValue === "number" && typeof bValue === "number") {
       return order === "asc" ? aValue - bValue : bValue - aValue;
     }
-
-    // Fallback for mixed types
     return order === "asc"
       ? aValue > bValue
         ? 1
@@ -397,6 +390,19 @@ const AdminProgramsTable = () => {
               <MenuItem value="running_now">Running Now</MenuItem>
               <MenuItem value="all">All Programs</MenuItem>
             </TextField>
+            {/* NEW UI CONTROL: Show Only My Programs toggle for faculty users */}
+            {user?.is_faculty && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={showMyPrograms}
+                    onChange={(e) => setShowMyPrograms(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Show Only My Programs"
+              />
+            )}
           </FilterRow>
         </FilterContainer>
 
@@ -426,15 +432,13 @@ const AdminProgramsTable = () => {
                   </StyledTableCell>
                 ))}
 
-                {/* Applicant Counts Column Header */}
                 <StyledTableCell
                   sx={{
                     textAlign: "center",
                     borderLeft: "1px solid rgba(224, 224, 224, 1)",
-                    width: "240px", // Fixed width for the counts column
+                    width: "240px",
                   }}
                 >
-                  {/* Use ApplicantCountsCell for the header */}
                   <ApplicantCountsCell
                     orderBy={orderBy}
                     order={order}
@@ -472,8 +476,6 @@ const AdminProgramsTable = () => {
                   <StyledTableCell>
                     {formatDate(program.end_date)}
                   </StyledTableCell>
-
-                  {/* Use ApplicantCountsCell for the data cell */}
                   <StyledTableCell
                     sx={{
                       borderLeft: "1px solid rgba(224, 224, 224, 1)",
