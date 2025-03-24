@@ -34,5 +34,8 @@ db.sqlite3
 
 mishmash/frontend/.sentryclirc
 
+# backup files
+backups/*
+
 # .DS_Store files
 .DS_Store
