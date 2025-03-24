@@ -104,7 +104,7 @@ class Command(BaseCommand):
                 payload = {
                     "value1": error_message,
                     "value2": str(backup_filepath),
-                    "value3": str(e),
+                    "value3": "THIS IS FROM backup_db",
                 }
                 response = requests.post(webhook_url, json=payload)
                 if response.status_code == 200:
@@ -147,7 +147,7 @@ class Command(BaseCommand):
                     payload = {
                         "value1": error_message,
                         "value2": str(old_backup),
-                        "value3": str(e),
+                        "value3": "THIS IS FROM backup_db",
                     }
                     response = requests.post(webhook_url, json=payload)
                     if response.status_code == 200:

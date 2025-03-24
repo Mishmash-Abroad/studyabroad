@@ -39,7 +39,7 @@ COPY run_backup.sh /app/run_backup.sh
 RUN chmod +x /app/run_backup.sh
 
 # Set up crontab to use the script
-RUN echo "* * * * * root /app/run_backup.sh" > /etc/crontab
+RUN echo "30 6 * * * root /app/run_backup.sh" > /etc/crontab
 
 # Create an entrypoint script that properly starts services
 COPY entrypoint.sh /app/entrypoint.sh
