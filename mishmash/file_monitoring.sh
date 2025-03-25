@@ -9,5 +9,5 @@ if [[ $OUTPUT == *"fail"* ]]; then
         curl -X POST \
               -H "Content-Type: application/json" \
               -d "{\"value1\":\"$ERROR_MESSAGE\",\"value2\":\"bruh\",\"value3\":\"summ happened in monitoring\"}" \
-                "https://maker.ifttt.com/trigger/Filemonitorfail/with/key/gxWFYRMC0fqf9Sl96i10YELsVXAywAZJqmd9LnWZhI2"
+                "https://maker.ifttt.com/trigger/File_monitor_fail/with/key/gxWFYRMC0fqf9Sl96i10YELsVXAywAZJqmd9LnWZhI2"
 fi
