@@ -7,7 +7,7 @@ from django.conf import settings
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import requests
-from api.constants import PATH_TO_BACKUPS
+
 
 class Command(BaseCommand):
     help = "Create a backup archive of the Django database and media files, keeping only the latest backup."
@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Define backup directory
-        backup_path = PATH_TO_BACKUPS
+        backup_path = os.path.join(settings.BASE_DIR, "backups")
 
         # Create backup directory if it does not exist
         Path(backup_path).mkdir(parents=True, exist_ok=True)

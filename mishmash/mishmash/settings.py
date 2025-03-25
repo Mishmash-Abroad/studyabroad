@@ -23,7 +23,6 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 
 from pathlib import Path
 from decouple import config
-from api.constants import PATH_TO_BACKUPS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -329,5 +328,5 @@ LOGGING = {
 
 
 # Add this line to define the backup directory (archive directory)
-ARCHIVE_DIRECTORY = PATH_TO_BACKUPS
+ARCHIVE_DIRECTORY = BASE_DIR / 'backups'
 ARCHIVE_FILENAME = '%Y-%m-%d--%H-%M'
