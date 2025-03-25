@@ -35,3 +35,5 @@ SEMESTERS = [
     "Fall",
     "Spring",
 ]
+
+PATH_TO_BACKUPS = '/home/vcm/backups'

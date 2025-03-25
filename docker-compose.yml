@@ -55,7 +55,7 @@ services:
     volumes:
       - static_volume:/app/static    # Persistent storage for static files
       - media_volume:/app/media      # Persistent storage for uploaded media
-      - ./backups:/app/backups 
+      - /home/vcm/backups:/app/backups 
     ports:
       - "8000:8000"  # Exposed for development debugging
     environment:
