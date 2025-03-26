@@ -33,11 +33,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate, logout as auth_logout
 from rest_framework.authtoken.models import Token
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from django.utils.timezone import now
 from django.db.models import Q
 from .models import (
+    User,
     Program,
     Application,
     ApplicationQuestion,
@@ -45,16 +46,18 @@ from .models import (
     Announcement,
     Document,
     ConfidentialNote,
+    LetterOfRecommendation,
 )
 from .serializers import (
+    UserSerializer,
     ProgramSerializer,
     ApplicationSerializer,
-    UserSerializer,
     ApplicationQuestionSerializer,
     ApplicationResponseSerializer,
-    AnnouncementSerializer,
-    DocumentSerializer,
     ConfidentialNoteSerializer,
+    DocumentSerializer,
+    AnnouncementSerializer,
+    LetterOfRecommendationSerializer,
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -81,6 +84,7 @@ import base64
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import logout as django_logout
 import os
+from .email_utils import send_recommendation_request_email, send_recommendation_retraction_email
 
 ### Custom permission classes for API access ###
 
@@ -276,6 +280,26 @@ class IsProgramFaculty(permissions.BasePermission):
         return request.user in obj.program.faculty_leads.all()
 
 
+class IsLetterRequestorOrStaff(permissions.BasePermission): 
+    """
+    Allows access only to the student who requested the letter or staff members.
+    Restricts students from viewing letter content while allowing them to manage their requests.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if obj.application.student == user:
+            if request.method in ['GET', 'DELETE']:
+                return True
+            return False
+            
+        # staff members (admin, faculty, reviewers) can only read letters
+        if user.is_admin or user.is_faculty or user.is_reviewer:
+            return request.method in permissions.SAFE_METHODS
+            
+        return False
+
+
 ### ViewSet classes for the API interface ###
 
 
@@ -427,7 +451,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
         #     )
 
         if not year.isdigit() or len(year) != 4:
-            raise ValidationError({"detail": "Year must be a 4-digit numeric value."})
+            raise ValidationError({"detail": "Year must be a four-digit number (e.g., 2025)."}
+            )
 
         valid_semesters = {"Fall", "Spring", "Summer"}
         if semester not in valid_semesters:
@@ -1640,6 +1665,280 @@ class DocumentViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response(
                 {"detail": f"Error retrieving document: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Letters of Recommendation.
+    Students create requests, system emails the writer, writer uploads PDF using token-based link.
+    Admin/faculty can read letter content, student cannot see PDF content.
+    """
+    queryset = LetterOfRecommendation.objects.all()
+    serializer_class = LetterOfRecommendationSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def get_permissions(self):
+        """
+        Different permissions based on action:
+        - Public endpoints for letter writers don't require authentication
+        - Student endpoints require the student to be the application owner
+        - Admin/faculty/reviewer can view but not modify letters
+        """
+        if self.action in ['public_info', 'fulfill_letter']:
+            # These are public endpoints that use token authentication
+            return [permissions.AllowAny()]
+        
+        # All other endpoints require auth and permissions
+        return [permissions.IsAuthenticated(), IsLetterRequestorOrStaff()]
+    
+    def get_serializer_context(self):
+        """
+        Add request to serializer context to allow permission checks in serializer methods.
+        This is needed to hide the PDF URL from students.
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+    def get_queryset(self):
+        """
+        Filter queryset based on user role:
+        - Admin/faculty/reviewer can see all letters
+        - Students can only see their own letter requests
+        """
+        user = self.request.user
+        
+        # For unauthenticated access (token-based), we return empty queryset
+        # Individual objects will be fetched in the public endpoints
+        if user.is_anonymous:
+            return LetterOfRecommendation.objects.none()
+            
+        # Admin, faculty and reviewers can see all letters
+        if user.is_admin or user.is_faculty or user.is_reviewer:
+            queryset = LetterOfRecommendation.objects.all()
+        else:
+            # Students can only see their own letters
+            queryset = LetterOfRecommendation.objects.filter(application__student=user)
+            
+        # Filter by application if provided
+        application_id = self.request.query_params.get('application', None)
+        if application_id:
+            queryset = queryset.filter(application=application_id)
+            
+        return queryset
+    
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def create_request(self, request):
+        """
+        Create a new letter of recommendation request:
+        - Student provides writer's name, email, and application ID
+        - System creates request and emails writer with unique token link
+        """
+        user = request.user
+        application_id = request.data.get('application_id')
+        writer_name = request.data.get('writer_name')
+        writer_email = request.data.get('writer_email')
+        
+        # Validate required fields
+        if not all([application_id, writer_name, writer_email]):
+            return Response(
+                {"detail": "Missing required fields."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Get application and verify ownership
+        try:
+            application = Application.objects.get(id=application_id, student=user)
+        except Application.DoesNotExist:
+            return Response(
+                {"detail": "Application not found or not yours."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        # Create the letter request
+        letter_obj = LetterOfRecommendation.objects.create(
+            application=application,
+            writer_name=writer_name.strip(),
+            writer_email=writer_email.strip()
+        )
+        
+        # Send email to the writer
+        backend_url = request.build_absolute_uri('/').rstrip('/')
+        # Use frontend URL instead of backend URL
+        if 'localhost' in backend_url:
+            # Development environment
+            frontend_url = backend_url.replace('8000', '3000')
+        else:
+            # Production - assuming frontend and backend are on same domain with different paths
+            frontend_url = backend_url
+        
+        send_recommendation_request_email(letter_obj, frontend_url)
+        
+        serializer = self.get_serializer(letter_obj)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['delete'], permission_classes=[permissions.IsAuthenticated])
+    def retract_request(self, request, pk=None):
+        """
+        Student retracts a letter request:
+        - If not fulfilled, email the writer that the request is canceled
+        - If fulfilled, permanently delete the letter PDF
+        """
+        try:
+            letter_obj = self.get_object()
+            
+            # Only the student who owns the application can retract
+            if letter_obj.application.student != request.user:
+                return Response(
+                    {"detail": "You cannot retract a request you did not create."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            # If not fulfilled yet, send a retraction email
+            if not letter_obj.is_fulfilled:
+                send_recommendation_retraction_email(letter_obj)
+            
+            # Delete the request (and associated PDF if any)
+            letter_obj.delete()
+            
+            return Response(
+                {"detail": "Letter request retracted successfully."},
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retracting request: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
+    def public_info(self, request, pk=None):
+        """
+        Public endpoint for letter writers to see request details.
+        Requires valid token in query parameters.
+        """
+        token = request.query_params.get('token')
+        if not token:
+            return Response(
+                {"detail": "Token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            letter_obj = LetterOfRecommendation.objects.get(id=pk, token=token)
+        except LetterOfRecommendation.DoesNotExist:
+            return Response(
+                {"detail": "Invalid or expired request link."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        # Return basic information about the request
+        data = {
+            "status": "valid",
+            "student_name": letter_obj.application.student.display_name,
+            "program_title": letter_obj.application.program.title,
+            "is_fulfilled": letter_obj.is_fulfilled,
+            "writer_name": letter_obj.writer_name,
+        }
+        
+        return Response(data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    def fulfill_letter(self, request, pk=None):
+        """
+        Public endpoint for letter writers to upload their recommendation letter.
+        Requires valid token in query parameters.
+        """
+        token = request.query_params.get('token')
+        if not token:
+            return Response(
+                {"detail": "Token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            letter_obj = LetterOfRecommendation.objects.get(id=pk, token=token)
+        except LetterOfRecommendation.DoesNotExist:
+            return Response(
+                {"detail": "Invalid or expired request link."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        # Check for PDF file
+        if 'pdf' not in request.FILES:
+            return Response(
+                {"detail": "No PDF file provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Save the PDF and update timestamp
+        letter_obj.pdf = request.FILES['pdf']
+        letter_obj.letter_timestamp = now()
+        letter_obj.save()
+        
+        return Response(
+            {
+                "detail": "Letter uploaded successfully.",
+                "student": letter_obj.application.student.display_name,
+                "program": letter_obj.application.program.title,
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    @action(detail=True, methods=['get'])
+    def secure_file(self, request, pk=None):
+        """
+        Securely serve recommendation letter PDF files with proper authorization checks.
+        
+        Only admin, faculty, and reviewers can access the actual PDF file.
+        Students can't view letter content even if they requested it.
+        """
+        try:
+            letter_obj = self.get_object()
+            
+            # Authorization check - student who requested cannot see PDF content
+            user = request.user
+            if letter_obj.application.student == user:
+                return Response(
+                    {"detail": "Students cannot view recommendation letter content."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            # Admin, faculty, or reviewer are allowed to view
+            if not (user.is_admin or user.is_faculty or user.is_reviewer):
+                return Response(
+                    {"detail": "You don't have permission to view this letter."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            # Check if letter has a PDF
+            if not letter_obj.pdf:
+                return Response(
+                    {"detail": "No letter has been uploaded yet."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            # Get file path and ensure it exists
+            file_path = letter_obj.pdf.path
+            if not os.path.exists(file_path):
+                return Response(
+                    {"detail": "Letter file not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            # Serve the file
+            response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+            filename = os.path.basename(file_path)
+            response['Content-Disposition'] = f'inline; filename="recommendation_{letter_obj.id}.pdf"'
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving letter: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

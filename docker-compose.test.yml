@@ -39,6 +39,8 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - AES_CIPHER_KEY=${AES_CIPHER_KEY}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_DEFAULT_FROM=${SENDGRID_DEFAULT_FROM}
     depends_on:
       db:
         condition: service_healthy

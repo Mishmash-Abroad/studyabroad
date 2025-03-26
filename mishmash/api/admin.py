@@ -8,6 +8,7 @@ from .models import (
     Announcement,
     Document,
     ConfidentialNote,
+    LetterOfRecommendation,
 )
 from allauth.socialaccount.models import SocialAccount
 
@@ -112,3 +113,11 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ("title", "application", "uploaded_at", "pdf", "type")
     list_filter = ("title", "application", "uploaded_at", "pdf", "type")
     search_fields = ("title", "application", "uploaded_at", "pdf", "type")
+
+
+@admin.register(LetterOfRecommendation)
+class LetterOfRecommendationAdmin(admin.ModelAdmin):
+    list_display = ("writer_name", "writer_email", "application", "is_fulfilled", "token")
+    list_filter = ("application__program", "pdf")
+    search_fields = ("writer_name", "writer_email", "application__student__username")
+    readonly_fields = ("token",)
