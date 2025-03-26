@@ -22,7 +22,11 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 """
 
 from pathlib import Path
-from decouple import config
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,22 +34,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY SETTINGS
 # ================
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='abcdefghijklmnop')
-OIDC_CLIENT_SECRET = config('OIDC_CLIENT_SECRET', default='QENTkFS6GmDz06UNYPh19j62xuVVuyxx1Y0K6RYSgy7D1x1ygjZHOCdVEiBojRp5_VR6nnkr3zIH9Wjlit4jtQ')
-AES_CIPHER_KEY = config('AES_CIPHER_KEY', default='bruh')
+SECRET_KEY = str(os.getenv('SECRET_KEY', 'abcdefghijklmnop'))
+OIDC_CLIENT_SECRET = str(os.getenv('OIDC_CLIENT_SECRET', 'QENTkFS6GmDz06UNYPh19j62xuVVuyxx1Y0K6RYSgy7D1x1ygjZHOCdVEiBojRp5_VR6nnkr3zIH9Wjlit4jtQ'))
+AES_CIPHER_KEY = str(os.getenv('AES_CIPHER_KEY', 'bruh'))
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Reads from environment variable, defaults to False for security
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 't', 'y', 'yes']
 
 # Allowed hosts are read from environment variable
 # Format: comma-separated list (e.g., "localhost,example.com")
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 
 # Email Settings
-SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='wrongkey')
-SENDGRID_DEFAULT_FROM = config('SENDGRID_DEFAULT_FROM', default='wrongkey')
+SENDGRID_API_KEY = str(os.getenv('SENDGRID_API_KEY', 'wrongkey'))
+SENDGRID_DEFAULT_FROM = str(os.getenv('SENDGRID_DEFAULT_FROM', 'wrongkey'))
 
 
 # CSRF COOKIE AND SESSION SECURITY
@@ -141,11 +145,11 @@ WSGI_APPLICATION = "mishmash.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DATABASE_NAME', default='mishmash'),
-        'USER': config('DATABASE_USER', default='root'),
-        'PASSWORD': config('DATABASE_PASSWORD', default='root'),
-        'HOST': config('DATABASE_HOST', default='127.0.0.1'),
-        'PORT': config('DATABASE_PORT', default='3306'),
+        'NAME': str(os.getenv('DATABASE_NAME', 'mishmash')),
+        'USER': str(os.getenv('DATABASE_USER', 'root')),
+        'PASSWORD': str(os.getenv('DATABASE_PASSWORD', 'root')),
+        'HOST': str(os.getenv('DATABASE_HOST', '127.0.0.1')),
+        'PORT': int(os.getenv('DATABASE_PORT', '3306')),
     }
 }
 
