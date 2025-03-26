@@ -34,9 +34,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY SETTINGS
 # ================
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = str(os.getenv('SECRET_KEY', 'abcdefghijklmnop'))
-OIDC_CLIENT_SECRET = str(os.getenv('OIDC_CLIENT_SECRET', 'QENTkFS6GmDz06UNYPh19j62xuVVuyxx1Y0K6RYSgy7D1x1ygjZHOCdVEiBojRp5_VR6nnkr3zIH9Wjlit4jtQ'))
-AES_CIPHER_KEY = str(os.getenv('AES_CIPHER_KEY', 'bruh'))
+SECRET_KEY = str(os.getenv('SECRET_KEY'))
+OIDC_CLIENT_SECRET = str(os.getenv('OIDC_CLIENT_SECRET'))
+AES_CIPHER_KEY = str(os.getenv('AES_CIPHER_KEY'))
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
