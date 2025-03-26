@@ -44,8 +44,8 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
 # Email Settings
-SENDGRID_API_KEY = config('SENDGRID_API_KEY')
-SENDGRID_DEFAULT_FROM = config('SENDGRID_DEFAULT_FROM')
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='wrongkey')
+SENDGRID_DEFAULT_FROM = config('SENDGRID_DEFAULT_FROM', default='wrongkey')
 
 
 # CSRF COOKIE AND SESSION SECURITY
