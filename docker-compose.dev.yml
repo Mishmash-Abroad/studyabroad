@@ -24,7 +24,7 @@ services:
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
-      - ./backups:/app/backups 
+      - /home/vcm/backups:/app/backups 
     environment:
       - DEBUG=0
       - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
