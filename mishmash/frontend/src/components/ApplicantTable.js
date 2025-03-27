@@ -132,16 +132,20 @@ const ApplicantTable = ({ programId }) => {
   };
 
   const handleRequestSort = (property) => {
+    const isSameColumn = orderBy === property;
+  
     if (property === "notes") {
-      // Toggle between sorting by count and date for notes column
-      if (orderBy === "notes") {
+      // Toggle note sort type if same column, otherwise default to 'count'
+      if (isSameColumn) {
         setNoteSortType(noteSortType === "count" ? "date" : "count");
+        setOrder(order === "asc" ? "desc" : "asc"); // Toggle order
       } else {
         setOrderBy("notes");
         setNoteSortType("count");
+        setOrder("asc"); // or "desc" as a default, your choice
       }
     } else {
-      const isAsc = orderBy === property && order === "asc";
+      const isAsc = isSameColumn && order === "asc";
       setOrder(isAsc ? "desc" : "asc");
       setOrderBy(property);
     }
@@ -204,13 +208,26 @@ const ApplicantTable = ({ programId }) => {
         }
       }
 
-      // Default sorting for other columns
-      const valueA = a[orderBy];
-      const valueB = b[orderBy];
+      const userA = userDetails[a.student] || {};
+      const userB = userDetails[b.student] || {};
 
-      if (!valueA || !valueB) return 0;
-      if (order === "asc") return valueA < valueB ? -1 : 1;
-      return valueA > valueB ? -1 : 1;
+      const valueA = userA[orderBy] ?? a[orderBy];
+      const valueB = userB[orderBy] ?? b[orderBy];
+
+      // Handle missing values gracefully
+      if (valueA == null && valueB == null) return 0;
+      if (valueA == null) return 1;
+      if (valueB == null) return -1;
+
+      // Use string comparison if either is a string
+      if (typeof valueA === "string" || typeof valueB === "string") {
+        return order === "asc"
+          ? valueA.toString().localeCompare(valueB.toString())
+          : valueB.toString().localeCompare(valueA.toString());
+      }
+
+      // Otherwise use normal comparison for numbers/dates
+      return order === "asc" ? valueA - valueB : valueB - valueA;
     });
 
   // Handle status dropdown change

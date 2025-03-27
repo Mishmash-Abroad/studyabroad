@@ -384,7 +384,7 @@ const AdminAppView = () => {
           standing in the program.
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <FormControl fullWidth>
+          <FormControl>
             <InputLabel id="status-select-label">Application Status</InputLabel>
             <Select
               labelId="status-select-label"
@@ -392,7 +392,7 @@ const AdminAppView = () => {
               value={status}
               label="Application Status"
               onChange={(e) => setStatus(e.target.value)}
-              sx={{ minWidth: "250px" }}
+              sx={{ minWidth: "250px", maxWidth: "500px", justifySelf: "left" }}
             >
               {ALL_AVAILABLE_STATUSES.map((option) => (
                 <MenuItem key={option} value={option}>
@@ -411,12 +411,13 @@ const AdminAppView = () => {
             color="primary"
             onClick={() => handleStatusChange(status)}
             disabled={status === application?.status}
-            sx={{ height: "56px", minWidth: "120px" }}
+            sx={{ height: "56px", minWidth: "170px" }}
           >
             Update Status
           </Button>
         </Box>
-        <Button
+      </Paper>
+      <Button
           variant="contained"
           sx={{ mt: 2 }}
           onClick={() =>
@@ -429,7 +430,6 @@ const AdminAppView = () => {
         >
           Return to Program Detail
         </Button>
-      </Paper>
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={cancelStatusChange}>
