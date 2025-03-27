@@ -8,8 +8,10 @@ from .models import (
     Announcement,
     Document,
     ConfidentialNote,
+    LetterOfRecommendation,
 )
 from allauth.socialaccount.models import SocialAccount
+
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -19,17 +21,19 @@ class UserAdmin(admin.ModelAdmin):
         "display_name",
         "email",
         "is_admin",
+        "is_faculty",
+        "is_reviewer",
         "is_active",
         "is_mfa_enabled",
         "is_sso",
     )
-    list_filter = ("is_admin", "is_active")
+    list_filter = ("is_admin", "is_faculty", "is_reviewer", "is_active")
     search_fields = ("username", "email", "display_name")
 
     def is_sso(self, obj):
         """Check if user logged in via SSO."""
         return obj.is_sso
-    
+
     is_sso.boolean = True
     is_sso.short_description = "SSO User"
 
@@ -40,7 +44,7 @@ class UserAdmin(admin.ModelAdmin):
         - Prevent admin from removing their own admin status
         """
         fields = ["password"]
-        
+
         if obj and obj.username == "admin":
             fields.append("is_admin")
 
@@ -109,3 +113,11 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ("title", "application", "uploaded_at", "pdf", "type")
     list_filter = ("title", "application", "uploaded_at", "pdf", "type")
     search_fields = ("title", "application", "uploaded_at", "pdf", "type")
+
+
+@admin.register(LetterOfRecommendation)
+class LetterOfRecommendationAdmin(admin.ModelAdmin):
+    list_display = ("writer_name", "writer_email", "application", "is_fulfilled", "token")
+    list_filter = ("application__program", "pdf")
+    search_fields = ("writer_name", "writer_email", "application__student__username")
+    readonly_fields = ("token",)

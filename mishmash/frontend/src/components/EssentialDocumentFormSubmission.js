@@ -10,10 +10,59 @@ import {
   Tab,
   Paper,
   Alert,
+  Link,
 } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
 import axiosInstance from "../utils/axios";
 import PDFUploadForm from "../components/PDFUploadForm";
 import DocumentStatusDisplay from "../components/DocumentStatusDisplay";
+import { DOCUMENTS } from "../utils/constants";
+
+// -------------------- STYLED COMPONENTS --------------------
+const DocumentSection = styled(Box)(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+}));
+
+const DocumentDescription = styled(Typography)(({ theme }) => ({
+  marginTop: theme.spacing(1),
+  marginBottom: theme.spacing(3),
+  color: theme.palette.text.secondary,
+}));
+
+const DocumentHeader = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: theme.spacing(2),
+}));
+
+const DocumentTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 500,
+}));
+
+const TemplateLink = styled(Link)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(0.5),
+  fontSize: "0.875rem",
+  color: theme.palette.primary.main,
+  cursor: "pointer",
+  textDecoration: "none",
+  "&:hover": {
+    textDecoration: "underline",
+  },
+}));
+
+// -------------------- HELPER FUNCTIONS --------------------
+const handleDownloadTemplate = (path, filename) => {
+  const link = document.createElement("a");
+  link.href = path;
+  link.setAttribute("download", filename);
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 // -------------------- COMPONENT LOGIC --------------------
 const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, documents = [] }) => {
@@ -45,71 +94,105 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
     );
   }
 
-  const DocumentSection = styled(Box)(({ theme }) => ({
-    marginBottom: theme.spacing(4),
-  }));
-
-  const DocumentDescription = styled(Typography)(({ theme }) => ({
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(3),
-    color: theme.palette.text.secondary,
-  }));
-
   return (
     <>
+      {/* Section for Code of Conduct document */}
       <DocumentSection>
+        <DocumentHeader>
+          <DocumentTitle variant="h6">
+            {DOCUMENTS.CODE_OF_CONDUCT.name}
+          </DocumentTitle>
+          <TemplateLink 
+            onClick={() => handleDownloadTemplate(DOCUMENTS.CODE_OF_CONDUCT.path, "Code_of_Conduct.pdf")}
+          >
+            <DownloadIcon fontSize="small" />
+            Download Template
+          </TemplateLink>
+        </DocumentHeader>
+        
         <PDFUploadForm
-          pdf_name={"Acknowledgement of the code of conduct"}
+          pdf_name={DOCUMENTS.CODE_OF_CONDUCT.name}
           application_id={application_id}
-          doc_type={"Acknowledgement of the code of conduct"}
+          doc_type={DOCUMENTS.CODE_OF_CONDUCT.name}
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Acknowledgement of the code of conduct: A document reviewing the code of
-          conduct, and attesting to student's understanding and commitment to
-          abide by same. The student must sign this to participate.
+          {DOCUMENTS.CODE_OF_CONDUCT.description}
         </DocumentDescription>
       </DocumentSection>
 
+      {/* Section for Housing Questionnaire document */}
       <DocumentSection>
+        <DocumentHeader>
+          <DocumentTitle variant="h6">
+            {DOCUMENTS.HOUSING_QUESTIONNAIRE.name}
+          </DocumentTitle>
+          <TemplateLink 
+            onClick={() => handleDownloadTemplate(DOCUMENTS.HOUSING_QUESTIONNAIRE.path, "Housing_Questionnaire.pdf")}
+          >
+            <DownloadIcon fontSize="small" />
+            Download Template
+          </TemplateLink>
+        </DocumentHeader>
+        
         <PDFUploadForm
-          pdf_name={"Housing questionnaire"}
+          pdf_name={DOCUMENTS.HOUSING_QUESTIONNAIRE.name}
           application_id={application_id}
-          doc_type={"Housing questionnaire"}
+          doc_type={DOCUMENTS.HOUSING_QUESTIONNAIRE.name}
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Housing questionnaire: A set of questions about housing preferences to
-          be reviewed by the faculty lead(s) to help with assigning housing. The
-          student must fill this out.
+          {DOCUMENTS.HOUSING_QUESTIONNAIRE.description}
         </DocumentDescription>
       </DocumentSection>
 
+      {/* Section for Medical History document */}
       <DocumentSection>
+        <DocumentHeader>
+          <DocumentTitle variant="h6">
+            {DOCUMENTS.MEDICAL_HISTORY.name}
+          </DocumentTitle>
+          <TemplateLink 
+            onClick={() => handleDownloadTemplate(DOCUMENTS.MEDICAL_HISTORY.path, "Medical_History_and_Immunizations.pdf")}
+          >
+            <DownloadIcon fontSize="small" />
+            Download Template
+          </TemplateLink>
+        </DocumentHeader>
+        
         <PDFUploadForm
-          pdf_name={"Medical/health history and immunization records"}
+          pdf_name={DOCUMENTS.MEDICAL_HISTORY.name}
           application_id={application_id}
-          doc_type={"Medical/health history and immunization records"}
+          doc_type={DOCUMENTS.MEDICAL_HISTORY.name}
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Medical/health history and immunization records: A high-level summary of
-          health status and attestation regarding immunizations. This document in
-          particular is covered by HIPAA (definition 11). The student must fill
-          out and sign this.
+          {DOCUMENTS.MEDICAL_HISTORY.description}
         </DocumentDescription>
       </DocumentSection>
 
+      {/* Section for Assumption of Risk document */}
       <DocumentSection>
+        <DocumentHeader>
+          <DocumentTitle variant="h6">
+            {DOCUMENTS.ASSUMPTION_OF_RISK.name}
+          </DocumentTitle>
+          <TemplateLink 
+            onClick={() => handleDownloadTemplate(DOCUMENTS.ASSUMPTION_OF_RISK.path, "Assumption_of_Risk.pdf")}
+          >
+            <DownloadIcon fontSize="small" />
+            Download Template
+          </TemplateLink>
+        </DocumentHeader>
+        
         <PDFUploadForm
-          pdf_name={"Assumption of risk form"}
+          pdf_name={DOCUMENTS.ASSUMPTION_OF_RISK.name}
           application_id={application_id}
-          doc_type={"Assumption of risk form"}
+          doc_type={DOCUMENTS.ASSUMPTION_OF_RISK.name}
           isReadOnly={isReadOnly}
         />
         <DocumentDescription>
-          Assumption of risk form: A document waiving HCC's liability for student
-          participation in the program. The student must sign this to participate.
+          {DOCUMENTS.ASSUMPTION_OF_RISK.description}
         </DocumentDescription>
       </DocumentSection>
     </>

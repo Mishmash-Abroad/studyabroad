@@ -50,10 +50,12 @@ services:
              python manage.py add_test_programs &&
              python manage.py add_test_applications &&
              python manage.py add_test_announcements &&
+             python manage.py backup_db &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - static_volume:/app/static    # Persistent storage for static files
       - media_volume:/app/media      # Persistent storage for uploaded media
+      - /home/vcm/backups:/app/backups 
     ports:
       - "8000:8000"  # Exposed for development debugging
     environment:
@@ -64,6 +66,8 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - SECRET_KEY=${SECRET_KEY}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
     depends_on:
       db:

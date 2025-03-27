@@ -38,3 +38,12 @@ sentry-sdk[django]
 
 
 django-auditlog
+django-archive
+
+# Email Services
+# SendGrid: Email delivery service
+sendgrid==6.10.0
+
+
+# env var import to django
+python-dotenv

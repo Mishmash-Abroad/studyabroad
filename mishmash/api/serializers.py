@@ -8,12 +8,14 @@ from .models import (
     Announcement,
     Document,
     ConfidentialNote,
+    LetterOfRecommendation,
 )
 from allauth.socialaccount.models import SocialAccount
 
 
 class UserSerializer(serializers.ModelSerializer):
     is_sso = serializers.ReadOnlyField()
+
     class Meta:
         model = User
         fields = [
@@ -22,8 +24,11 @@ class UserSerializer(serializers.ModelSerializer):
             "display_name",
             "email",
             "is_admin",
+            "is_faculty",
+            "is_reviewer",
             "is_mfa_enabled",
             "is_sso",
+            "roles_object",
         ]
 
 
@@ -31,7 +36,7 @@ class ProgramSerializer(serializers.ModelSerializer):
     faculty_leads = UserSerializer(many=True, read_only=True)
     faculty_lead_ids = serializers.PrimaryKeyRelatedField(
         source="faculty_leads",
-        queryset=User.objects.filter(is_admin=True),
+        queryset=User.objects.filter(is_faculty=True),
         many=True,
         write_only=True,
         required=False,
@@ -64,8 +69,10 @@ class ApplicationQuestionSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(read_only=True)
-    gpa = serializers.DecimalField(max_digits=4, decimal_places=3, coerce_to_string=True)
-    
+    gpa = serializers.DecimalField(
+        max_digits=4, decimal_places=3, coerce_to_string=True
+    )
+
     class Meta:
         model = Application
         fields = [
@@ -98,7 +105,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "content",
-            "cover_image",      # Accept the uploaded file
+            "cover_image",  # Accept the uploaded file
             "cover_image_url",  # For retrieving the image URL
             "pinned",
             "importance",
@@ -150,21 +157,71 @@ class ConfidentialNoteSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    pdf_url = serializers.SerializerMethodField()  
+    pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
         fields = ["id", "title", "pdf", "uploaded_at", "application", "type", "pdf_url"]
 
     def get_pdf_url(self, obj):
-        """Generate the absolute URL for the PDF file."""
-        request = self.context.get("request")  
+        """Generate the URL for securely accessing the PDF file."""
+        # return only the relative path which will be combined with the baseURL by axios
         if obj.pdf:
-            if request:
-                url = request.build_absolute_uri(obj.pdf.url)
-                # Ensure URL is HTTPS in production environments
-                if url.startswith('http:') and not request.META.get('HTTP_HOST', '').startswith('localhost'):
-                    url = url.replace('http:', 'https:', 1)
-                return url
-            return obj.pdf.url
+            return f'/api/documents/{obj.id}/secure_file/'
         return None
+
+
+class LetterOfRecommendationSerializer(serializers.ModelSerializer):
+    pdf_url = serializers.SerializerMethodField()
+    is_fulfilled = serializers.ReadOnlyField()
+    student_name = serializers.SerializerMethodField()
+    program_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LetterOfRecommendation
+        fields = [
+            "id",
+            "application",
+            "writer_name",
+            "writer_email",
+            "pdf",
+            "letter_timestamp",
+            "token",
+            "created_at",
+            "updated_at",
+            "pdf_url",
+            "is_fulfilled",
+            "student_name",
+            "program_title"
+        ]
+        read_only_fields = [
+            "id",
+            "application",
+            "pdf",
+            "letter_timestamp",
+            "token",
+            "created_at",
+            "updated_at",
+            "pdf_url",
+            "is_fulfilled",
+            "student_name",
+            "program_title"
+        ]
+
+    def get_pdf_url(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            user = request.user
+            if user.is_admin or user.is_faculty or user.is_reviewer:
+                if obj.pdf and obj.is_fulfilled:
+                    return f'/api/letters/{obj.id}/secure_file/'
+        return None
+    
+    def get_student_name(self, obj):
+        return obj.application.student.display_name
+    
+    def get_program_title(self, obj):
+        return obj.application.program.title
+    
+    def get_is_fulfilled(self, obj):
+        return obj.is_fulfilled

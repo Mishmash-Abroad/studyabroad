@@ -43,7 +43,12 @@ const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
   },
 }));
 
-const FacultyPicklist = ({ onFacultyChange, initialSelected = [], className }) => {
+const FacultyPicklist = ({
+  onFacultyChange,
+  initialSelected = [],
+  className,
+  is_admin
+}) => {
   const [facultyList, setFacultyList] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +61,8 @@ const FacultyPicklist = ({ onFacultyChange, initialSelected = [], className }) =
         const response = await axiosInstance.get("/api/users/", {
           params: { is_faculty: true },
         });
+        console.log(response.data);
+        
         setFacultyList(response.data);
         setError(null);
       } catch (err) {
@@ -90,6 +97,7 @@ const FacultyPicklist = ({ onFacultyChange, initialSelected = [], className }) =
   return (
     <StyledAutocomplete
       multiple
+      disabled={!is_admin}
       options={facultyList}
       value={selectedFaculty}
       onChange={handleFacultyChange}
@@ -126,6 +134,12 @@ const FacultyPicklist = ({ onFacultyChange, initialSelected = [], className }) =
       }
       isOptionEqualToValue={(option, value) => option.id === value.id}
       className={className}
+      sx={{
+        width: "100%",
+        alignSelf: "flex-start",
+        margin: 0,
+        justifyContent: "flex-start",
+      }}
     />
   );
 };

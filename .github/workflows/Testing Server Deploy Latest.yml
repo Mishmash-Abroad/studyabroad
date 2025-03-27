@@ -45,6 +45,8 @@ jobs:
             DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
             OIDC_CLIENT_SECRET=${{ secrets.OIDC_CLIENT_SECRET }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+            SENDGRID_DEFAULT_FROM=${{ secrets.SENDGRID_DEFAULT_FROM }}
             EOF
 
 
