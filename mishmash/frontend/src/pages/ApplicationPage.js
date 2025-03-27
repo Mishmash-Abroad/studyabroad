@@ -27,6 +27,7 @@ import {
   PROGRAM_STATUS,
   WITHDRAWABLE_APPLICATION_STATUSES,
 } from "../utils/constants";
+import confetti from "canvas-confetti";
 
 // -------------------- STYLED COMPONENTS --------------------
 const StyledComponents = {
@@ -158,6 +159,18 @@ const ApplicationPage = () => {
     loading,
     activeTab,
   } = state;
+
+  useEffect(() => {
+    const shouldShowConfetti = localStorage.getItem("showConfetti");
+    if (shouldShowConfetti) {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      localStorage.removeItem("showConfetti");
+    }
+  }, []);
 
   // -------------------- DATA FETCHING --------------------
   useEffect(() => {
@@ -374,7 +387,7 @@ const ApplicationPage = () => {
             : axiosInstance.post("/api/responses/", payload);
         })
       );
-
+      localStorage.setItem("showConfetti", "true");
       window.location.reload();
     } catch (err) {
       console.error("Application submission error:", err);
