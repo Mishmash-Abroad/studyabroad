@@ -39,6 +39,8 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - AES_CIPHER_KEY=${AES_CIPHER_KEY}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_DEFAULT_FROM=${SENDGRID_DEFAULT_FROM}
     depends_on:
       db:
         condition: service_healthy
@@ -52,6 +54,7 @@ services:
              python manage.py add_test_users -prod &&
              python manage.py add_test_programs -prod &&
              python manage.py add_test_applications -prod &&
+             python manage.py createsuperuser --noinput || true &&
              gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 4 mishmash.wsgi:application"
 
   nginx:
