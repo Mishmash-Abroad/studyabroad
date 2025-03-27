@@ -25,5 +25,5 @@ else
     echo "Failed to start cron"
     exit 1
 fi
-# Keep container running by following log
+# Keep container running by following log 
 fg

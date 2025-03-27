@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
 from allauth.socialaccount.models import SocialAccount
-
+import uuid
 
 from auditlog.registry import auditlog
 
@@ -221,6 +221,55 @@ class Document(models.Model):
         return f"{self.title}"
 
 
+def letters_upload_path(instance, filename):
+    """Helper to store letter PDFs in a subfolder by application ID."""
+    return f"recommendation_letters/{instance.application.id}/{filename}"
+
+
+class LetterOfRecommendation(models.Model):
+    """
+    Stores a single request for a letter of recommendation.
+    The letter writer does not need a user account.
+    """
+    application = models.ForeignKey(
+        "Application", 
+        on_delete=models.CASCADE, 
+        related_name="recommendations"
+    )
+    writer_name = models.CharField(max_length=255)
+    writer_email = models.EmailField()
+    
+    pdf = models.FileField(
+        upload_to=letters_upload_path, 
+        null=True, 
+        blank=True, 
+        help_text="Uploaded PDF letter"
+    )
+    letter_timestamp = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        help_text="Date/time the writer uploaded the letter"
+    )
+
+    # for verifying that the link used by the writer is valid
+    token = models.UUIDField(
+        default=uuid.uuid4, 
+        editable=False, 
+        unique=True,
+        help_text="Unique token to authenticate letter writer"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Letter for {self.application.student.username} to {self.writer_name}({self.writer_email}) is {'fulfilled' if self.is_fulfilled else 'not fulfilled'}"
+
+    @property
+    def is_fulfilled(self):
+        return bool(self.pdf and self.letter_timestamp)
+
+
 auditlog.register(User)
 auditlog.register(Program)
 auditlog.register(Application)
@@ -228,3 +277,4 @@ auditlog.register(ApplicationResponse)
 auditlog.register(Announcement)
 auditlog.register(ConfidentialNote)
 auditlog.register(Document)
+auditlog.register(LetterOfRecommendation)
