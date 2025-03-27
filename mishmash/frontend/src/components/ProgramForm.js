@@ -52,6 +52,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const [newQuestions, setNewQuestions] = useState([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (editingProgram) {
@@ -81,6 +82,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleInputChange = (e) => {
     setProgramData({ ...programData, [e.target.name]: e.target.value });
+    setDirty(true);
   };
 
   const handleQuestionChange = (index, value) => {
@@ -92,12 +94,14 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     }
 
     setQuestions(updatedQuestions);
+    setDirty(true);
   };
 
   const handleAddQuestion = () => {
     const newQuestion = { id: null, text: "" };
     setQuestions([...questions, newQuestion]);
     setNewQuestions([...newQuestions, newQuestion]);
+    setDirty(true);
   };
 
   const handleDeleteQuestion = (index) => {
@@ -106,6 +110,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       setDeletedQuestions([...deletedQuestions, question.id]);
     }
     setQuestions(questions.filter((_, i) => i !== index));
+    setDirty(true);
   };
 
   const confirmDelete = (index) => {
@@ -205,7 +210,9 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       }
 
       refreshPrograms();
-      navigate("/dashboard/admin-programs");
+      setDirty(false);
+      setErrorMessage("");
+      // navigate("/dashboard/admin-programs");
     } catch (error) {
       console.error("Error saving program:", error);
       setErrorMessage(
@@ -398,8 +405,18 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
               gap: "10px",
               justifyContent: "flex-end",
               mt: 2,
+              alignItems: "center",
             }}
           >
+            {dirty && (
+              <Typography
+                variant="body2"
+                color="error"
+                sx={{ mr: "10", fontWeight: 500 }}
+              >
+                *unsaved changes
+              </Typography>
+            )}
             {editingProgram && (
               <Button
                 variant="outlined"
