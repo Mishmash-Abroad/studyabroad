@@ -21,6 +21,7 @@ import {
   get_all_available_statuses_to_edit,
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
+import LetterReview from "./LetterReview";
 import ProgramForm from "./ProgramForm";
 import { useAuth } from "../context/AuthContext";
 
@@ -296,6 +297,12 @@ const AdminAppView = () => {
           Essential Documents Review
         </Typography>
         <DocumentReview application_id={id} />
+
+        {/* Letters of Recommendation Review */}
+        <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
+          Letters of Recommendation Review
+        </Typography>
+        <LetterReview application_id={id} />
       </Paper>
 
       {/* Confidential Notes Section */}

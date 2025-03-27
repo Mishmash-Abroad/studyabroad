@@ -24,6 +24,7 @@ services:
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
+      - /home/vcm/backups:/app/backups 
     environment:
       - DEBUG=0
       - DJANGO_ALLOWED_HOSTS=localhost,dev-mishmash.colab.duke.edu,mishmash.colab.duke.edu,testserver,test-mishmash.colab.duke.edu
@@ -36,6 +37,7 @@ services:
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
+      - AES_CIPHER_KEY=${AES_CIPHER_KEY}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
     depends_on:
       db:

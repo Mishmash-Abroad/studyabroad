@@ -4,6 +4,7 @@ import {
   TextField,
   Button,
   Paper,
+  IconButton,
   Typography,
   Alert,
   Select,
@@ -15,9 +16,11 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import { Delete, Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import { SEMESTERS } from "../utils/constants";
+import { DEFAULT_QUESTIONS } from "../utils/constants";
 import ApplicantTable from "./ApplicantTable";
 import FacultyPicklist from "./FacultyPicklist";
 import { useAuth } from "../context/AuthContext";
@@ -43,6 +46,13 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const [systemAdminWarning, setSystemAdminWarning] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const [questions, setQuestions] = useState([]);
+  const [deletedQuestions, setDeletedQuestions] = useState([]);
+  const [editQuestions, setEditQuestions] = useState([]);
+  const [newQuestions, setNewQuestions] = useState([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState(null);
+
   useEffect(() => {
     if (editingProgram) {
       setProgramData({
@@ -59,6 +69,13 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         end_date: editingProgram.end_date,
         description: editingProgram.description,
       });
+      axiosInstance.get(`/api/questions/?program=${editingProgram.id}`)
+        .then((response) => {
+          setQuestions(response.data);
+        })
+        .catch((error) => console.error("Failed to load questions:", error));
+    } else {
+      setQuestions(DEFAULT_QUESTIONS.map((q) => ({ id: null, text: q })));
     }
   }, [editingProgram]);
 
@@ -66,29 +83,76 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setProgramData({ ...programData, [e.target.name]: e.target.value });
   };
 
+  const handleQuestionChange = (index, value) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index].text = value;
+
+    if (updatedQuestions[index].id) {
+      setEditQuestions([...editQuestions, updatedQuestions[index]]);
+    }
+
+    setQuestions(updatedQuestions);
+  };
+
+  const handleAddQuestion = () => {
+    const newQuestion = { id: null, text: "" };
+    setQuestions([...questions, newQuestion]);
+    setNewQuestions([...newQuestions, newQuestion]);
+  };
+
+  const handleDeleteQuestion = (index) => {
+    const question = questions[index];
+    if (question.id) {
+      setDeletedQuestions([...deletedQuestions, question.id]);
+    }
+    setQuestions(questions.filter((_, i) => i !== index));
+  };
+
+  const confirmDelete = (index) => {
+    if (editingProgram) {
+      setQuestionToDelete(index);
+      setDeleteConfirmOpen(true);
+    } else {
+      handleDeleteQuestion(index);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    handleDeleteQuestion(questionToDelete);
+    setDeleteConfirmOpen(false);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+  };
+
   const handleFacultyChange = (selectedFaculty) => {
     if (selectedFaculty.length === 0) {
+      setProgramData({
+        ...programData,
+        faculty_lead_ids: [],
+      });
       // Show warning that System Admin will be added as faculty lead
-      setSystemAdminWarning(true);
+      // setSystemAdminWarning(true);
 
       // Get the System Admin user - in a real implementation,
       // you would either fetch this from the backend or use a known ID
-      axiosInstance
-        .get("/api/users/", {
-          params: { is_system_admin: true },
-        })
-        .then((response) => {
-          if (response.data && response.data.length > 0) {
-            const systemAdmin = response.data[0];
-            setProgramData({
-              ...programData,
-              faculty_lead_ids: [systemAdmin.id],
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching system admin:", error);
-        });
+      // axiosInstance
+      //   .get("/api/users/", {
+      //     params: { is_system_admin: true },
+      //   })
+      //   .then((response) => {
+      //     if (response.data && response.data.length > 0) {
+      //       const systemAdmin = response.data[0];
+      //       setProgramData({
+      //         ...programData,
+      //         faculty_lead_ids: [systemAdmin.id],
+      //       });
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     console.error("Error fetching system admin:", error);
+      //   });
     } else {
       // Regular case - user has selected faculty leads
       setSystemAdminWarning(false);
@@ -116,11 +180,28 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     try {
       if (editingProgram) {
         await axiosInstance.put(
-          `/api/programs/${editingProgram.id}/`,
-          programData
-        );
+          `/api/programs/${editingProgram.id}/`, programData );
+          
+          for (const question of newQuestions) {
+            await axiosInstance.post(`/api/questions/`, {
+              program: editingProgram.id,
+              text: question.text,
+            });
+          }
+          for (const question of editQuestions) {
+            await axiosInstance.patch(`/api/questions/${question.id}/`, {
+              text: question.text,
+            });
+          }
+          for (const questionId of deletedQuestions) {
+            await axiosInstance.delete(`/api/questions/${questionId}/`);
+          }
       } else {
-        await axiosInstance.post("/api/programs/", programData);
+        await axiosInstance.post("/api/programs/", 
+          {
+          ...programData,
+          questions: questions.map((q) => q.text),
+        });
       }
 
       refreshPrograms();
@@ -141,7 +222,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleCancelSubmit = () => {
     setDialogOpen(false);
-    // Leave systemAdminWarning true so user still sees the alert
   };
   
   const handleDeleteProgram = async () => {
@@ -222,16 +302,18 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             ))}
           </Select>
         </FormControl>
-        <FacultyPicklist
-          onFacultyChange={handleFacultyChange}
-          initialSelected={programData.faculty_lead_ids}
-          is_admin={user.is_admin}
-        />
+        <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
+          <FacultyPicklist
+            onFacultyChange={handleFacultyChange}
+            initialSelected={programData.faculty_lead_ids}
+            is_admin={user.is_admin}
+          />
+        </Box>
         <TextField
           label="Description"
           name="description"
           multiline
-          rows={3}
+          rows={25}
           fullWidth
           disabled={!user.is_admin}
           value={programData.description}
@@ -288,6 +370,27 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           onChange={handleInputChange}
         />
 
+        {/* Questions Section */}
+        <Box>
+          <Typography variant="h6">Questions</Typography>
+          {questions.map((q, index) => (
+            <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+              <TextField
+                disabled={!user.is_admin}
+                fullWidth
+                value={q.text}
+                onChange={(e) => handleQuestionChange(index, e.target.value)}
+              />
+              <IconButton disabled={!user.is_admin} onClick={() => confirmDelete(index)}>
+                <Delete />
+              </IconButton>
+            </Box>
+          ))}
+          <Button disabled={!user.is_admin} startIcon={<Add />} onClick={handleAddQuestion}>
+            Add Question
+          </Button>
+        </Box>
+
         {user.is_admin && (
           <Box
             sx={{
@@ -320,6 +423,20 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             programData.faculty_lead_ids.includes(user.id))) && (
           <ApplicantTable programId={editingProgram.id} />
         )}
+
+      {/* Confirm delete question dialog */}
+      <Dialog open={deleteConfirmOpen} onClose={handleCancelDelete}>
+        <DialogTitle>Delete Question?</DialogTitle>
+        <DialogContent>
+          Deleting this question will remove any existing responses. Continue?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={handleCancelSubmit}>
