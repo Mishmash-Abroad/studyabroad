@@ -15,8 +15,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
+  CircularProgress,
 } from "@mui/material";
-import { Delete, Add } from "@mui/icons-material";
+import { Delete, Add, Check } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import { SEMESTERS } from "../utils/constants";
@@ -45,6 +47,11 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [systemAdminWarning, setSystemAdminWarning] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Success notification states
+  const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [questions, setQuestions] = useState([]);
   const [deletedQuestions, setDeletedQuestions] = useState([]);
@@ -182,6 +189,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   };
 
   const submitProgram = async () => {
+    setIsSubmitting(true);
     try {
       if (editingProgram) {
         await axiosInstance.put(
@@ -201,24 +209,42 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           for (const questionId of deletedQuestions) {
             await axiosInstance.delete(`/api/questions/${questionId}/`);
           }
+          
+          // Show success message for update
+          setSuccessMessage(systemAdminWarning 
+            ? "Program updated successfully! System Administrator has been added as faculty lead."
+            : "Program updated successfully!");
       } else {
         await axiosInstance.post("/api/programs/", 
           {
           ...programData,
           questions: questions.map((q) => q.text),
         });
+        
+        // Show success message for creation
+        setSuccessMessage(systemAdminWarning 
+          ? "Program created successfully! System Administrator has been added as faculty lead."
+          : "Program created successfully!");
       }
 
       refreshPrograms();
       setDirty(false);
       setErrorMessage("");
-      // navigate("/dashboard/admin-programs");
+      setSuccessSnackbarOpen(true);
+      
+      // Navigate after a short delay to allow the user to see the success message
+      // setTimeout(() => {
+      //   navigate("/dashboard/admin-programs");
+      // }, 2000);
+      
     } catch (error) {
       console.error("Error saving program:", error);
       setErrorMessage(
         error.response?.data?.detail ||
           "Failed to save program. Please check your input."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -231,6 +257,10 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setDialogOpen(false);
   };
   
+  const handleCloseSuccessSnackbar = () => {
+    setSuccessSnackbarOpen(false);
+  };
+
   const handleDeleteProgram = async () => {
     if (!editingProgram) return;
     const countResponse = await axiosInstance.get(
@@ -421,12 +451,21 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
                 variant="outlined"
                 color="error"
                 onClick={handleDeleteProgram}
+                disabled={isSubmitting}
               >
                 Delete Program
               </Button>
             )}
-            <Button variant="contained" onClick={handleSubmit}>
-              {editingProgram ? "Update Program" : "Create Program"}
+            <Button 
+              variant="contained" 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+            >
+              {isSubmitting 
+                ? (editingProgram ? "Updating..." : "Creating...") 
+                : (editingProgram ? "Update Program" : "Create Program")
+              }
             </Button>
           </Box>
         )}
@@ -475,11 +514,34 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             onClick={handleConfirmSubmit}
             color="primary"
             variant="contained"
+            disabled={isSubmitting}
+            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            Continue
+            {isSubmitting ? "Processing..." : "Continue"}
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Success Snackbar */}
+      <Snackbar
+        open={successSnackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSuccessSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        message={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Check color="success" />
+            <span>{successMessage}</span>
+          </Box>
+        }
+        sx={{
+          marginTop: '64px', 
+          '& .MuiSnackbarContent-root': {
+            bgcolor: 'success.main',
+            color: 'success.contrastText',
+          }
+        }}
+      />
     </Paper>
   );
 };
