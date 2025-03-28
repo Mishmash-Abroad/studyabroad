@@ -313,7 +313,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           <FacultyPicklist
             onFacultyChange={handleFacultyChange}
             initialSelected={programData.faculty_lead_ids}
-            is_admin={user.is_admin}
           />
         </Box>
         <TextField
