@@ -47,7 +47,6 @@ const FacultyPicklist = ({
   onFacultyChange,
   initialSelected = [],
   className,
-  is_admin
 }) => {
   const [facultyList, setFacultyList] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
@@ -97,7 +96,6 @@ const FacultyPicklist = ({
   return (
     <StyledAutocomplete
       multiple
-      disabled={!is_admin}
       options={facultyList}
       value={selectedFaculty}
       onChange={handleFacultyChange}
