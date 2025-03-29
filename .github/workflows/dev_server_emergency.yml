@@ -33,14 +33,64 @@ jobs:
             cd /home/vcm/studyabroad
             git fetch --all
             git checkout ${{ github.event.inputs.commit_sha }}
+            
+            # Setup sentry token
+            cat <<EOF > ./mishmash/frontend/.sentryclirc
+            [auth]
+            token=${{ secrets.SENTRY_AUTH_TOKEN }}
+            EOF
+            
+            # Create .env file with all secret values.
+            cat <<EOF > .env
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
+            OIDC_CLIENT_SECRET=${{ secrets.OIDC_CLIENT_SECRET }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            AES_CIPHER_KEY=${{ secrets.AES_CIPHER_KEY }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+            SENDGRID_DEFAULT_FROM=${{ secrets.SENDGRID_DEFAULT_FROM }}
+            EOF
+            
             docker compose -f docker-compose.dev.yml down
             docker volume rm $(docker volume ls -q)
             docker compose -f docker-compose.dev.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps
 
-      - name: Discord success notification
-        if: success()
+      - name: Check Health Endpoints
+        id: check_health
+        continue-on-error: true
+        run: |
+          # Define the URLs to check
+          URLS=(
+            "https://dev-mishmash.colab.duke.edu/"
+            "https://test-mishmash.colab.duke.edu/"
+            "https://mishmash.colab.duke.edu/"
+          )
+          
+          # Wait a few seconds for containers to be fully up
+          sleep 5
+          
+          FAILED_URLS=""
+          for URL in "${URLS[@]}"; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            echo "Checking $URL: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" -ne 200 ]; then
+              FAILED_URLS+="\n$URL returned HTTP $HTTP_CODE"
+            fi
+          done
+          
+          if [ -n "$FAILED_URLS" ]; then
+            echo "Some endpoints failed:$FAILED_URLS"
+            echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "All endpoints passed the health check."
+            echo "failed_urls=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Discord Success Notification
+        if: steps.check_health.outcome == 'success'
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -48,7 +98,16 @@ jobs:
           description: "Deployed commit ${{ github.event.inputs.commit_sha }} at ${{ env.DEPLOYMENT_TIME }}"
           color: 0x00ff00  # Green color
 
-      - name: Discord failure notification
+      - name: Discord Failure Notification
+        if: steps.check_health.outcome == 'failure'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "DEV - One or more endpoints failed the health check"
+          description: "Health check failed at ${{ env.DEPLOYMENT_TIME }}. Details: ${{ steps.check_health.outputs.failed_urls }}"
+          color: 0xff0000  # Red color
+
+      - name: Discord deployment failure notification
         if: failure()
         uses: sarisia/actions-status-discord@v1
         with:

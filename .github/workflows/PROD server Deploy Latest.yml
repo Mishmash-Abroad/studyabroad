@@ -60,6 +60,7 @@ jobs:
 
       - name: Check Health Endpoints
         id: check_health
+        continue-on-error: true
         run: |
           # Define the URLs to check
           URLS=(
@@ -82,15 +83,15 @@ jobs:
           
           if [ -n "$FAILED_URLS" ]; then
             echo "Some endpoints failed:$FAILED_URLS"
+            echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
+            exit 1
           else
             echo "All endpoints passed the health check."
+            echo "failed_urls=" >> $GITHUB_OUTPUT
           fi
-          
-          # Set the output (empty if all passed)
-          echo "failed_urls=$FAILED_URLS" >> $GITHUB_OUTPUT
 
       - name: Discord Success Notification
-        if: steps.check_health.outputs.failed_urls == ''
+        if: steps.check_health.outcome == 'success'
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -99,7 +100,7 @@ jobs:
           color: 0x00ff00  # Green color
 
       - name: Discord Failure Notification
-        if: steps.check_health.outputs.failed_urls != ''
+        if: steps.check_health.outcome == 'failure'
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
