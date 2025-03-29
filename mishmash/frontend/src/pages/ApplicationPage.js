@@ -27,7 +27,7 @@ import {
   PROGRAM_STATUS,
   WITHDRAWABLE_APPLICATION_STATUSES,
 } from "../utils/constants";
-import confetti from "canvas-confetti";
+// import confetti from "canvas-confetti";
 
 // -------------------- STYLED COMPONENTS --------------------
 const StyledComponents = {
@@ -160,17 +160,17 @@ const ApplicationPage = () => {
     activeTab,
   } = state;
 
-  useEffect(() => {
-    const shouldShowConfetti = localStorage.getItem("showConfetti");
-    if (shouldShowConfetti) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-      localStorage.removeItem("showConfetti");
-    }
-  }, []);
+  // useEffect(() => {
+  //   const shouldShowConfetti = localStorage.getItem("showConfetti");
+  //   if (shouldShowConfetti) {
+  //     confetti({
+  //       particleCount: 150,
+  //       spread: 70,
+  //       origin: { y: 0.6 },
+  //     });
+  //     localStorage.removeItem("showConfetti");
+  //   }
+  // }, []);
 
   // -------------------- DATA FETCHING --------------------
   useEffect(() => {
@@ -387,7 +387,7 @@ const ApplicationPage = () => {
             : axiosInstance.post("/api/responses/", payload);
         })
       );
-      localStorage.setItem("showConfetti", "true");
+      // localStorage.setItem("showConfetti", "true");
       window.location.reload();
     } catch (err) {
       console.error("Application submission error:", err);
@@ -410,10 +410,7 @@ const ApplicationPage = () => {
   };
 
   const handleWithdraw = async () => {
-    if (
-      !application.id ||
-      !window.confirm("Withdraw application?")
-    ) {
+    if (!application.id || !window.confirm("Withdraw application?")) {
       return;
     }
 
@@ -704,7 +701,15 @@ const ApplicationPage = () => {
             >
               Program Description
             </Typography>
-            <Typography variant="body1" paragraph>
+            <Typography
+              variant="body1"
+              paragraph
+              sx={{
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+                hyphens: "auto",
+              }}
+            >
               {program.description ||
                 "No description provided for this program."}
             </Typography>
@@ -851,8 +856,10 @@ const ApplicationPage = () => {
             {/* Form Actions */}
             <ButtonContainer>
               <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-                {(WITHDRAWABLE_APPLICATION_STATUSES.includes(application.status) 
-                && (new Date() <= new Date(program.application_deadline))) && (
+                {WITHDRAWABLE_APPLICATION_STATUSES.includes(
+                  application.status
+                ) &&
+                  new Date() <= new Date(program.application_deadline) && (
                     <Button
                       variant="outlined"
                       color="error"
@@ -896,11 +903,11 @@ const ApplicationPage = () => {
             />
           </>
         )}
-        
+
         {/* Letters of Recommendation Tab */}
         {activeTab === 3 && (
-          <StudentLetterRequests 
-            application_id={application.id} 
+          <StudentLetterRequests
+            application_id={application.id}
             applicationStatus={application.status}
             programDeadline={program.application_deadline}
             isReadOnly={isReadOnly}

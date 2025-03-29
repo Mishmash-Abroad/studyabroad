@@ -324,7 +324,15 @@ const AdminAppView = () => {
                 key={note.id}
                 sx={{ p: 2, mb: 2, border: "1px solid #ccc", borderRadius: 1 }}
               >
-                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: "pre-line",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    hyphens: "auto",
+                  }}
+                >
                   {note.content}
                 </Typography>
                 <Typography

@@ -370,7 +370,7 @@ const ProgramCard = ({ program, onExpand }) => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr auto",
+                gridTemplateColumns: "1fr 1fr 1fr",
                 gap: "24px",
                 backgroundColor: theme.palette.grey[50],
                 padding: "24px",
@@ -420,9 +420,29 @@ const ProgramCard = ({ program, onExpand }) => {
                   {program.start_date} – {program.end_date}
                 </div>
               </div>
+              <div>
+                <strong
+                  style={{
+                    fontSize: theme.typography.subtitle1.fontSize,
+                    fontWeight: theme.typography.subtitle1.fontWeight,
+                    color: theme.palette.text.primary,
+                  }}
+                >
+                  Essential Document Deadline
+                </strong>
+                <div
+                  style={{
+                    marginTop: "8px",
+                    fontSize: theme.typography.body1.fontSize,
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {program.essential_document_deadline}
+                </div>
+              </div>
               <div
                 style={{
-                  display: "flex",
+                  // display: "flex",
                   flexDirection: "column",
                   alignItems: "flex-end",
                   justifyContent: "flex-end",
