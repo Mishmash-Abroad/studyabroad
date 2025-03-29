@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
-import { STATUS, ALL_STATUSES } from "../utils/constants";
+import { STATUS, ALL_STATUSES, copyEmailsByStatus } from "../utils/constants";
 
 // Component for the header cell in the AdminProgramsTable
 export const ApplicantCountsHeaderCell = ({
@@ -308,8 +308,20 @@ export const ApplicantCountsDataCell = ({
   order,
   onRequestSort,
   selectedStatuses,
+  allUsers,
 }) => {
   const programCounts = counts || {};
+
+  const handleStatusClick = async (status, event) => {
+    event.stopPropagation(); // Prevent sorting when copying
+    
+    if (!allUsers || !program) return;
+
+    const success = await copyEmailsByStatus(status, allUsers, program.id);
+    if (success) {
+      alert(`Emails copied to clipboard`);
+    }
+  };
 
   return (
     <Box
@@ -396,7 +408,14 @@ export const ApplicantCountsDataCell = ({
         const isSelected = selectedStatuses.includes(statusLower);
 
         return (
-          <Tooltip key={key} title={`${value}: ${count}`} placement="top" arrow>
+          <Tooltip 
+            key={key} 
+            title={count > 0 
+              ? `${value}: ${count} - Click to copy emails` 
+              : `${value}: No applicants`}
+            placement="top" 
+            arrow
+          >
             <Box
               sx={{
                 py: 0.25,
@@ -410,7 +429,7 @@ export const ApplicantCountsDataCell = ({
                   : "background.paper",
                 borderRadius: "4px",
                 border: "1px solid rgba(0, 0, 0, 0.12)",
-                cursor: "pointer",
+                cursor: count > 0 ? 'pointer' : 'default',
                 opacity: count > 0 ? 1 : 0.6,
                 width: "auto",
                 "&:hover": {
@@ -419,8 +438,10 @@ export const ApplicantCountsDataCell = ({
                     : "rgba(0, 0, 0, 0.04)",
                 },
               }}
-              onClick={() => {
-                onRequestSort(statusLower);
+              onClick={(e) => {
+                if (count > 0) {
+                  handleStatusClick(value, e);
+                }
               }}
             >
               <Typography
@@ -465,11 +486,18 @@ export const ApplicantCountsDataCell = ({
 
       {/* Add Total as the last chip */}
       <Tooltip
-        title={`Total Active: ${programCounts.total_active || 0}`}
+        title={`Total Active: ${programCounts.total_active || 0}${
+          programCounts.total_active > 0 ? ' - Click to copy all emails' : ''
+        }`}
         placement="top"
         arrow
       >
         <Box
+          onClick={(e) => {
+            if (programCounts.total_active > 0) {
+              handleStatusClick('total', e);
+            }
+          }}
           sx={{
             py: 0.25,
             px: 0.5,
@@ -483,7 +511,7 @@ export const ApplicantCountsDataCell = ({
                 : "background.paper",
             borderRadius: "4px",
             border: "1px solid rgba(0, 0, 0, 0.12)",
-            cursor: "pointer",
+            cursor: programCounts.total_active > 0 ? 'pointer' : 'default',
             width: "auto",
             "&:hover": {
               bgcolor:
@@ -492,7 +520,6 @@ export const ApplicantCountsDataCell = ({
                   : "rgba(0, 0, 0, 0.04)",
             },
           }}
-          onClick={() => onRequestSort("total_active")}
         >
           <Typography
             variant="caption"
@@ -543,6 +570,7 @@ const ApplicantCountsCell = ({
   onRequestSort,
   selectedStatuses,
   setSelectedStatuses,
+  allUsers,
   isHeaderCell = false,
 }) => {
   // Use useEffect to track sorted status for parent component
@@ -572,6 +600,7 @@ const ApplicantCountsCell = ({
         order={order}
         onRequestSort={onRequestSort}
         selectedStatuses={selectedStatuses}
+        allUsers={allUsers}
       />
     );
   }

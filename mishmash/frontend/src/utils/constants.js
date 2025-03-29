@@ -247,3 +247,29 @@ export const DEFAULT_QUESTIONS = [
   "Describe a time you adapted to a new or unfamiliar environment.",
   "What unique perspective or contribution will you bring to the group?",
 ]
+
+// Helper function to copy text to clipboard
+export const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+    return false;
+  }
+};
+
+// Helper function to copy emails by status
+export const copyEmailsByStatus = async (status, users, programId) => {
+  // Filter users by program and status
+  const filteredUsers = users.filter(user => 
+    user.programId === programId && 
+    (status === 'total' 
+      ? ['applied', 'approved', 'enrolled', 'eligible'].includes(user.status.toLowerCase())
+      : user.status.toLowerCase() === status.toLowerCase())
+  );
+
+  // Join emails with semicolon for Outlook
+  const emails = filteredUsers.map(user => user.email).join(';');
+  return copyToClipboard(emails);
+};
