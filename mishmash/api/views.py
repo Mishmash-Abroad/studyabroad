@@ -847,6 +847,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         - `400 Bad Request` if invalid data is provided.
         """
         date_of_birth_str = request.data.get("date_of_birth")
+        major_str = request.data.get("major")
 
         try:
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
@@ -860,6 +861,14 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         if date_of_birth > min_birth_date:
             return Response(
                 {"detail": "Applicants must be at least 10 years old."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if len(major_str) > 100:
+            return Response(
+                {
+                    "detail": "Major must be 100 characters or less."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -954,6 +963,15 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "You cannot change the program after applying."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        
+        if "major" in data:
+            if len(data["major"]) > 100:
+                return Response(
+                    {
+                        "detail": "Major must be 100 characters or less."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         return super().update(request, *args, **kwargs)
 
 
