@@ -270,6 +270,24 @@ class IsDocumentOwnerOrAdmin(permissions.BasePermission):
         return obj.application.student == request.user
 
 
+class IsDocumentOwnerOrStaff(permissions.BasePermission):
+    """
+    Permission class for documents:
+    - Admins, faculty, and reviewers have read-only access
+    - Document owners (students who submitted) have full access
+    """
+    
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        
+        # Staff users (admin, faculty, reviewers) have read-only access
+        if user.is_admin or user.is_faculty or user.is_reviewer:
+            return request.method in permissions.SAFE_METHODS
+            
+        # Document owner has full access
+        return obj.application.student == user
+
+
 class IsProgramFaculty(permissions.BasePermission):
     """
     Allows access only to the faculty of the program.
@@ -451,7 +469,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
         #     )
 
         if not year.isdigit() or len(year) != 4:
-            raise ValidationError({"detail": "Year must be a four-digit number (e.g., 2025)."}
+            raise ValidationError(
+                {"detail": "Year must be a four-digit number (e.g., 2025)."}
             )
 
         valid_semesters = {"Fall", "Spring", "Summer"}
@@ -1574,7 +1593,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [permissions.IsAuthenticated, IsDocumentOwnerOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsDocumentOwnerOrStaff]
 
     def create(self, request, *args, **kwargs):
         """
@@ -1641,7 +1660,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             application = document.application
             user = request.user
             
-            if not (user.is_admin or application.student == user):
+            if not (user.is_admin or user.is_faculty or user.is_reviewer or application.student == user):
                 return Response(
                     {"detail": "You do not have permission to access this document."},
                     status=status.HTTP_403_FORBIDDEN
