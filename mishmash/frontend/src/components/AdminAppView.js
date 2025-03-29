@@ -44,8 +44,6 @@ const AdminAppView = () => {
     get_all_available_statuses_to_edit(user.roles_object)
   );
 
-  console.log(ALL_AVAILABLE_STATUSES);
-
   useEffect(() => {
     fetchApplicationDetails();
   }, [id]);
