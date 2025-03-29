@@ -80,7 +80,7 @@ class Application(models.Model):
         blank=True,
         default=0.000,
     )
-    major = models.CharField(default="Undeclared")
+    major = models.CharField(max_length=100, default="Undeclared")
     status = models.CharField(
         max_length=20,
         choices=[
