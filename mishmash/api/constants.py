@@ -13,7 +13,6 @@ ALL_ADMIN_EDITABLE_STATUSES = [
     "Enrolled",
     "Eligible",
     "Approved",
-    "Completed",
     "Canceled",
 ]
 
