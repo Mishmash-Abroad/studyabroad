@@ -220,6 +220,8 @@ const AdminProgramsTable = () => {
           return endDate < today;
         case "accepting_applications":
           return applicationOpenDate <= today && today <= applicationDeadline;
+        case "in_review":
+          return applicationDeadline <= today && today <= startDate;
         case "running_now":
           return startDate <= today && endDate >= today;
         case "all":
@@ -387,6 +389,7 @@ const AdminProgramsTable = () => {
               <MenuItem value="accepting_applications">
                 Accepting Applications
               </MenuItem>
+              <MenuItem value="in_review">In Review</MenuItem>
               <MenuItem value="running_now">Running Now</MenuItem>
               <MenuItem value="all">All Programs</MenuItem>
             </TextField>
