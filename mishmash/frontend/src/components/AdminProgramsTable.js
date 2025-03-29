@@ -211,6 +211,7 @@ const AdminProgramsTable = () => {
     let filtered = programs.filter((program) => {
       const startDate = new Date(program.start_date);
       const endDate = new Date(program.end_date);
+      const applicationOpenDate = new Date(program.application_open_date);
       const applicationDeadline = new Date(program.application_deadline);
       switch (timeFilter) {
         case "current_future":
@@ -218,7 +219,7 @@ const AdminProgramsTable = () => {
         case "past":
           return endDate < today;
         case "accepting_applications":
-          return applicationDeadline >= today;
+          return applicationOpenDate <= today && today <= applicationDeadline;
         case "running_now":
           return startDate <= today && endDate >= today;
         case "all":
