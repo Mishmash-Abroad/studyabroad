@@ -132,6 +132,7 @@ const AdminProgramsTable = () => {
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   // NEW STATE: Toggle for showing only programs for which the logged-in faculty is a lead
   const [showMyPrograms, setShowMyPrograms] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
 
   const navigate = useNavigate();
   const { programTitle } = useParams();
@@ -147,6 +148,19 @@ const AdminProgramsTable = () => {
     const timeoutId = setTimeout(fetchPrograms, 300);
     return () => clearTimeout(timeoutId);
   }, [timeFilter, selectedFaculty, searchQuery]);
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const response = await axiosInstance.get('/api/users/');
+        setAllUsers(response.data);
+      } catch (err) {
+        console.error('Failed to fetch users data:', err);
+      }
+    };
+
+    fetchAllUsers();
+  }, []);
 
   const fetchPrograms = async () => {
     try {
@@ -446,6 +460,7 @@ const AdminProgramsTable = () => {
                     selectedStatuses={selectedStatuses}
                     setSelectedStatuses={setSelectedStatuses}
                     isHeaderCell={true}
+                    allUsers={allUsers}
                   />
                 </StyledTableCell>
               </TableRow>
@@ -489,6 +504,7 @@ const AdminProgramsTable = () => {
                       order={order}
                       onRequestSort={handleRequestSort}
                       selectedStatuses={selectedStatuses}
+                      allUsers={allUsers}
                     />
                   </StyledTableCell>
                 </StyledTableRow>
