@@ -207,7 +207,7 @@ const ApplicantTable = ({ programId }) => {
           return order === "asc" ? dateA - dateB : dateB - dateA;
         }
       }
-
+      
       const userA = userDetails[a.student] || {};
       const userB = userDetails[b.student] || {};
 
@@ -429,17 +429,13 @@ const ApplicantTable = ({ programId }) => {
                   key={column.id}
                   style={column.id === "status" ? { width: "80px" } : {}}
                 >
-                  {column.id !== "status" ? (
-                    <TableSortLabel
-                      active={orderBy === column.id}
-                      direction={orderBy === column.id ? order : "asc"}
-                      onClick={() => handleRequestSort(column.id)}
-                    >
-                      {column.label}
-                    </TableSortLabel>
-                  ) : (
-                    column.label
-                  )}
+                  <TableSortLabel
+                    active={orderBy === column.id}
+                    direction={orderBy === column.id ? order : "asc"}
+                    onClick={() => handleRequestSort(column.id)}
+                  >
+                    {column.label}
+                  </TableSortLabel>
                 </TableCell>
               ))}
             </TableRow>
