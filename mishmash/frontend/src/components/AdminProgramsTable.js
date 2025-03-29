@@ -177,7 +177,6 @@ const AdminProgramsTable = () => {
               `/api/programs/${program.id}/applicant_counts/`
             );
             counts[program.id] = countResponse.data;
-            console.log(countResponse);
           } catch (err) {
             console.error(
               `Error fetching applicant counts for program ${program.id}:`,
