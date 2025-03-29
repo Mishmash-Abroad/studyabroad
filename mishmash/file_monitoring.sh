@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-OUTPUT=$(hashdeep -r -a -k /home/vcm/hash_values.txt /home/vcm/studyabroad/mishmash/ /home/vcm/studyabroad/nginx/ /home/vcm/studyabroad/docker-compose.dev.yml /home/vcm/studyabroad/docker-compose.prod.yml /home/vcm/studyabroad/docker-compose.yml /home/vcm/studyabroad/docker-compose.test.yml /home/vcm/studyabroad/package.json /home/vcm/studyabroad/package-lock.json)
+OUTPUT=$(hashdeep -r -a -k /home/vcm/hash_values.txt /home/vcm/studyabroad)
 
 
 echo $OUTPUT >> /var/log/file_monitoring.log

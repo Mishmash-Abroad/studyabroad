@@ -3,6 +3,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
+import DocumentStatusDisplay from "../components/DocumentStatusDisplay"; 
 import {
   STATUS,
   PROGRAM_STATUS,
@@ -144,6 +145,8 @@ const getDeadlineInfo = (today, openDate, deadline) => {
 
 const ProgramCard = ({ program, onExpand }) => {
   const [applicationStatus, setApplicationStatus] = useState(null);
+  const [applicationId, setApplicationId] = useState(null); 
+  const [documents, setDocuments] = useState([]); 
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -160,12 +163,31 @@ const ProgramCard = ({ program, onExpand }) => {
           `/api/programs/${program.id}/application_status/`
         );
         setApplicationStatus(response.data.status);
+        setApplicationId(response.data.application_id); 
       } catch (error) {
         console.error("Error fetching application status:", error);
       }
     };
     fetchApplicationStatus();
   }, [program.id]);
+
+  // Fetch documents when applicationId is available
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (applicationId) {
+        try {
+          const response = await axiosInstance.get(
+            `/api/documents/?application=${applicationId}`
+          );
+          setDocuments(response.data);
+        } catch (error) {
+          console.error("Error fetching documents:", error);
+        }
+      }
+    };
+    
+    fetchDocuments();
+  }, [applicationId]);
 
   // Compute program status based solely on dates.
   const getProgramStatus = () =>
@@ -410,6 +432,24 @@ const ProgramCard = ({ program, onExpand }) => {
                 {renderActionButton()}
               </div>
             </div>
+            
+            {/* Document Status Display Section */}
+            {applicationStatus && applicationId && (
+              <div
+                style={{
+                  marginBottom: "24px",
+                  padding: "16px",
+                  backgroundColor: theme.palette.background.default,
+                  borderRadius: theme.shape.borderRadii.medium,
+                  boxShadow: theme.customShadows.z1,
+                }}
+              >
+                <DocumentStatusDisplay
+                  documents={documents}
+                  application_id={applicationId}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
