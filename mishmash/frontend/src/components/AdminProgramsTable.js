@@ -416,6 +416,7 @@ const AdminProgramsTable = () => {
                   "faculty_leads",
                   "application_open_date",
                   "application_deadline",
+                  "essential_document_deadline",
                   "start_date",
                   "end_date",
                 ].map((column) => (
@@ -431,7 +432,6 @@ const AdminProgramsTable = () => {
                     </TableSortLabel>
                   </StyledTableCell>
                 ))}
-
                 <StyledTableCell
                   sx={{
                     textAlign: "center",
@@ -469,6 +469,9 @@ const AdminProgramsTable = () => {
                   </StyledTableCell>
                   <StyledTableCell>
                     {formatDate(program.application_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(program.essential_document_deadline)}
                   </StyledTableCell>
                   <StyledTableCell>
                     {formatDate(program.start_date)}
