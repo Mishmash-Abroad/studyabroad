@@ -96,7 +96,7 @@ export const ApplicantCountsHeaderCell = ({
           <Typography variant="subtitle2" fontWeight="bold">
             Applicant Counts
           </Typography>
-          <Typography variant="caption" color="textSecondary">click count to copy applicant emails to clipboard</Typography>
+          <Typography variant="caption" color="textSecondary">click each count to copy applicant emails to clipboard</Typography>
 
         </TableSortLabel>
       </Box>
