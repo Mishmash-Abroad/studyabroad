@@ -509,7 +509,9 @@ const UserManagement = () => {
     { id: "username", label: "Username" },
     { id: "email", label: "Email" },
     { id: "is_sso", label: "Type" },
-    { id: "is_admin", label: "Role", align: "center" },
+    { id: "is_admin", label: "Admin", align: "center" },
+    { id: "is_faculty", label: "Faculty", align: "center" },
+    { id: "is_reviewer", label: "Reviewer", align: "center" },
     { id: "actions", label: "Actions", sortable: false, align: "center" },
   ];
 
@@ -601,8 +603,48 @@ const UserManagement = () => {
                         icon={
                           user.is_admin ? <AdminPanelSettings /> : <Person />
                         }
-                        label={user.is_admin ? "Admin" : "User"}
+                        label={user.is_admin ? "Admin" : "Non-Admin"}
                         color={user.is_admin ? "primary" : "default"}
+                        size="small"
+                        sx={{ minWidth: 80 }}
+                      />
+                    </Box>
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <Chip
+                        icon={
+                          user.is_admin ? <AdminPanelSettings /> : <Person />
+                        }
+                        label={user.is_faculty ? "Faculty" : "Non-Faculty"}
+                        color={user.is_faculty ? "primary" : "default"}
+                        size="small"
+                        sx={{ minWidth: 80 }}
+                      />
+                    </Box>
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <Chip
+                        icon={
+                          user.is_admin ? <AdminPanelSettings /> : <Person />
+                        }
+                        label={user.is_reviewer ? "Reviewer" : "Non-Reviewer"}
+                        color={user.is_reviewer ? "primary" : "default"}
                         size="small"
                         sx={{ minWidth: 80 }}
                       />
