@@ -185,7 +185,15 @@ const AdminAppView = () => {
               label="Description"
               value={program.description}
               fullWidth
-              InputProps={{ readOnly: true }}
+              InputProps={{
+                readOnly: true,
+                style: {
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                  whiteSpace: "pre-wrap",
+                },
+              }}
+              multiline
             />
             <TextField
               label="Year & Semester"
@@ -416,18 +424,18 @@ const AdminAppView = () => {
         </Box>
       </Paper>
       <Button
-          variant="contained"
-          sx={{ mt: 2 }}
-          onClick={() =>
-            navigate(
-              `/dashboard/admin-programs/${encodeURIComponent(
-                program.title.replace(/\s+/g, "-")
-              )}`
-            )
-          }
-        >
-          Return to Program Detail
-        </Button>
+        variant="contained"
+        sx={{ mt: 2 }}
+        onClick={() =>
+          navigate(
+            `/dashboard/admin-programs/${encodeURIComponent(
+              program.title.replace(/\s+/g, "-")
+            )}`
+          )
+        }
+      >
+        Return to Program Detail
+      </Button>
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={cancelStatusChange}>
