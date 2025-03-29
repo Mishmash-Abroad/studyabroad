@@ -442,7 +442,7 @@ const ProgramCard = ({ program, onExpand }) => {
               </div>
               <div
                 style={{
-                  // display: "flex",
+                  // display: "flex", 
                   flexDirection: "column",
                   alignItems: "flex-end",
                   justifyContent: "flex-end",
