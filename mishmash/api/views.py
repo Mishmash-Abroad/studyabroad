@@ -936,27 +936,30 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if user.is_admin and new_status not in ALL_ADMIN_EDITABLE_STATUSES:
-                    return Response(
-                        {
-                            "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                elif user.is_faculty and new_status not in ALL_FACULTY_EDITABLE_STATUSES:
-                    return Response(
-                        {
-                            "detail": "Invalid status update. Faculty can set status to 'Enrolled' or 'Canceled'."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                elif user.is_reviewer and new_status not in ALL_REVIEWER_EDITABLE_STATUSES:
-                    return Response(
-                        {
-                            "detail": "Invalid status update. Reviewer can set status to 'Enrolled' or 'Canceled'."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                if user.is_admin:    
+                    if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
+                        return Response(
+                            {
+                                "detail": "Invalid status update. Admins can set status to 'Enrolled' or 'Canceled'."
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                elif user.is_faculty:
+                    if new_status not in ALL_FACULTY_EDITABLE_STATUSES:
+                        return Response(
+                            {
+                                "detail": "Invalid status update. Faculty can set status to 'Enrolled', 'Applied', 'Approved', or 'Canceled'."
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                elif user.is_reviewer:
+                    if new_status not in ALL_REVIEWER_EDITABLE_STATUSES:
+                        return Response(
+                            {
+                                "detail": "Invalid status update. Reviewer can set status to 'Enrolled' or 'Canceled'."
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
         if "program" in data and data["program"] != application.program.id:
             return Response(

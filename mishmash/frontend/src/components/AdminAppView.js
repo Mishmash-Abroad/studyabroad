@@ -112,6 +112,7 @@ const AdminAppView = () => {
   const confirmStatusChange = async () => {
     try {
       await axiosInstance.patch(`/api/applications/${id}/`, { status });
+      setApplication({...application, status: status});
       setDialogOpen(false);
     } catch (error) {
       console.error("Error updating status:", error);
@@ -413,11 +414,6 @@ const AdminAppView = () => {
                   {option}
                 </MenuItem>
               ))}
-              {!ALL_AVAILABLE_STATUSES.includes(status) && (
-                <MenuItem key="current" value={status} disabled>
-                  {status}
-                </MenuItem>
-              )}
             </Select>
           </FormControl>
           <Button
