@@ -3,7 +3,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
-import DocumentStatusDisplay from "../components/DocumentStatusDisplay"; 
+import DocumentStatusDisplay from "../components/DocumentStatusDisplay";
 import {
   STATUS,
   PROGRAM_STATUS,
@@ -145,8 +145,8 @@ const getDeadlineInfo = (today, openDate, deadline) => {
 
 const ProgramCard = ({ program, onExpand }) => {
   const [applicationStatus, setApplicationStatus] = useState(null);
-  const [applicationId, setApplicationId] = useState(null); 
-  const [documents, setDocuments] = useState([]); 
+  const [applicationId, setApplicationId] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -163,7 +163,7 @@ const ProgramCard = ({ program, onExpand }) => {
           `/api/programs/${program.id}/application_status/`
         );
         setApplicationStatus(response.data.status);
-        setApplicationId(response.data.application_id); 
+        setApplicationId(response.data.application_id);
       } catch (error) {
         console.error("Error fetching application status:", error);
       }
@@ -185,7 +185,7 @@ const ProgramCard = ({ program, onExpand }) => {
         }
       }
     };
-    
+
     fetchDocuments();
   }, [applicationId]);
 
@@ -358,6 +358,9 @@ const ProgramCard = ({ program, onExpand }) => {
                   lineHeight: "1.6",
                   color: theme.palette.text.primary,
                   whiteSpace: "pre-line",
+                  wordWrap: "break-word", // Add this
+                  overflowWrap: "break-word", // Add this (for better browser support)
+                  hyphens: "auto", // Optional: adds hyphens when breaking words
                 }}
               >
                 {program.description}
@@ -432,7 +435,7 @@ const ProgramCard = ({ program, onExpand }) => {
                 {renderActionButton()}
               </div>
             </div>
-            
+
             {/* Document Status Display Section */}
             {applicationStatus && applicationId && (
               <div
