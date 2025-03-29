@@ -315,11 +315,22 @@ export const ApplicantCountsDataCell = ({
   const handleStatusClick = async (status, event) => {
     event.stopPropagation(); // Prevent sorting when copying
     
-    if (!allUsers || !program) return;
+    if (!allUsers || !program) {
+      alert('No users data available');
+      return;
+    }
 
-    const success = await copyEmailsByStatus(status, allUsers, program.id);
-    if (success) {
-      alert(`Emails copied to clipboard`);
+    const result = await copyEmailsByStatus(status, allUsers, program.id);
+    
+    if (result.success) {
+      const count = status === 'total' 
+        ? programCounts.total_active 
+        : programCounts[status.toLowerCase()] || 0;
+      
+      alert(`Copied ${count} email${count !== 1 ? 's' : ''} to clipboard`);
+    } else {
+      // Show the specific error message
+      alert(result.error || 'Failed to copy emails');
     }
   };
 

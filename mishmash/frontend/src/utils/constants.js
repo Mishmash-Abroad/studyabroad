@@ -250,17 +250,34 @@ export const DEFAULT_QUESTIONS = [
 
 // Helper function to copy text to clipboard
 export const copyToClipboard = async (text) => {
+  if (!text || text.trim() === '') {
+    console.error('No text provided to copy');
+    return { success: false, error: 'No emails found to copy' };
+  }
+  
   try {
     await navigator.clipboard.writeText(text);
-    return true;
+    return { success: true };
   } catch (err) {
     console.error('Failed to copy text: ', err);
-    return false;
+    return { 
+      success: false, 
+      error: 'Failed to copy to clipboard. Make sure you have clipboard permissions.' 
+    };
   }
 };
 
 // Helper function to copy emails by status
 export const copyEmailsByStatus = async (status, users, programId) => {
+  // Handle missing data
+  if (!users || !users.length) {
+    return { success: false, error: 'No user data available' };
+  }
+  
+  if (!programId) {
+    return { success: false, error: 'No program ID provided' };
+  }
+  
   // Filter users by program and status
   const filteredUsers = users.filter(user => 
     user.programId === programId && 
@@ -268,6 +285,13 @@ export const copyEmailsByStatus = async (status, users, programId) => {
       ? ['applied', 'approved', 'enrolled', 'eligible'].includes(user.status.toLowerCase())
       : user.status.toLowerCase() === status.toLowerCase())
   );
+
+  if (filteredUsers.length === 0) {
+    return { 
+      success: false, 
+      error: `No emails found for ${status === 'total' ? 'active users' : status} status` 
+    };
+  }
 
   // Join emails with semicolon for Outlook
   const emails = filteredUsers.map(user => user.email).join(';');
