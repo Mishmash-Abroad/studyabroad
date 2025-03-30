@@ -1681,7 +1681,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             application = document.application
             user = request.user
             
-            if not (user.is_admin or user.is_faculty or user.is_reviewer or application.student == user):
+            if not (user.is_admin or user.is_faculty or application.student == user):
                 return Response(
                     {"detail": "You do not have permission to access this document."},
                     status=status.HTTP_403_FORBIDDEN

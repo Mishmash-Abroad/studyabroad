@@ -303,7 +303,7 @@ const AdminAppView = () => {
         <Typography variant="h5" sx={{ mb: 2 }}>
           Essential Documents Review
         </Typography>
-        <DocumentReview application_id={id} />
+        <DocumentReview application_id={id} isAdminOrFaculty={user.is_admin || user.is_faculty} />
 
         {/* Letters of Recommendation Review */}
         <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
