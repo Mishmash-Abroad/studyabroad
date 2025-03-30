@@ -455,6 +455,7 @@ const UserManagement = () => {
   // Handle user deletion
   const handleDeleteUser = async (user) => {
     try {
+      
       const warningResponse = await axiosInstance.get(
         `/api/users/${user.id}/user_warnings/`
       );
