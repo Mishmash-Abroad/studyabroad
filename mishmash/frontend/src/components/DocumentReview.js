@@ -17,7 +17,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import axiosInstance from "../utils/axios";
 
-const DocumentReview = ({ application_id }) => {
+const DocumentReview = ({ application_id, isAdminOrFaculty = false }) => {
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
@@ -111,7 +111,7 @@ const DocumentReview = ({ application_id }) => {
               <TableCell>Document Type</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Last Updated</TableCell>
-              <TableCell>Actions</TableCell>
+              {isAdminOrFaculty && <TableCell>Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -135,26 +135,28 @@ const DocumentReview = ({ application_id }) => {
                   <TableCell>
                     {doc ? new Date(doc.uploaded_at).toLocaleString() : "N/A"}
                   </TableCell>
-                  <TableCell>
-                    {doc && (
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleView(doc)}
-                          title="View PDF"
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDownload(doc)}
-                          title="Download PDF"
-                        >
-                          <DownloadIcon />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </TableCell>
+                  {isAdminOrFaculty && (
+                    <TableCell>
+                      {doc && (
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleView(doc)}
+                            title="View PDF"
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDownload(doc)}
+                            title="Download PDF"
+                          >
+                            <DownloadIcon />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

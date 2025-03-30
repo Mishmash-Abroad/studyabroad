@@ -132,6 +132,7 @@ const AdminProgramsTable = () => {
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   // NEW STATE: Toggle for showing only programs for which the logged-in faculty is a lead
   const [showMyPrograms, setShowMyPrograms] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
 
   const navigate = useNavigate();
   const { programTitle } = useParams();
@@ -147,6 +148,19 @@ const AdminProgramsTable = () => {
     const timeoutId = setTimeout(fetchPrograms, 300);
     return () => clearTimeout(timeoutId);
   }, [timeFilter, selectedFaculty, searchQuery]);
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const response = await axiosInstance.get('/api/users/');
+        setAllUsers(response.data);
+      } catch (err) {
+        console.error('Failed to fetch users data:', err);
+      }
+    };
+
+    fetchAllUsers();
+  }, []);
 
   const fetchPrograms = async () => {
     try {
@@ -177,7 +191,6 @@ const AdminProgramsTable = () => {
               `/api/programs/${program.id}/applicant_counts/`
             );
             counts[program.id] = countResponse.data;
-            console.log(countResponse);
           } catch (err) {
             console.error(
               `Error fetching applicant counts for program ${program.id}:`,
@@ -212,6 +225,7 @@ const AdminProgramsTable = () => {
     let filtered = programs.filter((program) => {
       const startDate = new Date(program.start_date);
       const endDate = new Date(program.end_date);
+      const applicationOpenDate = new Date(program.application_open_date);
       const applicationDeadline = new Date(program.application_deadline);
       switch (timeFilter) {
         case "current_future":
@@ -219,7 +233,9 @@ const AdminProgramsTable = () => {
         case "past":
           return endDate < today;
         case "accepting_applications":
-          return applicationDeadline >= today;
+          return applicationOpenDate <= today && today <= applicationDeadline;
+        case "in_review":
+          return applicationDeadline <= today && today <= startDate;
         case "running_now":
           return startDate <= today && endDate >= today;
         case "all":
@@ -387,6 +403,7 @@ const AdminProgramsTable = () => {
               <MenuItem value="accepting_applications">
                 Accepting Applications
               </MenuItem>
+              <MenuItem value="in_review">In Review</MenuItem>
               <MenuItem value="running_now">Running Now</MenuItem>
               <MenuItem value="all">All Programs</MenuItem>
             </TextField>
@@ -416,6 +433,7 @@ const AdminProgramsTable = () => {
                   "faculty_leads",
                   "application_open_date",
                   "application_deadline",
+                  "essential_document_deadline",
                   "start_date",
                   "end_date",
                 ].map((column) => (
@@ -431,7 +449,6 @@ const AdminProgramsTable = () => {
                     </TableSortLabel>
                   </StyledTableCell>
                 ))}
-
                 <StyledTableCell
                   sx={{
                     textAlign: "center",
@@ -446,6 +463,7 @@ const AdminProgramsTable = () => {
                     selectedStatuses={selectedStatuses}
                     setSelectedStatuses={setSelectedStatuses}
                     isHeaderCell={true}
+                    allUsers={allUsers}
                   />
                 </StyledTableCell>
               </TableRow>
@@ -471,6 +489,9 @@ const AdminProgramsTable = () => {
                     {formatDate(program.application_deadline)}
                   </StyledTableCell>
                   <StyledTableCell>
+                    {formatDate(program.essential_document_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
                     {formatDate(program.start_date)}
                   </StyledTableCell>
                   <StyledTableCell>
@@ -489,6 +510,7 @@ const AdminProgramsTable = () => {
                       order={order}
                       onRequestSort={handleRequestSort}
                       selectedStatuses={selectedStatuses}
+                      allUsers={allUsers}
                     />
                   </StyledTableCell>
                 </StyledTableRow>

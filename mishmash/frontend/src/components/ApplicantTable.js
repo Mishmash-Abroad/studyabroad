@@ -23,8 +23,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import {
-  ALL_STATUSES,
-  ALL_ADMIN_EDITABLE_STATUSES,
+  get_all_available_statuses_to_edit,
   STATUS,
   getStatusLabel,
 } from "../utils/constants";
@@ -32,9 +31,11 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import NoteIcon from "@mui/icons-material/Note";
 import DescriptionIcon from "@mui/icons-material/Description";
+import { useAuth } from "../context/AuthContext";
 
 const ApplicantTable = ({ programId }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,6 +46,9 @@ const ApplicantTable = ({ programId }) => {
   const [userDetails, setUserDetails] = useState({});
   const [documents, setDocuments] = useState({});
   const [confidentialNotes, setConfidentialNotes] = useState({});
+  const ALL_AVAILABLE_STATUSES = Object.values(
+    get_all_available_statuses_to_edit(user.roles_object)
+  );
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -133,7 +137,7 @@ const ApplicantTable = ({ programId }) => {
 
   const handleRequestSort = (property) => {
     const isSameColumn = orderBy === property;
-  
+
     if (property === "notes") {
       // Toggle note sort type if same column, otherwise default to 'count'
       if (isSameColumn) {
@@ -429,17 +433,13 @@ const ApplicantTable = ({ programId }) => {
                   key={column.id}
                   style={column.id === "status" ? { width: "80px" } : {}}
                 >
-                  {column.id !== "status" ? (
-                    <TableSortLabel
-                      active={orderBy === column.id}
-                      direction={orderBy === column.id ? order : "asc"}
-                      onClick={() => handleRequestSort(column.id)}
-                    >
-                      {column.label}
-                    </TableSortLabel>
-                  ) : (
-                    column.label
-                  )}
+                  <TableSortLabel
+                    active={orderBy === column.id}
+                    direction={orderBy === column.id ? order : "asc"}
+                    onClick={() => handleRequestSort(column.id)}
+                  >
+                    {column.label}
+                  </TableSortLabel>
                 </TableCell>
               ))}
             </TableRow>
@@ -491,14 +491,12 @@ const ApplicantTable = ({ programId }) => {
                         },
                       }}
                     >
-                      {ALL_ADMIN_EDITABLE_STATUSES.map((status, index) => (
+                      {ALL_AVAILABLE_STATUSES.map((status, index) => (
                         <MenuItem key={index} value={status}>
                           {getStatusLabel(status)}
                         </MenuItem>
                       ))}
-                      {!ALL_ADMIN_EDITABLE_STATUSES.includes(
-                        applicant.status
-                      ) && (
+                      {!ALL_AVAILABLE_STATUSES.includes(applicant.status) && (
                         <MenuItem
                           key="current"
                           value={applicant.status}

@@ -44,8 +44,6 @@ const AdminAppView = () => {
     get_all_available_statuses_to_edit(user.roles_object)
   );
 
-  console.log(ALL_AVAILABLE_STATUSES);
-
   useEffect(() => {
     fetchApplicationDetails();
   }, [id]);
@@ -114,6 +112,7 @@ const AdminAppView = () => {
   const confirmStatusChange = async () => {
     try {
       await axiosInstance.patch(`/api/applications/${id}/`, { status });
+      setApplication({...application, status: status});
       setDialogOpen(false);
     } catch (error) {
       console.error("Error updating status:", error);
@@ -187,7 +186,15 @@ const AdminAppView = () => {
               label="Description"
               value={program.description}
               fullWidth
-              InputProps={{ readOnly: true }}
+              InputProps={{
+                readOnly: true,
+                style: {
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                  whiteSpace: "pre-wrap",
+                },
+              }}
+              multiline
             />
             <TextField
               label="Year & Semester"
@@ -296,7 +303,7 @@ const AdminAppView = () => {
         <Typography variant="h5" sx={{ mb: 2 }}>
           Essential Documents Review
         </Typography>
-        <DocumentReview application_id={id} />
+        <DocumentReview application_id={id} isAdminOrFaculty={user.is_admin || user.is_faculty} />
 
         {/* Letters of Recommendation Review */}
         <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
@@ -318,7 +325,15 @@ const AdminAppView = () => {
                 key={note.id}
                 sx={{ p: 2, mb: 2, border: "1px solid #ccc", borderRadius: 1 }}
               >
-                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: "pre-line",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    hyphens: "auto",
+                  }}
+                >
                   {note.content}
                 </Typography>
                 <Typography
@@ -399,11 +414,6 @@ const AdminAppView = () => {
                   {option}
                 </MenuItem>
               ))}
-              {!ALL_AVAILABLE_STATUSES.includes(status) && (
-                <MenuItem key="current" value={status} disabled>
-                  {status}
-                </MenuItem>
-              )}
             </Select>
           </FormControl>
           <Button
@@ -418,18 +428,18 @@ const AdminAppView = () => {
         </Box>
       </Paper>
       <Button
-          variant="contained"
-          sx={{ mt: 2 }}
-          onClick={() =>
-            navigate(
-              `/dashboard/admin-programs/${encodeURIComponent(
-                program.title.replace(/\s+/g, "-")
-              )}`
-            )
-          }
-        >
-          Return to Program Detail
-        </Button>
+        variant="contained"
+        sx={{ mt: 2 }}
+        onClick={() =>
+          navigate(
+            `/dashboard/admin-programs/${encodeURIComponent(
+              program.title.replace(/\s+/g, "-")
+            )}`
+          )
+        }
+      >
+        Return to Program Detail
+      </Button>
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={cancelStatusChange}>
