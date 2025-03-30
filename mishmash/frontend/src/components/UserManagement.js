@@ -468,11 +468,11 @@ const UserManagement = () => {
       
       // Only mention applications if they have any
       const hasApplications = applications_count > 0;
-      
+      const programs_affected = faculty_programs.join(", ") == 'None' ? 'no programs' : faculty_programs.join(", ");
       if (hasFacultyPrograms && hasApplications) {
-        message = `Deleting ${user.display_name} will remove them as faculty lead for ${faculty_programs.length} program(s) and delete their ${applications_count} submitted applications. Proceed?`;
+        message =  `Deleting ${user.display_name} will remove them as faculty lead for ${programs_affected} and delete their ${applications_count} submitted applications. Proceed?`;
       } else if (hasFacultyPrograms) {
-        message = `Deleting ${user.display_name} will remove them as faculty lead for ${faculty_programs.length} program(s). Proceed?`;
+        message = `Deleting ${user.display_name} will remove them as faculty lead for ${programs_affected}. Proceed?`;
       } else if (hasApplications) {
         message = `Deleting ${user.display_name} will delete their ${applications_count} submitted applications. Proceed?`;
       }
