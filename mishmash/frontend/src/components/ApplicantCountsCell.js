@@ -15,7 +15,7 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import { STATUS, ALL_STATUSES } from "../utils/constants";
-import axiosInstance from "../utils/axiosInstance";
+import axiosInstance from "../utils/axios";
 
 // Helper function to copy text to clipboard
 const copyToClipboard = async (text) => {
