@@ -209,6 +209,10 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           for (const questionId of deletedQuestions) {
             await axiosInstance.delete(`/api/questions/${questionId}/`);
           }
+
+          setNewQuestions([]);
+          setEditQuestions([]);
+          setDeletedQuestions([]);
           
           // Show success message for update
           setSuccessMessage(systemAdminWarning 
