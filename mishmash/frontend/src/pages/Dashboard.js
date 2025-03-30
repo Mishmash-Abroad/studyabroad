@@ -109,21 +109,29 @@ const AnnouncementsSection = styled("div")(({ theme }) => ({
 }));
 
 // -------------------- COMPONENTS --------------------
-const AdminOverview = () => (
-  <>
-    <WelcomeSection>
-      <Typography variant="h6" gutterBottom>
-        Welcome to the Admin Dashboard
-      </Typography>
-      <Typography variant="body1" color="textSecondary">
-        Manage announcements, programs, and users from this central location.
-      </Typography>
-    </WelcomeSection>
-    <AnnouncementsSection>
-      <AnnouncementsManager />
-    </AnnouncementsSection>
-  </>
-);
+const AdminOverview = () => {
+  const { user } = useAuth();
+
+  return (
+    <>
+      <WelcomeSection>
+        <Typography variant="h6" gutterBottom>
+          Welcome to the Admin Dashboard
+        </Typography>
+        <Typography variant="body1" color="textSecondary">
+          Manage announcements, programs, and users from this central location.
+        </Typography>
+      </WelcomeSection>
+      <AnnouncementsSection>
+        {user?.is_admin ? (
+          <AnnouncementsManager />
+        ) : (
+          <AnnouncementsBrowser />
+        )}
+      </AnnouncementsSection>
+    </>
+  );
+};
 
 const StudentOverview = () => (
   <>
