@@ -15,6 +15,7 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import { STATUS, ALL_STATUSES } from "../utils/constants";
+import axiosInstance from "../utils/axiosInstance";
 
 // Helper function to copy text to clipboard
 const copyToClipboard = async (text) => {
@@ -43,49 +44,58 @@ const copyEmailsByStatus = async (status, users, programId) => {
     userCount: users?.length || 0 
   });
   
-  // Handle missing data
-  if (!users || !users.length) {
-    console.error('No user data available:', users);
-    return { success: false, error: 'No user data available' };
-  }
-  
-  if (!programId) {
-    console.error('No program ID provided');
-    return { success: false, error: 'No program ID provided' };
-  }
-  
-  // Log the first few users to see their structure
-  console.log('Sample users:', users.slice(0, 2));
-  
-  // Filter users by program and status
-  const filteredUsers = users.filter(user => {
-    const matchesProgram = user.programId === programId;
-    let matchesStatus = false;
-    
-    if (status === 'total') {
-      matchesStatus = ['applied', 'approved', 'enrolled', 'eligible'].includes(user.status?.toLowerCase());
-    } else {
-      matchesStatus = user.status?.toLowerCase() === status.toLowerCase();
+  try {
+    if (!programId) {
+      console.error('No program ID provided');
+      return { success: false, error: 'No program ID provided' };
     }
     
-    console.log(`User ${user.email || 'unknown'}: programId match: ${matchesProgram}, status match: ${matchesStatus}`);
-    return matchesProgram && matchesStatus;
-  });
-
-  console.log(`Filtered ${users.length} users down to ${filteredUsers.length} for status "${status}" and programId "${programId}"`);
-
-  if (filteredUsers.length === 0) {
-    console.error('No matching users found. All users:', users);
-    return { 
-      success: false, 
-      error: `No emails found for ${status === 'total' ? 'active users' : status} status` 
-    };
+    // Instead of using allUsers (which is empty), fetch the applications directly
+    // This makes our code match the same logic used in the backend for counting
+    const response = await axiosInstance.get(`/api/applications/?program=${programId}`);
+    const applications = response.data;
+    
+    console.log(`Fetched ${applications.length} applications for program ${programId}`);
+    
+    // Filter applications based on status
+    const filteredApplications = applications.filter(app => {
+      if (status === 'total') {
+        return ['applied', 'approved', 'enrolled', 'eligible'].includes(app.status.toLowerCase());
+      } else {
+        return app.status.toLowerCase() === status.toLowerCase();
+      }
+    });
+    
+    console.log(`Filtered ${applications.length} applications down to ${filteredApplications.length} for status "${status}"`);
+    
+    if (filteredApplications.length === 0) {
+      return { 
+        success: false, 
+        error: `No emails found for ${status === 'total' ? 'active users' : status} status` 
+      };
+    }
+    
+    // For each application, we need to get the student's email
+    const userRequests = filteredApplications.map(app => 
+      axiosInstance.get(`/api/users/${app.student}`)
+    );
+    
+    const userResponses = await Promise.all(userRequests);
+    const emails = userResponses.map(response => response.data.email).filter(Boolean);
+    
+    console.log(`Found ${emails.length} emails:`, emails.substring(0, 100) + (emails.length > 100 ? '...' : ''));
+    
+    if (emails.length === 0) {
+      return { success: false, error: 'No emails found' };
+    }
+    
+    // Join emails with semicolon for Outlook
+    const emailString = emails.join(';');
+    return copyToClipboard(emailString);
+  } catch (error) {
+    console.error('Error fetching application data:', error);
+    return { success: false, error: 'Error fetching application data' };
   }
-
-  // Join emails with semicolon for Outlook
-  const emails = filteredUsers.map(user => user.email).join(';');
-  console.log(`Found ${filteredUsers.length} emails:`, emails.substring(0, 100) + (emails.length > 100 ? '...' : ''));
-  return copyToClipboard(emails);
 };
 
 // Component for the header cell in the AdminProgramsTable
