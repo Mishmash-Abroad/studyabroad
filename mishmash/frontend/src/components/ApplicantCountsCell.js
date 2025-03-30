@@ -37,24 +37,45 @@ const copyToClipboard = async (text) => {
 
 // Helper function to copy emails by status
 const copyEmailsByStatus = async (status, users, programId) => {
+  console.log('Copy emails function called with:', { 
+    status, 
+    programId, 
+    userCount: users?.length || 0 
+  });
+  
   // Handle missing data
   if (!users || !users.length) {
+    console.error('No user data available:', users);
     return { success: false, error: 'No user data available' };
   }
   
   if (!programId) {
+    console.error('No program ID provided');
     return { success: false, error: 'No program ID provided' };
   }
   
+  // Log the first few users to see their structure
+  console.log('Sample users:', users.slice(0, 2));
+  
   // Filter users by program and status
-  const filteredUsers = users.filter(user => 
-    user.programId === programId && 
-    (status === 'total' 
-      ? ['applied', 'approved', 'enrolled', 'eligible'].includes(user.status.toLowerCase())
-      : user.status.toLowerCase() === status.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const matchesProgram = user.programId === programId;
+    let matchesStatus = false;
+    
+    if (status === 'total') {
+      matchesStatus = ['applied', 'approved', 'enrolled', 'eligible'].includes(user.status?.toLowerCase());
+    } else {
+      matchesStatus = user.status?.toLowerCase() === status.toLowerCase();
+    }
+    
+    console.log(`User ${user.email || 'unknown'}: programId match: ${matchesProgram}, status match: ${matchesStatus}`);
+    return matchesProgram && matchesStatus;
+  });
+
+  console.log(`Filtered ${users.length} users down to ${filteredUsers.length} for status "${status}" and programId "${programId}"`);
 
   if (filteredUsers.length === 0) {
+    console.error('No matching users found. All users:', users);
     return { 
       success: false, 
       error: `No emails found for ${status === 'total' ? 'active users' : status} status` 
@@ -63,6 +84,7 @@ const copyEmailsByStatus = async (status, users, programId) => {
 
   // Join emails with semicolon for Outlook
   const emails = filteredUsers.map(user => user.email).join(';');
+  console.log(`Found ${filteredUsers.length} emails:`, emails.substring(0, 100) + (emails.length > 100 ? '...' : ''));
   return copyToClipboard(emails);
 };
 
