@@ -86,9 +86,25 @@ export const ALL_ADMIN_EDITABLE_STATUSES = [
   STATUS.ENROLLED,
   STATUS.ELIGIBLE,
   STATUS.APPROVED,
-  STATUS.COMPLETED,
   STATUS.CANCELED,
 ];
+
+// Derived status lists for different contexts
+export const ALL_FACULTY_EDITABLE_STATUSES = [
+  // Statuses an admin is allowed to set a student to.
+  STATUS.APPLIED,
+  STATUS.ELIGIBLE,
+  STATUS.APPROVED,
+];
+
+// Derived status lists for different contexts
+export const ALL_REVIEWER_EDITABLE_STATUSES = [
+  // Statuses an admin is allowed to set a student to.
+  STATUS.APPLIED,
+  STATUS.ELIGIBLE,
+];
+
+
 
 export const ALL_STUDENT_EDITABLE_STATUSES = [
   // Statuses a student is allowed to set themselves to.
@@ -169,24 +185,6 @@ export const SESSION_TIMEOUTS = {
 // Academic terms
 export const SEMESTERS = ["Summer", "Fall", "Spring"];
 
-export const STATUSES_ADMINS_CAN_EDIT = {
-  APPLIED: "Applied",
-  ELIGIBLE: "Eligible",
-  APPROVED: "Approved",
-  ENROLLED: "Enrolled",
-  CANCELED: "Canceled",
-};
-
-export const STATUSES_FACULTY_CAN_EDIT = {
-  APPLIED: "Applied",
-  ELIGIBLE: "Eligible",
-  APPROVED: "Approved",
-};
-
-export const STATUSES_REVIEWERS_CAN_EDIT = {
-  APPLIED: "Applied",
-  ELIGIBLE: "Eligible",
-};
 
 /**
  * Determines the set of application statuses a user can edit based on their role.
@@ -200,11 +198,11 @@ export const STATUSES_REVIEWERS_CAN_EDIT = {
  */
 export const get_all_available_statuses_to_edit = (roles) => {
   if (roles.IS_ADMIN) {
-    return STATUSES_ADMINS_CAN_EDIT;
+    return ALL_ADMIN_EDITABLE_STATUSES;
   } else if (roles.IS_FACULTY) {
-    return STATUSES_FACULTY_CAN_EDIT;
+    return ALL_FACULTY_EDITABLE_STATUSES;
   } else if (roles.IS_REVIEWER) {
-    return STATUSES_REVIEWERS_CAN_EDIT;
+    return ALL_REVIEWER_EDITABLE_STATUSES;
   }
 
   return {};

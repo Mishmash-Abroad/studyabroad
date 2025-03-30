@@ -61,6 +61,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=270),
                 "start_date": today - timedelta(days=180),
                 "end_date": today - timedelta(days=90),
+                "faculty": ["Emily Garcia", "Daniel Garcia"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Digital Innovation in Silicon Valley",
@@ -72,6 +74,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=280),
                 "start_date": today - timedelta(days=190),
                 "end_date": today - timedelta(days=100),
+                "faculty": ["Anna Digital"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Sustainable Agriculture in New Zealand",
@@ -83,6 +87,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=275),
                 "start_date": today - timedelta(days=185),
                 "end_date": today - timedelta(days=95),
+                "faculty": ["Thomas Farm", "Linda Sustainable"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Journalism in New York City",
@@ -94,6 +100,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=285),
                 "start_date": today - timedelta(days=195),
                 "end_date": today - timedelta(days=105),
+                "faculty": ["James Journalism", "Maria Media"],
+                "questions":DEFAULT_QUESTIONS,
             },
             # Currently Running Programs (Spring 2025)
             {
@@ -106,6 +114,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=120),
                 "start_date": today - timedelta(days=30),
                 "end_date": today + timedelta(days=60),
+                "faculty": ["Marco Urban", "Alice Brown"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Wildlife Conservation in Kenya",
@@ -117,6 +127,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=130),
                 "start_date": today - timedelta(days=40),
                 "end_date": today + timedelta(days=50),
+                "faculty": ["Emma Nature"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Film Production in Los Angeles",
@@ -128,6 +140,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=125),
                 "start_date": today - timedelta(days=35),
                 "end_date": today + timedelta(days=55),
+                "faculty": ["Claire Design"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Robotics Research in Seoul",
@@ -139,6 +153,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today - timedelta(days=135),
                 "start_date": today - timedelta(days=45),
                 "end_date": today + timedelta(days=45),
+                "faculty": ["Catherine Taylor"],
+                "questions":DEFAULT_QUESTIONS,
             },
             # Currently Open for Applications (Summer 2025)
             {
@@ -151,6 +167,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=5),
                 "start_date": today + timedelta(days=120),
                 "end_date": today + timedelta(days=150),
+                "faculty": ["Emily Smith", "Alice Smith"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "AAAAAAAAAAAAAAAAAAAAAA",
@@ -162,6 +180,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=5),
                 "start_date": today + timedelta(days=120),
                 "end_date": today + timedelta(days=150),
+                "faculty": ["System Administrator"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Art and Architecture in Florence",
@@ -173,6 +193,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=10),
                 "start_date": today + timedelta(days=130),
                 "end_date": today + timedelta(days=160),
+                "faculty": ["David Space", "Frank Taylor"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Global Health in Cape Town",
@@ -184,6 +206,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today,
                 "start_date": today + timedelta(days=140),
                 "end_date": today + timedelta(days=170),
+                "faculty": ["John Astronomy"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Culinary Arts in Paris",
@@ -195,6 +219,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=15),
                 "start_date": today + timedelta(days=125),
                 "end_date": today + timedelta(days=155),
+                "faculty": ["Sophie Polar", "Frank Taylor"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Music Performance in Vienna",
@@ -206,6 +232,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=12),
                 "start_date": today + timedelta(days=128),
                 "end_date": today + timedelta(days=158),
+                "faculty": ["Alice Smith", "Emily Smith"],
+                "questions":DEFAULT_QUESTIONS,
             },
             # Currently Open for Applications (Fall 2025)
             {
@@ -218,6 +246,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=50),
                 "start_date": today + timedelta(days=180),
                 "end_date": today + timedelta(days=270),
+                "faculty": ["Marco Urban"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Sustainable Engineering in Stockholm",
@@ -229,6 +259,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=55),
                 "start_date": today + timedelta(days=200),
                 "end_date": today + timedelta(days=290),
+                "faculty": ["Claire Design"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Global Business in Singapore",
@@ -240,6 +272,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=45),
                 "start_date": today + timedelta(days=190),
                 "end_date": today + timedelta(days=280),
+                "faculty": ["Paul Game"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Psychology Research in Copenhagen",
@@ -251,6 +285,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=52),
                 "start_date": today + timedelta(days=185),
                 "end_date": today + timedelta(days=275),
+                "faculty": ["Alice Brown"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Urban Design in Barcelona",
@@ -262,6 +298,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=48),
                 "start_date": today + timedelta(days=188),
                 "end_date": today + timedelta(days=278),
+                "faculty": ["Marco Urban", "Claire Design"],
+                "questions":DEFAULT_QUESTIONS,
             },
             # Future Programs - Not Yet Open for Applications (Spring 2026)
             {
@@ -274,6 +312,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=120),
                 "start_date": today + timedelta(days=400),
                 "end_date": today + timedelta(days=490),
+                "faculty": ["Sophie Polar", "John Astronomy"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Environmental Science in Costa Rica",
@@ -285,6 +325,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=115),
                 "start_date": today + timedelta(days=410),
                 "end_date": today + timedelta(days=500),
+                "faculty": ["Emma Nature"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Fashion Design in Milan",
@@ -296,6 +338,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=118),
                 "start_date": today + timedelta(days=415),
                 "end_date": today + timedelta(days=505),
+                "faculty": ["Giulia Fashion"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Space Science in Houston",
@@ -307,6 +351,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=122),
                 "start_date": today + timedelta(days=420),
                 "end_date": today + timedelta(days=510),
+                "faculty": ["David Space", "John Astronomy"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Game Design in Montreal",
@@ -318,6 +364,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": today + timedelta(days=125),
                 "start_date": today + timedelta(days=425),
                 "end_date": today + timedelta(days=515),
+                "faculty": ["Paul Game", "Anna Digital"],
+                "questions":DEFAULT_QUESTIONS,
             },
         ]
 
@@ -332,6 +380,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2025, 2, 28),
                 "start_date": datetime(2025, 8, 18),
                 "end_date": datetime(2025, 12, 28),
+                "faculty": ["Jessica Anderson"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "History in Canada",
@@ -343,6 +393,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2025, 2, 28),
                 "start_date": datetime(2025, 8, 18),
                 "end_date": datetime(2025, 12, 28),
+                "faculty": ["Emily Bletsch"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Art in Italy",
@@ -354,6 +406,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2024, 2, 29),
                 "start_date": datetime(2024, 8, 19),
                 "end_date": datetime(2024, 12, 29),
+                "faculty": ["Emily Walker"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Medicine in India",
@@ -365,6 +419,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2028, 2, 29),
                 "start_date": datetime(2028, 8, 14),
                 "end_date": datetime(2028, 12, 31),
+                "faculty": ["Emily Bletsch"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Language in Japan",
@@ -376,6 +432,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2029, 2, 28),
                 "start_date": datetime(2029, 8, 20),
                 "end_date": datetime(2029, 12, 30),
+                "faculty": ["Jessica Anderson"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Technology in Japan",
@@ -387,6 +445,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2030, 2, 28),
                 "start_date": datetime(2030, 8, 19),
                 "end_date": datetime(2030, 12, 29),
+                "faculty": ["Sarah Smith"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Medicine in Canada",
@@ -398,6 +458,10 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2024, 11, 30),
                 "start_date": datetime(2025, 1, 6),
                 "end_date": datetime(2025, 5, 4),
+                "faculty": ["Emily Bletsch"],
+                "questions":["What's your opinion of this program?",
+                             "Have you ever did familiar project related to this program?",
+                            ],
             },
             {
                 "title": "Technology in Australia",
@@ -409,6 +473,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2026, 11, 30),
                 "start_date": datetime(2027, 1, 4),
                 "end_date": datetime(2027, 5, 2),
+                "faculty": ["Emily Bletsch"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Art in Australia",
@@ -420,6 +486,8 @@ class Command(BaseCommand):
                 "essential_document_deadline": datetime(2027, 11, 30),
                 "start_date": datetime(2028, 1, 3),
                 "end_date": datetime(2028, 5, 7),
+                "faculty": ["Sarah Smith"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Art in Japan",
@@ -428,9 +496,11 @@ class Command(BaseCommand):
                 "description": "Art in Japan: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2028, 9, 1),
                 "application_deadline": datetime(2028, 11, 30),
-                "application_deadline": datetime(2028, 11, 30),
+                "essential_document_deadline": datetime(2028, 11, 30),
                 "start_date": datetime(2029, 1, 8),
                 "end_date": datetime(2029, 5, 6),
+                "faculty": ["Emily Bletsch"],
+                "questions":DEFAULT_QUESTIONS,
             },
             {
                 "title": "Art in France",
@@ -439,92 +509,36 @@ class Command(BaseCommand):
                 "description": "Art in France: A unique and enriching study abroad experience focusing on local culture, history, and academic insights.",
                 "application_open_date": datetime(2024, 9, 1),
                 "application_deadline": datetime(2024, 11, 30),
-                "application_deadline": datetime(2024, 11, 30),
+                "essential_document_deadline": datetime(2024, 11, 30),
                 "start_date": datetime(2025, 5, 19),
                 "end_date": datetime(2025, 8, 17),
+                "faculty": ["Jessica Anderson"],
+                "questions":DEFAULT_QUESTIONS,
             },
         ]
+
 
         Program.objects.all().delete()
         ApplicationQuestion.objects.all().delete()
         self.stdout.write("Cleared existing programs and questions")
 
-        # Faculty assignments for each program
-        faculty_assignments = {
-            "Ancient Philosophy in Athens": ["Emily Garcia", "Daniel Garcia"],
-            "Digital Innovation in Silicon Valley": ["Anna Digital"],
-            "Sustainable Agriculture in New Zealand": [
-                "Thomas Farm",
-                "Linda Sustainable",
-            ],
-            "Journalism in New York City": ["James Journalism", "Maria Media"],
-            "European Politics Tour": ["Marco Urban", "Alice Brown"],
-            "Wildlife Conservation in Kenya": ["Emma Nature"],
-            "Film Production in Los Angeles": ["Claire Design"],
-            "Robotics Research in Seoul": ["Catherine Taylor"],
-            "Marine Biology in Great Barrier Reef": ["Emily Smith", "Alice Smith"],
-            "Art and Architecture in Florence": ["David Space", "Frank Taylor"],
-            "Global Health in Cape Town": ["John Astronomy"],
-            "Culinary Arts in Paris": ["Sophie Polar", "Frank Taylor"],
-            "Music Performance in Vienna": ["Alice Smith", "Emily Smith"],
-            "Technology Innovation in Tokyo": ["Marco Urban"],
-            "Sustainable Engineering in Stockholm": ["Claire Design"],
-            "Global Business in Singapore": ["Paul Game"],
-            "Psychology Research in Copenhagen": ["Alice Brown"],
-            "Urban Design in Barcelona": ["Marco Urban", "Claire Design"],
-            "Antarctic Research Expedition": ["Sophie Polar", "John Astronomy"],
-            "Environmental Science in Costa Rica": ["Emma Nature"],
-            "Fashion Design in Milan": ["Giulia Fashion"],
-            "Space Science in Houston": ["David Space", "John Astronomy"],
-            "Game Design in Montreal": ["Paul Game", "Anna Digital"],
-            "Science in Spain": ["Alice Lee"],
-            "History in Canada": ["Alice Garcia", "Maria Media"],
-            "Art in Italy": ["Alice Johnson"],
-            "Medicine in India": ["Daniel Garcia", "Anna Digital"],
-            "Language in Japan": ["Daniel Lee", "James Journalism"],
-            "Technology in Japan": ["Emily Garcia", "Maria Media"],
-            "Medicine in Canada": ["Alice Brown", "Thomas Farm"],
-            "Technology in Australia": ["Catherine Taylor", "Anna Digital"],
-            "Art in Australia": ["Alice Smith", "Linda Sustainable"],
-            "Art in Japan": ["Emily Smith"],
-            "Art in France": ["Frank Taylor"],
-        }
-
-        prod_faculty_assignments = {
-            "Science in Spain": ["Jessica Anderson"],
-            "History in Canada": ["Emily Bletsch"],
-            "Art in Italy": ["Emily Walker"],
-            "Medicine in India": ["Emily Bletsch"],
-            "Language in Japan": ["Jessica Anderson"],
-            "Technology in Japan": ["Sarah Smith"],
-            "Medicine in Canada": ["Ashley Brown"],
-            "Technology in Australia": ["Emily Bletsch"],
-            "Art in Australia": ["Sarah Smith"],
-            "Art in Japan": ["Emily Bletsch"],
-            "Art in France": ["Jessica Anderson"],
-        }
-
         if prod_mode:
             for program_data in prod_programs_data:
-                program = Program.objects.create(**program_data)
+                program = Program.objects.create(
+                    title = program_data["title"],
+                    year = program_data["year"],
+                    semester = program_data["semester"],
+                    description = program_data["description"],
+                    application_open_date = program_data["application_open_date"],
+                    application_deadline = program_data["application_deadline"],
+                    essential_document_deadline = program_data["essential_document_deadline"],
+                    start_date = program_data["start_date"],
+                    end_date = program_data["end_date"],
+                )
+                faculty_users = [User.objects.get(display_name=x) for x in program_data["faculty"]]
+                program.faculty_leads.set(faculty_users)
 
-                # Assign faculty leads
-                if program.title in prod_faculty_assignments:
-                    program.faculty_leads.remove(User.objects.get(display_name="System Administrator"))
-                    for faculty_name in faculty_assignments[program.title]:
-                        if faculty_name in faculty_users:
-                            program.faculty_leads.add(User.objects.get(display_name=faculty_name))
-                        else:
-                            self.stdout.write(
-                                f"Warning: Faculty {faculty_name} not found"
-                            )
-                else:
-                    self.stdout.write(
-                        f"Warning: No faculty leads assigned for {program.title}"
-                    )
-
-                # Add default questions
-                for question_text in DEFAULT_QUESTIONS:
+                for question_text in program_data["questions"]:
                     ApplicationQuestion.objects.create(
                         program=program, text=question_text
                     )
@@ -532,25 +546,21 @@ class Command(BaseCommand):
                 self.stdout.write(f"Created program: {program.title}")
         else:
             for program_data in programs_data:
-                program = Program.objects.create(**program_data)
+                program = Program.objects.create(
+                    title = program_data["title"],
+                    year = program_data["year"],
+                    semester = program_data["semester"],
+                    description = program_data["description"],
+                    application_open_date = program_data["application_open_date"],
+                    application_deadline = program_data["application_deadline"],
+                    essential_document_deadline = program_data["essential_document_deadline"],
+                    start_date = program_data["start_date"],
+                    end_date = program_data["end_date"],
+                )
+                faculty_users = [User.objects.get(display_name=x) for x in program_data["faculty"]]
+                program.faculty_leads.set(faculty_users)
 
-                # Assign faculty leads
-                if program.title in faculty_assignments:
-                    program.faculty_leads.remove(User.objects.get(display_name="System Administrator"))
-                    for faculty_name in faculty_assignments[program.title]:
-                        if faculty_name in faculty_users:
-                            program.faculty_leads.add(User.objects.get(display_name=faculty_name))
-                        else:
-                            self.stdout.write(
-                                f"Warning: Faculty {faculty_name} not found"
-                            )
-                else:
-                    self.stdout.write(
-                        f"Warning: No faculty leads assigned for {program.title}"
-                    )
-
-                # Add default questions
-                for question_text in DEFAULT_QUESTIONS:
+                for question_text in program_data["questions"]:
                     ApplicationQuestion.objects.create(
                         program=program, text=question_text
                     )

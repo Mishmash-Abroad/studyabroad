@@ -17,19 +17,19 @@ NUM_TO_KEEP="$3"
 mkdir -p "$DEST_PATH"
 
 # Transfer backups
-scp -r backup_admin@$SRC_SERVER:/home/backup_admin/backups/* "$DEST_PATH"
+scp -r backup_admin@$SRC_SERVER:/home/vcm/backups/* "$DEST_PATH"
 
 # Check the exit status
 if [ $? -eq 0 ]; then
     echo "SCP transfer succeeded to $DEST_PATH"
 
     # Count the number of backup files
-    BACKUP_COUNT=$(find "$DEST_PATH" -type f -name "*.enc" | wc -l)
+    BACKUP_COUNT=$(find "$DEST_PATH" -type f | wc -l)
 
     # If there are NUM_TO_KEEP or more backup files, delete the oldest one
-    if [ $BACKUP_COUNT -ge $NUM_TO_KEEP ]; then
+    if [ $BACKUP_COUNT -gt $NUM_TO_KEEP ]; then
         # Find the oldest backup file based on modification time
-        OLDEST_FILE=$(find "$DEST_PATH" -type f -name "*.enc" -printf "%T+ %p\n" | sort | head -n 1 | awk '{print $2}')
+        OLDEST_FILE=$(find "$DEST_PATH" -type f -printf "%T+ %p\n" | sort | head -n 1 | awk '{print $2}')
 
         if [ -n "$OLDEST_FILE" ]; then
             echo "Removing oldest backup file: $OLDEST_FILE"

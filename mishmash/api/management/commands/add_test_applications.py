@@ -107,65 +107,91 @@ class Command(BaseCommand):
 
         prod_applications_data = [
             ('tylerharris352', 'Science in Spain', 'Applied', '2004-09-01', 3.52, 'Biology',
-             "The opportunity to learn in a different environment is invaluable.",
-             "I bring a collaborative spirit and a unique cultural perspective.",
-             "This program supports my career aspirations in global business.",
-             "I want to explore new cultures and enhance my academic knowledge.",
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively."),
+             {
+                DEFAULT_QUESTIONS[0]: "The opportunity to learn in a different environment is invaluable.",
+                DEFAULT_QUESTIONS[1]: "I bring a collaborative spirit and a unique cultural perspective.",
+                DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
+                DEFAULT_QUESTIONS[3]: "I want to explore new cultures and enhance my academic knowledge.",
+                DEFAULT_QUESTIONS[4]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively."
+             }),
+
             ('tylerharris352', 'Medicine in Canada', 'Enrolled', '2004-09-01', 3.52, 'Biology',
-             "I anticipate communication barriers but will overcome them through active learning and collaboration.",
-             "I anticipate communication barriers but will overcome them through active learning and collaboration.",
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
-             "I am excited to network with peers and professionals in this field.",
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively."),
+             {
+                "What's your opinion of this program?": "I think it's a quite great program.",
+                "Have you ever did familiar project related to this program?": "I did one project related to this program before."
+             }),
+
             ('davidclark074', 'Science in Spain', 'Canceled', '2004-06-15', 2.54, 'Psychology',
-             "This program provides hands-on experience crucial for my future career.",
-             "This program provides hands-on experience crucial for my future career.",
-             "This program aligns with my passion for international relations and global studies.",
-             "I anticipate communication barriers but will overcome them through active learning and collaboration.",
-             "I am excited to network with peers and professionals in this field."),
+             {
+                DEFAULT_QUESTIONS[0]: "This program provides hands-on experience crucial for my future career.",
+                DEFAULT_QUESTIONS[1]: "This program provides hands-on experience crucial for my future career.",
+                DEFAULT_QUESTIONS[2]: "This program aligns with my passion for international relations and global studies.",
+                DEFAULT_QUESTIONS[3]: "I anticipate communication barriers but will overcome them through active learning and collaboration.",
+                DEFAULT_QUESTIONS[4]: "I am excited to network with peers and professionals in this field."
+            }),
+
             ('elizabethjohnson303', 'History in Canada', 'Enrolled', '2008-03-20', 3.95, 'Psychology',
-             "I am excited to network with peers and professionals in this field.",
-             "This program provides hands-on experience crucial for my future career.",
-             "I want to explore new cultures and enhance my academic knowledge.",
-             "This program provides hands-on experience crucial for my future career.",
-             "This program aligns with my passion for international relations and global studies."),
+             {
+                DEFAULT_QUESTIONS[0]: "I am excited to network with peers and professionals in this field.",
+                DEFAULT_QUESTIONS[1]: "This program provides hands-on experience crucial for my future career.",
+                DEFAULT_QUESTIONS[2]: "I want to explore new cultures and enhance my academic knowledge.",
+                DEFAULT_QUESTIONS[3]: "This program provides hands-on experience crucial for my future career.",
+                DEFAULT_QUESTIONS[4]: "This program aligns with my passion for international relations and global studies."
+            }),
+
             ('jamestaylor121', 'Science in Spain', 'Applied', '2000-02-29', 2.6, 'Psychology',
-             "I seek to improve my language skills and immerse myself in the local culture.",
-             "I seek to improve my language skills and immerse myself in the local culture.",
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
-             "I anticipate communication barriers but will overcome them through active learning and collaboration.",
-             "I bring a collaborative spirit and a unique cultural perspective."),
+             {
+                DEFAULT_QUESTIONS[0]: "I seek to improve my language skills and immerse myself in the local culture.",
+                DEFAULT_QUESTIONS[1]: "I seek to improve my language skills and immerse myself in the local culture.",
+                DEFAULT_QUESTIONS[2]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
+                DEFAULT_QUESTIONS[3]: "I anticipate communication barriers but will overcome them through active learning and collaboration.",
+                DEFAULT_QUESTIONS[4]: "I bring a collaborative spirit and a unique cultural perspective."
+            }),
+
             ('emilyharris658', 'Science in Spain', 'Withdrawn', '2001-04-12', 3.64, 'Biology',
-             "I bring a collaborative spirit and a unique cultural perspective.",
-             "I seek to improve my language skills and immerse myself in the local culture.",
-             "This program supports my career aspirations in global business.",
-             "I anticipate communication barriers but will overcome them through active learning and collaboration.",
-             "This program aligns with my passion for international relations and global studies."),
+             {
+                DEFAULT_QUESTIONS[0]: "I bring a collaborative spirit and a unique cultural perspective.",
+                DEFAULT_QUESTIONS[1]: "I seek to improve my language skills and immerse myself in the local culture.",
+                DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
+                DEFAULT_QUESTIONS[3]: "I anticipate communication barriers but will overcome them through active learning and collaboration.",
+                DEFAULT_QUESTIONS[4]: "This program aligns with my passion for international relations and global studies."
+             }),
+
             ('elizabethlewis588', 'Art in Italy', 'Enrolled', '2000-03-16', 3.1, 'Psychology',
-             "The opportunity to learn in a different environment is invaluable.",
-             "I bring a collaborative spirit and a unique cultural perspective.",
-             "This program aligns with my passion for international relations and global studies.",
-             "The opportunity to learn in a different environment is invaluable.",
-             "This program provides hands-on experience crucial for my future career."),
+             {
+                DEFAULT_QUESTIONS[0]: "The opportunity to learn in a different environment is invaluable.",
+                DEFAULT_QUESTIONS[1]: "I bring a collaborative spirit and a unique cultural perspective.",
+                DEFAULT_QUESTIONS[2]: "This program aligns with my passion for international relations and global studies.",
+                DEFAULT_QUESTIONS[3]: "The opportunity to learn in a different environment is invaluable.",
+                DEFAULT_QUESTIONS[4]: "This program provides hands-on experience crucial for my future career."
+            }),
+
             ('jessicasmith684', 'Art in Italy', 'Withdrawn', '2008-08-08', 3.0, 'Engineering',
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
-             "This program provides hands-on experience crucial for my future career.",
-             "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
-             "This program provides hands-on experience crucial for my future career."),
+             {
+                DEFAULT_QUESTIONS[0]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
+                DEFAULT_QUESTIONS[1]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
+                DEFAULT_QUESTIONS[2]: "This program provides hands-on experience crucial for my future career.",
+                DEFAULT_QUESTIONS[3]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
+                DEFAULT_QUESTIONS[4]: "This program provides hands-on experience crucial for my future career."
+             }),
+
             ('jessicasmith684', 'History in Canada', 'Canceled', '2008-08-08', 3.0, 'Engineering',
-             "I want to explore new cultures and enhance my academic knowledge.",
-             "The opportunity to learn in a different environment is invaluable.",
-             "This program supports my career aspirations in global business.",
-             "I bring a collaborative spirit and a unique cultural perspective.",
-             "The opportunity to learn in a different environment is invaluable."),
+             {
+                DEFAULT_QUESTIONS[0]: "I want to explore new cultures and enhance my academic knowledge.",
+                DEFAULT_QUESTIONS[1]: "The opportunity to learn in a different environment is invaluable.",
+                DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
+                DEFAULT_QUESTIONS[3]: "I bring a collaborative spirit and a unique cultural perspective.",
+                DEFAULT_QUESTIONS[4]: "The opportunity to learn in a different environment is invaluable."
+             }),
+             
             ('jessicasmith610', 'History in Canada', 'Applied', '2001-07-07', 3.6, 'Computer Science',
-             "The opportunity to learn in a different environment is invaluable.",
-             "The opportunity to learn in a different environment is invaluable.",
-             "This program supports my career aspirations in global business.",
-             "I want to explore new cultures and enhance my academic knowledge.",
-             "I am excited to network with peers and professionals in this field."),
+             {
+                DEFAULT_QUESTIONS[0]: "The opportunity to learn in a different environment is invaluable.",
+                DEFAULT_QUESTIONS[1]: "The opportunity to learn in a different environment is invaluable.",
+                DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
+                DEFAULT_QUESTIONS[3]: "I want to explore new cultures and enhance my academic knowledge.",
+                DEFAULT_QUESTIONS[4]: "I am excited to network with peers and professionals in this field."
+             }),
         ]
 
 
@@ -212,7 +238,7 @@ class Command(BaseCommand):
         self.stdout.write('Cleared existing applications and responses')
 
         if prod_mode:
-            for username, program_title, status, dob, gpa, major, r1, r2, r3, r4, r5 in prod_applications_data:
+            for username, program_title, status, dob, gpa, major, questionnaire in prod_applications_data:
                 try:
                     user = User.objects.get(username=username)
                     program = Program.objects.get(title=program_title)
@@ -231,20 +257,10 @@ class Command(BaseCommand):
                     questions = ApplicationQuestion.objects.filter(program=program)
 
                     for question in questions:
-                        if question.text == DEFAULT_QUESTIONS[0]:
-                            r_txt = r1
-                        elif question.text == DEFAULT_QUESTIONS[1]:
-                            r_txt = r2
-                        elif question.text == DEFAULT_QUESTIONS[2]:
-                            r_txt = r3
-                        elif question.text == DEFAULT_QUESTIONS[3]:
-                            r_txt = r4
-                        elif question.text == DEFAULT_QUESTIONS[4]:
-                            r_txt = r5
                         ApplicationResponse.objects.create(
                             application=application,
                             question=question,
-                            response=r_txt,
+                            response=questionnaire[question.text],
                         )
 
                     if user.username == "jessicasmith610":

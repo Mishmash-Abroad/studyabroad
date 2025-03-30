@@ -208,7 +208,7 @@ useEffect(() => {
       }
     } catch (err) {
       // If no session token is returned, do nothing.
-      console.log("No SSO session detected.", err);
+      console.error("No SSO session detected.", err);
     }
   }
   checkSSO();

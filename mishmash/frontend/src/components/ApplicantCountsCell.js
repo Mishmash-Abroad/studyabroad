@@ -15,6 +15,101 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import { STATUS, ALL_STATUSES } from "../utils/constants";
+import axiosInstance from "../utils/axios";
+
+// Helper function to copy text to clipboard
+const copyToClipboard = async (text) => {
+  if (!text || text.trim() === '') {
+    console.error('No text provided to copy');
+    return { success: false, error: 'No emails found to copy' };
+  }
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+    return { 
+      success: false, 
+      error: 'Failed to copy to clipboard. Make sure you have clipboard permissions.' 
+    };
+  }
+};
+
+// Helper function to copy emails by status
+const copyEmailsByStatus = async (status, users, programId) => {
+  console.log('Copy emails function called with:', { 
+    status, 
+    programId, 
+    userCount: users?.length || 0 
+  });
+  
+  try {
+    if (!programId) {
+      console.error('No program ID provided');
+      return { success: false, error: 'No program ID provided' };
+    }
+    
+    // Instead of using allUsers (which is empty), fetch the applications directly
+    // This makes our code match the same logic used in the backend for counting
+    const response = await axiosInstance.get(`/api/applications/?program=${programId}`);
+    const applications = response.data;
+    
+    console.log(`Fetched ${applications.length} applications for program ${programId}`);
+    
+    // Filter applications based on status
+    const filteredApplications = applications.filter(app => {
+      if (status === 'total') {
+        return ['applied', 'approved', 'enrolled', 'eligible'].includes(app.status.toLowerCase());
+      } else {
+        return app.status.toLowerCase() === status.toLowerCase();
+      }
+    });
+    
+    console.log(`Filtered ${applications.length} applications down to ${filteredApplications.length} for status "${status}"`);
+    
+    if (filteredApplications.length === 0) {
+      return { 
+        success: false, 
+        error: `No emails found for ${status === 'total' ? 'active users' : status} status` 
+      };
+    }
+    
+    // For each application, we need to get the student's email
+    const userRequests = filteredApplications.map(app => 
+      axiosInstance.get(`/api/users/${app.student}`)
+    );
+    
+    try {
+      const userResponses = await Promise.all(userRequests);
+      const emails = userResponses.map(response => response.data.email).filter(Boolean);
+      
+      // Log safely without using substring (which was causing errors)
+      if (emails.length > 0) {
+        const emailPreview = emails.join(';').length > 100 
+          ? emails.join(';').slice(0, 100) + '...' 
+          : emails.join(';');
+        console.log(`Found ${emails.length} emails:`, emailPreview);
+      } else {
+        console.log('No valid emails found in user responses');
+      }
+      
+      if (emails.length === 0) {
+        return { success: false, error: 'No emails found' };
+      }
+      
+      // Join emails with semicolon for Outlook
+      const emailString = emails.join(';');
+      return copyToClipboard(emailString);
+    } catch (innerError) {
+      console.error('Error processing user data:', innerError);
+      return { success: false, error: 'Error processing user data' };
+    }
+  } catch (error) {
+    console.error('Error fetching application data:', error);
+    return { success: false, error: 'Error fetching application data' };
+  }
+};
 
 // Component for the header cell in the AdminProgramsTable
 export const ApplicantCountsHeaderCell = ({
@@ -23,6 +118,7 @@ export const ApplicantCountsHeaderCell = ({
   onRequestSort,
   selectedStatuses,
   setSelectedStatuses,
+  allUsers,
 }) => {
   // State for menu
   const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState(null);
@@ -93,9 +189,14 @@ export const ApplicantCountsHeaderCell = ({
           direction={order}
           onClick={handleSortByStatuses}
         >
-          <Typography variant="subtitle2" fontWeight="bold">
-            Applicant Counts
-          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <Typography variant="subtitle2" fontWeight="bold">
+              Applicant Counts
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              click each count to copy applicant emails
+            </Typography>
+          </Box>
         </TableSortLabel>
       </Box>
       <Box>
@@ -306,8 +407,32 @@ export const ApplicantCountsDataCell = ({
   order,
   onRequestSort,
   selectedStatuses,
+  allUsers,
 }) => {
   const programCounts = counts || {};
+
+  const handleStatusClick = async (status, event) => {
+    event.stopPropagation(); // Prevent sorting when copying
+    
+    if (!allUsers || !program) {
+      alert('No users data available');
+      return;
+    }
+
+    // Copy emails for the specific status
+    const result = await copyEmailsByStatus(status, allUsers, program.id);
+    
+    if (result.success) {
+      const count = status === 'total' 
+        ? programCounts.total_active 
+        : programCounts[status.toLowerCase()] || 0;
+      
+      alert(`Copied ${count} email${count !== 1 ? 's' : ''} to clipboard`);
+    } else {
+      // Show the specific error message
+      alert(result.error || 'Failed to copy emails');
+    }
+  };
 
   return (
     <Box
@@ -394,7 +519,14 @@ export const ApplicantCountsDataCell = ({
         const isSelected = selectedStatuses.includes(statusLower);
 
         return (
-          <Tooltip key={key} title={`${value}: ${count}`} placement="top" arrow>
+          <Tooltip 
+            key={key} 
+            title={count > 0 
+              ? `${value}: ${count} - Click to copy emails` 
+              : `${value}: No applicants`}
+            placement="top" 
+            arrow
+          >
             <Box
               sx={{
                 py: 0.25,
@@ -408,7 +540,7 @@ export const ApplicantCountsDataCell = ({
                   : "background.paper",
                 borderRadius: "4px",
                 border: "1px solid rgba(0, 0, 0, 0.12)",
-                cursor: "pointer",
+                cursor: count > 0 ? 'pointer' : 'default',
                 opacity: count > 0 ? 1 : 0.6,
                 width: "auto",
                 "&:hover": {
@@ -417,8 +549,10 @@ export const ApplicantCountsDataCell = ({
                     : "rgba(0, 0, 0, 0.04)",
                 },
               }}
-              onClick={() => {
-                onRequestSort(statusLower);
+              onClick={(e) => {
+                if (count > 0) {
+                  handleStatusClick(value, e);
+                }
               }}
             >
               <Typography
@@ -463,11 +597,18 @@ export const ApplicantCountsDataCell = ({
 
       {/* Add Total as the last chip */}
       <Tooltip
-        title={`Total Active: ${programCounts.total_active || 0}`}
+        title={`Total Active: ${programCounts.total_active || 0}${
+          programCounts.total_active > 0 ? ' - Click to copy all emails' : ''
+        }`}
         placement="top"
         arrow
       >
         <Box
+          onClick={(e) => {
+            if (programCounts.total_active > 0) {
+              handleStatusClick('total', e);
+            }
+          }}
           sx={{
             py: 0.25,
             px: 0.5,
@@ -481,7 +622,7 @@ export const ApplicantCountsDataCell = ({
                 : "background.paper",
             borderRadius: "4px",
             border: "1px solid rgba(0, 0, 0, 0.12)",
-            cursor: "pointer",
+            cursor: programCounts.total_active > 0 ? 'pointer' : 'default',
             width: "auto",
             "&:hover": {
               bgcolor:
@@ -490,7 +631,6 @@ export const ApplicantCountsDataCell = ({
                   : "rgba(0, 0, 0, 0.04)",
             },
           }}
-          onClick={() => onRequestSort("total_active")}
         >
           <Typography
             variant="caption"
@@ -541,6 +681,7 @@ const ApplicantCountsCell = ({
   onRequestSort,
   selectedStatuses,
   setSelectedStatuses,
+  allUsers,
   isHeaderCell = false,
 }) => {
   // Use useEffect to track sorted status for parent component
@@ -559,6 +700,7 @@ const ApplicantCountsCell = ({
         onRequestSort={onRequestSort}
         selectedStatuses={selectedStatuses}
         setSelectedStatuses={setSelectedStatuses}
+        allUsers={allUsers}
       />
     );
   } else {
@@ -570,6 +712,7 @@ const ApplicantCountsCell = ({
         order={order}
         onRequestSort={onRequestSort}
         selectedStatuses={selectedStatuses}
+        allUsers={allUsers}
       />
     );
   }

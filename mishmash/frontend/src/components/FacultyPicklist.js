@@ -47,7 +47,6 @@ const FacultyPicklist = ({
   onFacultyChange,
   initialSelected = [],
   className,
-  is_admin
 }) => {
   const [facultyList, setFacultyList] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
@@ -61,7 +60,6 @@ const FacultyPicklist = ({
         const response = await axiosInstance.get("/api/users/", {
           params: { is_faculty: true },
         });
-        console.log(response.data);
         
         setFacultyList(response.data);
         setError(null);
@@ -97,7 +95,6 @@ const FacultyPicklist = ({
   return (
     <StyledAutocomplete
       multiple
-      disabled={!is_admin}
       options={facultyList}
       value={selectedFaculty}
       onChange={handleFacultyChange}
