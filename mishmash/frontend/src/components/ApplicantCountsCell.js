@@ -189,11 +189,14 @@ export const ApplicantCountsHeaderCell = ({
           direction={order}
           onClick={handleSortByStatuses}
         >
-          <Typography variant="subtitle2" fontWeight="bold">
-            Applicant Counts
-          </Typography>
-          <Typography variant="caption" color="textSecondary">click each count to copy applicant emails to clipboard</Typography>
-
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <Typography variant="subtitle2" fontWeight="bold">
+              Applicant Counts
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              click each count to copy applicant emails
+            </Typography>
+          </Box>
         </TableSortLabel>
       </Box>
       <Box>
