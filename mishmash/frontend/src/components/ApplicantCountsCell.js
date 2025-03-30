@@ -14,7 +14,57 @@ import {
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
-import { STATUS, ALL_STATUSES, copyEmailsByStatus } from "../utils/constants";
+import { STATUS, ALL_STATUSES } from "../utils/constants";
+
+// Helper function to copy text to clipboard
+const copyToClipboard = async (text) => {
+  if (!text || text.trim() === '') {
+    console.error('No text provided to copy');
+    return { success: false, error: 'No emails found to copy' };
+  }
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+    return { 
+      success: false, 
+      error: 'Failed to copy to clipboard. Make sure you have clipboard permissions.' 
+    };
+  }
+};
+
+// Helper function to copy emails by status
+const copyEmailsByStatus = async (status, users, programId) => {
+  // Handle missing data
+  if (!users || !users.length) {
+    return { success: false, error: 'No user data available' };
+  }
+  
+  if (!programId) {
+    return { success: false, error: 'No program ID provided' };
+  }
+  
+  // Filter users by program and status
+  const filteredUsers = users.filter(user => 
+    user.programId === programId && 
+    (status === 'total' 
+      ? ['applied', 'approved', 'enrolled', 'eligible'].includes(user.status.toLowerCase())
+      : user.status.toLowerCase() === status.toLowerCase())
+  );
+
+  if (filteredUsers.length === 0) {
+    return { 
+      success: false, 
+      error: `No emails found for ${status === 'total' ? 'active users' : status} status` 
+    };
+  }
+
+  // Join emails with semicolon for Outlook
+  const emails = filteredUsers.map(user => user.email).join(';');
+  return copyToClipboard(emails);
+};
 
 // Component for the header cell in the AdminProgramsTable
 export const ApplicantCountsHeaderCell = ({
@@ -23,6 +73,7 @@ export const ApplicantCountsHeaderCell = ({
   onRequestSort,
   selectedStatuses,
   setSelectedStatuses,
+  allUsers,
 }) => {
   // State for menu
   const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState(null);
@@ -320,6 +371,7 @@ export const ApplicantCountsDataCell = ({
       return;
     }
 
+    // Copy emails for the specific status
     const result = await copyEmailsByStatus(status, allUsers, program.id);
     
     if (result.success) {
@@ -600,6 +652,7 @@ const ApplicantCountsCell = ({
         onRequestSort={onRequestSort}
         selectedStatuses={selectedStatuses}
         setSelectedStatuses={setSelectedStatuses}
+        allUsers={allUsers}
       />
     );
   } else {
