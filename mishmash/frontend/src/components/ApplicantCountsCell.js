@@ -80,18 +80,31 @@ const copyEmailsByStatus = async (status, users, programId) => {
       axiosInstance.get(`/api/users/${app.student}`)
     );
     
-    const userResponses = await Promise.all(userRequests);
-    const emails = userResponses.map(response => response.data.email).filter(Boolean);
-    
-    console.log(`Found ${emails.length} emails:`, emails.substring(0, 100) + (emails.length > 100 ? '...' : ''));
-    
-    if (emails.length === 0) {
-      return { success: false, error: 'No emails found' };
+    try {
+      const userResponses = await Promise.all(userRequests);
+      const emails = userResponses.map(response => response.data.email).filter(Boolean);
+      
+      // Log safely without using substring (which was causing errors)
+      if (emails.length > 0) {
+        const emailPreview = emails.join(';').length > 100 
+          ? emails.join(';').slice(0, 100) + '...' 
+          : emails.join(';');
+        console.log(`Found ${emails.length} emails:`, emailPreview);
+      } else {
+        console.log('No valid emails found in user responses');
+      }
+      
+      if (emails.length === 0) {
+        return { success: false, error: 'No emails found' };
+      }
+      
+      // Join emails with semicolon for Outlook
+      const emailString = emails.join(';');
+      return copyToClipboard(emailString);
+    } catch (innerError) {
+      console.error('Error processing user data:', innerError);
+      return { success: false, error: 'Error processing user data' };
     }
-    
-    // Join emails with semicolon for Outlook
-    const emailString = emails.join(';');
-    return copyToClipboard(emailString);
   } catch (error) {
     console.error('Error fetching application data:', error);
     return { success: false, error: 'Error fetching application data' };
