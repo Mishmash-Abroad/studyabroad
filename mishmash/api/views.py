@@ -492,7 +492,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         except (TypeError, ValueError):
-            raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
+            raise ValidationError({"detail": "Invalid date format or missing date. Use MM-DD-YYYY"})
 
         if application_deadline < application_open_date:
             raise ValidationError(
@@ -616,7 +616,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 else end_date
             )
         except (TypeError, ValueError):
-            raise ValidationError({"detail": "Invalid date format. Use YYYY-MM-DD."})
+            raise ValidationError({"detail": "Invalid date format or missing date. Use MM-DD-YYYY"})
 
         if application_open_date > application_deadline:
             raise ValidationError(
@@ -853,7 +853,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
         except ValueError:
             return Response(
-                {"detail": "Invalid date format. Use YYYY-MM-DD."},
+                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -912,7 +912,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 new_dob = datetime.strptime(data["date_of_birth"], "%Y-%m-%d").date()
             except ValueError:
                 return Response(
-                    {"detail": "Invalid date format. Use YYYY-MM-DD."},
+                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
