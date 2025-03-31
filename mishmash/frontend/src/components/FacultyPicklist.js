@@ -47,6 +47,7 @@ const FacultyPicklist = ({
   onFacultyChange,
   initialSelected = [],
   className,
+  disable_picklist = false,
 }) => {
   const [facultyList, setFacultyList] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState([]);
@@ -100,6 +101,7 @@ const FacultyPicklist = ({
       onChange={handleFacultyChange}
       getOptionLabel={(option) => option.display_name}
       loading={loading}
+      disabled={disable_picklist}
       renderInput={(params) => (
         <TextField
           {...params}
