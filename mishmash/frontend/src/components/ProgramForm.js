@@ -347,7 +347,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           <FacultyPicklist
             onFacultyChange={handleFacultyChange}
             initialSelected={programData.faculty_lead_ids}
-            disable_picklist={true}
+            disable_picklist={!user.is_admin}
           />
         </Box>
         <TextField
