@@ -55,8 +55,16 @@ class Program(models.Model):
     application_open_date = models.DateField(null=True, blank=True)
     application_deadline = models.DateField(null=True, blank=True)
     essential_document_deadline = models.DateField(null=True, blank=True)
+    payment_deadline = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    track_payment = models.BooleanField(default=True)
+    provider_partners = models.ManyToManyField(
+        "User",
+        related_name="provider_partners",
+        limit_choices_to={"is_partner": True},
+        blank=True,
+    )
 
     @property
     def year_semester(self):
@@ -204,9 +212,15 @@ class Announcement(models.Model):
 class Document(models.Model):
     TYPES_OF_DOCS = [
         ("Assumption of risk form", "Assumption of risk form"),
-        ("Acknowledgement of the code of conduct", "Acknowledgement of the code of conduct",), 
+        (
+            "Acknowledgement of the code of conduct",
+            "Acknowledgement of the code of conduct",
+        ),
         ("Housing questionnaire", "Housing questionnaire"),
-        ("Medical/health history and immunization records","Medical/health history and immunization records",),
+        (
+            "Medical/health history and immunization records",
+            "Medical/health history and immunization records",
+        ),
     ]
     title = models.CharField(max_length=255)
     pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
@@ -231,32 +245,29 @@ class LetterOfRecommendation(models.Model):
     Stores a single request for a letter of recommendation.
     The letter writer does not need a user account.
     """
+
     application = models.ForeignKey(
-        "Application", 
-        on_delete=models.CASCADE, 
-        related_name="recommendations"
+        "Application", on_delete=models.CASCADE, related_name="recommendations"
     )
     writer_name = models.CharField(max_length=255)
     writer_email = models.EmailField()
-    
+
     pdf = models.FileField(
-        upload_to=letters_upload_path, 
-        null=True, 
-        blank=True, 
-        help_text="Uploaded PDF letter"
+        upload_to=letters_upload_path,
+        null=True,
+        blank=True,
+        help_text="Uploaded PDF letter",
     )
     letter_timestamp = models.DateTimeField(
-        null=True, 
-        blank=True, 
-        help_text="Date/time the writer uploaded the letter"
+        null=True, blank=True, help_text="Date/time the writer uploaded the letter"
     )
 
     # for verifying that the link used by the writer is valid
     token = models.UUIDField(
-        default=uuid.uuid4, 
-        editable=False, 
+        default=uuid.uuid4,
+        editable=False,
         unique=True,
-        help_text="Unique token to authenticate letter writer"
+        help_text="Unique token to authenticate letter writer",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
