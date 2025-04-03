@@ -103,6 +103,15 @@ class Application(models.Model):
         default="Applied",
     )
     applied_on = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("Unpaid", "Unpaid"),
+            ("Partially", "Partially"),
+            ("Fully", "Fully"),
+        ],
+        blank=True
+    )
 
     def __str__(self):
         return f"{self.student.display_name} - {self.program.title}"
