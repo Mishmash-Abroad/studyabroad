@@ -12,7 +12,7 @@ class User(AbstractUser):
     is_admin = models.BooleanField(default=False)
     is_faculty = models.BooleanField(default=False)
     is_reviewer = models.BooleanField(default=False)
-    is_partner = models.BooleanField(default=False)
+    is_provider_partner = models.BooleanField(default=False)
     is_mfa_enabled = models.BooleanField(default=False)
 
     groups = models.ManyToManyField(
@@ -63,8 +63,8 @@ class Program(models.Model):
     provider_partners = models.ManyToManyField(
         "User",
         related_name="provider_partners",
-        limit_choices_to={"is_partner": True},
-        blank=True,
+        limit_choices_to={"is_provider_partner": True},
+        blank=True
     )
 
     @property
