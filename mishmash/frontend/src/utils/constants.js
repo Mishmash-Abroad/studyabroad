@@ -17,12 +17,39 @@ export const STATUS = {
   CANCELED: "Canceled",
 };
 
+// Status Enums - Single source of truth for payment status names
+export const PAYMENT_STATUS = {
+  UNPAID: "Unpaid",
+  PARTIALLY: "Partially",
+  FULLY: "Fully",
+};
+
 // Program status enums
 export const PROGRAM_STATUS = {
   OPEN: "Open",
   OPENING_SOON: "Opening Soon",
   CLOSED: "Closed",
 };
+
+// All possible payment statuses with their properties
+export const ALL_PAYMENT_STATUSES = {
+  [PAYMENT_STATUS.UNPAID]: {
+    severity: SEVERITY_LEVELS.CRITICAL,
+    description: "Payment is unpaid",
+    abbr: "UNPD",
+  },
+  [PAYMENT_STATUS.PARTIALLY]: {
+    severity: SEVERITY_LEVELS.WARNING,
+    description: "Payment is partially paid",
+    abbr: "PRTL",
+  },
+  [PAYMENT_STATUS.FULLY]: {
+    severity: SEVERITY_LEVELS.GOOD,
+    description: "Payment is fully paid",
+    abbr: "FULL",
+  },
+};
+
 
 // All possible statuses with their properties
 export const ALL_STATUSES = {
@@ -118,6 +145,12 @@ export const ALL_ESSENTIAL_DOC_STATUSES = [
   STATUS.ENROLLED,
 ];
 
+export const ALL_PAYMENT_APPLICATION_STATUSES = [
+  // Statuses where Payments can be submitted.
+  STATUS.APPROVED,
+  STATUS.ENROLLED,
+];
+
 export const READ_ONLY_APPLICATION_STATUSES = [
   // Application responses should be read-only.
   STATUS.CANCELED,
@@ -160,9 +193,14 @@ export const PROGRAM_ACTION_BUTTON_TEXT = {
 // Helper functions for status handling
 export const getStatusSeverity = (status) =>
   ALL_STATUSES[status]?.severity ?? SEVERITY_LEVELS.NORMAL;
+export const getPaymentStatusSeverity = (status) =>
+  ALL_PAYMENT_STATUSES[status]?.severity ?? SEVERITY_LEVELS.NORMAL;
 export const getStatusLabel = (status) => ALL_STATUSES[status]?.label ?? status;
+export const getPaymentStatusLabel = (status) => ALL_PAYMENT_STATUSES[status]?.label ?? status;
 export const getStatusDescription = (status) =>
   ALL_STATUSES[status]?.description ?? "";
+export const getPaymentStatusDescription = (status) =>
+  ALL_PAYMENT_STATUSES[status]?.description ?? "";
 
 // Theme-based status styling: Expects theme.palette.status to have keys matching the severity strings.
 export const getStatusStyle = (theme, severity) => {

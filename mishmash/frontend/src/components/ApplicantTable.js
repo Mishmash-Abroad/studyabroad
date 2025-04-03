@@ -26,6 +26,8 @@ import {
   get_all_available_statuses_to_edit,
   STATUS,
   getStatusLabel,
+  getPaymentStatusLabel,
+  ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -52,11 +54,18 @@ const ApplicantTable = ({ programId }) => {
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState({
+  const [pendingApplicationStatus, setPendingApplicationStatus] = useState({
     applicantId: null,
     newStatus: "",
     currentStatus: "",
   });
+
+  const [pendingPaymentStatus, setPendingPaymentStatus] = useState({
+    applicantId: null,
+    newStatus: "",
+    currentStatus: "",
+  });
+
 
   useEffect(() => {
     fetchApplicants();
@@ -235,21 +244,31 @@ const ApplicantTable = ({ programId }) => {
     });
 
   // Handle status dropdown change
-  const handleStatusSelect = (e, applicantId, currentStatus) => {
+  const handleApplicationStatusSelect = (e, applicantId, currentStatus) => {
     e.stopPropagation();
     const newStatus = e.target.value;
     if (newStatus === currentStatus) return;
-    setPendingStatus({ applicantId, newStatus, currentStatus });
+    setPendingApplicationStatus({ applicantId, newStatus, currentStatus });
     setDialogOpen(true);
   };
 
+  // Handle payment status dropdown change
+  const handlePaymentStatusSelect = (e, applicantId, currentStatus) => {
+    e.stopPropagation();
+    const newStatus = e.target.value;
+    if (newStatus === currentStatus) return;
+    setPendingPaymentStatus({ applicantId, newStatus, currentStatus });
+    setDialogOpen(true);
+  };
+
+
   // Confirm status change
-  const confirmStatusChange = async () => {
+  const confirmApplicationStatusChange = async () => {
     try {
       await axiosInstance.patch(
-        `/api/applications/${pendingStatus.applicantId}/`,
+        `/api/applications/${pendingApplicationStatus.applicantId}/`,
         {
-          status: pendingStatus.newStatus,
+          status: pendingApplicationStatus.newStatus,
         }
       );
       fetchApplicants();
@@ -258,15 +277,41 @@ const ApplicantTable = ({ programId }) => {
       setError("Failed to update status.");
     } finally {
       setDialogOpen(false);
-      setPendingStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+      setPendingApplicationStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    }
+  };
+
+  // Confirm status change
+  const confirmPaymentStatusChange = async () => {
+    try {
+      await axiosInstance.patch(
+        `/api/applications/${pendingPaymentStatus.applicantId}/`,
+        {
+          payment_status: pendingPaymentStatus.newStatus,
+        }
+      );
+      fetchApplicants();
+    } catch (err) {
+      console.error("Error updating status:", err);
+      setError("Failed to update status.");
+    } finally {
+      setDialogOpen(false);
+      setPendingPaymentStatus({ applicantId: null, newStatus: "", currentStatus: "" });
     }
   };
 
   // Cancel status change
-  const cancelStatusChange = () => {
+  const cancelApplicationStatusChange = () => {
     setDialogOpen(false);
-    setPendingStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    setPendingApplicationStatus({ applicantId: null, newStatus: "", currentStatus: "" });
   };
+
+  // Cancel status change
+  const cancelPaymentStatusChange = () => {
+    setDialogOpen(false);
+    setPendingPaymentStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+  };
+
 
   // Helper function to check document status
   const getDocumentStatus = (docs, type) => {
@@ -428,6 +473,7 @@ const ApplicantTable = ({ programId }) => {
                   }`,
                 },
                 { id: "status", label: "Status" },
+                { id: "payment_status", label: "Payment Status" },
               ].map((column) => (
                 <TableCell
                   key={column.id}
@@ -477,7 +523,7 @@ const ApplicantTable = ({ programId }) => {
                       size="small"
                       value={applicant.status}
                       onChange={(e) =>
-                        handleStatusSelect(e, applicant.id, applicant.status)
+                        handleApplicationStatusSelect(e, applicant.id, applicant.status)
                       }
                       onClick={(e) => e.stopPropagation()}
                       sx={{
@@ -507,6 +553,43 @@ const ApplicantTable = ({ programId }) => {
                       )}
                     </TextField>
                   </TableCell>
+
+                  {(applicant.track_payment && ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status)) && <TableCell style={{ padding: "6px 4px" }}>
+                    <TextField
+                      select
+                      size="small"
+                      value={applicant.payment_status}
+                      onChange={(e) =>
+                        handlePaymentStatusSelect(e, applicant.id, applicant.status)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        minWidth: "100px",
+                        "& .MuiSelect-select": {
+                          padding: "4px 6px",
+                          fontSize: "0.8125rem",
+                        },
+                        "& .MuiSelect-icon": {
+                          right: "2px",
+                        },
+                      }}
+                    >
+                      {['unpaid'].map((status, index) => (
+                        <MenuItem key={index} value={status}>
+                          {getPaymentStatusLabel(status)}
+                        </MenuItem>
+                      ))}
+                      {!['unpaid'].includes(applicant.status) && (
+                        <MenuItem
+                          key="current"
+                          value={applicant.status}
+                          disabled
+                        >
+                          {getPaymentStatusLabel(applicant.status)}
+                        </MenuItem>
+                      )}
+                    </TextField>
+                  </TableCell>}
                 </TableRow>
               );
             })}
@@ -520,21 +603,21 @@ const ApplicantTable = ({ programId }) => {
       )}
 
       {/* Confirmation Dialog */}
-      <Dialog open={dialogOpen} onClose={cancelStatusChange}>
+      <Dialog open={dialogOpen} onClose={cancelApplicationStatusChange}>
         <DialogTitle>Confirm Status Change</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to change the status from{" "}
-            <strong>{getStatusLabel(pendingStatus.currentStatus)}</strong> to{" "}
-            <strong>{getStatusLabel(pendingStatus.newStatus)}</strong>?
+            <strong>{getStatusLabel(pendingApplicationStatus.currentStatus)}</strong> to{" "}
+            <strong>{getStatusLabel(pendingApplicationStatus.newStatus)}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={cancelStatusChange} color="inherit">
+          <Button onClick={cancelApplicationStatusChange} color="inherit">
             Cancel
           </Button>
           <Button
-            onClick={confirmStatusChange}
+            onClick={confirmApplicationStatusChange}
             color="primary"
             variant="contained"
           >
