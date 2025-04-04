@@ -69,6 +69,7 @@ class ProgramSerializer(serializers.ModelSerializer):
             "essential_document_deadline",
             "start_date",
             "end_date",
+            "track_payment",
         ]
 
 

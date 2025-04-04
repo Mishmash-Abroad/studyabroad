@@ -68,6 +68,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
+      console.log(editingProgram);
       setProgramData({
         title: editingProgram.title,
         year: editingProgram.year,
@@ -99,19 +100,18 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleInputChange = (e) => {
     setProgramData({ ...programData, [e.target.name]: e.target.value });
-    console.log(programData);
+
     setDirty(true);
   };
 
   const handleBooleanChange = (e) => {
-    console.log(e.target.checked);
+    // TODO figure out a way to shorten this
     if (e.target.checked) {
       setProgramData({ ...programData, [e.target.name]: true });
     } else {
       setProgramData({ ...programData, [e.target.name]: false });
     }
 
-    console.log(programData);
     setDirty(true);
   };
 
@@ -201,6 +201,16 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       // Show warning dialog about System Admin being added automatically
       setSystemAdminWarning(true);
       setDialogOpen(true);
+      return;
+    }
+
+    if (
+      programData.track_payment &&
+      programData.provider_partner_ids.length === 0
+    ) {
+      setErrorMessage(
+        "Provider partners must be selected when payment tracking is enabled."
+      );
       return;
     }
 
