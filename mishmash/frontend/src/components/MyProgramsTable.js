@@ -384,6 +384,7 @@ const MyProgramsTable = () => {
     { id: "end_date", label: "Program End", sortable: true },
     { id: "status", label: "Application Status", sortable: true },
     { id: "documents", label: "Documents", sortable: true },
+    { id: "payment_status", label: "Payment Status", sortable: true },
   ];
 
   if (loading)
@@ -450,6 +451,11 @@ const MyProgramsTable = () => {
                   <span className="status-badge">
                     {app.documents?.length || 0}/4 Documents
                   </span>
+                </StyledTableCell>
+                <StyledTableCell>
+                  {app.program.payment_status
+                    ? app.program.payment_status
+                    : "N/A"}
                 </StyledTableCell>
               </TableRow>
               {renderExpandedRow(app)}

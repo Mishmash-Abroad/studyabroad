@@ -16,6 +16,8 @@ import {
   DialogContent,
   DialogActions,
   Snackbar,
+  FormControlLabel,
+  Switch,
   CircularProgress,
 } from "@mui/material";
 import { Delete, Add, Check } from "@mui/icons-material";
@@ -26,6 +28,7 @@ import { DEFAULT_QUESTIONS } from "../utils/constants";
 import ApplicantTable from "./ApplicantTable";
 import FacultyPicklist from "./FacultyPicklist";
 import { useAuth } from "../context/AuthContext";
+import ProviderPartnerPicklist from "./ProviderPartnerPicklist";
 
 const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const navigate = useNavigate();
@@ -36,19 +39,21 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     year: "",
     semester: "",
     faculty_lead_ids: [],
+    provider_partner_ids: [],
     application_open_date: "",
     application_deadline: "",
     essential_document_deadline: "",
     start_date: "",
     end_date: "",
     description: "",
+    track_payment: false,
   });
 
   const [errorMessage, setErrorMessage] = useState(null);
   const [systemAdminWarning, setSystemAdminWarning] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Success notification states
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -63,6 +68,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
+      console.log(editingProgram);
       setProgramData({
         title: editingProgram.title,
         year: editingProgram.year,
@@ -70,14 +76,19 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         faculty_lead_ids: editingProgram.faculty_leads.map(
           (faculty) => faculty.id
         ),
+        provider_partner_ids: editingProgram.provider_partners.map(
+          (partner) => partner.id
+        ),
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
         essential_document_deadline: editingProgram.essential_document_deadline,
         start_date: editingProgram.start_date,
         end_date: editingProgram.end_date,
         description: editingProgram.description,
+        track_payment: editingProgram.track_payment,
       });
-      axiosInstance.get(`/api/questions/?program=${editingProgram.id}`)
+      axiosInstance
+        .get(`/api/questions/?program=${editingProgram.id}`)
         .then((response) => {
           setQuestions(response.data);
         })
@@ -89,6 +100,18 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleInputChange = (e) => {
     setProgramData({ ...programData, [e.target.name]: e.target.value });
+
+    setDirty(true);
+  };
+
+  const handleBooleanChange = (e) => {
+    // TODO figure out a way to shorten this
+    if (e.target.checked) {
+      setProgramData({ ...programData, [e.target.name]: true });
+    } else {
+      setProgramData({ ...programData, [e.target.name]: false });
+    }
+
     setDirty(true);
   };
 
@@ -144,33 +167,30 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         ...programData,
         faculty_lead_ids: [],
       });
-      // Show warning that System Admin will be added as faculty lead
-      // setSystemAdminWarning(true);
-
-      // Get the System Admin user - in a real implementation,
-      // you would either fetch this from the backend or use a known ID
-      // axiosInstance
-      //   .get("/api/users/", {
-      //     params: { is_system_admin: true },
-      //   })
-      //   .then((response) => {
-      //     if (response.data && response.data.length > 0) {
-      //       const systemAdmin = response.data[0];
-      //       setProgramData({
-      //         ...programData,
-      //         faculty_lead_ids: [systemAdmin.id],
-      //       });
-      //     }
-      //   })
-      //   .catch((error) => {
-      //     console.error("Error fetching system admin:", error);
-      //   });
     } else {
       // Regular case - user has selected faculty leads
       setSystemAdminWarning(false);
       setProgramData({
         ...programData,
         faculty_lead_ids: selectedFaculty.map((faculty) => faculty.id),
+      });
+    }
+  };
+
+  const handleProviderPartnerChange = (selectedProviderPartner) => {
+    if (selectedProviderPartner.length === 0) {
+      setProgramData({
+        ...programData,
+        provider_partner_ids: [],
+      });
+    } else {
+      // Regular case - user has selected faculty leads
+      setSystemAdminWarning(false);
+      setProgramData({
+        ...programData,
+        provider_partner_ids: selectedProviderPartner.map(
+          (provider_partner) => provider_partner.id
+        ),
       });
     }
   };
@@ -184,6 +204,16 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       return;
     }
 
+    if (
+      programData.track_payment &&
+      programData.provider_partner_ids.length === 0
+    ) {
+      setErrorMessage(
+        "Provider partners must be selected when payment tracking is enabled."
+      );
+      return;
+    }
+
     // If we have faculty leads, proceed with submission
     await submitProgram();
   };
@@ -193,54 +223,58 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     try {
       if (editingProgram) {
         await axiosInstance.put(
-          `/api/programs/${editingProgram.id}/`, programData );
-          
-          for (const question of newQuestions) {
-            await axiosInstance.post(`/api/questions/`, {
-              program: editingProgram.id,
-              text: question.text,
-            });
-          }
-          for (const question of editQuestions) {
-            await axiosInstance.patch(`/api/questions/${question.id}/`, {
-              text: question.text,
-            });
-          }
-          for (const questionId of deletedQuestions) {
-            await axiosInstance.delete(`/api/questions/${questionId}/`);
-          }
+          `/api/programs/${editingProgram.id}/`,
+          programData
+        );
 
-          setNewQuestions([]);
-          setEditQuestions([]);
-          setDeletedQuestions([]);
-          
-          // Show success message for update
-          setSuccessMessage(systemAdminWarning 
+        for (const question of newQuestions) {
+          await axiosInstance.post(`/api/questions/`, {
+            program: editingProgram.id,
+            text: question.text,
+          });
+        }
+        for (const question of editQuestions) {
+          await axiosInstance.patch(`/api/questions/${question.id}/`, {
+            text: question.text,
+          });
+        }
+        for (const questionId of deletedQuestions) {
+          await axiosInstance.delete(`/api/questions/${questionId}/`);
+        }
+
+        setNewQuestions([]);
+        setEditQuestions([]);
+        setDeletedQuestions([]);
+
+        // Show success message for update
+        setSuccessMessage(
+          systemAdminWarning
             ? "Program updated successfully! System Administrator has been added as faculty lead."
-            : "Program updated successfully!");
+            : "Program updated successfully!"
+        );
       } else {
-        await axiosInstance.post("/api/programs/", 
-          {
+        await axiosInstance.post("/api/programs/", {
           ...programData,
           questions: questions.map((q) => q.text),
         });
-        
+
         // Show success message for creation
-        setSuccessMessage(systemAdminWarning 
-          ? "Program created successfully! System Administrator has been added as faculty lead."
-          : "Program created successfully!");
+        setSuccessMessage(
+          systemAdminWarning
+            ? "Program created successfully! System Administrator has been added as faculty lead."
+            : "Program created successfully!"
+        );
       }
 
       refreshPrograms();
       setDirty(false);
       setErrorMessage("");
       setSuccessSnackbarOpen(true);
-      
+
       // Navigate after a short delay to allow the user to see the success message
       // setTimeout(() => {
       //   navigate("/dashboard/admin-programs");
       // }, 2000);
-      
     } catch (error) {
       console.error("Error saving program:", error);
       setErrorMessage(
@@ -260,7 +294,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const handleCancelSubmit = () => {
     setDialogOpen(false);
   };
-  
+
   const handleCloseSuccessSnackbar = () => {
     setSuccessSnackbarOpen(false);
   };
@@ -350,6 +384,32 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             disable_picklist={!user.is_admin}
           />
         </Box>
+        <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={programData.track_payment}
+                name="track_payment"
+                onChange={handleBooleanChange}
+                color="success"
+              />
+            }
+            label={
+              programData.track_payment
+                ? "Payment Tracking Enabled"
+                : "Payment Tracking Disabled"
+            }
+          />
+        </Box>
+        {programData.track_payment && (
+          <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
+            <ProviderPartnerPicklist
+              onProviderPartnerChange={handleProviderPartnerChange}
+              initialSelected={programData.provider_partner_ids}
+              disable_picklist={!user.is_admin}
+            />
+          </Box>
+        )}
         <TextField
           label="Description"
           name="description"
@@ -410,7 +470,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.end_date}
           onChange={handleInputChange}
         />
-
         {/* Questions Section */}
         <Box>
           <Typography variant="h6">Questions</Typography>
@@ -422,16 +481,22 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
                 value={q.text}
                 onChange={(e) => handleQuestionChange(index, e.target.value)}
               />
-              <IconButton disabled={!user.is_admin} onClick={() => confirmDelete(index)}>
+              <IconButton
+                disabled={!user.is_admin}
+                onClick={() => confirmDelete(index)}
+              >
                 <Delete />
               </IconButton>
             </Box>
           ))}
-          <Button disabled={!user.is_admin} startIcon={<Add />} onClick={handleAddQuestion}>
+          <Button
+            disabled={!user.is_admin}
+            startIcon={<Add />}
+            onClick={handleAddQuestion}
+          >
             Add Question
           </Button>
         </Box>
-
         {user.is_admin && (
           <Box
             sx={{
@@ -461,16 +526,23 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
                 Delete Program
               </Button>
             )}
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              {isSubmitting 
-                ? (editingProgram ? "Updating..." : "Creating...") 
-                : (editingProgram ? "Update Program" : "Create Program")
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : null
               }
+            >
+              {isSubmitting
+                ? editingProgram
+                  ? "Updating..."
+                  : "Creating..."
+                : editingProgram
+                ? "Update Program"
+                : "Create Program"}
             </Button>
           </Box>
         )}
@@ -520,31 +592,35 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
             color="primary"
             variant="contained"
             disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : null
+            }
           >
             {isSubmitting ? "Processing..." : "Continue"}
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Success Snackbar */}
       <Snackbar
         open={successSnackbarOpen}
         autoHideDuration={6000}
         onClose={handleCloseSuccessSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
         message={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Check color="success" />
             <span>{successMessage}</span>
           </Box>
         }
         sx={{
-          marginTop: '64px', 
-          '& .MuiSnackbarContent-root': {
-            bgcolor: 'success.main',
-            color: 'success.contrastText',
-          }
+          marginTop: "64px",
+          "& .MuiSnackbarContent-root": {
+            bgcolor: "success.main",
+            color: "success.contrastText",
+          },
         }}
       />
     </Paper>
