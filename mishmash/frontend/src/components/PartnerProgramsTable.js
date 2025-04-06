@@ -25,13 +25,9 @@ import {
   Popover,
   Badge,
 } from "@mui/material";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import CloseIcon from "@mui/icons-material/Close";
 import axiosInstance from "../utils/axios";
-import ProgramForm from "./ProgramForm";
 import FacultyPicklist from "./FacultyPicklist";
-import { STATUS, ALL_STATUSES } from "../utils/constants";
-import ApplicantCountsCell from "./ApplicantCountsCell";
+import { STATUS } from "../utils/constants";
 // Import the auth hook to get the logged-in user
 import { useAuth } from "../context/AuthContext";
 
@@ -94,7 +90,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   borderBottom: `2px solid ${theme.palette.divider}`,
   "&:hover": {
     backgroundColor: theme.palette.action.hover,
-    transform: "scale(1.01)",
     boxShadow: theme.shadows[1],
     zIndex: 1,
   },
@@ -119,7 +114,6 @@ const StyledTableHead = styled(TableHead)(({ theme }) => ({
 const PartnerProgramsTable = () => {
   const { user } = useAuth(); // Get the logged-in user
   const [programs, setPrograms] = useState([]);
-  const [applicantCounts, setApplicantCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orderBy, setOrderBy] = useState("application_deadline");
@@ -191,6 +185,7 @@ const PartnerProgramsTable = () => {
             const countResponse = await axiosInstance.get(
               `/api/programs/${program.id}/applicant_counts/`
             );
+            console.log(countResponse.data);
             counts[program.id] = countResponse.data;
           } catch (err) {
             console.error(
@@ -200,7 +195,7 @@ const PartnerProgramsTable = () => {
           }
         })
       );
-      setApplicantCounts(counts);
+    
     } catch (err) {
       setError("Failed to load programs.");
     } finally {
@@ -283,32 +278,15 @@ const PartnerProgramsTable = () => {
 
   const sortedPrograms = [...filteredPrograms].sort((a, b) => {
     let aValue, bValue;
-    if (allStatusKeys.includes(orderBy)) {
-      // Single status sorting
-      aValue = applicantCounts[a.id]?.[orderBy] || 0;
-      bValue = applicantCounts[b.id]?.[orderBy] || 0;
-    } else if (orderBy === "total_active") {
-      // Default total sorting
-      aValue = applicantCounts[a.id]?.[orderBy] || 0;
-      bValue = applicantCounts[b.id]?.[orderBy] || 0;
-    } else if (orderBy === "selected_statuses" && selectedStatuses.length > 0) {
-      // Combined multi-status sorting
-      aValue = selectedStatuses.reduce((sum, status) => {
-        return sum + (applicantCounts[a.id]?.[status] || 0);
-      }, 0);
-      bValue = selectedStatuses.reduce((sum, status) => {
-        return sum + (applicantCounts[b.id]?.[status] || 0);
-      }, 0);
-    } else {
-      // Regular column sorting
-      aValue = a[orderBy] || "";
-      bValue = b[orderBy] || "";
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return order === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
+    // Regular column sorting
+    aValue = a[orderBy] || "";
+    bValue = b[orderBy] || "";
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      return order === "asc"
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
     }
+
     if (typeof aValue === "number" && typeof bValue === "number") {
       return order === "asc" ? aValue - bValue : bValue - aValue;
     }
@@ -323,31 +301,16 @@ const PartnerProgramsTable = () => {
 
   const handleEditProgram = (program) => {
     navigate(
-      `/dashboard/admin-programs/${encodeURIComponent(
+      `/dashboard/partner-programs/${encodeURIComponent(
         program.title.replace(/\s+/g, "-")
       )}`
     );
   };
 
-  const handleNewProgram = () => {
-    navigate("/dashboard/admin-programs/new-program");
-  };
-
-  const isCreatingNewProgram = location.pathname.endsWith("/new-program");
-
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  if (programTitle || isCreatingNewProgram) {
-    return (
-      <ProgramForm
-        onClose={() => navigate("/dashboard/admin-programs")}
-        refreshPrograms={fetchPrograms}
-        editingProgram={isCreatingNewProgram ? null : editingProgram}
-      />
-    );
-  }
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -371,13 +334,6 @@ const PartnerProgramsTable = () => {
               <StyledFacultyPicklist onFacultyChange={setSelectedFaculty} />
             </Box>
             <Box sx={{ flexGrow: 1 }} />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNewProgram}
-            >
-              New Program
-            </Button>
           </FilterRow>
           <FilterRow>
             <TextField
@@ -435,6 +391,7 @@ const PartnerProgramsTable = () => {
                   "application_open_date",
                   "application_deadline",
                   "essential_document_deadline",
+                  "payment_deadline",
                   "start_date",
                   "end_date",
                 ].map((column) => (
@@ -450,23 +407,6 @@ const PartnerProgramsTable = () => {
                     </TableSortLabel>
                   </StyledTableCell>
                 ))}
-                <StyledTableCell
-                  sx={{
-                    textAlign: "center",
-                    borderLeft: "1px solid rgba(224, 224, 224, 1)",
-                    width: "240px",
-                  }}
-                >
-                  <ApplicantCountsCell
-                    orderBy={orderBy}
-                    order={order}
-                    onRequestSort={handleRequestSort}
-                    selectedStatuses={selectedStatuses}
-                    setSelectedStatuses={setSelectedStatuses}
-                    isHeaderCell={true}
-                    allUsers={allUsers}
-                  />
-                </StyledTableCell>
               </TableRow>
             </StyledTableHead>
             <TableBody>
@@ -474,7 +414,6 @@ const PartnerProgramsTable = () => {
                 <StyledTableRow
                   key={program.id}
                   onClick={() => handleEditProgram(program)}
-                  hover
                 >
                   <StyledTableCell>{program.title}</StyledTableCell>
                   <StyledTableCell>{program.year_semester}</StyledTableCell>
@@ -493,26 +432,13 @@ const PartnerProgramsTable = () => {
                     {formatDate(program.essential_document_deadline)}
                   </StyledTableCell>
                   <StyledTableCell>
+                    {formatDate(program.payment_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
                     {formatDate(program.start_date)}
                   </StyledTableCell>
                   <StyledTableCell>
                     {formatDate(program.end_date)}
-                  </StyledTableCell>
-                  <StyledTableCell
-                    sx={{
-                      borderLeft: "1px solid rgba(224, 224, 224, 1)",
-                      p: 0.5,
-                    }}
-                  >
-                    <ApplicantCountsCell
-                      program={program}
-                      counts={applicantCounts[program.id] || {}}
-                      orderBy={orderBy}
-                      order={order}
-                      onRequestSort={handleRequestSort}
-                      selectedStatuses={selectedStatuses}
-                      allUsers={allUsers}
-                    />
                   </StyledTableCell>
                 </StyledTableRow>
               ))}
