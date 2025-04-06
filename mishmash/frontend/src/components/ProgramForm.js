@@ -30,7 +30,6 @@ import FacultyPicklist from "./FacultyPicklist";
 import ProviderPartnerPicklist from "./ProviderPartnerPicklist";
 import { useAuth } from "../context/AuthContext";
 
-
 const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -44,6 +43,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     application_open_date: "",
     application_deadline: "",
     essential_document_deadline: "",
+    payment_deadline: "",
     start_date: "",
     end_date: "",
     description: "",
@@ -83,6 +83,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
         essential_document_deadline: editingProgram.essential_document_deadline,
+        payment_deadline: editingProgram.payment_deadline,
         start_date: editingProgram.start_date,
         end_date: editingProgram.end_date,
         description: editingProgram.description,
@@ -451,6 +452,19 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.essential_document_deadline}
           onChange={handleInputChange}
         />
+
+        {programData.track_payment && (
+          <TextField
+            label="Payment Deadline"
+            type="date"
+            name="payment_deadline"
+            fullWidth
+            disabled={!user.is_admin}
+            InputLabelProps={{ shrink: true }}
+            value={programData.payment_deadline}
+            onChange={handleInputChange}
+          />
+        )}
         <TextField
           label="Start Date"
           type="date"
