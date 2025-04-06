@@ -59,7 +59,7 @@ class Program(models.Model):
     payment_deadline = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
-    track_payment = models.BooleanField(default=True)
+    track_payment = models.BooleanField(default=False)
     provider_partners = models.ManyToManyField(
         "User",
         related_name="provider_partners",

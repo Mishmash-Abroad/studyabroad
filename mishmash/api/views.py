@@ -381,6 +381,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         search = self.request.query_params.get("search", None)
         faculty_ids = self.request.query_params.get("faculty_ids", None)
+        partner_ids = self.request.query_params.get("partner_ids", None)
+        track_payment = self.request.query_params.get("track_payment", None)
 
         if search:
             queryset = queryset.filter(Q(title__icontains=search))
@@ -389,7 +391,20 @@ class ProgramViewSet(viewsets.ModelViewSet):
             faculty_id_list = [int(id) for id in faculty_ids.split(",") if id.isdigit()]
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
+                
+        if partner_ids:
+            partner_id_list = [int(id) for id in partner_ids.split(",") if id.isdigit()]
+            if partner_id_list:
+                queryset = queryset.filter(provider_partners__id__in=partner_id_list)  
+                              
 
+        if track_payment is not None:
+            if track_payment.lower() == "true":
+                queryset = queryset.filter(track_payment=True)
+            elif track_payment.lower() == "false":
+                queryset = queryset.filter(track_payment=False)
+
+        # TODO this might be where the bug is for faculty not updating when no fauclty
         # Check for programs with no faculty leads and add admin user as default
         for program in queryset:
             # Check if program has any faculty leads
