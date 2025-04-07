@@ -29,6 +29,7 @@ import ApplicantTable from "./ApplicantTable";
 import FacultyPicklist from "./FacultyPicklist";
 import ProviderPartnerPicklist from "./ProviderPartnerPicklist";
 import { useAuth } from "../context/AuthContext";
+import PartnerApplicantTable from "./PartnerApplicantTable";
 
 const PartnerProgramForm = ({ program }) => {
   const navigate = useNavigate();
@@ -249,13 +250,7 @@ const PartnerProgramForm = ({ program }) => {
         </Box>
       </Box>
 
-      {program &&
-        (user.is_admin ||
-          user.is_reviewer ||
-          (user.is_faculty &&
-            programData.faculty_lead_ids.includes(user.id))) && (
-          <ApplicantTable programId={program.id} />
-        )}
+      {program && <PartnerApplicantTable programId={program.id} />}
 
       {/* Success Snackbar */}
       <Snackbar
