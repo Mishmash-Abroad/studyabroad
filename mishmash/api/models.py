@@ -112,7 +112,7 @@ class Application(models.Model):
             ("Partially", "Partially"),
             ("Fully", "Fully"),
         ],
-        blank=True
+        default="Unpaid"
     )
 
     def __str__(self):

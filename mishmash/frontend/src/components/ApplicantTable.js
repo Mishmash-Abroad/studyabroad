@@ -54,6 +54,7 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [pendingApplicationStatus, setPendingApplicationStatus] = useState({
     applicantId: null,
     newStatus: "",
@@ -257,7 +258,7 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
     const newStatus = e.target.value;
     if (newStatus === currentStatus) return;
     setPendingPaymentStatus({ applicantId, newStatus, currentStatus });
-    setDialogOpen(true);
+    setPaymentDialogOpen(true);
   };
 
   // Confirm status change
@@ -297,7 +298,7 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
       console.error("Error updating status:", err);
       setError("Failed to update status.");
     } finally {
-      setDialogOpen(false);
+      setPaymentDialogOpen(false);
       setPendingPaymentStatus({
         applicantId: null,
         newStatus: "",
@@ -318,7 +319,7 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
 
   // Cancel status change
   const cancelPaymentStatusChange = () => {
-    setDialogOpen(false);
+    setPaymentDialogOpen(false);
     setPendingPaymentStatus({
       applicantId: null,
       newStatus: "",
@@ -575,48 +576,44 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
 
                   {show_track_payment && (
                     <TableCell style={{ padding: "6px 4px" }}>
-                      <TextField
-                        select
-                        size="small"
-                        value={applicant.payment_status || "N/A"}
-                        onChange={(e) =>
-                          handlePaymentStatusSelect(
-                            e,
-                            applicant.id,
-                            applicant.payment_status
-                          )
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                          minWidth: "100px",
-                          "& .MuiSelect-select": {
-                            padding: "4px 6px",
-                            fontSize: "0.8125rem",
-                          },
-                          "& .MuiSelect-icon": {
-                            right: "2px",
-                          },
-                        }}
-                      >
-                        {["unpaid", "partially", "fully"].map(
-                          (status, index) => (
-                            <MenuItem key={index} value={status}>
-                              {getPaymentStatusLabel(status)}
-                            </MenuItem>
-                          )
-                        )}
-                        {!["unpaid", "partially", "fully"].includes(
-                          applicant.payment_status
-                        ) && (
-                          <MenuItem
-                            key="current"
-                            value={applicant.payment_status || "N/A"}
-                            disabled
-                          >
-                            {getPaymentStatusLabel(applicant.payment_status) || "N/A"}
-                          </MenuItem>
-                        )}
-                      </TextField>
+                      {ALL_PAYMENT_APPLICATION_STATUSES.includes(
+                        applicant.status
+                      ) && (
+                        <TextField
+                          select
+                          size="small"
+                          value={applicant.payment_status}
+                          onChange={(e) =>
+                            handlePaymentStatusSelect(
+                              e,
+                              applicant.id,
+                              applicant.payment_status
+                            )
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{
+                            minWidth: "100px",
+                            "& .MuiSelect-select": {
+                              padding: "4px 6px",
+                              fontSize: "0.8125rem",
+                            },
+                            "& .MuiSelect-icon": {
+                              right: "2px",
+                            },
+                          }}
+                        >
+                          {["unpaid", "partially", "fully"].map(
+                            (status, index) => (
+                              <MenuItem key={index} value={status}>
+                                {getPaymentStatusLabel(status)}
+                              </MenuItem>
+                            )
+                          )}
+                        </TextField>
+                      )}
+                      {!ALL_PAYMENT_APPLICATION_STATUSES.includes(
+                        applicant.status
+                      ) && <h3> N/A </h3>}
                     </TableCell>
                   )}
                 </TableRow>
@@ -653,6 +650,36 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
           </Button>
           <Button
             onClick={confirmApplicationStatusChange}
+            color="primary"
+            variant="contained"
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={cancelPaymentStatusChange}>
+        <DialogTitle>Confirm Status Change</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to change the status from{" "}
+            <strong>
+              {getPaymentStatusLabel(pendingPaymentStatus.currentStatus)}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {getPaymentStatusLabel(pendingPaymentStatus.newStatus)}
+            </strong>
+            ?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelPaymentStatusChange} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmPaymentStatusChange}
             color="primary"
             variant="contained"
           >
