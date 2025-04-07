@@ -697,7 +697,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 )
         else:
             request.data["provider_partner_ids"] = []
-            request.data["payment_deadline"] = ""
+            request.data["payment_deadline"] = None
             
             
 

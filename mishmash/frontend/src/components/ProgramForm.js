@@ -568,7 +568,10 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           user.is_reviewer ||
           (user.is_faculty &&
             programData.faculty_lead_ids.includes(user.id))) && (
-          <ApplicantTable programId={editingProgram.id} />
+          <ApplicantTable
+            programId={editingProgram.id}
+            show_track_payment={editingProgram.track_payment}
+          />
         )}
 
       {/* Confirm delete question dialog */}

@@ -35,7 +35,7 @@ import NoteIcon from "@mui/icons-material/Note";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useAuth } from "../context/AuthContext";
 
-const ApplicantTable = ({ programId }) => {
+const ApplicantTable = ({ programId, show_track_payment }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [applicants, setApplicants] = useState([]);
@@ -65,7 +65,6 @@ const ApplicantTable = ({ programId }) => {
     newStatus: "",
     currentStatus: "",
   });
-
 
   useEffect(() => {
     fetchApplicants();
@@ -261,7 +260,6 @@ const ApplicantTable = ({ programId }) => {
     setDialogOpen(true);
   };
 
-
   // Confirm status change
   const confirmApplicationStatusChange = async () => {
     try {
@@ -277,7 +275,11 @@ const ApplicantTable = ({ programId }) => {
       setError("Failed to update status.");
     } finally {
       setDialogOpen(false);
-      setPendingApplicationStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+      setPendingApplicationStatus({
+        applicantId: null,
+        newStatus: "",
+        currentStatus: "",
+      });
     }
   };
 
@@ -296,22 +298,33 @@ const ApplicantTable = ({ programId }) => {
       setError("Failed to update status.");
     } finally {
       setDialogOpen(false);
-      setPendingPaymentStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+      setPendingPaymentStatus({
+        applicantId: null,
+        newStatus: "",
+        currentStatus: "",
+      });
     }
   };
 
   // Cancel status change
   const cancelApplicationStatusChange = () => {
     setDialogOpen(false);
-    setPendingApplicationStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    setPendingApplicationStatus({
+      applicantId: null,
+      newStatus: "",
+      currentStatus: "",
+    });
   };
 
   // Cancel status change
   const cancelPaymentStatusChange = () => {
     setDialogOpen(false);
-    setPendingPaymentStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    setPendingPaymentStatus({
+      applicantId: null,
+      newStatus: "",
+      currentStatus: "",
+    });
   };
-
 
   // Helper function to check document status
   const getDocumentStatus = (docs, type) => {
@@ -479,13 +492,15 @@ const ApplicantTable = ({ programId }) => {
                   key={column.id}
                   style={column.id === "status" ? { width: "80px" } : {}}
                 >
-                  <TableSortLabel
-                    active={orderBy === column.id}
-                    direction={orderBy === column.id ? order : "asc"}
-                    onClick={() => handleRequestSort(column.id)}
-                  >
-                    {column.label}
-                  </TableSortLabel>
+                  {(show_track_payment || column.id != "payment_status") && (
+                    <TableSortLabel
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : "asc"}
+                      onClick={() => handleRequestSort(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  )}
                 </TableCell>
               ))}
             </TableRow>
@@ -498,7 +513,7 @@ const ApplicantTable = ({ programId }) => {
                 count: 0,
                 lastUpdated: "N/A",
               };
-
+              console.log(applicant.payment_status);
               return (
                 <TableRow
                   key={applicant.id}
@@ -523,7 +538,11 @@ const ApplicantTable = ({ programId }) => {
                       size="small"
                       value={applicant.status}
                       onChange={(e) =>
-                        handleApplicationStatusSelect(e, applicant.id, applicant.status)
+                        handleApplicationStatusSelect(
+                          e,
+                          applicant.id,
+                          applicant.status
+                        )
                       }
                       onClick={(e) => e.stopPropagation()}
                       sx={{
@@ -554,42 +573,52 @@ const ApplicantTable = ({ programId }) => {
                     </TextField>
                   </TableCell>
 
-                  {(applicant.track_payment && ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status)) && <TableCell style={{ padding: "6px 4px" }}>
-                    <TextField
-                      select
-                      size="small"
-                      value={applicant.payment_status}
-                      onChange={(e) =>
-                        handlePaymentStatusSelect(e, applicant.id, applicant.status)
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                      sx={{
-                        minWidth: "100px",
-                        "& .MuiSelect-select": {
-                          padding: "4px 6px",
-                          fontSize: "0.8125rem",
-                        },
-                        "& .MuiSelect-icon": {
-                          right: "2px",
-                        },
-                      }}
-                    >
-                      {['unpaid'].map((status, index) => (
-                        <MenuItem key={index} value={status}>
-                          {getPaymentStatusLabel(status)}
-                        </MenuItem>
-                      ))}
-                      {!['unpaid'].includes(applicant.status) && (
-                        <MenuItem
-                          key="current"
-                          value={applicant.status}
-                          disabled
-                        >
-                          {getPaymentStatusLabel(applicant.status)}
-                        </MenuItem>
-                      )}
-                    </TextField>
-                  </TableCell>}
+                  {show_track_payment && (
+                    <TableCell style={{ padding: "6px 4px" }}>
+                      <TextField
+                        select
+                        size="small"
+                        value={applicant.payment_status || "N/A"}
+                        onChange={(e) =>
+                          handlePaymentStatusSelect(
+                            e,
+                            applicant.id,
+                            applicant.payment_status
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{
+                          minWidth: "100px",
+                          "& .MuiSelect-select": {
+                            padding: "4px 6px",
+                            fontSize: "0.8125rem",
+                          },
+                          "& .MuiSelect-icon": {
+                            right: "2px",
+                          },
+                        }}
+                      >
+                        {["unpaid", "partially", "fully"].map(
+                          (status, index) => (
+                            <MenuItem key={index} value={status}>
+                              {getPaymentStatusLabel(status)}
+                            </MenuItem>
+                          )
+                        )}
+                        {!["unpaid", "partially", "fully"].includes(
+                          applicant.payment_status
+                        ) && (
+                          <MenuItem
+                            key="current"
+                            value={applicant.payment_status || "N/A"}
+                            disabled
+                          >
+                            {getPaymentStatusLabel(applicant.payment_status) || "N/A"}
+                          </MenuItem>
+                        )}
+                      </TextField>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}
@@ -608,8 +637,14 @@ const ApplicantTable = ({ programId }) => {
         <DialogContent>
           <Typography>
             Are you sure you want to change the status from{" "}
-            <strong>{getStatusLabel(pendingApplicationStatus.currentStatus)}</strong> to{" "}
-            <strong>{getStatusLabel(pendingApplicationStatus.newStatus)}</strong>?
+            <strong>
+              {getStatusLabel(pendingApplicationStatus.currentStatus)}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {getStatusLabel(pendingApplicationStatus.newStatus)}
+            </strong>
+            ?
           </Typography>
         </DialogContent>
         <DialogActions>
