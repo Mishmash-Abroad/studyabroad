@@ -67,6 +67,7 @@ class ProgramSerializer(serializers.ModelSerializer):
             "application_open_date",
             "application_deadline",
             "essential_document_deadline",
+            "payment_deadline",
             "start_date",
             "end_date",
             "track_payment",

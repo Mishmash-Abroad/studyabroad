@@ -30,6 +30,8 @@ import FacultyPicklist from "./FacultyPicklist";
 import { STATUS } from "../utils/constants";
 // Import the auth hook to get the logged-in user
 import { useAuth } from "../context/AuthContext";
+import ProgramForm from "./ProgramForm";
+import PartnerProgramForm from "./PartnerProgramForm";
 
 // -------------------- STYLES --------------------
 const TableWrapper = styled("div")(({ theme }) => ({
@@ -114,6 +116,7 @@ const StyledTableHead = styled(TableHead)(({ theme }) => ({
 const PartnerProgramsTable = () => {
   const { user } = useAuth(); // Get the logged-in user
   const [programs, setPrograms] = useState([]);
+  const [applicantCounts, setApplicantCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orderBy, setOrderBy] = useState("application_deadline");
@@ -146,10 +149,10 @@ const PartnerProgramsTable = () => {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const response = await axiosInstance.get('/api/users/');
+        const response = await axiosInstance.get("/api/users/");
         setAllUsers(response.data);
       } catch (err) {
-        console.error('Failed to fetch users data:', err);
+        console.error("Failed to fetch users data:", err);
       }
     };
 
@@ -165,10 +168,9 @@ const PartnerProgramsTable = () => {
       if (timeFilter === "current_future") {
         params.exclude_ended = "true";
       }
-      
+
       params.partner_ids = [user.id].map((f) => f.id).join(",");
       params.track_payment = "true";
-      
 
       // Add search query if present
       if (searchQuery) {
@@ -185,7 +187,6 @@ const PartnerProgramsTable = () => {
             const countResponse = await axiosInstance.get(
               `/api/programs/${program.id}/applicant_counts/`
             );
-            console.log(countResponse.data);
             counts[program.id] = countResponse.data;
           } catch (err) {
             console.error(
@@ -195,7 +196,7 @@ const PartnerProgramsTable = () => {
           }
         })
       );
-    
+      setApplicantCounts(counts);
     } catch (err) {
       setError("Failed to load programs.");
     } finally {
@@ -311,6 +312,15 @@ const PartnerProgramsTable = () => {
     setSearchQuery(e.target.value);
   };
 
+  if (programTitle) {
+    return (
+      <PartnerProgramForm
+        onClose={() => navigate("/dashboard/partner-programs")}
+        refreshPrograms={fetchPrograms}
+        program={editingProgram}
+      />
+    );
+  }
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -394,6 +404,7 @@ const PartnerProgramsTable = () => {
                   "payment_deadline",
                   "start_date",
                   "end_date",
+                  "Applied & Enrolled"
                 ].map((column) => (
                   <StyledTableCell key={column}>
                     <TableSortLabel
@@ -410,38 +421,45 @@ const PartnerProgramsTable = () => {
               </TableRow>
             </StyledTableHead>
             <TableBody>
-              {sortedPrograms.map((program) => (
-                <StyledTableRow
-                  key={program.id}
-                  onClick={() => handleEditProgram(program)}
-                >
-                  <StyledTableCell>{program.title}</StyledTableCell>
-                  <StyledTableCell>{program.year_semester}</StyledTableCell>
-                  <StyledTableCell>
-                    {program.faculty_leads
-                      .map((faculty) => faculty.display_name)
-                      .join(", ")}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {formatDate(program.application_open_date)}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {formatDate(program.application_deadline)}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {formatDate(program.essential_document_deadline)}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {formatDate(program.payment_deadline)}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {formatDate(program.start_date)}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {formatDate(program.end_date)}
-                  </StyledTableCell>
-                </StyledTableRow>
-              ))}
+              {sortedPrograms.map((program) => {
+                console.log(applicantCounts);
+                return (
+                  <StyledTableRow
+                    key={program.id}
+                    onClick={() => handleEditProgram(program)}
+                  >
+                    <StyledTableCell>{program.title}</StyledTableCell>
+                    <StyledTableCell>{program.year_semester}</StyledTableCell>
+                    <StyledTableCell>
+                      {program.faculty_leads
+                        .map((faculty) => faculty.display_name)
+                        .join(", ")}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {formatDate(program.application_open_date)}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {formatDate(program.application_deadline)}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {formatDate(program.essential_document_deadline)}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {formatDate(program.payment_deadline)}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {formatDate(program.start_date)}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {formatDate(program.end_date)}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {applicantCounts[program.id]?.approved +
+                        applicantCounts[program.id]?.enrolled || 0}
+                    </StyledTableCell>
+                  </StyledTableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </StyledTableContainer>

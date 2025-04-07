@@ -18,6 +18,7 @@ import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
 import UserManagement from "../components/UserManagement";
 import Typography from "@mui/material/Typography";
+import PartnerProgramForm from "../components/PartnerProgramForm";
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
@@ -302,6 +303,10 @@ const Dashboard = () => {
                 <Route
                   path="partner-overview"
                   element={<ProviderPartnerOverview />}
+                />
+                <Route
+                  path="partner-programs/:programTitle"
+                  element={<PartnerProgramsTable />}
                 />
               </>
             )}
