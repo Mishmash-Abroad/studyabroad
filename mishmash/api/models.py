@@ -12,6 +12,7 @@ class User(AbstractUser):
     is_admin = models.BooleanField(default=False)
     is_faculty = models.BooleanField(default=False)
     is_reviewer = models.BooleanField(default=False)
+    # TODO make mutually exclusiv
     is_provider_partner = models.BooleanField(default=False)
     is_mfa_enabled = models.BooleanField(default=False)
 
