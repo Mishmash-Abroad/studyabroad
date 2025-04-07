@@ -590,7 +590,6 @@ class ProgramViewSet(viewsets.ModelViewSet):
             "track_payment", program_instance.track_payment
         )
         semester = request.data.get("semester", program_instance.semester)
-        
 
         # Define regex for year (must be a 4-digit number)
         year_pattern = r"^\d{4}$"
@@ -685,11 +684,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if track_payment:
             if not payment_deadline:
                 raise ValidationError(
-                    {
-                        "detail": "Payment deadline should be set if track payment is set"
-                    }
+                    {"detail": "Payment deadline should be set if track payment is set"}
                 )
-            if not (essential_document_deadline <=payment_deadline <= start_date):
+            if not (essential_document_deadline <= payment_deadline <= start_date):
                 raise ValidationError(
                     {
                         "detail": "Payment deadline should be after or at essential document deadline and before or at start date"
@@ -698,8 +695,6 @@ class ProgramViewSet(viewsets.ModelViewSet):
         else:
             request.data["provider_partner_ids"] = []
             request.data["payment_deadline"] = None
-            
-            
 
         return super().update(request, *args, **kwargs)
 
@@ -1306,13 +1301,20 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         user = self.get_object()
         new_is_admin = request.data.get("is_admin", user.is_admin)
+        new_is_faculty = request.data.get("is_faculty", user.is_faculty)
+        new_is_provider_partner = request.data.get(
+            "is_provider_partner", user.is_provider_partner
+        )
 
-        if not user.is_admin and new_is_admin:
+        if not user.is_admin and new_is_admin or new_is_provider_partner:
             # User is being promoted to admin, delete applications
+            # or user is being promoted to partner, delete apps
             applications_deleted = Application.objects.filter(student=user).delete()
             print(f"Deleted {applications_deleted[0]} applications for {user.username}")
 
-        if user.is_admin and not new_is_admin:
+        # TODO here is the logic where the bug is
+        # it shoiuld be FACULTY not ADMIN
+        if user.is_faculty and not new_is_faculty or new_is_provider_partner:
             # User is being demoted from admin, remove them from faculty lead roles
             programs = Program.objects.filter(faculty_leads=user)
             for program in programs:
@@ -1324,6 +1326,11 @@ class UserViewSet(viewsets.ModelViewSet):
             print(
                 f"Removed {user.username} from faculty leads of {programs.count()} programs"
             )
+
+        if new_is_provider_partner:
+            request.data["is_admin"] = False
+            request.data["is_faculty"] = False
+            request.data["is_reviewer"] = False
 
         return super().update(request, *args, **kwargs)
 
