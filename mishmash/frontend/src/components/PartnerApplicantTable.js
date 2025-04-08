@@ -17,27 +17,12 @@ import {
   DialogContent,
   DialogActions,
   Typography,
-  Tooltip,
-  IconButton,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import {
-  get_all_available_statuses_to_edit,
-  STATUS,
-  getStatusLabel,
-  getPaymentStatusLabel,
-  ALL_PAYMENT_APPLICATION_STATUSES,
-} from "../utils/constants";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
-import NoteIcon from "@mui/icons-material/Note";
-import DescriptionIcon from "@mui/icons-material/Description";
-import { useAuth } from "../context/AuthContext";
+import { STATUS, getStatusLabel } from "../utils/constants";
+import PaymentStatusDropDown from "./PaymentStatusDropDown";
 
 const PartnerApplicantTable = ({ programId }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,18 +30,9 @@ const PartnerApplicantTable = ({ programId }) => {
   const [order, setOrder] = useState("desc");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [userDetails, setUserDetails] = useState({});
-  const ALL_AVAILABLE_STATUSES = Object.values(
-    get_all_available_statuses_to_edit(user.roles_object)
-  );
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingApplicationStatus, setPendingApplicationStatus] = useState({
-    applicantId: null,
-    newStatus: "",
-    currentStatus: "",
-  });
-
   const [pendingPaymentStatus, setPendingPaymentStatus] = useState({
     applicantId: null,
     newStatus: "",
@@ -136,15 +112,6 @@ const PartnerApplicantTable = ({ programId }) => {
       return order === "asc" ? valueA - valueB : valueB - valueA;
     });
 
-  // Handle status dropdown change
-  const handleApplicationStatusSelect = (e, applicantId, currentStatus) => {
-    e.stopPropagation();
-    const newStatus = e.target.value;
-    if (newStatus === currentStatus) return;
-    setPendingApplicationStatus({ applicantId, newStatus, currentStatus });
-    setDialogOpen(true);
-  };
-
   // Handle payment status dropdown change
   const handlePaymentStatusSelect = (e, applicantId, currentStatus) => {
     e.stopPropagation();
@@ -155,37 +122,15 @@ const PartnerApplicantTable = ({ programId }) => {
   };
 
   // Confirm status change
-  const confirmApplicationStatusChange = async () => {
-    try {
-      await axiosInstance.patch(
-        `/api/applications/${pendingApplicationStatus.applicantId}/`,
-        {
-          status: pendingApplicationStatus.newStatus,
-        }
-      );
-      fetchApplicants();
-    } catch (err) {
-      console.error("Error updating status:", err);
-      setError("Failed to update status.");
-    } finally {
-      setDialogOpen(false);
-      setPendingApplicationStatus({
-        applicantId: null,
-        newStatus: "",
-        currentStatus: "",
-      });
-    }
-  };
-
-  // Confirm status change
   const confirmPaymentStatusChange = async () => {
     try {
-      await axiosInstance.patch(
+      const bruh = await axiosInstance.patch(
         `/api/applications/${pendingPaymentStatus.applicantId}/`,
         {
           payment_status: pendingPaymentStatus.newStatus,
         }
       );
+      console.log(bruh);
       fetchApplicants();
     } catch (err) {
       console.error("Error updating status:", err);
@@ -201,16 +146,6 @@ const PartnerApplicantTable = ({ programId }) => {
   };
 
   // Cancel status change
-  const cancelApplicationStatusChange = () => {
-    setDialogOpen(false);
-    setPendingApplicationStatus({
-      applicantId: null,
-      newStatus: "",
-      currentStatus: "",
-    });
-  };
-
-  // Cancel status change
   const cancelPaymentStatusChange = () => {
     setDialogOpen(false);
     setPendingPaymentStatus({
@@ -218,107 +153,6 @@ const PartnerApplicantTable = ({ programId }) => {
       newStatus: "",
       currentStatus: "",
     });
-  };
-
-  // Helper function to check document status
-  const getDocumentStatus = (docs, type) => {
-    if (!docs || !Array.isArray(docs)) return false;
-    return docs.some((doc) => doc.type === type);
-  };
-
-  // Render document summary
-  const renderDocumentsSummary = (docs) => {
-    if (!docs || !Array.isArray(docs)) return "No documents";
-
-    const requiredDocs = [
-      "Acknowledgement of the code of conduct",
-      "Housing questionnaire",
-      "Medical/health history and immunization records",
-      "Assumption of risk form",
-    ];
-
-    const submittedCount = requiredDocs.filter((type) =>
-      getDocumentStatus(docs, type)
-    ).length;
-    const totalCount = requiredDocs.length;
-
-    return (
-      <Tooltip
-        title={
-          <Box>
-            <Typography variant="subtitle2">Document Status:</Typography>
-            {requiredDocs.map((type) => (
-              <Box
-                key={type}
-                display="flex"
-                alignItems="center"
-                gap={1}
-                my={0.5}
-              >
-                {getDocumentStatus(docs, type) ? (
-                  <CheckCircleIcon fontSize="small" color="success" />
-                ) : (
-                  <ErrorIcon fontSize="small" color="error" />
-                )}
-                <Typography variant="body2">{type}</Typography>
-              </Box>
-            ))}
-          </Box>
-        }
-        PopperProps={{
-          disablePortal: true,
-          modifiers: [
-            {
-              name: "preventOverflow",
-              enabled: true,
-              options: {
-                altAxis: true,
-                altBoundary: true,
-                tether: true,
-                rootBoundary: "document",
-                padding: 8,
-              },
-            },
-          ],
-        }}
-        disableFocusListener
-        disableTouchListener
-        followCursor
-        leaveDelay={0}
-      >
-        <Box display="flex" alignItems="center">
-          <DescriptionIcon fontSize="small" sx={{ mr: 0.5 }} />
-          <Typography variant="body2">
-            {submittedCount}/{totalCount}
-          </Typography>
-        </Box>
-      </Tooltip>
-    );
-  };
-
-  // Render notes summary
-  // Render notes summary with subscript for last update
-  const renderNotesSummary = (notes) => {
-    if (!notes || notes.count === 0) {
-      return (
-        <Box display="flex" alignItems="left">
-          <NoteIcon fontSize="small" sx={{ mb: 0.5 }} />
-          <Typography variant="body2">0</Typography>
-        </Box>
-      );
-    }
-    const lastUpdatedDate = notes.lastUpdated.split(",")[0];
-    return (
-      <Box display="flex" alignItems="left" flexDirection="column">
-        <Box display="flex" alignItems="left">
-          <NoteIcon fontSize="small" sx={{ mr: 0.5 }} />
-          <Typography variant="body2">{notes.count}</Typography>
-        </Box>
-        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-          {notes.lastAuthor} - {lastUpdatedDate}
-        </Typography>
-      </Box>
-    );
   };
 
   return (
@@ -394,44 +228,10 @@ const PartnerApplicantTable = ({ programId }) => {
                   <TableCell>{user.username || "N/A"}</TableCell>
                   <TableCell>{user.email || "N/A"}</TableCell>
                   <TableCell>
-                    {ALL_PAYMENT_APPLICATION_STATUSES.includes(
-                      applicant.status
-                    ) && (
-                      <TextField
-                        select
-                        size="small"
-                        value={applicant.payment_status}
-                        onChange={(e) =>
-                          handlePaymentStatusSelect(
-                            e,
-                            applicant.id,
-                            applicant.payment_status
-                          )
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                          minWidth: "100px",
-                          "& .MuiSelect-select": {
-                            padding: "4px 6px",
-                            fontSize: "0.8125rem",
-                          },
-                          "& .MuiSelect-icon": {
-                            right: "2px",
-                          },
-                        }}
-                      >
-                        {["unpaid", "partially", "fully"].map(
-                          (status, index) => (
-                            <MenuItem key={index} value={status}>
-                              {getPaymentStatusLabel(status)}
-                            </MenuItem>
-                          )
-                        )}
-                      </TextField>
-                    )}
-                    {!ALL_PAYMENT_APPLICATION_STATUSES.includes(
-                      applicant.status
-                    ) && <h3> N/A </h3>}
+                    <PaymentStatusDropDown
+                      applicant={applicant}
+                      handlePaymentStatus={handlePaymentStatusSelect}
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -446,27 +246,24 @@ const PartnerApplicantTable = ({ programId }) => {
       )}
 
       {/* Confirmation Dialog */}
-      <Dialog open={dialogOpen} onClose={cancelApplicationStatusChange}>
+      <Dialog open={dialogOpen} onClose={cancelPaymentStatusChange}>
         <DialogTitle>Confirm Status Change</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to change the status from{" "}
             <strong>
-              {getStatusLabel(pendingApplicationStatus.currentStatus)}
+              {getStatusLabel(pendingPaymentStatus.currentStatus)}
             </strong>{" "}
-            to{" "}
-            <strong>
-              {getStatusLabel(pendingApplicationStatus.newStatus)}
-            </strong>
+            to <strong>{getStatusLabel(pendingPaymentStatus.newStatus)}</strong>
             ?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={cancelApplicationStatusChange} color="inherit">
+          <Button onClick={cancelPaymentStatusChange} color="inherit">
             Cancel
           </Button>
           <Button
-            onClick={confirmApplicationStatusChange}
+            onClick={confirmPaymentStatusChange}
             color="primary"
             variant="contained"
           >

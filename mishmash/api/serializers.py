@@ -96,6 +96,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "gpa",
             "major",
             "status",
+            "payment_status",
             "applied_on",
         ]
 

@@ -1302,6 +1302,10 @@ class UserViewSet(viewsets.ModelViewSet):
         # If requesting faculty list, filter to only show faculty
         if self.action == "list" and self.request.query_params.get("is_faculty"):
             return queryset.filter(is_faculty=True).order_by("display_name")
+        
+        # If requesting partner list, filter to only show parttner
+        if self.action == "list" and self.request.query_params.get("is_provider_partner"):
+            return queryset.filter(is_provider_partner=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access
         if self.action == "list" and not (

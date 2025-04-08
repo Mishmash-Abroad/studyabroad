@@ -34,6 +34,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import NoteIcon from "@mui/icons-material/Note";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useAuth } from "../context/AuthContext";
+import PaymentStatusDropDown from "./PaymentStatusDropDown";
 
 const ApplicantTable = ({ programId, show_track_payment }) => {
   const navigate = useNavigate();
@@ -573,49 +574,10 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
                       )}
                     </TextField>
                   </TableCell>
-
-                  {show_track_payment && (
-                    <TableCell style={{ padding: "6px 4px" }}>
-                      {ALL_PAYMENT_APPLICATION_STATUSES.includes(
-                        applicant.status
-                      ) && (
-                        <TextField
-                          select
-                          size="small"
-                          value={applicant.payment_status}
-                          onChange={(e) =>
-                            handlePaymentStatusSelect(
-                              e,
-                              applicant.id,
-                              applicant.payment_status
-                            )
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          sx={{
-                            minWidth: "100px",
-                            "& .MuiSelect-select": {
-                              padding: "4px 6px",
-                              fontSize: "0.8125rem",
-                            },
-                            "& .MuiSelect-icon": {
-                              right: "2px",
-                            },
-                          }}
-                        >
-                          {["unpaid", "partially", "fully"].map(
-                            (status, index) => (
-                              <MenuItem key={index} value={status}>
-                                {getPaymentStatusLabel(status)}
-                              </MenuItem>
-                            )
-                          )}
-                        </TextField>
-                      )}
-                      {!ALL_PAYMENT_APPLICATION_STATUSES.includes(
-                        applicant.status
-                      ) && <h3> N/A </h3>}
-                    </TableCell>
-                  )}
+                  <PaymentStatusDropDown
+                    applicant={applicant}
+                    handlePaymentStatus={handlePaymentStatusSelect}
+                  />
                 </TableRow>
               );
             })}
