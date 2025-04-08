@@ -82,20 +82,8 @@ const PartnerApplicantTable = ({ programId }) => {
           .get(`/api/users/${app.student}`)
           .then((res) => ({ id: app.student, ...res.data }))
       );
-      const documentRequests = response.data.map((app) =>
-        axiosInstance
-          .get(`/api/documents/?application=${app.id}`)
-          .then((res) => ({ id: app.id, docs: res.data }))
-      );
-      const noteRequests = response.data.map((app) =>
-        axiosInstance
-          .get(`/api/notes/?application=${app.id}`)
-          .then((res) => ({ id: app.id, notes: res.data }))
-      );
 
       const userResponses = await Promise.all(userRequests);
-      const documentResponses = await Promise.all(documentRequests);
-      const noteResponses = await Promise.all(noteRequests);
 
       // Map users
       const userMap = {};
@@ -400,60 +388,51 @@ const PartnerApplicantTable = ({ programId }) => {
                 <TableRow
                   key={applicant.id}
                   hover
-                  onClick={() => navigate(`/applications/${applicant.id}`)}
                   style={{ cursor: "pointer" }}
                 >
                   <TableCell>{user.display_name || "N/A"}</TableCell>
                   <TableCell>{user.username || "N/A"}</TableCell>
                   <TableCell>{user.email || "N/A"}</TableCell>
-                  <TableCell>{applicant.date_of_birth}</TableCell>
-                  <TableCell>{applicant.gpa}</TableCell>
-                  <TableCell>{applicant.major}</TableCell>
-                  {applicant.track_payment &&
-                    ALL_PAYMENT_APPLICATION_STATUSES.includes(
+                  <TableCell>
+                    {ALL_PAYMENT_APPLICATION_STATUSES.includes(
                       applicant.status
                     ) && (
-                      <TableCell style={{ padding: "6px 4px" }}>
-                        <TextField
-                          select
-                          size="small"
-                          value={applicant.payment_status}
-                          onChange={(e) =>
-                            handlePaymentStatusSelect(
-                              e,
-                              applicant.id,
-                              applicant.status
-                            )
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          sx={{
-                            minWidth: "100px",
-                            "& .MuiSelect-select": {
-                              padding: "4px 6px",
-                              fontSize: "0.8125rem",
-                            },
-                            "& .MuiSelect-icon": {
-                              right: "2px",
-                            },
-                          }}
-                        >
-                          {["unpaid"].map((status, index) => (
+                      <TextField
+                        select
+                        size="small"
+                        value={applicant.payment_status}
+                        onChange={(e) =>
+                          handlePaymentStatusSelect(
+                            e,
+                            applicant.id,
+                            applicant.payment_status
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{
+                          minWidth: "100px",
+                          "& .MuiSelect-select": {
+                            padding: "4px 6px",
+                            fontSize: "0.8125rem",
+                          },
+                          "& .MuiSelect-icon": {
+                            right: "2px",
+                          },
+                        }}
+                      >
+                        {["unpaid", "partially", "fully"].map(
+                          (status, index) => (
                             <MenuItem key={index} value={status}>
                               {getPaymentStatusLabel(status)}
                             </MenuItem>
-                          ))}
-                          {!["unpaid"].includes(applicant.status) && (
-                            <MenuItem
-                              key="current"
-                              value={applicant.status}
-                              disabled
-                            >
-                              {getPaymentStatusLabel(applicant.status)}
-                            </MenuItem>
-                          )}
-                        </TextField>
-                      </TableCell>
+                          )
+                        )}
+                      </TextField>
                     )}
+                    {!ALL_PAYMENT_APPLICATION_STATUSES.includes(
+                      applicant.status
+                    ) && <h3> N/A </h3>}
+                  </TableCell>
                 </TableRow>
               );
             })}

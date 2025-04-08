@@ -127,6 +127,13 @@ class IsOwnerOrReviewer(permissions.BasePermission):
         return obj.student == request.user or request.user.is_reviewer
 
 
+class IsOwnerOrProviderPartner(permissions.BasePermission):
+    """Custom permission to allow only the owner or an partner to edit/view."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.student == request.user or request.user.is_provider_partner
+
+
 class IsAdminOrSelf(permissions.BasePermission):
     """Custom permission to allow users to access their own data, while admins can access any user's data."""
 
@@ -146,6 +153,13 @@ class IsReviewerOrSelf(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.is_reviewer or obj.id == request.user.id
+
+
+class IsProviderPartnerOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while partner can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_provider_partner or obj.id == request.user.id
 
 
 class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
@@ -169,7 +183,7 @@ class IsApplicationResponseOwnerOrFaculty(permissions.BasePermission):
 
 
 class IsApplicationResponseOwnerOrReviewer(permissions.BasePermission):
-    """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
+    """Custom permission to allow only owners of the application responses or reviewer to access or modify them."""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_reviewer:
@@ -829,7 +843,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationSerializer
     permission_classes = [
         permissions.IsAuthenticated,
-        IsOwnerOrAdmin | IsOwnerOrFaculty | IsOwnerOrReviewer,
+        IsOwnerOrAdmin
+        | IsOwnerOrFaculty
+        | IsOwnerOrReviewer
+        | IsOwnerOrProviderPartner,
     ]
 
     def get_queryset(self):
@@ -1260,7 +1277,10 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [
         IsAuthenticated,
-        IsAdminOrReadOnly | IsFacultyOrSelf | IsReviewerOrSelf,
+        IsAdminOrReadOnly
+        | IsFacultyOrSelf
+        | IsReviewerOrSelf
+        | IsProviderPartnerOrSelf,
     ]
     filter_backends = [filters.SearchFilter]
     search_fields = ["username", "display_name", "email"]
