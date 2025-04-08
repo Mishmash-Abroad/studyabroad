@@ -17,11 +17,37 @@ export const STATUS = {
   CANCELED: "Canceled",
 };
 
+// Status Enums - Single source of truth for payment status names
+export const PAYMENT_STATUS = {
+  UNPAID: "Unpaid",
+  PARTIALLY: "Partially",
+  FULLY: "Fully",
+};
+
 // Program status enums
 export const PROGRAM_STATUS = {
   OPEN: "Open",
   OPENING_SOON: "Opening Soon",
   CLOSED: "Closed",
+};
+
+// All possible payment statuses with their properties
+export const ALL_PAYMENT_STATUSES = {
+  [PAYMENT_STATUS.UNPAID]: {
+    severity: SEVERITY_LEVELS.CRITICAL,
+    description: "Payment is unpaid",
+    abbr: "UNPD",
+  },
+  [PAYMENT_STATUS.PARTIALLY]: {
+    severity: SEVERITY_LEVELS.WARNING,
+    description: "Payment is partially paid",
+    abbr: "PRTL",
+  },
+  [PAYMENT_STATUS.FULLY]: {
+    severity: SEVERITY_LEVELS.GOOD,
+    description: "Payment is fully paid",
+    abbr: "FULL",
+  },
 };
 
 // All possible statuses with their properties
@@ -104,8 +130,6 @@ export const ALL_REVIEWER_EDITABLE_STATUSES = [
   STATUS.ELIGIBLE,
 ];
 
-
-
 export const ALL_STUDENT_EDITABLE_STATUSES = [
   // Statuses a student is allowed to set themselves to.
   STATUS.APPLIED,
@@ -114,6 +138,12 @@ export const ALL_STUDENT_EDITABLE_STATUSES = [
 
 export const ALL_ESSENTIAL_DOC_STATUSES = [
   // Statuses where essential documents can be submitted.
+  STATUS.APPROVED,
+  STATUS.ENROLLED,
+];
+
+export const ALL_PAYMENT_APPLICATION_STATUSES = [
+  // Statuses where Payments can be submitted.
   STATUS.APPROVED,
   STATUS.ENROLLED,
 ];
@@ -160,9 +190,15 @@ export const PROGRAM_ACTION_BUTTON_TEXT = {
 // Helper functions for status handling
 export const getStatusSeverity = (status) =>
   ALL_STATUSES[status]?.severity ?? SEVERITY_LEVELS.NORMAL;
+export const getPaymentStatusSeverity = (status) =>
+  ALL_PAYMENT_STATUSES[status]?.severity ?? SEVERITY_LEVELS.NORMAL;
 export const getStatusLabel = (status) => ALL_STATUSES[status]?.label ?? status;
+export const getPaymentStatusLabel = (status) =>
+  ALL_PAYMENT_STATUSES[status]?.label ?? status;
 export const getStatusDescription = (status) =>
   ALL_STATUSES[status]?.description ?? "";
+export const getPaymentStatusDescription = (status) =>
+  ALL_PAYMENT_STATUSES[status]?.description ?? "";
 
 // Theme-based status styling: Expects theme.palette.status to have keys matching the severity strings.
 export const getStatusStyle = (theme, severity) => {
@@ -185,14 +221,13 @@ export const SESSION_TIMEOUTS = {
 // Academic terms
 export const SEMESTERS = ["Summer", "Fall", "Spring"];
 
-
 /**
  * Determines the set of application statuses a user can edit based on their role.
- * 
+ *
  * - Admins, faculty, and reviewers have specific permissions to edit statuses.
- * - Students (or users without the specified roles) receive an empty object, 
+ * - Students (or users without the specified roles) receive an empty object,
  *   meaning they cannot modify application statuses of other students.
- * 
+ *
  * @param {Object} roles - An object containing user roles as boolean values.
  * @returns {Object} - The set of statuses the user can edit, or an empty object if unauthorized.
  */
@@ -211,32 +246,37 @@ export const get_all_available_statuses_to_edit = (roles) => {
 export const DOCUMENT_TEMPLATES = {
   "Acknowledgement of the code of conduct": "/templates/Code_of_Conduct.pdf",
   "Housing questionnaire": "/templates/Housing_Questionnaire.pdf",
-  "Medical/health history and immunization records": "/templates/Medical_History_and_Immunizations.pdf",
-  "Assumption of risk form": "/templates/Assumption_of_Risk.pdf"
-}
+  "Medical/health history and immunization records":
+    "/templates/Medical_History_and_Immunizations.pdf",
+  "Assumption of risk form": "/templates/Assumption_of_Risk.pdf",
+};
 
 export const DOCUMENTS = {
   CODE_OF_CONDUCT: {
     name: "Acknowledgement of the code of conduct",
     path: "/templates/Code_of_Conduct.pdf",
-    description: "Acknowledgement of the code of conduct: A document reviewing the code of conduct, and attesting to student's understanding and commitment to abide by same. The student must sign this to participate.",
+    description:
+      "Acknowledgement of the code of conduct: A document reviewing the code of conduct, and attesting to student's understanding and commitment to abide by same. The student must sign this to participate.",
   },
   HOUSING_QUESTIONNAIRE: {
     name: "Housing questionnaire",
     path: "/templates/Housing_Questionnaire.pdf",
-    description: "Housing questionnaire: A set of questions about housing preferences to be reviewed by the faculty lead(s) to help with assigning housing. The student must fill this out.",
+    description:
+      "Housing questionnaire: A set of questions about housing preferences to be reviewed by the faculty lead(s) to help with assigning housing. The student must fill this out.",
   },
   MEDICAL_HISTORY: {
     name: "Medical/health history and immunization records",
     path: "/templates/Medical_History_and_Immunizations.pdf",
-    description: "Medical/health history and immunization records: A high-level summary of health status and attestation regarding immunizations. This document in particular is covered by HIPAA (definition 11). The student must fill out and sign this.",
+    description:
+      "Medical/health history and immunization records: A high-level summary of health status and attestation regarding immunizations. This document in particular is covered by HIPAA (definition 11). The student must fill out and sign this.",
   },
   ASSUMPTION_OF_RISK: {
     name: "Assumption of risk form",
     path: "/templates/Assumption_of_Risk.pdf",
-    description: "Assumption of risk form: A document waiving HCC's liability for student participation in the program. The student must sign this to participate.",
+    description:
+      "Assumption of risk form: A document waiving HCC's liability for student participation in the program. The student must sign this to participate.",
   },
-}
+};
 
 export const DEFAULT_QUESTIONS = [
   "Why do you want to participate in this study abroad program?",
@@ -244,4 +284,4 @@ export const DEFAULT_QUESTIONS = [
   "What challenges do you anticipate during this experience, and how will you address them?",
   "Describe a time you adapted to a new or unfamiliar environment.",
   "What unique perspective or contribution will you bring to the group?",
-]
+];

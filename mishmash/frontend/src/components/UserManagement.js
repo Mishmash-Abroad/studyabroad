@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { styled } from "@mui/material/styles";
 import {
   Box,
@@ -89,12 +89,24 @@ const UserRoleChips = ({ user, currentUser, onRoleChange }) => {
   if (!user.is_admin) availableRoles.push("admin");
   if (!user.is_faculty) availableRoles.push("faculty");
   if (!user.is_reviewer) availableRoles.push("reviewer");
+  if (!user.is_provider_partner) availableRoles.push("provider_partner");
 
   // Whether user has any roles
-  const hasAnyRole = user.is_admin || user.is_faculty || user.is_reviewer;
+  const hasAnyRole =
+    user.is_admin ||
+    user.is_faculty ||
+    user.is_reviewer ||
+    user.is_provider_partner;
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 1 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 1,
+      }}
+    >
       {/* Admin role chip */}
       {user.is_admin && (
         <Chip
@@ -143,6 +155,21 @@ const UserRoleChips = ({ user, currentUser, onRoleChange }) => {
         />
       )}
 
+      {user.is_provider_partner && (
+        <Chip
+          size="small"
+          color="success"
+          icon={<AssignmentTurnedIn fontSize="small" />}
+          label="Provider Partner"
+          onDelete={
+            currentUser?.id === user.id
+              ? undefined
+              : () => onRoleChange(user, "provider_partner", false)
+          }
+          sx={chipStyle}
+        />
+      )}
+
       {/* Regular user chip (no roles) */}
       {!hasAnyRole && (
         <Chip
@@ -160,12 +187,12 @@ const UserRoleChips = ({ user, currentUser, onRoleChange }) => {
           <IconButton
             size="small"
             sx={{
-              border: '1px dashed rgba(0, 0, 0, 0.23)',
-              borderRadius: '50%',
-              padding: '2px',
+              border: "1px dashed rgba(0, 0, 0, 0.23)",
+              borderRadius: "50%",
+              padding: "2px",
               height: 24,
               width: 24,
-              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+              "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
             }}
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
@@ -225,13 +252,33 @@ const UserRoleChips = ({ user, currentUser, onRoleChange }) => {
             <ListItemText>Promote to Reviewer</ListItemText>
           </MenuItem>
         )}
+
+        {!user.is_provider_partner && (
+          <MenuItem
+            onClick={() => {
+              onRoleChange(user, "provider_partner", true);
+              setAnchorEl(null);
+            }}
+            disabled={currentUser?.id === user.id}
+          >
+            <ListItemIcon>
+              <AssignmentTurnedIn fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Promote to Provider Partner</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
     </Box>
   );
 };
 
 // UserActionButtons Component - Handles user-related actions
-const UserActionButtons = ({ user, currentUser, onChangePassword, onDeleteUser }) => {
+const UserActionButtons = ({
+  user,
+  currentUser,
+  onChangePassword,
+  onDeleteUser,
+}) => {
   const isCurrentUser = currentUser?.id === user.id;
   const isSystemAdmin = user.username === "admin";
 
@@ -239,7 +286,11 @@ const UserActionButtons = ({ user, currentUser, onChangePassword, onDeleteUser }
     <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
       {/* Change Password Button */}
       <Tooltip
-        title={user.is_sso ? "SSO users use external authentication" : "Change Password"}
+        title={
+          user.is_sso
+            ? "SSO users use external authentication"
+            : "Change Password"
+        }
         disableInteractive
       >
         <span>
@@ -319,11 +370,21 @@ const UserManagement = () => {
   // Column definitions
   const columns = [
     { id: "username", label: "Username", sortable: true, align: "left" },
-    { id: "display_name", label: "Display Name", sortable: true, align: "left" },
+    {
+      id: "display_name",
+      label: "Display Name",
+      sortable: true,
+      align: "left",
+    },
     { id: "email", label: "Email", sortable: true, align: "left" },
     { id: "is_sso", label: "Type", sortable: true, align: "center" },
     { id: "roles", label: "Roles", sortable: false, align: "center" },
-    { id: "actions", label: "Account Actions", sortable: false, align: "center" },
+    {
+      id: "actions",
+      label: "Account Actions",
+      sortable: false,
+      align: "center",
+    },
   ];
 
   // Fetch data on component mount
@@ -365,7 +426,10 @@ const UserManagement = () => {
       if (error.response.status === 400) {
         setError(error.response.data.detail || defaultMessage);
       } else if (error.response.status === 403) {
-        setError(error.response.data.detail || "You don't have permission to perform this action.");
+        setError(
+          error.response.data.detail ||
+            "You don't have permission to perform this action."
+        );
       } else if (error.response.status === 401) {
         setError("Authentication failed. Please login again.");
       } else {
@@ -401,35 +465,52 @@ const UserManagement = () => {
 
       if (addRole) {
         // Different messages based on current roles
-        const hasNoApplications = user.is_faculty || user.is_reviewer || user.is_admin;
-        
-        title = `Warning: Promote to ${roleType.charAt(0).toUpperCase() + roleType.slice(1)}`;
-        
+        const hasNoApplications =
+          user.is_faculty ||
+          user.is_reviewer ||
+          user.is_admin ||
+          user.is_provider_partner;
+
+        title = `Warning: Promote to ${
+          roleType.charAt(0).toUpperCase() + roleType.slice(1)
+        }`;
+        console.log(roleType);
         if (hasNoApplications) {
           message = `Are you sure you want to promote ${user.display_name} to ${roleType}?`;
+          
+          message +=
+            roleType != "provider_partner"
+              ? ``
+              : `This will remove all other roles`;
         } else {
           message = `Promoting ${user.display_name} to ${roleType} will delete their ${applications_count} submitted applications. Do you wish to proceed?`;
         }
-        
+
         action = { [`is_${roleType}`]: true };
       } else {
-        title = `Warning: Demote from ${roleType.charAt(0).toUpperCase() + roleType.slice(1)}`;
-        
+        title = `Warning: Demote from ${
+          roleType.charAt(0).toUpperCase() + roleType.slice(1)
+        }`;
+
         // Different messages based on whether they have faculty programs
-        if (roleType === 'reviewer') {
+        if (roleType === "reviewer") {
           message = `Are you sure you want to demote ${user.display_name} from reviewer? This may affect their ability to review applications.`;
-        } else if (roleType === 'faculty') {
+        } else if (roleType === "faculty") {
           // For faculty and admin roles, check if they're a faculty lead for any programs
           if (faculty_programs && faculty_programs.length > 0) {
-            message = `Demoting ${user.display_name} from ${roleType} will remove them as faculty lead for the following programs: ${faculty_programs.join(", ")}.`;
+            message = `Demoting ${
+              user.display_name
+            } from ${roleType} will remove them as faculty lead for the following programs: ${faculty_programs.join(
+              ", "
+            )}.`;
           } else {
             message = `Are you sure you want to demote ${user.display_name} from ${roleType}?`;
           }
-        } else if (roleType === 'admin') {
+        } else if (roleType === "admin") {
           // Admin role isn't directly associated with programs
           message = `Are you sure you want to demote ${user.display_name} from admin?`;
         }
-        
+
         action = { [`is_${roleType}`]: false };
       }
 
@@ -455,7 +536,6 @@ const UserManagement = () => {
   // Handle user deletion
   const handleDeleteUser = async (user) => {
     try {
-      
       const warningResponse = await axiosInstance.get(
         `/api/users/${user.id}/user_warnings/`
       );
@@ -463,15 +543,19 @@ const UserManagement = () => {
 
       // Build a context-appropriate message based on user roles and data
       let message = `Are you sure you want to delete ${user.display_name}?`;
-      
+
       // Only mention faculty lead programs if the user is actually a faculty member AND has programs
-      const hasFacultyPrograms = user.is_faculty && faculty_programs && faculty_programs.length > 0;
-      
+      const hasFacultyPrograms =
+        user.is_faculty && faculty_programs && faculty_programs.length > 0;
+
       // Only mention applications if they have any
       const hasApplications = applications_count > 0;
-      const programs_affected = faculty_programs.join(", ") == 'None' ? 'no programs' : faculty_programs.join(", ");
+      const programs_affected =
+        faculty_programs.join(", ") == "None"
+          ? "no programs"
+          : faculty_programs.join(", ");
       if (hasFacultyPrograms && hasApplications) {
-        message =  `Deleting ${user.display_name} will remove them as faculty lead for ${programs_affected} and delete their ${applications_count} submitted applications. Proceed?`;
+        message = `Deleting ${user.display_name} will remove them as faculty lead for ${programs_affected} and delete their ${applications_count} submitted applications. Proceed?`;
       } else if (hasFacultyPrograms) {
         message = `Deleting ${user.display_name} will remove them as faculty lead for ${programs_affected}. Proceed?`;
       } else if (hasApplications) {
@@ -504,7 +588,16 @@ const UserManagement = () => {
       if (roleFilter === "ADMIN" && user.is_admin) return true;
       if (roleFilter === "FACULTY" && user.is_faculty) return true;
       if (roleFilter === "REVIEWER" && user.is_reviewer) return true;
-      if (roleFilter === "REGULAR" && !user.is_admin && !user.is_faculty && !user.is_reviewer) return true;
+      if (roleFilter === "PROVIDER_PARTNER" && user.is_provider_partner)
+        return true;
+      if (
+        roleFilter === "REGULAR" &&
+        !user.is_admin &&
+        !user.is_faculty &&
+        !user.is_reviewer &&
+        !user.is_provider_partner
+      )
+        return true;
       return false;
     })
     .filter((user) => {
@@ -575,7 +668,9 @@ const UserManagement = () => {
       {/* Error message */}
       {error && (
         <Box sx={{ mt: 2, mb: 2, pl: 2 }}>
-          <Typography color="error" variant="body2">{error}</Typography>
+          <Typography color="error" variant="body2">
+            {error}
+          </Typography>
         </Box>
       )}
 
@@ -611,17 +706,25 @@ const UserManagement = () => {
               </TableRow>
             ) : (
               filteredAndSortedUsers.map((user) => {
-                const isCurrentUser = currentUser &&
-                  (user.id === currentUser.id || user.username === currentUser.username);
+                const isCurrentUser =
+                  currentUser &&
+                  (user.id === currentUser.id ||
+                    user.username === currentUser.username);
 
                 return (
                   <TableRow
                     key={user.id}
                     hover
-                    sx={isCurrentUser ? {
-                      backgroundColor: "rgba(0, 0, 0, 0.04)",
-                      "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.08)" },
-                    } : {}}
+                    sx={
+                      isCurrentUser
+                        ? {
+                            backgroundColor: "rgba(0, 0, 0, 0.04)",
+                            "&:hover": {
+                              backgroundColor: "rgba(0, 0, 0, 0.08)",
+                            },
+                          }
+                        : {}
+                    }
                   >
                     <StyledTableCell>{user.username}</StyledTableCell>
                     <StyledTableCell>
@@ -637,7 +740,13 @@ const UserManagement = () => {
                     <StyledTableCell>{user.email}</StyledTableCell>
                     <StyledTableCell align="center">
                       <Chip
-                        icon={user.is_sso ? <Link color="secondary" /> : <Storage color="secondary" />}
+                        icon={
+                          user.is_sso ? (
+                            <Link color="secondary" />
+                          ) : (
+                            <Storage color="secondary" />
+                          )
+                        }
                         label={user.is_sso ? "SSO" : "Local"}
                         color="secondary"
                         size="small"
