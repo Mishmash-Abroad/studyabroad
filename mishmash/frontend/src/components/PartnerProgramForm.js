@@ -169,7 +169,7 @@ const PartnerProgramForm = ({ program }) => {
           <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
             <ProviderPartnerPicklist
               initialSelected={programData.provider_partner_ids}
-              disable_picklist={!user.is_admin}
+              disable_picklist={true}
             />
           </Box>
         )}

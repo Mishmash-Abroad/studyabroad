@@ -407,7 +407,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
             <ProviderPartnerPicklist
               onProviderPartnerChange={handleProviderPartnerChange}
-              initialSelected={programData.provider_partner_ids}
+              initialSelected={programData.provider_partner_ids || ""}
               disable_picklist={!user.is_admin}
             />
           </Box>

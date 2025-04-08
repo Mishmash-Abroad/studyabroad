@@ -59,17 +59,22 @@ const ProviderPartnerPicklist = ({
       try {
         setLoading(true);
         const response = await axiosInstance.get("/api/users/", {
-          params: { is_provider_partner: true },
+          params: { is_provider_partner: "true" },
         });
-        
-        // TODO fix this so that it is not necessary to filter
-        const filteredPartners = response.data.filter(user => user.is_provider_partner === true);
 
-        setProviderPartnerList(filteredPartners);
+        // // TODO fix this so that it is not necessary to filter
+        // const filteredPartners = response.data.filter(
+        //   (user) => user.is_provider_partner == true
+        // );
+        console.log("bru");
+        console.log(response.data);
+        setProviderPartnerList(response.data);
         setError(null);
       } catch (err) {
         console.error("Error fetching provider partners:", err);
-        setError("Failed to load provider partner list. Please try again later.");
+        setError(
+          "Failed to load provider partner list. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
@@ -79,9 +84,12 @@ const ProviderPartnerPicklist = ({
   }, []);
 
   useEffect(() => {
+    console.log(initialSelected);
+    console.log(providerPartnerList);
+
     if (providerPartnerList.length > 0 && initialSelected.length > 0) {
-      const initialProviderPartner = providerPartnerList.filter((providerPartner) =>
-        initialSelected.includes(providerPartner.id)
+      const initialProviderPartner = providerPartnerList.filter(
+        (providerPartner) => initialSelected.includes(providerPartner.id)
       );
       setSelectedProviderPartner(initialProviderPartner);
     }
@@ -95,6 +103,8 @@ const ProviderPartnerPicklist = ({
   if (error) {
     return <div style={{ color: "red", padding: "10px" }}>{error}</div>;
   }
+
+  console.log(selectedProviderPartner);
 
   return (
     <StyledAutocomplete
@@ -110,7 +120,11 @@ const ProviderPartnerPicklist = ({
           {...params}
           variant="standard"
           label="Provider Partners"
-          placeholder={selectedProviderPartner.length === 0 ? "Search provider partners..." : ""}
+          placeholder={
+            selectedProviderPartner.length === 0
+              ? "Search provider partners..."
+              : ""
+          }
           InputLabelProps={{
             shrink: true,
           }}

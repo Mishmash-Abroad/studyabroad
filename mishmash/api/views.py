@@ -1288,6 +1288,7 @@ class UserViewSet(viewsets.ModelViewSet):
             self.request.user.is_admin
             or self.request.user.is_faculty
             or self.request.user.is_reviewer
+            or self.request.user.is_provider_partner
         ):
             return queryset.none()
 
