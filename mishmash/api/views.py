@@ -708,7 +708,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 )
         else:
             request.data["provider_partner_ids"] = []
-            request.data["payment_deadline"] = None
+            request.data["payment_deadline"] = essential_document_deadline
 
         return super().update(request, *args, **kwargs)
 
