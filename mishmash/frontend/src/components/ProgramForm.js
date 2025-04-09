@@ -285,7 +285,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       );
     } finally {
       setIsSubmitting(false);
-      navigate(`/dashboard/admin-programs/${programData.title}`);
+      // TODO  might need to revaluate this - Alexis
+      navigate(
+        `/dashboard/admin-programs/${encodeURIComponent(
+          programData.title.trim().replace(/\s+/g, "-")
+        )}`
+      );
     }
   };
 
