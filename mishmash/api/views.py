@@ -761,6 +761,35 @@ class ProgramViewSet(viewsets.ModelViewSet):
             return Response({"status": None})
 
     @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
+    def payment_status(self, request, pk=None):
+        """
+        Get the current user's payment application status for a specific program.
+
+        ## Returns:
+        - 200 OK: `{"status": "Unpaid", "application_id": 12}`
+        - 401 Unauthorized: If user is not authenticated
+        - 404 Not Found: If application does not exist
+
+        ## Example:
+        - `GET /api/programs/5/application_status/`
+
+        ## Permissions:
+        - Authenticated users only
+        """
+        program = self.get_object()
+        if not request.user.is_authenticated or not program.track_payment:
+            return Response({"status": None})
+
+        try:
+            application = Application.objects.get(student=request.user, program=program)
+            
+            return Response(
+                {"payment_status": application.payment_status, "application_id": application.id}
+            )
+        except Application.DoesNotExist:
+            return Response({"status": None})
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
     def applicant_counts(self, request, pk=None):
         """
         Retrieve the number of applicants in different statuses for a program.
