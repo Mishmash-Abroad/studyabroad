@@ -106,8 +106,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setDirty(true);
   };
 
-  const handleBooleanChange = (e) => {
+  const handleTrackPaymentChange = async (e) => {
     // TODO figure out a way to shorten this
+    if (editingProgram && !e.target.checked) {
+      if (
+        !window.confirm(
+          `Are you sure you want to disable track payments for this program? recorded payment informaton will be lost if the modification (disabling track payments) is done .`
+        )
+      )
+        return;
+    }
+
     if (e.target.checked) {
       setProgramData({ ...programData, [e.target.name]: true });
     } else {
@@ -398,7 +407,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
               <Switch
                 checked={programData.track_payment}
                 name="track_payment"
-                onChange={handleBooleanChange}
+                onChange={handleTrackPaymentChange}
                 color="success"
               />
             }
