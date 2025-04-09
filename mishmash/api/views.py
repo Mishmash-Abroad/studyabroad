@@ -478,9 +478,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
         year = request.data.get("year", "").strip()
         semester = request.data.get("semester", "").strip()
         description = request.data.get("description", "").strip()
+        track_payment = request.data.get("track_payment") == "true"
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         essential_document_deadline = request.data.get("essential_document_deadline")
+        payment_deadline = request.data.get("payment_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
         questions = request.data.get("questions", [])
@@ -499,11 +501,6 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         if len(semester) > 20:
             raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
-
-        # if len(description) > 1000:
-        #     raise ValidationError(
-        #         {"detail": "Description cannot exceed 1000 characters."}
-        #     )
 
         if not year.isdigit() or len(year) != 4:
             raise ValidationError(
@@ -556,6 +553,29 @@ class ProgramViewSet(viewsets.ModelViewSet):
                     "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
                 }
             )
+
+        if track_payment:
+            try:
+                payment_deadline = datetime.strptime(payment_deadline, "%Y-%m-%d")
+                if not payment_deadline:
+                    raise ValidationError(
+                        {
+                            "detail": "Payment deadline should be set if track payment is set"
+                        }
+                    )
+                if not (essential_document_deadline <= payment_deadline <= start_date):
+                    raise ValidationError(
+                        {
+                            "detail": "Payment deadline should be after or at essential document deadline and before or at start date"
+                        }
+                    )
+            except:
+                raise ValidationError(
+                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+                )
+        else:
+            request.data["provider_partner_ids"] = []
+            request.data["payment_deadline"] = None
 
         response = super().create(request, *args, **kwargs)
         program_instance = Program.objects.get(id=response.data.get("id"))
@@ -708,7 +728,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 )
         else:
             request.data["provider_partner_ids"] = []
-            request.data["payment_deadline"] = essential_document_deadline
+            request.data["payment_deadline"] = None
 
         return super().update(request, *args, **kwargs)
 
@@ -1302,9 +1322,11 @@ class UserViewSet(viewsets.ModelViewSet):
         # If requesting faculty list, filter to only show faculty
         if self.action == "list" and self.request.query_params.get("is_faculty"):
             return queryset.filter(is_faculty=True).order_by("display_name")
-        
+
         # If requesting partner list, filter to only show parttner
-        if self.action == "list" and self.request.query_params.get("is_provider_partner"):
+        if self.action == "list" and self.request.query_params.get(
+            "is_provider_partner"
+        ):
             return queryset.filter(is_provider_partner=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access

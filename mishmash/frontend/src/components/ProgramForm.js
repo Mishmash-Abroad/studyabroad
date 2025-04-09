@@ -285,6 +285,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       );
     } finally {
       setIsSubmitting(false);
+      navigate(`/dashboard/admin-programs/${programData.title}`);
     }
   };
 
