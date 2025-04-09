@@ -474,7 +474,7 @@ const UserManagement = () => {
         title = `Warning: Promote to ${
           roleType.charAt(0).toUpperCase() + roleType.slice(1)
         }`;
-        console.log(roleType);
+        
         if (hasNoApplications) {
           message = `Are you sure you want to promote ${user.display_name} to ${roleType}?`;
           

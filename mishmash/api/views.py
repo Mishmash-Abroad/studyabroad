@@ -1318,16 +1318,16 @@ class UserViewSet(viewsets.ModelViewSet):
         Return all users for admins, but only faculty for public faculty list
         """
         queryset = User.objects.all()
-
-        # If requesting faculty list, filter to only show faculty
-        if self.action == "list" and self.request.query_params.get("is_faculty"):
-            return queryset.filter(is_faculty=True).order_by("display_name")
+        is_faculty = self.request.query_params.get("is_faculty")
+        is_provider_partner = self.request.query_params.get("is_provider_partner")
 
         # If requesting partner list, filter to only show parttner
-        if self.action == "list" and self.request.query_params.get(
-            "is_provider_partner"
-        ):
+        if is_provider_partner and self.action == "list":
             return queryset.filter(is_provider_partner=True).order_by("display_name")
+
+        # If requesting faculty list, filter to only show faculty
+        if is_faculty and self.action == "list":
+            return queryset.filter(is_faculty=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access
         if self.action == "list" and not (

@@ -124,13 +124,12 @@ const PartnerApplicantTable = ({ programId }) => {
   // Confirm status change
   const confirmPaymentStatusChange = async () => {
     try {
-      const bruh = await axiosInstance.patch(
+      await axiosInstance.patch(
         `/api/applications/${pendingPaymentStatus.applicantId}/`,
         {
           payment_status: pendingPaymentStatus.newStatus,
         }
       );
-      console.log(bruh);
       fetchApplicants();
     } catch (err) {
       console.error("Error updating status:", err);

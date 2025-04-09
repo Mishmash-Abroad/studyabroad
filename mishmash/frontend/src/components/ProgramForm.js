@@ -69,7 +69,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
-      console.log(editingProgram);
       setProgramData({
         title: editingProgram.title,
         year: editingProgram.year,
@@ -111,7 +110,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     if (editingProgram && !e.target.checked) {
       if (
         !window.confirm(
-          `Are you sure you want to disable track payments for this program? recorded payment informaton will be lost if the modification (disabling track payments) is done .`
+          `Are you sure you want to disable track payments for this program? recorded payment informaton will be lost if the modification (disabling track payments) is done. `
         )
       )
         return;
@@ -422,7 +421,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
             <ProviderPartnerPicklist
               onProviderPartnerChange={handleProviderPartnerChange}
-              initialSelected={programData.provider_partner_ids || ""}
+              initialSelected={programData.provider_partner_ids}
               disable_picklist={!user.is_admin}
             />
           </Box>
