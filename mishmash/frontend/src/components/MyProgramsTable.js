@@ -177,7 +177,10 @@ const compareValues = (a, b, orderBy) => {
     [
       "title",
       "year_semester",
+      "application_open_date",
       "application_deadline",
+      "essential_document_deadline",
+      "payment_deadline",
       "start_date",
       "end_date",
     ].includes(orderBy)
@@ -208,7 +211,16 @@ const compareValues = (a, b, orderBy) => {
   if (valueB === null || valueB === undefined) return -1;
   if (valueA === valueB) return 0;
   // Date fields
-  if (["application_deadline", "start_date", "end_date"].includes(orderBy)) {
+  if (
+    [
+      "application_open_date",
+      "application_deadline",
+      "essential_document_deadline",
+      "payment_deadline",
+      "start_date",
+      "end_date",
+    ].includes(orderBy)
+  ) {
     return new Date(valueA) - new Date(valueB);
   }
   // String comparison
@@ -254,6 +266,7 @@ const MyProgramsTable = () => {
                 );
                 documents = documentsResponse.data;
               }
+              console.log(program);
               return {
                 id: program.id,
                 program,
@@ -381,8 +394,23 @@ const MyProgramsTable = () => {
     { id: "year_semester", label: "Year & Semester", sortable: true },
     { id: "faculty_leads", label: "Faculty Lead(s)", sortable: true },
     {
+      id: "application_open_date",
+      label: "Application Open Date",
+      sortable: true,
+    },
+    {
       id: "application_deadline",
       label: "Application Deadline",
+      sortable: true,
+    },
+    {
+      id: "essential_document_deadline",
+      label: "Essential Document Deadline",
+      sortable: true,
+    },
+    {
+      id: "payment_deadline",
+      label: "Payment Deadline",
       sortable: true,
     },
     { id: "start_date", label: "Program Start", sortable: true },
@@ -443,7 +471,18 @@ const MyProgramsTable = () => {
                       .join(", ")}
                   </StyledTableCell>
                   <StyledTableCell>
+                    {formatDate(app.program.application_open_date)}
+                  </StyledTableCell>
+                  <StyledTableCell>
                     {formatDate(app.program.application_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(app.program.essential_document_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {!app.program.track_payment
+                      ? "N/A"
+                      : formatDate(app.program.payment_deadline)}
                   </StyledTableCell>
                   <StyledTableCell>
                     {formatDate(app.program.start_date)}
