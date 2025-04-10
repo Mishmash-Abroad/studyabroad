@@ -7,6 +7,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import { styled } from "@mui/material/styles";
 import TopNavBar from "../components/TopNavBar";
