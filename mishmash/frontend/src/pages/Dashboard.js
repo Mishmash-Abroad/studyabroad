@@ -197,7 +197,7 @@ const return_based_on_roles = (
 
 // -------------------- MAIN COMPONENT --------------------
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // logic for choosing the right routes
@@ -215,6 +215,7 @@ const Dashboard = () => {
   const refreshPrerequisites = async () => {
     try {
       await axiosInstance.post(`/api/users/${user.id}/refresh_transcript/`);
+      refreshUser();
     } catch (err) {
       console.error("Failed to connect user to a Ulink account.");
     }
@@ -247,7 +248,9 @@ const Dashboard = () => {
     if (user?.is_sso && !user?.ulink_username) {
       // try to connect ulink. If fails, warn user.
       refreshPrerequisites();
-      setUlinkDialogOpen(true);
+      if (!user?.ulink_username) {
+        setUlinkDialogOpen(true);
+      }
     }
   }, [user]);
 
