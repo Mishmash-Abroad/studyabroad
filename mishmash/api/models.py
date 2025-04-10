@@ -7,6 +7,13 @@ import uuid
 from auditlog.registry import auditlog
 
 
+def site_branding_logo_upload_path(instance, filename):
+    """
+    Construct a path for the logo file. E.g.: "branding/logo.png"
+    """
+    return f"branding/{filename}"
+
+
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
@@ -292,6 +299,41 @@ class LetterOfRecommendation(models.Model):
         return bool(self.pdf and self.letter_timestamp)
 
 
+class SiteBranding(models.Model):
+    """
+    Stores site branding information for white-label support.
+    Typically there will be only one active record.
+    """
+    site_name = models.CharField(
+        max_length=200,
+        default="Study Abroad College",
+        help_text="Name of the institution or site."
+    )
+    primary_color = models.CharField(
+        max_length=20,
+        default="#1976d2",  # A nice default blue color
+        help_text="Main highlight color (HEX code like #1976d2)."
+    )
+    logo = models.ImageField(
+        upload_to=site_branding_logo_upload_path,
+        null=True,
+        blank=True,
+        help_text="Upload a logo image. Ideally PNG with transparent background."
+    )
+    welcome_message = models.TextField(
+        default="Welcome to our Study Abroad portal!",
+        blank=True,
+        help_text="Welcome message displayed on the homepage."
+    )
+    
+    class Meta:
+        verbose_name = "Site Branding"
+        verbose_name_plural = "Site Branding"
+
+    def __str__(self):
+        return f"Branding: {self.site_name}"
+
+
 auditlog.register(User)
 auditlog.register(Program)
 auditlog.register(Application)
@@ -300,3 +342,4 @@ auditlog.register(Announcement)
 auditlog.register(ConfidentialNote)
 auditlog.register(Document)
 auditlog.register(LetterOfRecommendation)
+auditlog.register(SiteBranding)

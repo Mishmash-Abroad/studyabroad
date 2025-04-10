@@ -47,6 +47,7 @@ from .models import (
     Document,
     ConfidentialNote,
     LetterOfRecommendation,
+    SiteBranding,
 )
 from .serializers import (
     UserSerializer,
@@ -58,6 +59,7 @@ from .serializers import (
     DocumentSerializer,
     AnnouncementSerializer,
     LetterOfRecommendationSerializer,
+    SiteBrandingSerializer,
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -2235,3 +2237,35 @@ class MFAViewSet(viewsets.ViewSet):
         return Response(
             {"error": "Invalid TOTP code."}, status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class SiteBrandingViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing site branding settings (white-label support).
+    Only administrators can modify branding settings, but all users can view them.
+    """
+    queryset = SiteBranding.objects.all()
+    serializer_class = SiteBrandingSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    @action(detail=False, methods=['get'])
+    def current(self, request):
+        """
+        Get the current active branding settings. Creates default settings if none exist.
+        """
+        try:
+            # Try to get the first branding record, or create a default one if none exists
+            branding, created = SiteBranding.objects.get_or_create(
+                id=1,  # Always use ID 1 for consistency
+                defaults={
+                    'site_name': 'Study Abroad College',
+                    'primary_color': '#1976d2',
+                }
+            )
+            serializer = self.get_serializer(branding, context={'request': request})
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"error": f"Error retrieving branding settings: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

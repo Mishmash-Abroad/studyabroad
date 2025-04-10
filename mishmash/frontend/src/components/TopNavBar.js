@@ -3,6 +3,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
+import CircularProgress from '@mui/material/CircularProgress';
 import { Menu, MenuItem, IconButton, Button } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -131,18 +132,46 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
 }));
 
 // -------------------- COMPONENT LOGIC --------------------
-const LOGO_PATH = "/images/logo.png";
 
 function TopNavBar({ onLoginClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [branding, setBranding] = useState({
+    site_name: "Study Abroad College",
+    primary_color: theme.palette.primary.main,
+    logo_url: null
+  });
+  const [loading, setLoading] = useState(true);
 
   // Reset anchorEl when user changes
   useEffect(() => {
     setAnchorEl(null);
   }, [user]);
+  
+  // Fetch branding settings when component mounts
+  useEffect(() => {
+    const fetchBranding = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get("/api/branding/current/");
+        setBranding({
+          site_name: response.data.site_name,
+          primary_color: response.data.primary_color,
+          logo_url: response.data.logo_url
+        });
+      } catch (error) {
+        console.error("Error fetching branding:", error);
+        // Use defaults in case of error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBranding();
+  }, []);
 
   const handleLogout = async () => {
     handleUserMenuClose(); // Close the menu first
@@ -178,10 +207,28 @@ function TopNavBar({ onLoginClick }) {
 
   return (
     <>
-      <NavBar>
+      <NavBar style={{ backgroundColor: branding.primary_color }}>
         <NavLogo onClick={() => navigate("/")}>
-          <NavLogoImage src={LOGO_PATH} alt="HCC Logo" />
-          <NavTitle>HCC Study Abroad</NavTitle>
+          {loading ? (
+            <CircularProgress size={40} color="inherit" />
+          ) : (
+            <>
+              {branding.logo_url ? (
+                <NavLogoImage 
+                  src={branding.logo_url} 
+                  alt="Site Logo" 
+                  onError={(e) => {
+                    console.log('Logo failed to load:', branding.logo_url);
+                    e.target.src = '/images/logo.png';
+                    e.target.onerror = null; // Prevent infinite loop
+                  }}
+                />
+              ) : (
+                <NavLogoImage src="/images/logo.png" alt="Default Logo" />
+              )}
+              <NavTitle>{branding.site_name}</NavTitle>
+            </>
+          )}
         </NavLogo>
 
         <NavControls>
