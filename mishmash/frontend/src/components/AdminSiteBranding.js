@@ -170,6 +170,12 @@ const AdminSiteBranding = () => {
         if (response.data.logo_url) {
           setLogoPreview(response.data.logo_url);
         }
+        
+        // Set the page title when first loading the branding
+        if (response.data.site_name) {
+          document.title = response.data.site_name;
+        }
+        
         setLoading(false);
       } catch (err) {
         console.error("Error fetching branding:", err);
@@ -247,6 +253,10 @@ const AdminSiteBranding = () => {
       
       setLogo(null);
       setSuccess(true);
+      
+      // Update the page title to match the site name
+      const newTitle = response.data.site_name || "Study Abroad";
+      document.title = newTitle;
       
       setTimeout(() => {
         window.location.reload();
