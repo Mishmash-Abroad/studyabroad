@@ -211,6 +211,14 @@ const Dashboard = () => {
     STUDENT_ROUTES
   );
 
+  const refreshPrerequisites = async () => {
+    try {
+      await axiosInstance.post(`/api/users/${user.id}/refresh_transcript/`);
+    } catch (err) {
+      console.error("Failed to connect user to a Ulink account.");
+    }
+  };
+
   // Handle default route
   useEffect(() => {
     // Only adjust the route if user is available
@@ -236,6 +244,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user?.is_sso && !user?.ulink_username) {
+      // try to connect ulink. If fails, warn user.
+      refreshPrerequisites();
       setUlinkDialogOpen(true);
     }
   }, [user]);

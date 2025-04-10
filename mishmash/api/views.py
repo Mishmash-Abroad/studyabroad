@@ -1731,6 +1731,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
     def refresh_transcript(self, request, pk=None):
         user = self.get_object()
+        user.save() # this will re-attempt to connect ulink for sso users
 
         if not user.ulink_username:
             return Response({"error": "This user does not have a Ulink username linked."},
