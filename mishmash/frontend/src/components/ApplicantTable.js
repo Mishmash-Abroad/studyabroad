@@ -48,6 +48,7 @@ const ApplicantTable = ({ programId }) => {
   const [userDetails, setUserDetails] = useState({});
   const [documents, setDocuments] = useState({});
   const [confidentialNotes, setConfidentialNotes] = useState({});
+  const [prereqCheck, setPrereqCheck] = useState(null);
   const ALL_AVAILABLE_STATUSES = Object.values(
     get_all_available_statuses_to_edit(user.roles_object)
   );
@@ -244,10 +245,26 @@ const ApplicantTable = ({ programId }) => {
     });
 
   // Handle status dropdown change
-  const handleApplicationStatusSelect = (e, applicantId, currentStatus) => {
+  const handleApplicationStatusSelect = async (e, applicantId, currentStatus) => {
     e.stopPropagation();
     const newStatus = e.target.value;
     if (newStatus === currentStatus) return;
+
+    try {
+      // Fetch application to get student and program IDs
+      const appResponse = await axiosInstance.get(`/api/applications/${applicantId}/`);
+      
+      // Then fetch prerequisite check
+      const prereqResponse = await axiosInstance.get(
+        `/api/programs/${appResponse.data.program}/check_prerequisites/?student_id=${appResponse.data.student}`
+      );
+      
+      setPrereqCheck(prereqResponse.data);
+    } catch (err) {
+      console.error("Error fetching prerequisite check:", err);
+      setPrereqCheck({ error: err.response?.data?.detail || "Unknown error" });
+    }
+
     setPendingApplicationStatus({ applicantId, newStatus, currentStatus });
     setDialogOpen(true);
   };
@@ -610,6 +627,12 @@ const ApplicantTable = ({ programId }) => {
             Are you sure you want to change the status from{" "}
             <strong>{getStatusLabel(pendingApplicationStatus.currentStatus)}</strong> to{" "}
             <strong>{getStatusLabel(pendingApplicationStatus.newStatus)}</strong>?
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+            {!prereqCheck?.meets_all && pendingApplicationStatus.newStatus === "Eligible"
+              ? `The selected user is missing the following pre-requisites: ${prereqCheck?.missing}.`
+              : "This will update the applicant's status in the system and may trigger notifications."
+            }
           </Typography>
         </DialogContent>
         <DialogActions>

@@ -43,6 +43,7 @@ const AdminAppView = () => {
   const ALL_AVAILABLE_STATUSES = Object.values(
     get_all_available_statuses_to_edit(user.roles_object)
   );
+  const [prereqCheck, setPrereqCheck] = useState(null);
 
   useEffect(() => {
     fetchApplicationDetails();
@@ -95,6 +96,18 @@ const AdminAppView = () => {
         }
       }
 
+      // Fetch pre-requisite data
+      if (appResponse.data && programResponse.data && userResponse.data) {
+        try {
+          const prereqResponse = await axiosInstance.get(
+            `/api/programs/${appResponse.data.program}/check_prerequisites/?student_id=${appResponse.data.student}`
+          );
+          setPrereqCheck(prereqResponse.data);
+        } catch (err) {
+          console.error("Error fetching prerequisite check:", err);
+          setPrereqCheck({ error: err.response.data.detail });
+        }
+      }
       setError(null);
     } catch (err) {
       console.error("Error fetching application details:", err);
@@ -160,6 +173,22 @@ const AdminAppView = () => {
           editingProgram={program}
         />
       );
+    }
+  };
+
+  const refreshPrerequisites = async () => {
+    try {
+      await axiosInstance.post(`/api/users/${student.id}/refresh_transcript/`);
+  
+      const response = await axiosInstance.get(
+        `/api/programs/${application.program}/check_prerequisites/?student_id=${application.student}`
+      );
+  
+      setPrereqCheck(response.data);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to refresh prerequisites:", err);
+      setError("Failed to refresh prerequisites. Please try again.");
     }
   };
 
@@ -272,6 +301,39 @@ const AdminAppView = () => {
             <strong>Major:</strong> {application.major}
           </Typography>
         </Box>
+
+        {program?.prerequisites?.length > 0 && prereqCheck && (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" sx={{ mb: 2 }}>
+            Prerequisite Check
+          </Typography>
+          <Button variant="outlined" onClick={refreshPrerequisites}>
+            Refresh Prerequisites
+          </Button>
+
+          {prereqCheck.error ? (
+            <Typography color="error">{prereqCheck.error}</Typography>
+          ) : (
+            <ul>
+              {program.prerequisites.map((course) => {
+                const isMet = !prereqCheck.missing.includes(course);
+                return (
+                  <li key={course}>
+                    <Typography
+                      sx={{
+                        color: isMet ? "green" : "red",
+                        fontWeight: isMet ? 500 : 400,
+                      }}
+                    >
+                      {course} – {isMet ? "Complete" : "Missing"}
+                    </Typography>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Box>
+      )}
 
         {/* Application Responses */}
         <Typography variant="h5" sx={{ mb: 2 }}>
@@ -450,8 +512,10 @@ const AdminAppView = () => {
             <strong>{application?.status}</strong> to <strong>{status}</strong>?
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-            This will update the applicant's status in the system and may
-            trigger notifications.
+            {!prereqCheck?.meets_all && status === "Eligible"
+              ? `The selected user is missing the following pre-requisites: ${prereqCheck?.missing}.`
+              : "This will update the applicant's status in the system and may trigger notifications."
+            }
           </Typography>
         </DialogContent>
         <DialogActions>
