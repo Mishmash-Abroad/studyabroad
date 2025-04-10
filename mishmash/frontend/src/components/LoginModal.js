@@ -4,6 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
 import MFALogin from "../mfa/MFAModal";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 
 // -------------------- STYLES --------------------
 const ModalOverlay = styled("div")(({ theme }) => ({
@@ -129,6 +135,7 @@ const LoginModal = ({ onClose }) => {
   const [mfaToken, setMfaToken] = useState(null);
   const [mfaUserData, setMfaUserData] = useState(null);
   const mouseDownInsideModalRef = useRef(false);
+  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
 
   // Add ESC key handler to close the modal
   useEffect(() => {
@@ -243,8 +250,9 @@ const LoginModal = ({ onClose }) => {
       if (response.data.token) {
         const { token, ...userData } = response.data;
         login(userData, token);
-        onClose();
-        navigate("/dashboard");
+        // onClose();
+        setUlinkDialogOpen(true);
+        return
       }
     } catch (err) {
       // Handle 400 Bad Request for validation errors
@@ -408,6 +416,19 @@ const LoginModal = ({ onClose }) => {
           }}
         />
       )}
+      {/* Ulink Required Dialog */}
+      <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+        <DialogTitle>Do you wish to connect a Ulink account?</DialogTitle>
+        <DialogContent>
+          <Typography>You must connect your profile to a Ulink account in order to apply to a program. This can be done at any time by clicking 'Connect Ulink' in the account dropdown.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => navigate("/dashboard")}>Remind me later</Button>
+          <Button onClick={() => navigate("/connect-ulink")} variant="contained">
+            Connect Ulink
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

@@ -7,6 +7,13 @@ import uuid
 from auditlog.registry import auditlog
 
 
+def site_branding_logo_upload_path(instance, filename):
+    """
+    Construct a path for the logo file. E.g.: "branding/logo.png"
+    """
+    return f"branding/{filename}"
+
+
 class User(AbstractUser):
     display_name = models.CharField(max_length=100, default="New User")
     is_admin = models.BooleanField(default=False)
@@ -15,6 +22,18 @@ class User(AbstractUser):
     # TODO make mutually exclusiv
     is_provider_partner = models.BooleanField(default=False)
     is_mfa_enabled = models.BooleanField(default=False)
+    ulink_username = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Ulink account username. For SSO users, this is equal to username and read-only."
+    )
+    ulink_transcript = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Cached dict mapping course code (e.g. 'BIOL 101') to grade (e.g. 'A-', 'IP')"
+    )
 
     groups = models.ManyToManyField(
         "auth.Group",
@@ -32,6 +51,8 @@ class User(AbstractUser):
     @property
     def is_sso(self):
         """Check if user logged in via SSO."""
+        if not self.pk:
+            return False
         return SocialAccount.objects.filter(user=self).exists()
 
     @property
@@ -41,6 +62,13 @@ class User(AbstractUser):
             "IS_FACULTY": self.is_faculty,
             "IS_REVIEWER": self.is_reviewer,
         }
+    
+    def save(self, *args, **kwargs):
+        if self.is_sso and not self.ulink_username:
+            conflict = User.objects.filter(ulink_username=self.username).exclude(id=self.id).exists()
+            if not conflict:
+                self.ulink_username = self.username
+        super().save(*args, **kwargs)
 
 
 class Program(models.Model):
@@ -66,6 +94,11 @@ class Program(models.Model):
         related_name="provider_partners",
         limit_choices_to={"is_provider_partner": True},
         blank=True
+    )
+    prerequisites = models.JSONField(
+        blank=True,
+        default=list,
+        help_text="List of required course codes like 'BIOL 101', 'PHYS 101'."
     )
 
     @property
@@ -292,6 +325,41 @@ class LetterOfRecommendation(models.Model):
         return bool(self.pdf and self.letter_timestamp)
 
 
+class SiteBranding(models.Model):
+    """
+    Stores site branding information for white-label support.
+    Typically there will be only one active record.
+    """
+    site_name = models.CharField(
+        max_length=200,
+        default="Study Abroad College",
+        help_text="Name of the institution or site."
+    )
+    primary_color = models.CharField(
+        max_length=20,
+        default="#1976d2",  # A nice default blue color
+        help_text="Main highlight color (HEX code like #1976d2)."
+    )
+    logo = models.ImageField(
+        upload_to=site_branding_logo_upload_path,
+        null=True,
+        blank=True,
+        help_text="Upload a logo image. Ideally PNG with transparent background."
+    )
+    welcome_message = models.TextField(
+        default="Welcome to our Study Abroad portal!",
+        blank=True,
+        help_text="Welcome message displayed on the homepage."
+    )
+    
+    class Meta:
+        verbose_name = "Site Branding"
+        verbose_name_plural = "Site Branding"
+
+    def __str__(self):
+        return f"Branding: {self.site_name}"
+
+
 auditlog.register(User)
 auditlog.register(Program)
 auditlog.register(Application)
@@ -300,3 +368,4 @@ auditlog.register(Announcement)
 auditlog.register(ConfidentialNote)
 auditlog.register(Document)
 auditlog.register(LetterOfRecommendation)
+auditlog.register(SiteBranding)

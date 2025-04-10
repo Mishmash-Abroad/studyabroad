@@ -48,6 +48,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     end_date: "",
     description: "",
     track_payment: false,
+    prerequisites: [],
   });
 
   const [errorMessage, setErrorMessage] = useState(null);
@@ -69,7 +70,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
-      console.log(editingProgram);
       setProgramData({
         title: editingProgram.title,
         year: editingProgram.year,
@@ -88,6 +88,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         end_date: editingProgram.end_date,
         description: editingProgram.description,
         track_payment: editingProgram.track_payment,
+        prerequisites: editingProgram.prerequisites || [],
       });
       axiosInstance
         .get(`/api/questions/?program=${editingProgram.id}`)
@@ -106,8 +107,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setDirty(true);
   };
 
-  const handleBooleanChange = (e) => {
+  const handleTrackPaymentChange = async (e) => {
     // TODO figure out a way to shorten this
+    if (editingProgram && !e.target.checked) {
+      if (
+        !window.confirm(
+          `Are you sure you want to disable track payments for this program? recorded payment informaton will be lost if the modification (disabling track payments) is done. `
+        )
+      )
+        return;
+    }
+
     if (e.target.checked) {
       setProgramData({ ...programData, [e.target.name]: true });
     } else {
@@ -220,13 +230,37 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     await submitProgram();
   };
 
+  const normalizeCourse = (input) => {
+    const cleaned = input.trim().toUpperCase().replace(/\s+/g, ' ');
+    const isValid = /^[A-Z0-9]{1,8} \d{3}$/.test(cleaned);
+    return { normalized: cleaned, isValid };
+  };
+
+  const handlePrerequisiteChange = (index, value) => {
+    const updated = [...programData.prerequisites];
+    updated[index] = value;
+    setProgramData((prev) => ({ ...prev, prerequisites: updated }));
+    setDirty(true);
+  };
+
   const submitProgram = async () => {
     setIsSubmitting(true);
     try {
+      const normalizedPrereqs = programData.prerequisites.map((p) => normalizeCourse(p));
+      const invalid = normalizedPrereqs.find((item) => !item.isValid);
+
+      if (invalid) {
+        setErrorMessage('Course designations must be in the format "<DEPARTMENT> <NUMBER>"');
+        return;
+      }
+
+      const updatedPrereqs = normalizedPrereqs.map((item) => item.normalized);
+      const payload = { ...programData, prerequisites: updatedPrereqs };
+
       if (editingProgram) {
         await axiosInstance.put(
           `/api/programs/${editingProgram.id}/`,
-          programData
+          payload
         );
 
         for (const question of newQuestions) {
@@ -256,7 +290,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         );
       } else {
         await axiosInstance.post("/api/programs/", {
-          ...programData,
+          ...payload,
           questions: questions.map((q) => q.text),
         });
 
@@ -285,6 +319,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       );
     } finally {
       setIsSubmitting(false);
+      // TODO  might need to revaluate this - Alexis
+      navigate(
+        `/dashboard/admin-programs/${encodeURIComponent(
+          programData.title.trim().replace(/\s+/g, "-")
+        )}`
+      );
     }
   };
 
@@ -392,7 +432,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
               <Switch
                 checked={programData.track_payment}
                 name="track_payment"
-                onChange={handleBooleanChange}
+                onChange={handleTrackPaymentChange}
                 color="success"
               />
             }
@@ -407,7 +447,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           <Box sx={{ alignSelf: "flex-start", width: "100%" }}>
             <ProviderPartnerPicklist
               onProviderPartnerChange={handleProviderPartnerChange}
-              initialSelected={programData.provider_partner_ids || ""}
+              initialSelected={programData.provider_partner_ids}
               disable_picklist={!user.is_admin}
             />
           </Box>
@@ -485,6 +525,45 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.end_date}
           onChange={handleInputChange}
         />
+
+        <Box>
+          <Typography variant="h6">Pre-requisite Courses</Typography>
+          {programData.prerequisites.map((course, index) => (
+            <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+              <TextField
+                fullWidth
+                disabled={!user.is_admin}
+                label={`Course ${index + 1}`}
+                value={course}
+                onChange={(e) => handlePrerequisiteChange(index, e.target.value)}
+              />
+              <IconButton
+                disabled={!user.is_admin}
+                onClick={() => {
+                  const updated = programData.prerequisites.filter((_, i) => i !== index);
+                  setProgramData({ ...programData, prerequisites: updated });
+                  setDirty(true);
+                }}
+              >
+                <Delete />
+              </IconButton>
+            </Box>
+          ))}
+          <Button
+            disabled={!user.is_admin}
+            startIcon={<Add />}
+            onClick={() => {
+              setProgramData({
+                ...programData,
+                prerequisites: [...programData.prerequisites, ""],
+              });
+              setDirty(true);
+            }}
+          >
+            Add Course
+          </Button>
+        </Box>
+
         {/* Questions Section */}
         <Box>
           <Typography variant="h6">Questions</Typography>

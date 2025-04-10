@@ -59,15 +59,8 @@ const ProviderPartnerPicklist = ({
       try {
         setLoading(true);
         const response = await axiosInstance.get("/api/users/", {
-          params: { is_provider_partner: "true" },
+          params: { is_provider_partner: true },
         });
-
-        // // TODO fix this so that it is not necessary to filter
-        // const filteredPartners = response.data.filter(
-        //   (user) => user.is_provider_partner == true
-        // );
-        console.log("bru");
-        console.log(response.data);
         setProviderPartnerList(response.data);
         setError(null);
       } catch (err) {
@@ -84,9 +77,6 @@ const ProviderPartnerPicklist = ({
   }, []);
 
   useEffect(() => {
-    console.log(initialSelected);
-    console.log(providerPartnerList);
-
     if (providerPartnerList.length > 0 && initialSelected.length > 0) {
       const initialProviderPartner = providerPartnerList.filter(
         (providerPartner) => initialSelected.includes(providerPartner.id)
@@ -103,8 +93,6 @@ const ProviderPartnerPicklist = ({
   if (error) {
     return <div style={{ color: "red", padding: "10px" }}>{error}</div>;
   }
-
-  console.log(selectedProviderPartner);
 
   return (
     <StyledAutocomplete

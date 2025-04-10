@@ -177,7 +177,10 @@ const compareValues = (a, b, orderBy) => {
     [
       "title",
       "year_semester",
+      "application_open_date",
       "application_deadline",
+      "essential_document_deadline",
+      "payment_deadline",
       "start_date",
       "end_date",
     ].includes(orderBy)
@@ -208,7 +211,16 @@ const compareValues = (a, b, orderBy) => {
   if (valueB === null || valueB === undefined) return -1;
   if (valueA === valueB) return 0;
   // Date fields
-  if (["application_deadline", "start_date", "end_date"].includes(orderBy)) {
+  if (
+    [
+      "application_open_date",
+      "application_deadline",
+      "essential_document_deadline",
+      "payment_deadline",
+      "start_date",
+      "end_date",
+    ].includes(orderBy)
+  ) {
     return new Date(valueA) - new Date(valueB);
   }
   // String comparison
@@ -244,6 +256,9 @@ const MyProgramsTable = () => {
               const statusResponse = await axiosInstance.get(
                 `/api/programs/${program.id}/application_status/`
               );
+              const paymentStatusResponse = await axiosInstance.get(
+                `/api/programs/${program.id}/payment_status/`
+              );
               let documents = [];
               if (statusResponse.data.application_id) {
                 const documentsResponse = await axiosInstance.get(
@@ -251,11 +266,13 @@ const MyProgramsTable = () => {
                 );
                 documents = documentsResponse.data;
               }
+              console.log(program);
               return {
                 id: program.id,
                 program,
                 application_id: statusResponse.data.application_id,
                 status: statusResponse.data.status,
+                payment_status: paymentStatusResponse.data.payment_status,
                 documents,
               };
             } catch (error) {
@@ -276,6 +293,7 @@ const MyProgramsTable = () => {
             app.status &&
             validStatuses.includes(app.status.toLowerCase())
         );
+
         setApplications(relevantApplications);
         setError(null);
       } catch (err) {
@@ -376,8 +394,23 @@ const MyProgramsTable = () => {
     { id: "year_semester", label: "Year & Semester", sortable: true },
     { id: "faculty_leads", label: "Faculty Lead(s)", sortable: true },
     {
+      id: "application_open_date",
+      label: "Application Open Date",
+      sortable: true,
+    },
+    {
       id: "application_deadline",
       label: "Application Deadline",
+      sortable: true,
+    },
+    {
+      id: "essential_document_deadline",
+      label: "Essential Document Deadline",
+      sortable: true,
+    },
+    {
+      id: "payment_deadline",
+      label: "Payment Deadline",
       sortable: true,
     },
     { id: "start_date", label: "Program Start", sortable: true },
@@ -421,46 +454,56 @@ const MyProgramsTable = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {sortedApplications.map((app) => (
-            <React.Fragment key={app.id}>
-              <TableRow
-                hover
-                onClick={() => handleRowClick(app.id)}
-                style={{ cursor: "pointer" }}
-              >
-                <StyledTableCell>{app.program.title}</StyledTableCell>
-                <StyledTableCell>{app.program.year_semester}</StyledTableCell>
-                <StyledTableCell>
-                  {app.program.faculty_leads
-                    .map((f) => f.display_name)
-                    .join(", ")}
-                </StyledTableCell>
-                <StyledTableCell>
-                  {formatDate(app.program.application_deadline)}
-                </StyledTableCell>
-                <StyledTableCell>
-                  {formatDate(app.program.start_date)}
-                </StyledTableCell>
-                <StyledTableCell>
-                  {formatDate(app.program.end_date)}
-                </StyledTableCell>
-                <StatusCell status={app.status}>
-                  <span className="status-badge">{app.status}</span>
-                </StatusCell>
-                <StyledTableCell>
-                  <span className="status-badge">
-                    {app.documents?.length || 0}/4 Documents
-                  </span>
-                </StyledTableCell>
-                <StyledTableCell>
-                  {app.program.payment_status
-                    ? app.program.payment_status
-                    : "N/A"}
-                </StyledTableCell>
-              </TableRow>
-              {renderExpandedRow(app)}
-            </React.Fragment>
-          ))}
+          {sortedApplications.map((app) => {
+            console.log(app);
+            return (
+              <React.Fragment key={app.id}>
+                <TableRow
+                  hover
+                  onClick={() => handleRowClick(app.id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <StyledTableCell>{app.program.title}</StyledTableCell>
+                  <StyledTableCell>{app.program.year_semester}</StyledTableCell>
+                  <StyledTableCell>
+                    {app.program.faculty_leads
+                      .map((f) => f.display_name)
+                      .join(", ")}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(app.program.application_open_date)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(app.program.application_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(app.program.essential_document_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {!app.program.track_payment
+                      ? "N/A"
+                      : formatDate(app.program.payment_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(app.program.start_date)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(app.program.end_date)}
+                  </StyledTableCell>
+                  <StatusCell status={app.status}>
+                    <span className="status-badge">{app.status}</span>
+                  </StatusCell>
+                  <StyledTableCell>
+                    <span className="status-badge">
+                      {app.documents?.length || 0}/4 Documents
+                    </span>
+                  </StyledTableCell>
+                  <StyledTableCell>{app.payment_status}</StyledTableCell>
+                </TableRow>
+                {renderExpandedRow(app)}
+              </React.Fragment>
+            );
+          })}
         </TableBody>
       </Table>
     </TableWrapper>

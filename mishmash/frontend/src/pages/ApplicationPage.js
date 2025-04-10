@@ -159,6 +159,8 @@ const ApplicationPage = () => {
     loading,
     activeTab,
   } = state;
+  const [prereqStatus, setPrereqStatus] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // useEffect(() => {
   //   const shouldShowConfetti = localStorage.getItem("showConfetti");
@@ -193,6 +195,18 @@ const ApplicationPage = () => {
         const existingApp = applicationsRes.data.find(
           (app) => app.program == program_id
         );
+
+        if (programData?.prerequisites?.length > 0) {
+          try {
+            const prereqRes = await axiosInstance.get(
+              `/api/programs/${program_id}/check_prerequisites/?student_id=${user.id}`
+            );
+            setPrereqStatus(prereqRes.data);
+          } catch (err) {
+            console.error("Error checking prerequisites:", err);
+            setPrereqStatus({ error: "Unable to determine prerequisite status." });
+          }
+        }
 
         // Application becomes read-only if:
         // - Past the program's deadline OR
@@ -340,7 +354,15 @@ const ApplicationPage = () => {
       return;
     }
 
-    updateState({ loading: true, error: "" });
+    // Check prerequisites and warn user if prerequisites are not met
+    if (!prereqStatus.meets_all) {
+      if (window.confirm(`You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`)) {
+        updateState({ loading: true, error: "" });
+      } else {
+        updateState({ error: "User canceled submission action." });
+        return
+      }
+    }
 
     try {
       // Submit or update application
@@ -428,6 +450,21 @@ const ApplicationPage = () => {
         error: "Failed to withdraw application",
         loading: false,
       });
+    }
+  };
+
+  const handleRefreshTranscript = async () => {
+    try {
+      await axiosInstance.post(`/api/users/${user.id}/refresh_transcript/`);
+      const prereqRes = await axiosInstance.get(
+        `/api/programs/${program_id}/check_prerequisites/?student_id=${user.id}`
+      );
+      setPrereqStatus(prereqRes.data);
+      setSuccessMessage("Transcript refreshed!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      console.error("Transcript refresh failed:", err);
+      updateState({ error: "Failed to refresh transcript." });
     }
   };
 
@@ -713,6 +750,46 @@ const ApplicationPage = () => {
               {program.description ||
                 "No description provided for this program."}
             </Typography>
+
+            {program?.prerequisites?.length > 0 && (
+              <Box sx={{ mt: 4 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="h6" gutterBottom color="primary">
+                    Prerequisite Status
+                  </Typography>
+                  <Button variant="outlined" onClick={handleRefreshTranscript}>
+                    Refresh Transcript
+                  </Button>
+                </Box>
+                {successMessage && <p style={{ color: "green", justifySelf: "right" }}>{successMessage}</p>}
+
+                {prereqStatus ? (
+                  prereqStatus.error ? (
+                    <Typography color="error">{prereqStatus.error}</Typography>
+                  ) : (
+                    <ul>
+                      {program.prerequisites.map((course) => {
+                        const isMet = !prereqStatus.missing.includes(course);
+                        return (
+                          <li key={course}>
+                            <Typography
+                              sx={{
+                                color: isMet ? "green" : "red",
+                                fontWeight: isMet ? 500 : 400,
+                              }}
+                            >
+                              {course} – {isMet ? "Complete" : "Missing"}
+                            </Typography>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )
+                ) : (
+                  <Typography>Loading prerequisite information...</Typography>
+                )}
+              </Box>
+            )}
 
             <Box sx={{ mt: 3 }}>
               {!application.id && (

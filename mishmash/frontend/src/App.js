@@ -18,6 +18,7 @@ import MFAOverview from "./mfa/MFAOverview";
 import ActivateTOTP from "./mfa/ActivateTOTP";
 import DeactivateTOTP from "./mfa/DeactivateTOTP";
 import PublicLetterUploadPage from "./pages/PublicLetterUploadPage";
+import UlinkConnection from "./components/UlinkConnection";
 
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -64,6 +65,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DeactivateTOTP />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/connect-ulink"
+            element={
+              <ProtectedRoute>
+                <UlinkConnection />
               </ProtectedRoute>
             }
           />

@@ -370,6 +370,7 @@ const UserManagement = () => {
   // Column definitions
   const columns = [
     { id: "username", label: "Username", sortable: true, align: "left" },
+    { id: "ulink_username", label: "Ulink Username", sortable: true, align: "left" },
     {
       id: "display_name",
       label: "Display Name",
@@ -474,7 +475,7 @@ const UserManagement = () => {
         title = `Warning: Promote to ${
           roleType.charAt(0).toUpperCase() + roleType.slice(1)
         }`;
-        console.log(roleType);
+        
         if (hasNoApplications) {
           message = `Are you sure you want to promote ${user.display_name} to ${roleType}?`;
           
@@ -727,6 +728,7 @@ const UserManagement = () => {
                     }
                   >
                     <StyledTableCell>{user.username}</StyledTableCell>
+                    <StyledTableCell>{user.ulink_username}</StyledTableCell>
                     <StyledTableCell>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         {isCurrentUser && (

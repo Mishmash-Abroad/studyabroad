@@ -5,7 +5,6 @@ import {
 } from "../utils/constants";
 import { TextField, MenuItem } from "@mui/material";
 const PaymentStatusDropDown = ({ applicant, handlePaymentStatus }) => {
-  console.log(applicant);
   return (
     <>
       {ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status) && (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -7,6 +7,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+import axiosInstance from "../utils/axios";
 import { useAuth } from "../context/AuthContext";
 import { styled } from "@mui/material/styles";
 import TopNavBar from "../components/TopNavBar";
@@ -18,7 +19,13 @@ import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
 import UserManagement from "../components/UserManagement";
 import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 import PartnerProgramForm from "../components/PartnerProgramForm";
+import AdminSiteBranding from "../components/AdminSiteBranding";
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
@@ -26,6 +33,7 @@ const ADMIN_ROUTES = [
   { path: "admin-programs", label: "Program Management" },
   { path: "browse", label: "Browse Programs" },
   { path: "user-management", label: "User Management" },
+  { path: "site-branding", label: "Site Branding" },
 ];
 
 const STUDENT_ROUTES = [
@@ -189,13 +197,14 @@ const return_based_on_roles = (
 
 // -------------------- MAIN COMPONENT --------------------
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // logic for choosing the right routes
   // if admin, faculty, reviewer = admin routes
   // if provider partner = partner routes
   // student routes other wise
+  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
   const routes = return_based_on_roles(
     user,
     ADMIN_ROUTES,
@@ -203,8 +212,17 @@ const Dashboard = () => {
     STUDENT_ROUTES
   );
 
+  const refreshPrerequisites = async () => {
+    try {
+      await axiosInstance.post(`/api/users/${user.id}/refresh_transcript/`);
+      refreshUser();
+    } catch (err) {
+      console.error("Failed to connect user to a Ulink account.");
+    }
+  };
+
   // Handle default route
-  React.useEffect(() => {
+  useEffect(() => {
     // Only adjust the route if user is available
     if (user && location.pathname === "/dashboard") {
       const defaultPath = `/dashboard/${return_based_on_roles(
@@ -225,6 +243,16 @@ const Dashboard = () => {
   const handleTabChange = (path) => {
     navigate(path);
   };
+
+  useEffect(() => {
+    if (user?.is_sso && !user?.ulink_username) {
+      // try to connect ulink. If fails, warn user.
+      refreshPrerequisites();
+      if (!user?.ulink_username) {
+        setUlinkDialogOpen(true);
+      }
+    }
+  }, [user]);
 
   return (
     <DashboardContainer>
@@ -277,7 +305,10 @@ const Dashboard = () => {
               </>
             )}
             {user?.is_admin && (
-              <Route path="user-management" element={<UserManagement />} />
+              <>
+                <Route path="user-management" element={<UserManagement />} />
+                <Route path="site-branding" element={<AdminSiteBranding />} />
+              </>
             )}
 
             {/* Student Routes */}
@@ -339,6 +370,18 @@ const Dashboard = () => {
             </>
           </Routes>
         </TabContent>
+        <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+          <DialogTitle>Ulink Connection Failed</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Your Ulink account could not be connected because the username is already in use.
+              Please delete any other accounts using this Ulink username before applying to programs.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setUlinkDialogOpen(false)}>Remind me later</Button>
+          </DialogActions>
+        </Dialog>
       </DashboardContent>
     </DashboardContainer>
   );

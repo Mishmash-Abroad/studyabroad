@@ -96,6 +96,7 @@ router.register(r'notes', ConfidentialNoteViewSet, basename="confidentialnote")
 router.register(r'documents', DocumentViewSet, basename='documents')
 router.register(r'letters', LetterOfRecommendationViewSet, basename='letters')
 router.register(r'mfa', MFAViewSet, basename='mfa')
+router.register(r'branding', SiteBrandingViewSet, basename='branding')
 
 # Define URL patterns, including both router-generated and custom endpoints
 urlpatterns = [

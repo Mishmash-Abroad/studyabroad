@@ -422,7 +422,6 @@ const PartnerProgramsTable = () => {
             </StyledTableHead>
             <TableBody>
               {sortedPrograms.map((program) => {
-                console.log(applicantCounts);
                 return (
                   <StyledTableRow
                     key={program.id}
