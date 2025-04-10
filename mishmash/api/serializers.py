@@ -31,6 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_mfa_enabled",
             "is_sso",
             "roles_object",
+            "ulink_username",
         ]
 
 
@@ -72,6 +73,7 @@ class ProgramSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "track_payment",
+            "prerequisites",
         ]
 
 

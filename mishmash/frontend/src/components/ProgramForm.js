@@ -48,6 +48,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     end_date: "",
     description: "",
     track_payment: false,
+    prerequisites: [],
   });
 
   const [errorMessage, setErrorMessage] = useState(null);
@@ -87,6 +88,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         end_date: editingProgram.end_date,
         description: editingProgram.description,
         track_payment: editingProgram.track_payment,
+        prerequisites: editingProgram.prerequisites || [],
       });
       axiosInstance
         .get(`/api/questions/?program=${editingProgram.id}`)
@@ -228,13 +230,37 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     await submitProgram();
   };
 
+  const normalizeCourse = (input) => {
+    const cleaned = input.trim().toUpperCase().replace(/\s+/g, ' ');
+    const isValid = /^[A-Z0-9]{1,8} \d{3}$/.test(cleaned);
+    return { normalized: cleaned, isValid };
+  };
+
+  const handlePrerequisiteChange = (index, value) => {
+    const updated = [...programData.prerequisites];
+    updated[index] = value;
+    setProgramData((prev) => ({ ...prev, prerequisites: updated }));
+    setDirty(true);
+  };
+
   const submitProgram = async () => {
     setIsSubmitting(true);
     try {
+      const normalizedPrereqs = programData.prerequisites.map((p) => normalizeCourse(p));
+      const invalid = normalizedPrereqs.find((item) => !item.isValid);
+
+      if (invalid) {
+        setErrorMessage('Course designations must be in the format "<DEPARTMENT> <NUMBER>"');
+        return;
+      }
+
+      const updatedPrereqs = normalizedPrereqs.map((item) => item.normalized);
+      const payload = { ...programData, prerequisites: updatedPrereqs };
+
       if (editingProgram) {
         await axiosInstance.put(
           `/api/programs/${editingProgram.id}/`,
-          programData
+          payload
         );
 
         for (const question of newQuestions) {
@@ -264,7 +290,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         );
       } else {
         await axiosInstance.post("/api/programs/", {
-          ...programData,
+          ...payload,
           questions: questions.map((q) => q.text),
         });
 
@@ -499,6 +525,45 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.end_date}
           onChange={handleInputChange}
         />
+
+        <Box>
+          <Typography variant="h6">Pre-requisite Courses</Typography>
+          {programData.prerequisites.map((course, index) => (
+            <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+              <TextField
+                fullWidth
+                disabled={!user.is_admin}
+                label={`Course ${index + 1}`}
+                value={course}
+                onChange={(e) => handlePrerequisiteChange(index, e.target.value)}
+              />
+              <IconButton
+                disabled={!user.is_admin}
+                onClick={() => {
+                  const updated = programData.prerequisites.filter((_, i) => i !== index);
+                  setProgramData({ ...programData, prerequisites: updated });
+                  setDirty(true);
+                }}
+              >
+                <Delete />
+              </IconButton>
+            </Box>
+          ))}
+          <Button
+            disabled={!user.is_admin}
+            startIcon={<Add />}
+            onClick={() => {
+              setProgramData({
+                ...programData,
+                prerequisites: [...programData.prerequisites, ""],
+              });
+              setDirty(true);
+            }}
+          >
+            Add Course
+          </Button>
+        </Box>
+
         {/* Questions Section */}
         <Box>
           <Typography variant="h6">Questions</Typography>

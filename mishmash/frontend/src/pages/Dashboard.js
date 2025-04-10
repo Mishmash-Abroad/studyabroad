@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Routes,
   Route,
@@ -18,6 +18,11 @@ import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
 import UserManagement from "../components/UserManagement";
 import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 import PartnerProgramForm from "../components/PartnerProgramForm";
 import AdminSiteBranding from "../components/AdminSiteBranding";
 
@@ -206,7 +211,7 @@ const Dashboard = () => {
   );
 
   // Handle default route
-  React.useEffect(() => {
+  useEffect(() => {
     // Only adjust the route if user is available
     if (user && location.pathname === "/dashboard") {
       const defaultPath = `/dashboard/${return_based_on_roles(
@@ -227,6 +232,12 @@ const Dashboard = () => {
   const handleTabChange = (path) => {
     navigate(path);
   };
+
+  useEffect(() => {
+    if (user?.is_sso && !user?.ulink_username) {
+      setUlinkDialogOpen(true);
+    }
+  }, [user]);
 
   return (
     <DashboardContainer>
@@ -344,6 +355,18 @@ const Dashboard = () => {
             </>
           </Routes>
         </TabContent>
+        <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+          <DialogTitle>Ulink Connection Failed</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Your Ulink account could not be connected because the username is already in use.
+              Please delete any other accounts using this Ulink username before applying to programs.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setUlinkDialogOpen(false)}>Remind me later</Button>
+          </DialogActions>
+        </Dialog>
       </DashboardContent>
     </DashboardContainer>
   );

@@ -203,6 +203,12 @@ function TopNavBar({ onLoginClick }) {
     handleUserMenuClose();
     navigate("/mfa");
   };
+
+  const handleUlink = () => {
+    handleUserMenuClose();
+    navigate("/connect-ulink");
+  };
+
   const open = Boolean(anchorEl);
 
   return (
@@ -263,6 +269,9 @@ function TopNavBar({ onLoginClick }) {
                 )}
                 {!user.is_sso && (
                   <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
+                )}
+                {!user.is_sso && !user.ulink_username && (
+                  <MenuItem onClick={handleUlink}>Connect Ulink</MenuItem>
                 )}
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </StyledMenu>
