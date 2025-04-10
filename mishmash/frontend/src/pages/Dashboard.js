@@ -203,6 +203,7 @@ const Dashboard = () => {
   // if admin, faculty, reviewer = admin routes
   // if provider partner = partner routes
   // student routes other wise
+  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
   const routes = return_based_on_roles(
     user,
     ADMIN_ROUTES,
