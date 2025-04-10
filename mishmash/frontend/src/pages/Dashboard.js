@@ -19,6 +19,7 @@ import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
 import UserManagement from "../components/UserManagement";
 import Typography from "@mui/material/Typography";
 import PartnerProgramForm from "../components/PartnerProgramForm";
+import AdminSiteBranding from "../components/AdminSiteBranding";
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
@@ -26,6 +27,7 @@ const ADMIN_ROUTES = [
   { path: "admin-programs", label: "Program Management" },
   { path: "browse", label: "Browse Programs" },
   { path: "user-management", label: "User Management" },
+  { path: "site-branding", label: "Site Branding" },
 ];
 
 const STUDENT_ROUTES = [
@@ -277,7 +279,10 @@ const Dashboard = () => {
               </>
             )}
             {user?.is_admin && (
-              <Route path="user-management" element={<UserManagement />} />
+              <>
+                <Route path="user-management" element={<UserManagement />} />
+                <Route path="site-branding" element={<AdminSiteBranding />} />
+              </>
             )}
 
             {/* Student Routes */}
