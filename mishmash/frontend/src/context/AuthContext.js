@@ -61,6 +61,17 @@ export const AuthProvider = ({ children }) => {
   const INACTIVITY_TIMEOUT = SESSION_TIMEOUTS.INACTIVITY;
   const ABSOLUTE_TIMEOUT = SESSION_TIMEOUTS.ABSOLUTE;
 
+  const refreshUser = async () => {
+    try {
+      const response = await axiosInstance.get("/api/users/current_user/");
+      const userData = response.data.user ?? response.data;
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+    } catch (error) {
+      console.error("Failed to refresh user info:", error);
+    }
+  };
+
   // Initialize user data on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -200,6 +211,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         verifyMFA,
+        refreshUser,
       }}
     >
       <SessionExpiredDialog
