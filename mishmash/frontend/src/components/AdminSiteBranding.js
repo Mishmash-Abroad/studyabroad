@@ -156,15 +156,6 @@ const AdminSiteBranding = () => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = React.useRef(null);
 
-  // Update document title when site name changes
-  useEffect(() => {
-    if (branding.site_name) {
-      document.title = branding.site_name;
-    } else {
-      document.title = "Study Abroad";
-    }
-  }, [branding.site_name]);
-
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -176,13 +167,15 @@ const AdminSiteBranding = () => {
           primary_color: response.data.primary_color || "#1976d2",
           welcome_message: response.data.welcome_message || "",
         });
-        
-        // Update document title after loading data
-        document.title = response.data.site_name || "Study Abroad";
-        
         if (response.data.logo_url) {
           setLogoPreview(response.data.logo_url);
         }
+        
+        // Set the page title when first loading the branding
+        if (response.data.site_name) {
+          document.title = response.data.site_name;
+        }
+        
         setLoading(false);
       } catch (err) {
         console.error("Error fetching branding:", err);
@@ -261,8 +254,9 @@ const AdminSiteBranding = () => {
       setLogo(null);
       setSuccess(true);
       
-      // Update document title immediately after successful save
-      document.title = response.data.site_name || "Study Abroad";
+      // Update the page title to match the site name
+      const newTitle = response.data.site_name || "Study Abroad";
+      document.title = newTitle;
       
       setTimeout(() => {
         window.location.reload();
