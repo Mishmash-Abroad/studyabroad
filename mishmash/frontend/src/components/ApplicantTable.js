@@ -34,8 +34,9 @@ import ErrorIcon from "@mui/icons-material/Error";
 import NoteIcon from "@mui/icons-material/Note";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useAuth } from "../context/AuthContext";
+import PaymentStatusDropDown from "./PaymentStatusDropDown";
 
-const ApplicantTable = ({ programId }) => {
+const ApplicantTable = ({ programId, show_track_payment }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [applicants, setApplicants] = useState([]);
@@ -55,6 +56,7 @@ const ApplicantTable = ({ programId }) => {
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [pendingApplicationStatus, setPendingApplicationStatus] = useState({
     applicantId: null,
     newStatus: "",
@@ -66,7 +68,6 @@ const ApplicantTable = ({ programId }) => {
     newStatus: "",
     currentStatus: "",
   });
-
 
   useEffect(() => {
     fetchApplicants();
@@ -275,9 +276,8 @@ const ApplicantTable = ({ programId }) => {
     const newStatus = e.target.value;
     if (newStatus === currentStatus) return;
     setPendingPaymentStatus({ applicantId, newStatus, currentStatus });
-    setDialogOpen(true);
+    setPaymentDialogOpen(true);
   };
-
 
   // Confirm status change
   const confirmApplicationStatusChange = async () => {
@@ -294,7 +294,11 @@ const ApplicantTable = ({ programId }) => {
       setError("Failed to update status.");
     } finally {
       setDialogOpen(false);
-      setPendingApplicationStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+      setPendingApplicationStatus({
+        applicantId: null,
+        newStatus: "",
+        currentStatus: "",
+      });
     }
   };
 
@@ -312,23 +316,34 @@ const ApplicantTable = ({ programId }) => {
       console.error("Error updating status:", err);
       setError("Failed to update status.");
     } finally {
-      setDialogOpen(false);
-      setPendingPaymentStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+      setPaymentDialogOpen(false);
+      setPendingPaymentStatus({
+        applicantId: null,
+        newStatus: "",
+        currentStatus: "",
+      });
     }
   };
 
   // Cancel status change
   const cancelApplicationStatusChange = () => {
     setDialogOpen(false);
-    setPendingApplicationStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    setPendingApplicationStatus({
+      applicantId: null,
+      newStatus: "",
+      currentStatus: "",
+    });
   };
 
   // Cancel status change
   const cancelPaymentStatusChange = () => {
-    setDialogOpen(false);
-    setPendingPaymentStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    setPaymentDialogOpen(false);
+    setPendingPaymentStatus({
+      applicantId: null,
+      newStatus: "",
+      currentStatus: "",
+    });
   };
-
 
   // Helper function to check document status
   const getDocumentStatus = (docs, type) => {
@@ -496,13 +511,15 @@ const ApplicantTable = ({ programId }) => {
                   key={column.id}
                   style={column.id === "status" ? { width: "80px" } : {}}
                 >
-                  <TableSortLabel
-                    active={orderBy === column.id}
-                    direction={orderBy === column.id ? order : "asc"}
-                    onClick={() => handleRequestSort(column.id)}
-                  >
-                    {column.label}
-                  </TableSortLabel>
+                  {(show_track_payment || column.id != "payment_status") && (
+                    <TableSortLabel
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : "asc"}
+                      onClick={() => handleRequestSort(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  )}
                 </TableCell>
               ))}
             </TableRow>
@@ -515,7 +532,7 @@ const ApplicantTable = ({ programId }) => {
                 count: 0,
                 lastUpdated: "N/A",
               };
-
+              console.log(applicant.payment_status);
               return (
                 <TableRow
                   key={applicant.id}
@@ -540,7 +557,11 @@ const ApplicantTable = ({ programId }) => {
                       size="small"
                       value={applicant.status}
                       onChange={(e) =>
-                        handleApplicationStatusSelect(e, applicant.id, applicant.status)
+                        handleApplicationStatusSelect(
+                          e,
+                          applicant.id,
+                          applicant.status
+                        )
                       }
                       onClick={(e) => e.stopPropagation()}
                       sx={{
@@ -570,43 +591,10 @@ const ApplicantTable = ({ programId }) => {
                       )}
                     </TextField>
                   </TableCell>
-
-                  {(applicant.track_payment && ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status)) && <TableCell style={{ padding: "6px 4px" }}>
-                    <TextField
-                      select
-                      size="small"
-                      value={applicant.payment_status}
-                      onChange={(e) =>
-                        handlePaymentStatusSelect(e, applicant.id, applicant.status)
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                      sx={{
-                        minWidth: "100px",
-                        "& .MuiSelect-select": {
-                          padding: "4px 6px",
-                          fontSize: "0.8125rem",
-                        },
-                        "& .MuiSelect-icon": {
-                          right: "2px",
-                        },
-                      }}
-                    >
-                      {['unpaid'].map((status, index) => (
-                        <MenuItem key={index} value={status}>
-                          {getPaymentStatusLabel(status)}
-                        </MenuItem>
-                      ))}
-                      {!['unpaid'].includes(applicant.status) && (
-                        <MenuItem
-                          key="current"
-                          value={applicant.status}
-                          disabled
-                        >
-                          {getPaymentStatusLabel(applicant.status)}
-                        </MenuItem>
-                      )}
-                    </TextField>
-                  </TableCell>}
+                  <PaymentStatusDropDown
+                    applicant={applicant}
+                    handlePaymentStatus={handlePaymentStatusSelect}
+                  />
                 </TableRow>
               );
             })}
@@ -625,8 +613,14 @@ const ApplicantTable = ({ programId }) => {
         <DialogContent>
           <Typography>
             Are you sure you want to change the status from{" "}
-            <strong>{getStatusLabel(pendingApplicationStatus.currentStatus)}</strong> to{" "}
-            <strong>{getStatusLabel(pendingApplicationStatus.newStatus)}</strong>?
+            <strong>
+              {getStatusLabel(pendingApplicationStatus.currentStatus)}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {getStatusLabel(pendingApplicationStatus.newStatus)}
+            </strong>
+            ?
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
             {!prereqCheck?.meets_all && pendingApplicationStatus.newStatus === "Eligible"
@@ -641,6 +635,36 @@ const ApplicantTable = ({ programId }) => {
           </Button>
           <Button
             onClick={confirmApplicationStatusChange}
+            color="primary"
+            variant="contained"
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={cancelPaymentStatusChange}>
+        <DialogTitle>Confirm Status Change</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to change the status from{" "}
+            <strong>
+              {getPaymentStatusLabel(pendingPaymentStatus.currentStatus)}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {getPaymentStatusLabel(pendingPaymentStatus.newStatus)}
+            </strong>
+            ?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelPaymentStatusChange} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmPaymentStatusChange}
             color="primary"
             variant="contained"
           >

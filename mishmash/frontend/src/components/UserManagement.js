@@ -92,7 +92,11 @@ const UserRoleChips = ({ user, currentUser, onRoleChange }) => {
   if (!user.is_provider_partner) availableRoles.push("provider_partner");
 
   // Whether user has any roles
-  const hasAnyRole = user.is_admin || user.is_faculty || user.is_reviewer || user.is_provider_partner;
+  const hasAnyRole =
+    user.is_admin ||
+    user.is_faculty ||
+    user.is_reviewer ||
+    user.is_provider_partner;
 
   return (
     <Box
@@ -463,14 +467,22 @@ const UserManagement = () => {
       if (addRole) {
         // Different messages based on current roles
         const hasNoApplications =
-          user.is_faculty || user.is_reviewer || user.is_admin || user.is_provider_partner;
+          user.is_faculty ||
+          user.is_reviewer ||
+          user.is_admin ||
+          user.is_provider_partner;
 
         title = `Warning: Promote to ${
           roleType.charAt(0).toUpperCase() + roleType.slice(1)
         }`;
-
+        
         if (hasNoApplications) {
           message = `Are you sure you want to promote ${user.display_name} to ${roleType}?`;
+          
+          message +=
+            roleType != "provider_partner"
+              ? ``
+              : `This will remove all other roles`;
         } else {
           message = `Promoting ${user.display_name} to ${roleType} will delete their ${applications_count} submitted applications. Do you wish to proceed?`;
         }
@@ -577,12 +589,13 @@ const UserManagement = () => {
       if (roleFilter === "ADMIN" && user.is_admin) return true;
       if (roleFilter === "FACULTY" && user.is_faculty) return true;
       if (roleFilter === "REVIEWER" && user.is_reviewer) return true;
-      if (roleFilter === "PROVIDER_PARTNER" && user.is_provider_partner) return true;
+      if (roleFilter === "PROVIDER_PARTNER" && user.is_provider_partner)
+        return true;
       if (
         roleFilter === "REGULAR" &&
         !user.is_admin &&
         !user.is_faculty &&
-        !user.is_reviewer && 
+        !user.is_reviewer &&
         !user.is_provider_partner
       )
         return true;

@@ -27,8 +27,8 @@ import { SEMESTERS } from "../utils/constants";
 import { DEFAULT_QUESTIONS } from "../utils/constants";
 import ApplicantTable from "./ApplicantTable";
 import FacultyPicklist from "./FacultyPicklist";
-import { useAuth } from "../context/AuthContext";
 import ProviderPartnerPicklist from "./ProviderPartnerPicklist";
+import { useAuth } from "../context/AuthContext";
 
 const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const navigate = useNavigate();
@@ -43,6 +43,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     application_open_date: "",
     application_deadline: "",
     essential_document_deadline: "",
+    payment_deadline: "",
     start_date: "",
     end_date: "",
     description: "",
@@ -82,6 +83,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         application_open_date: editingProgram.application_open_date,
         application_deadline: editingProgram.application_deadline,
         essential_document_deadline: editingProgram.essential_document_deadline,
+        payment_deadline: editingProgram.payment_deadline,
         start_date: editingProgram.start_date,
         end_date: editingProgram.end_date,
         description: editingProgram.description,
@@ -105,8 +107,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
     setDirty(true);
   };
 
-  const handleBooleanChange = (e) => {
+  const handleTrackPaymentChange = async (e) => {
     // TODO figure out a way to shorten this
+    if (editingProgram && !e.target.checked) {
+      if (
+        !window.confirm(
+          `Are you sure you want to disable track payments for this program? recorded payment informaton will be lost if the modification (disabling track payments) is done. `
+        )
+      )
+        return;
+    }
+
     if (e.target.checked) {
       setProgramData({ ...programData, [e.target.name]: true });
     } else {
@@ -308,6 +319,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       );
     } finally {
       setIsSubmitting(false);
+      // TODO  might need to revaluate this - Alexis
+      navigate(
+        `/dashboard/admin-programs/${encodeURIComponent(
+          programData.title.trim().replace(/\s+/g, "-")
+        )}`
+      );
     }
   };
 
@@ -415,7 +432,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
               <Switch
                 checked={programData.track_payment}
                 name="track_payment"
-                onChange={handleBooleanChange}
+                onChange={handleTrackPaymentChange}
                 color="success"
               />
             }
@@ -475,6 +492,19 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           value={programData.essential_document_deadline}
           onChange={handleInputChange}
         />
+
+        {programData.track_payment && (
+          <TextField
+            label="Payment Deadline"
+            type="date"
+            name="payment_deadline"
+            fullWidth
+            disabled={!user.is_admin}
+            InputLabelProps={{ shrink: true }}
+            value={programData.payment_deadline}
+            onChange={handleInputChange}
+          />
+        )}
         <TextField
           label="Start Date"
           type="date"
@@ -617,7 +647,10 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           user.is_reviewer ||
           (user.is_faculty &&
             programData.faculty_lead_ids.includes(user.id))) && (
-          <ApplicantTable programId={editingProgram.id} />
+          <ApplicantTable
+            programId={editingProgram.id}
+            show_track_payment={editingProgram.track_payment}
+          />
         )}
 
       {/* Confirm delete question dialog */}

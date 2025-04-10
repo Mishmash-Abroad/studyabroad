@@ -47,6 +47,7 @@ from .models import (
     Document,
     ConfidentialNote,
     LetterOfRecommendation,
+    SiteBranding,
 )
 from .serializers import (
     UserSerializer,
@@ -58,6 +59,7 @@ from .serializers import (
     DocumentSerializer,
     AnnouncementSerializer,
     LetterOfRecommendationSerializer,
+    SiteBrandingSerializer,
 )
 from django.shortcuts import render, redirect
 from api.models import User
@@ -72,7 +74,12 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.parsers import FileUploadParser
-from .constants import ALL_ADMIN_EDITABLE_STATUSES, ALL_FACULTY_EDITABLE_STATUSES, ALL_REVIEWER_EDITABLE_STATUSES, ALL_STATUSES
+from .constants import (
+    ALL_ADMIN_EDITABLE_STATUSES,
+    ALL_FACULTY_EDITABLE_STATUSES,
+    ALL_REVIEWER_EDITABLE_STATUSES,
+    ALL_STATUSES,
+)
 import re
 from .constants import SEMESTERS
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -84,8 +91,11 @@ import base64
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import logout as django_logout
 import os
-from .email_utils import send_recommendation_request_email, send_recommendation_retraction_email
 from .ulink_scraper import get_ulink_pin, refresh_ulink_transcript
+from .email_utils import (
+    send_recommendation_request_email,
+    send_recommendation_retraction_email,
+)
 
 ### Custom permission classes for API access ###
 
@@ -120,6 +130,13 @@ class IsOwnerOrReviewer(permissions.BasePermission):
         return obj.student == request.user or request.user.is_reviewer
 
 
+class IsOwnerOrProviderPartner(permissions.BasePermission):
+    """Custom permission to allow only the owner or an partner to edit/view."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.student == request.user or request.user.is_provider_partner
+
+
 class IsAdminOrSelf(permissions.BasePermission):
     """Custom permission to allow users to access their own data, while admins can access any user's data."""
 
@@ -141,6 +158,13 @@ class IsReviewerOrSelf(permissions.BasePermission):
         return request.user.is_reviewer or obj.id == request.user.id
 
 
+class IsProviderPartnerOrSelf(permissions.BasePermission):
+    """Custom permission to allow users to access their own data, while partner can access any user's data."""
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_provider_partner or obj.id == request.user.id
+
+
 class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or admins to access or modify them."""
 
@@ -149,6 +173,7 @@ class IsApplicationResponseOwnerOrAdmin(permissions.BasePermission):
             return request.method in permissions.SAFE_METHODS
 
         return obj.application.student == request.user
+
 
 class IsApplicationResponseOwnerOrFaculty(permissions.BasePermission):
     """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
@@ -161,7 +186,7 @@ class IsApplicationResponseOwnerOrFaculty(permissions.BasePermission):
 
 
 class IsApplicationResponseOwnerOrReviewer(permissions.BasePermission):
-    """Custom permission to allow only owners of the application responses or faculty to access or modify them."""
+    """Custom permission to allow only owners of the application responses or reviewer to access or modify them."""
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_reviewer:
@@ -277,14 +302,14 @@ class IsDocumentOwnerOrStaff(permissions.BasePermission):
     - Admins, faculty, and reviewers have read-only access
     - Document owners (students who submitted) have full access
     """
-    
+
     def has_object_permission(self, request, view, obj):
         user = request.user
-        
+
         # Staff users (admin, faculty, reviewers) have read-only access
         if user.is_admin or user.is_faculty or user.is_reviewer:
             return request.method in permissions.SAFE_METHODS
-            
+
         # Document owner has full access
         return obj.application.student == user
 
@@ -299,7 +324,7 @@ class IsProgramFaculty(permissions.BasePermission):
         return request.user in obj.program.faculty_leads.all()
 
 
-class IsLetterRequestorOrStaff(permissions.BasePermission): 
+class IsLetterRequestorOrStaff(permissions.BasePermission):
     """
     Allows access only to the student who requested the letter or staff members.
     Restricts students from viewing letter content while allowing them to manage their requests.
@@ -308,14 +333,14 @@ class IsLetterRequestorOrStaff(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         if obj.application.student == user:
-            if request.method in ['GET', 'DELETE']:
+            if request.method in ["GET", "DELETE"]:
                 return True
             return False
-            
+
         # staff members (admin, faculty, reviewers) can only read letters
         if user.is_admin or user.is_faculty or user.is_reviewer:
             return request.method in permissions.SAFE_METHODS
-            
+
         return False
 
 
@@ -382,6 +407,8 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         search = self.request.query_params.get("search", None)
         faculty_ids = self.request.query_params.get("faculty_ids", None)
+        partner_ids = self.request.query_params.get("partner_ids", None)
+        track_payment = self.request.query_params.get("track_payment", None)
 
         if search:
             queryset = queryset.filter(Q(title__icontains=search))
@@ -391,6 +418,18 @@ class ProgramViewSet(viewsets.ModelViewSet):
             if faculty_id_list:
                 queryset = queryset.filter(faculty_leads__id__in=faculty_id_list)
 
+        if partner_ids:
+            partner_id_list = [int(id) for id in partner_ids.split(",") if id.isdigit()]
+            if partner_id_list:
+                queryset = queryset.filter(provider_partners__id__in=partner_id_list)
+
+        if track_payment is not None:
+            if track_payment.lower() == "true":
+                queryset = queryset.filter(track_payment=True)
+            elif track_payment.lower() == "false":
+                queryset = queryset.filter(track_payment=False)
+
+        # TODO this might be where the bug is for faculty not updating when no fauclty
         # Check for programs with no faculty leads and add admin user as default
         for program in queryset:
             # Check if program has any faculty leads
@@ -442,9 +481,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
         year = request.data.get("year", "").strip()
         semester = request.data.get("semester", "").strip()
         description = request.data.get("description", "").strip()
+        track_payment = request.data.get("track_payment") == "true"
         application_open_date = request.data.get("application_open_date")
         application_deadline = request.data.get("application_deadline")
         essential_document_deadline = request.data.get("essential_document_deadline")
+        payment_deadline = request.data.get("payment_deadline")
         start_date = request.data.get("start_date")
         end_date = request.data.get("end_date")
         questions = request.data.get("questions", [])
@@ -463,11 +504,6 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         if len(semester) > 20:
             raise ValidationError({"detail": "Semester cannot exceed 20 characters."})
-
-        # if len(description) > 1000:
-        #     raise ValidationError(
-        #         {"detail": "Description cannot exceed 1000 characters."}
-        #     )
 
         if not year.isdigit() or len(year) != 4:
             raise ValidationError(
@@ -493,7 +529,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         except (TypeError, ValueError):
-            raise ValidationError({"detail": "Invalid date format or missing date. Use MM-DD-YYYY"})
+            raise ValidationError(
+                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+            )
 
         if application_deadline < application_open_date:
             raise ValidationError(
@@ -518,6 +556,29 @@ class ProgramViewSet(viewsets.ModelViewSet):
                     "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
                 }
             )
+
+        if track_payment:
+            try:
+                payment_deadline = datetime.strptime(payment_deadline, "%Y-%m-%d")
+                if not payment_deadline:
+                    raise ValidationError(
+                        {
+                            "detail": "Payment deadline should be set if track payment is set"
+                        }
+                    )
+                if not (essential_document_deadline <= payment_deadline <= start_date):
+                    raise ValidationError(
+                        {
+                            "detail": "Payment deadline should be after or at essential document deadline and before or at start date"
+                        }
+                    )
+            except:
+                raise ValidationError(
+                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+                )
+        else:
+            request.data["provider_partner_ids"] = []
+            request.data["payment_deadline"] = None
 
         response = super().create(request, *args, **kwargs)
         program_instance = Program.objects.get(id=response.data.get("id"))
@@ -562,6 +623,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
         program_instance = self.get_object()
 
         year = request.data.get("year", program_instance.year)
+        track_payment = request.data.get(
+            "track_payment", program_instance.track_payment
+        )
         semester = request.data.get("semester", program_instance.semester)
 
         # Define regex for year (must be a 4-digit number)
@@ -587,6 +651,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
         essential_document_deadline = request.data.get(
             "essential_document_deadline", program_instance.essential_document_deadline
         )
+        payment_deadline = request.data.get(
+            "payment_deadline", program_instance.payment_deadline
+        )
         start_date = request.data.get("start_date", program_instance.start_date)
         end_date = request.data.get("end_date", program_instance.end_date)
 
@@ -606,6 +673,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 if isinstance(essential_document_deadline, str)
                 else essential_document_deadline
             )
+            payment_deadline = (
+                datetime.strptime(payment_deadline, "%Y-%m-%d").date()
+                if isinstance(payment_deadline, str)
+                else payment_deadline
+            )
             start_date = (
                 datetime.strptime(start_date, "%Y-%m-%d").date()
                 if isinstance(start_date, str)
@@ -617,7 +689,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 else end_date
             )
         except (TypeError, ValueError):
-            raise ValidationError({"detail": "Invalid date format or missing date. Use MM-DD-YYYY"})
+            raise ValidationError(
+                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+            )
 
         if application_open_date > application_deadline:
             raise ValidationError(
@@ -643,6 +717,21 @@ class ProgramViewSet(viewsets.ModelViewSet):
                     "detail": "Dates should be monotonically increasing in the order listed:  application_open_date, application_deadline, essential_document_deadline, start_date, end_date (e.g., start date cannot be after end date, but they may potentially be equal)."
                 }
             )
+
+        if track_payment:
+            if not payment_deadline:
+                raise ValidationError(
+                    {"detail": "Payment deadline should be set if track payment is set"}
+                )
+            if not (essential_document_deadline <= payment_deadline <= start_date):
+                raise ValidationError(
+                    {
+                        "detail": "Payment deadline should be after or at essential document deadline and before or at start date"
+                    }
+                )
+        else:
+            request.data["provider_partner_ids"] = []
+            request.data["payment_deadline"] = None
 
         return super().update(request, *args, **kwargs)
 
@@ -670,6 +759,35 @@ class ProgramViewSet(viewsets.ModelViewSet):
             application = Application.objects.get(student=request.user, program=program)
             return Response(
                 {"status": application.status, "application_id": application.id}
+            )
+        except Application.DoesNotExist:
+            return Response({"status": None})
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAdminOrReadOnly])
+    def payment_status(self, request, pk=None):
+        """
+        Get the current user's payment application status for a specific program.
+
+        ## Returns:
+        - 200 OK: `{"status": "Unpaid", "application_id": 12}`
+        - 401 Unauthorized: If user is not authenticated
+        - 404 Not Found: If application does not exist
+
+        ## Example:
+        - `GET /api/programs/5/application_status/`
+
+        ## Permissions:
+        - Authenticated users only
+        """
+        program = self.get_object()
+        if not request.user.is_authenticated or not program.track_payment:
+            return Response({"status": None})
+
+        try:
+            application = Application.objects.get(student=request.user, program=program)
+            
+            return Response(
+                {"payment_status": application.payment_status, "application_id": application.id}
             )
         except Application.DoesNotExist:
             return Response({"status": None})
@@ -825,7 +943,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationSerializer
     permission_classes = [
         permissions.IsAuthenticated,
-        IsOwnerOrAdmin | IsOwnerOrFaculty | IsOwnerOrReviewer,
+        IsOwnerOrAdmin
+        | IsOwnerOrFaculty
+        | IsOwnerOrReviewer
+        | IsOwnerOrProviderPartner,
     ]
 
     def get_queryset(self):
@@ -912,12 +1033,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "Applicants must be at least 10 years old."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         if len(major_str) > 100:
             return Response(
-                {
-                    "detail": "Major must be 100 characters or less."
-                },
+                {"detail": "Major must be 100 characters or less."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -985,7 +1104,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                     )
 
             else:
-                if user.is_admin:    
+                if user.is_admin:
                     if new_status not in ALL_ADMIN_EDITABLE_STATUSES:
                         return Response(
                             {
@@ -1015,13 +1134,11 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 {"detail": "You cannot change the program after applying."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         if "major" in data:
             if len(data["major"]) > 100:
                 return Response(
-                    {
-                        "detail": "Major must be 100 characters or less."
-                    },
+                    {"detail": "Major must be 100 characters or less."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         return super().update(request, *args, **kwargs)
@@ -1081,7 +1198,9 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationResponseSerializer
     permission_classes = [
         permissions.IsAuthenticated,
-        IsApplicationResponseOwnerOrAdmin | IsApplicationResponseOwnerOrFaculty | IsApplicationResponseOwnerOrReviewer
+        IsApplicationResponseOwnerOrAdmin
+        | IsApplicationResponseOwnerOrFaculty
+        | IsApplicationResponseOwnerOrReviewer,
     ]
 
     def get_queryset(self):
@@ -1110,7 +1229,11 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
                 raise NotFound(detail="Application not found.")
 
             if (
-                not (self.request.user.is_admin or self.request.user.is_faculty or self.request.user.is_reviewer)
+                not (
+                    self.request.user.is_admin
+                    or self.request.user.is_faculty
+                    or self.request.user.is_reviewer
+                )
                 and application.student != self.request.user
             ):
                 raise PermissionDenied(
@@ -1254,7 +1377,10 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [
         IsAuthenticated,
-        IsAdminOrReadOnly | IsFacultyOrSelf | IsReviewerOrSelf,
+        IsAdminOrReadOnly
+        | IsFacultyOrSelf
+        | IsReviewerOrSelf
+        | IsProviderPartnerOrSelf,
     ]
     filter_backends = [filters.SearchFilter]
     search_fields = ["username", "display_name", "email"]
@@ -1272,9 +1398,15 @@ class UserViewSet(viewsets.ModelViewSet):
         Return all users for admins, but only faculty for public faculty list
         """
         queryset = User.objects.all()
+        is_faculty = self.request.query_params.get("is_faculty")
+        is_provider_partner = self.request.query_params.get("is_provider_partner")
+
+        # If requesting partner list, filter to only show parttner
+        if is_provider_partner and self.action == "list":
+            return queryset.filter(is_provider_partner=True).order_by("display_name")
 
         # If requesting faculty list, filter to only show faculty
-        if self.action == "list" and self.request.query_params.get("is_faculty"):
+        if is_faculty and self.action == "list":
             return queryset.filter(is_faculty=True).order_by("display_name")
 
         # For other list requests, maintain admin-only access
@@ -1282,6 +1414,7 @@ class UserViewSet(viewsets.ModelViewSet):
             self.request.user.is_admin
             or self.request.user.is_faculty
             or self.request.user.is_reviewer
+            or self.request.user.is_provider_partner
         ):
             return queryset.none()
 
@@ -1295,13 +1428,20 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         user = self.get_object()
         new_is_admin = request.data.get("is_admin", user.is_admin)
+        new_is_faculty = request.data.get("is_faculty", user.is_faculty)
+        new_is_provider_partner = request.data.get(
+            "is_provider_partner", user.is_provider_partner
+        )
 
-        if not user.is_admin and new_is_admin:
+        if not user.is_admin and new_is_admin or new_is_provider_partner:
             # User is being promoted to admin, delete applications
+            # or user is being promoted to partner, delete apps
             applications_deleted = Application.objects.filter(student=user).delete()
             print(f"Deleted {applications_deleted[0]} applications for {user.username}")
 
-        if user.is_admin and not new_is_admin:
+        # TODO here is the logic where the bug is
+        # it shoiuld be FACULTY not ADMIN
+        if user.is_faculty and not new_is_faculty or new_is_provider_partner:
             # User is being demoted from admin, remove them from faculty lead roles
             programs = Program.objects.filter(faculty_leads=user)
             for program in programs:
@@ -1313,6 +1453,11 @@ class UserViewSet(viewsets.ModelViewSet):
             print(
                 f"Removed {user.username} from faculty leads of {programs.count()} programs"
             )
+
+        if new_is_provider_partner:
+            request.data["is_admin"] = False
+            request.data["is_faculty"] = False
+            request.data["is_reviewer"] = False
 
         return super().update(request, *args, **kwargs)
 
@@ -1771,14 +1916,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def secure_file(self, request, pk=None):
         """
         Securely serve document files with proper authorization checks.
-        
+
         Only the document owner (student who submitted) or an admin can access the file.
         This prevents direct access to files via URL and adds an authorization layer.
-        
+
         Returns:
             FileResponse: The requested PDF file if authorization passes
             Response: 403 Forbidden if unauthorized
@@ -1786,37 +1931,38 @@ class DocumentViewSet(viewsets.ModelViewSet):
         """
         try:
             document = self.get_object()
-            
+
             # Check if user is authorized (already handled by permission_classes)
             # But we do an extra check here for clarity
             application = document.application
             user = request.user
-            
+
             if not (user.is_admin or user.is_faculty or application.student == user):
                 return Response(
                     {"detail": "You do not have permission to access this document."},
-                    status=status.HTTP_403_FORBIDDEN
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-                
+
             # If we get here, user is authorized to view this document
             file_path = document.pdf.path
-            
+
             if not os.path.exists(file_path):
                 return Response(
-                    {"detail": "File not found."},
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "File not found."}, status=status.HTTP_404_NOT_FOUND
                 )
-                
+
             # Create a FileResponse for the file
-            response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
-            response['Content-Disposition'] = f'inline; filename="{document.title}"'
-            
+            response = FileResponse(
+                open(file_path, "rb"), content_type="application/pdf"
+            )
+            response["Content-Disposition"] = f'inline; filename="{document.title}"'
+
             return response
-            
+
         except Exception as e:
             return Response(
                 {"detail": f"Error retrieving document: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -1826,10 +1972,11 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
     Students create requests, system emails the writer, writer uploads PDF using token-based link.
     Admin/faculty can read letter content, student cannot see PDF content.
     """
+
     queryset = LetterOfRecommendation.objects.all()
     serializer_class = LetterOfRecommendationSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    
+
     def get_permissions(self):
         """
         Different permissions based on action:
@@ -1837,22 +1984,22 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
         - Student endpoints require the student to be the application owner
         - Admin/faculty/reviewer can view but not modify letters
         """
-        if self.action in ['public_info', 'fulfill_letter']:
+        if self.action in ["public_info", "fulfill_letter"]:
             # These are public endpoints that use token authentication
             return [permissions.AllowAny()]
-        
+
         # All other endpoints require auth and permissions
         return [permissions.IsAuthenticated(), IsLetterRequestorOrStaff()]
-    
+
     def get_serializer_context(self):
         """
         Add request to serializer context to allow permission checks in serializer methods.
         This is needed to hide the PDF URL from students.
         """
         context = super().get_serializer_context()
-        context['request'] = self.request
+        context["request"] = self.request
         return context
-    
+
     def get_queryset(self):
         """
         Filter queryset based on user role:
@@ -1860,27 +2007,29 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
         - Students can only see their own letter requests
         """
         user = self.request.user
-        
+
         # For unauthenticated access (token-based), we return empty queryset
         # Individual objects will be fetched in the public endpoints
         if user.is_anonymous:
             return LetterOfRecommendation.objects.none()
-            
+
         # Admin, faculty and reviewers can see all letters
         if user.is_admin or user.is_faculty or user.is_reviewer:
             queryset = LetterOfRecommendation.objects.all()
         else:
             # Students can only see their own letters
             queryset = LetterOfRecommendation.objects.filter(application__student=user)
-            
+
         # Filter by application if provided
-        application_id = self.request.query_params.get('application', None)
+        application_id = self.request.query_params.get("application", None)
         if application_id:
             queryset = queryset.filter(application=application_id)
-            
+
         return queryset
-    
-    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+
+    @action(
+        detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated]
+    )
     def create_request(self, request):
         """
         Create a new letter of recommendation request:
@@ -1888,49 +2037,53 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
         - System creates request and emails writer with unique token link
         """
         user = request.user
-        application_id = request.data.get('application_id')
-        writer_name = request.data.get('writer_name')
-        writer_email = request.data.get('writer_email')
-        
+        application_id = request.data.get("application_id")
+        writer_name = request.data.get("writer_name")
+        writer_email = request.data.get("writer_email")
+
         # Validate required fields
         if not all([application_id, writer_name, writer_email]):
             return Response(
                 {"detail": "Missing required fields."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         # Get application and verify ownership
         try:
             application = Application.objects.get(id=application_id, student=user)
         except Application.DoesNotExist:
             return Response(
                 {"detail": "Application not found or not yours."},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
-            
+
         # Create the letter request
         letter_obj = LetterOfRecommendation.objects.create(
             application=application,
             writer_name=writer_name.strip(),
-            writer_email=writer_email.strip()
+            writer_email=writer_email.strip(),
         )
-        
+
         # Send email to the writer
-        backend_url = request.build_absolute_uri('/').rstrip('/')
+        backend_url = request.build_absolute_uri("/").rstrip("/")
         # Use frontend URL instead of backend URL
-        if 'localhost' in backend_url:
+        if "localhost" in backend_url:
             # Development environment
-            frontend_url = backend_url.replace('8000', '3000')
+            frontend_url = backend_url.replace("8000", "3000")
         else:
             # Production - assuming frontend and backend are on same domain with different paths
             frontend_url = backend_url
-        
+
         send_recommendation_request_email(letter_obj, frontend_url)
-        
+
         serializer = self.get_serializer(letter_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    @action(detail=True, methods=['delete'], permission_classes=[permissions.IsAuthenticated])
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def retract_request(self, request, pk=None):
         """
         Student retracts a letter request:
@@ -1939,53 +2092,52 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
         """
         try:
             letter_obj = self.get_object()
-            
+
             # Only the student who owns the application can retract
             if letter_obj.application.student != request.user:
                 return Response(
                     {"detail": "You cannot retract a request you did not create."},
-                    status=status.HTTP_403_FORBIDDEN
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-                
+
             # If not fulfilled yet, send a retraction email
             if not letter_obj.is_fulfilled:
                 send_recommendation_retraction_email(letter_obj)
-            
+
             # Delete the request (and associated PDF if any)
             letter_obj.delete()
-            
+
             return Response(
                 {"detail": "Letter request retracted successfully."},
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
-            
+
         except Exception as e:
             return Response(
                 {"detail": f"Error retracting request: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-    
-    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
+
+    @action(detail=True, methods=["get"], permission_classes=[permissions.AllowAny])
     def public_info(self, request, pk=None):
         """
         Public endpoint for letter writers to see request details.
         Requires valid token in query parameters.
         """
-        token = request.query_params.get('token')
+        token = request.query_params.get("token")
         if not token:
             return Response(
-                {"detail": "Token is required."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         try:
             letter_obj = LetterOfRecommendation.objects.get(id=pk, token=token)
         except LetterOfRecommendation.DoesNotExist:
             return Response(
                 {"detail": "Invalid or expired request link."},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
-            
+
         # Return basic information about the request
         data = {
             "status": "valid",
@@ -1994,103 +2146,105 @@ class LetterOfRecommendationViewSet(viewsets.ModelViewSet):
             "is_fulfilled": letter_obj.is_fulfilled,
             "writer_name": letter_obj.writer_name,
         }
-        
+
         return Response(data, status=status.HTTP_200_OK)
-    
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.AllowAny])
     def fulfill_letter(self, request, pk=None):
         """
         Public endpoint for letter writers to upload their recommendation letter.
         Requires valid token in query parameters.
         """
-        token = request.query_params.get('token')
+        token = request.query_params.get("token")
         if not token:
             return Response(
-                {"detail": "Token is required."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         try:
             letter_obj = LetterOfRecommendation.objects.get(id=pk, token=token)
         except LetterOfRecommendation.DoesNotExist:
             return Response(
                 {"detail": "Invalid or expired request link."},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
-            
+
         # Check for PDF file
-        if 'pdf' not in request.FILES:
+        if "pdf" not in request.FILES:
             return Response(
-                {"detail": "No PDF file provided."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "No PDF file provided."}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         # Save the PDF and update timestamp
-        letter_obj.pdf = request.FILES['pdf']
+        letter_obj.pdf = request.FILES["pdf"]
         letter_obj.letter_timestamp = now()
         letter_obj.save()
-        
+
         return Response(
             {
                 "detail": "Letter uploaded successfully.",
                 "student": letter_obj.application.student.display_name,
                 "program": letter_obj.application.program.title,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
-    
-    @action(detail=True, methods=['get'])
+
+    @action(detail=True, methods=["get"])
     def secure_file(self, request, pk=None):
         """
         Securely serve recommendation letter PDF files with proper authorization checks.
-        
+
         Only admin, faculty, and reviewers can access the actual PDF file.
         Students can't view letter content even if they requested it.
         """
         try:
             letter_obj = self.get_object()
-            
+
             # Authorization check - student who requested cannot see PDF content
             user = request.user
             if letter_obj.application.student == user:
                 return Response(
                     {"detail": "Students cannot view recommendation letter content."},
-                    status=status.HTTP_403_FORBIDDEN
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-                
+
             # Admin, faculty, or reviewer are allowed to view
             if not (user.is_admin or user.is_faculty or user.is_reviewer):
                 return Response(
                     {"detail": "You don't have permission to view this letter."},
-                    status=status.HTTP_403_FORBIDDEN
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-                
+
             # Check if letter has a PDF
             if not letter_obj.pdf:
                 return Response(
                     {"detail": "No letter has been uploaded yet."},
-                    status=status.HTTP_404_NOT_FOUND
+                    status=status.HTTP_404_NOT_FOUND,
                 )
-                
+
             # Get file path and ensure it exists
             file_path = letter_obj.pdf.path
             if not os.path.exists(file_path):
                 return Response(
                     {"detail": "Letter file not found."},
-                    status=status.HTTP_404_NOT_FOUND
+                    status=status.HTTP_404_NOT_FOUND,
                 )
-                
+
             # Serve the file
-            response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+            response = FileResponse(
+                open(file_path, "rb"), content_type="application/pdf"
+            )
             filename = os.path.basename(file_path)
-            response['Content-Disposition'] = f'inline; filename="recommendation_{letter_obj.id}.pdf"'
-            
+            response["Content-Disposition"] = (
+                f'inline; filename="recommendation_{letter_obj.id}.pdf"'
+            )
+
             return response
-            
+
         except Exception as e:
             return Response(
                 {"detail": f"Error retrieving letter: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -2194,3 +2348,35 @@ class MFAViewSet(viewsets.ViewSet):
         return Response(
             {"error": "Invalid TOTP code."}, status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class SiteBrandingViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing site branding settings (white-label support).
+    Only administrators can modify branding settings, but all users can view them.
+    """
+    queryset = SiteBranding.objects.all()
+    serializer_class = SiteBrandingSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    @action(detail=False, methods=['get'])
+    def current(self, request):
+        """
+        Get the current active branding settings. Creates default settings if none exist.
+        """
+        try:
+            # Try to get the first branding record, or create a default one if none exists
+            branding, created = SiteBranding.objects.get_or_create(
+                id=1,  # Always use ID 1 for consistency
+                defaults={
+                    'site_name': 'Study Abroad College',
+                    'primary_color': '#1976d2',
+                }
+            )
+            serializer = self.get_serializer(branding, context={'request': request})
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"error": f"Error retrieving branding settings: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

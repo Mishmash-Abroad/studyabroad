@@ -10,6 +10,29 @@ logger = logging.getLogger(__name__)
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "SG.idk")
 DEFAULT_FROM_EMAIL = os.getenv("SENDGRID_DEFAULT_FROM", "hccabroad@gmail.com")
 
+# Get site branding for emails
+def get_site_branding():
+    try:
+        from .models import SiteBranding
+        branding = SiteBranding.objects.first()
+        if branding:
+            # Use relative URL path for the logo that will work in emails
+            logo_url = f"/media/{branding.logo.name}" if branding.logo else "/images/logo.png"
+            return {
+                'site_name': branding.site_name,
+                'primary_color': branding.primary_color,
+                'logo_url': logo_url
+            }
+    except Exception as e:
+        logger.error(f"Error fetching site branding: {str(e)}")
+    
+    # Return defaults if no branding is found or there was an error
+    return {
+        'site_name': 'Study Abroad College',
+        'primary_color': '#1a237e',
+        'logo_url': '/images/logo.png'
+    }
+
 def send_email(to_email, subject, html_content=None):
     """
     Send an email using SendGrid API
@@ -66,6 +89,12 @@ def send_recommendation_request_email(letter_obj, base_url):
     student_name = letter_obj.application.student.display_name
     program_title = letter_obj.application.program.title
     
+    # Get site branding
+    branding = get_site_branding()
+    site_name = branding['site_name']
+    primary_color = branding['primary_color']
+    logo_url = f"{base_url}{branding['logo_url']}"
+    
     # Build the unique URL with token for writer to upload letter
     upload_url = f"{base_url}/letters/{letter_obj.id}?token={letter_obj.token}"
     
@@ -83,8 +112,8 @@ def send_recommendation_request_email(letter_obj, base_url):
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <!-- Header with logo -->
         <tr>
-            <td style="padding: 20px 0; text-align: center; background-color: #1a237e;">
-                <img src="{base_url}/images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
+            <td style="padding: 20px 0; text-align: center; background-color: {primary_color};">
+                <img src="{logo_url}" alt="{site_name}" width="180" style="max-width: 80%;">
             </td>
         </tr>
         
@@ -119,7 +148,7 @@ def send_recommendation_request_email(letter_obj, base_url):
                     Best regards,
                 </p>
                 <p style="font-size: 16px; line-height: 1.6; margin-top: 0;">
-                    <strong>HCC Study Abroad Program</strong>
+                    <strong>{site_name}</strong>
                 </p>
             </td>
         </tr>
@@ -128,7 +157,7 @@ def send_recommendation_request_email(letter_obj, base_url):
         <tr>
             <td style="padding: 20px 40px; background-color: #f5f5f5; text-align: center; border-top: 1px solid #e0e0e0;">
                 <p style="font-size: 14px; color: #757575; margin: 0;">
-                    &copy; 2025 HCC Study Abroad Program. All rights reserved.
+                    &copy; 2025 {site_name}. All rights reserved.
                 </p>
             </td>
         </tr>
@@ -156,6 +185,12 @@ def send_recommendation_retraction_email(letter_obj):
     # This is needed because we don't have base_url passed to this function
     base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     
+    # Get site branding
+    branding = get_site_branding()
+    site_name = branding['site_name']
+    primary_color = branding['primary_color']
+    logo_url = f"{base_url}{branding['logo_url']}"
+    
     subject = f"Letter of Recommendation Request Retracted - {student_name}"
     
     html_content = f"""
@@ -170,8 +205,8 @@ def send_recommendation_retraction_email(letter_obj):
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <!-- Header with logo -->
         <tr>
-            <td style="padding: 20px 0; text-align: center; background-color: #1a237e;">
-                <img src="{base_url}/images/logo.png" alt="HCC Study Abroad" width="180" style="max-width: 80%;">
+            <td style="padding: 20px 0; text-align: center; background-color: {primary_color};">
+                <img src="{logo_url}" alt="{site_name}" width="180" style="max-width: 80%;">
             </td>
         </tr>
         
@@ -200,7 +235,7 @@ def send_recommendation_retraction_email(letter_obj):
                     Best regards,
                 </p>
                 <p style="font-size: 16px; line-height: 1.6; margin-top: 0;">
-                    <strong>HCC Study Abroad Program</strong>
+                    <strong>{site_name}</strong>
                 </p>
             </td>
         </tr>
@@ -209,7 +244,7 @@ def send_recommendation_retraction_email(letter_obj):
         <tr>
             <td style="padding: 20px 40px; background-color: #f5f5f5; text-align: center; border-top: 1px solid #e0e0e0;">
                 <p style="font-size: 14px; color: #757575; margin: 0;">
-                    &copy; 2025 HCC Study Abroad Program. All rights reserved.
+                    &copy; 2025 {site_name}. All rights reserved.
                 </p>
             </td>
         </tr>

@@ -9,6 +9,7 @@ from .models import (
     Document,
     ConfidentialNote,
     LetterOfRecommendation,
+    SiteBranding,
 )
 from allauth.socialaccount.models import SocialAccount
 
@@ -68,6 +69,7 @@ class ProgramSerializer(serializers.ModelSerializer):
             "application_open_date",
             "application_deadline",
             "essential_document_deadline",
+            "payment_deadline",
             "start_date",
             "end_date",
             "track_payment",
@@ -97,6 +99,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "gpa",
             "major",
             "status",
+            "payment_status",
             "applied_on",
         ]
 
@@ -239,3 +242,29 @@ class LetterOfRecommendationSerializer(serializers.ModelSerializer):
 
     def get_is_fulfilled(self, obj):
         return obj.is_fulfilled
+
+
+class SiteBrandingSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = SiteBranding
+        fields = [
+            "id", 
+            "site_name", 
+            "primary_color", 
+            "logo", 
+            "logo_url", 
+            "welcome_message"
+        ]
+    
+    def get_logo_url(self, obj):
+        request = self.context.get("request")
+        if obj.logo and hasattr(obj.logo, 'url'):
+            try:
+                # For Docker environment, return a relative URL that will be properly served by Nginx
+                return f"/media/{obj.logo.name}"
+            except Exception as e:
+                print(f"Error generating logo URL: {e}")
+                return None
+        return None

@@ -61,15 +61,13 @@ const ProviderPartnerPicklist = ({
         const response = await axiosInstance.get("/api/users/", {
           params: { is_provider_partner: true },
         });
-        
-        // TODO fix this so that it is not necessary to filter
-        const filteredPartners = response.data.filter(user => user.is_provider_partner === true);
-
-        setProviderPartnerList(filteredPartners);
+        setProviderPartnerList(response.data);
         setError(null);
       } catch (err) {
         console.error("Error fetching provider partners:", err);
-        setError("Failed to load provider partner list. Please try again later.");
+        setError(
+          "Failed to load provider partner list. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
@@ -80,8 +78,8 @@ const ProviderPartnerPicklist = ({
 
   useEffect(() => {
     if (providerPartnerList.length > 0 && initialSelected.length > 0) {
-      const initialProviderPartner = providerPartnerList.filter((providerPartner) =>
-        initialSelected.includes(providerPartner.id)
+      const initialProviderPartner = providerPartnerList.filter(
+        (providerPartner) => initialSelected.includes(providerPartner.id)
       );
       setSelectedProviderPartner(initialProviderPartner);
     }
@@ -110,7 +108,11 @@ const ProviderPartnerPicklist = ({
           {...params}
           variant="standard"
           label="Provider Partners"
-          placeholder={selectedProviderPartner.length === 0 ? "Search provider partners..." : ""}
+          placeholder={
+            selectedProviderPartner.length === 0
+              ? "Search provider partners..."
+              : ""
+          }
           InputLabelProps={{
             shrink: true,
           }}

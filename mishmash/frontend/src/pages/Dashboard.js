@@ -12,6 +12,7 @@ import { styled } from "@mui/material/styles";
 import TopNavBar from "../components/TopNavBar";
 import AdminProgramsTable from "../components/AdminProgramsTable";
 import ProgramBrowser from "../components/ProgramBrowser";
+import PartnerProgramsTable from "../components/PartnerProgramsTable";
 import MyProgramsTable from "../components/MyProgramsTable";
 import AnnouncementsManager from "../components/AnnouncementsManager";
 import AnnouncementsBrowser from "../components/AnnouncementsBrowser";
@@ -22,6 +23,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import PartnerProgramForm from "../components/PartnerProgramForm";
+import AdminSiteBranding from "../components/AdminSiteBranding";
 
 // -------------------- ROUTE CONFIGURATIONS --------------------
 const ADMIN_ROUTES = [
@@ -29,12 +32,18 @@ const ADMIN_ROUTES = [
   { path: "admin-programs", label: "Program Management" },
   { path: "browse", label: "Browse Programs" },
   { path: "user-management", label: "User Management" },
+  { path: "site-branding", label: "Site Branding" },
 ];
 
 const STUDENT_ROUTES = [
   { path: "overview", label: "Overview" },
   { path: "browse", label: "Browse Programs" },
   { path: "my-programs", label: "My Programs" },
+];
+
+const PARTNER_ROUTES = [
+  { path: "partner-overview", label: "Overview" },
+  { path: "partner-programs", label: "Program Management" },
 ];
 
 // -------------------- STYLES --------------------
@@ -128,11 +137,7 @@ const AdminOverview = () => {
         </Typography>
       </WelcomeSection>
       <AnnouncementsSection>
-        {user?.is_admin ? (
-          <AnnouncementsManager />
-        ) : (
-          <AnnouncementsBrowser />
-        )}
+        {user?.is_admin ? <AnnouncementsManager /> : <AnnouncementsBrowser />}
       </AnnouncementsSection>
     </>
   );
@@ -155,25 +160,66 @@ const StudentOverview = () => (
   </>
 );
 
+const ProviderPartnerOverview = () => (
+  <>
+    <WelcomeSection>
+      <Typography variant="h6" gutterBottom>
+        Welcome to Your Dashboard
+      </Typography>
+      <Typography variant="body1" color="textSecondary">
+        Manage student application payment statuses.
+      </Typography>
+    </WelcomeSection>
+  </>
+);
+
+// a function to return the options based on the user roles
+// if user is admin, faculty or reviewer then return admin option
+// if partner return partner option
+// otherwise return student option
+const return_based_on_roles = (
+  user,
+  admin_option,
+  partner_option,
+  student_option
+) => {
+  if (user?.is_provider_partner) {
+    return partner_option;
+  }
+
+  if (user?.is_admin || user?.is_faculty || user?.is_reviewer) {
+    return admin_option;
+  }
+
+  return student_option;
+};
+
 // -------------------- MAIN COMPONENT --------------------
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
-  const routes =
-    user?.is_admin || user?.is_faculty || user?.is_reviewer
-      ? ADMIN_ROUTES
-      : STUDENT_ROUTES;
+  // logic for choosing the right routes
+  // if admin, faculty, reviewer = admin routes
+  // if provider partner = partner routes
+  // student routes other wise
+  const routes = return_based_on_roles(
+    user,
+    ADMIN_ROUTES,
+    PARTNER_ROUTES,
+    STUDENT_ROUTES
+  );
+
   // Handle default route
   useEffect(() => {
     // Only adjust the route if user is available
     if (user && location.pathname === "/dashboard") {
-      const defaultPath = `/dashboard/${
-        user?.is_admin || user?.is_faculty || user?.is_reviewer
-          ? "admin-overview"
-          : "overview"
-      }`;
+      const defaultPath = `/dashboard/${return_based_on_roles(
+        user,
+        "admin-overview",
+        "partner-overview",
+        "overview"
+      )}`;
       // Replace the current history entry instead of adding a new one
       window.history.replaceState(null, "", defaultPath);
       // Force a re-render to show the correct content
@@ -199,9 +245,12 @@ const Dashboard = () => {
       <DashboardContent>
         <DashboardHeader>
           <DashboardTitle>
-            {user?.is_admin || user?.is_faculty || user?.is_reviewer
-              ? "Admin Dashboard"
-              : "Student Dashboard"}
+            {return_based_on_roles(
+              user,
+              "Admin Dashboard",
+              "Partner Dashboard",
+              "Student Dashboard"
+            )}
           </DashboardTitle>
         </DashboardHeader>
 
@@ -240,35 +289,70 @@ const Dashboard = () => {
                 />
               </>
             )}
-
             {user?.is_admin && (
-              <Route path="user-management" element={<UserManagement />} />
+              <>
+                <Route path="user-management" element={<UserManagement />} />
+                <Route path="site-branding" element={<AdminSiteBranding />} />
+              </>
             )}
 
             {/* Student Routes */}
-            {!(user?.is_admin || user?.is_faculty || user?.is_reviewer) && (
+            {!(
+              user?.is_admin ||
+              user?.is_faculty ||
+              user?.is_reviewer ||
+              user?.is_provider_partner
+            ) && (
               <>
                 <Route path="overview" element={<StudentOverview />} />
                 <Route path="my-programs" element={<MyProgramsTable />} />
               </>
             )}
 
-            {/* Common Routes */}
-            <Route path="browse" element={<ProgramBrowser />} />
-            <Route path="browse/:programTitle" element={<ProgramBrowser />} />
-            <Route
-              path="*"
-              element={
-                <Navigate
-                  to={
-                    user?.is_admin || user?.is_faculty || user?.is_reviewer
-                      ? "admin-overview"
-                      : "overview"
-                  }
-                  replace
+            {/* Partner Routes */}
+            {user?.is_provider_partner && (
+              <>
+                <Route
+                  path="partner-programs"
+                  element={<PartnerProgramsTable />}
                 />
-              }
-            />
+                <Route
+                  path="partner-overview"
+                  element={<ProviderPartnerOverview />}
+                />
+                <Route
+                  path="partner-programs/:programTitle"
+                  element={<PartnerProgramsTable />}
+                />
+              </>
+            )}
+
+            {/* Common Routes */}
+            {!user?.is_provider_partner && (
+              <>
+                <Route path="browse" element={<ProgramBrowser />} />
+                <Route
+                  path="browse/:programTitle"
+                  element={<ProgramBrowser />}
+                />{" "}
+              </>
+            )}
+            <>
+              <Route
+                path="*"
+                element={
+                  <Navigate
+                    to={return_based_on_roles(
+                      user,
+                      "admin-overview",
+                      "partner-overview",
+                      "overview"
+                    )}
+                    replace
+                  />
+                }
+              />
+            </>
           </Routes>
         </TabContent>
         <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
