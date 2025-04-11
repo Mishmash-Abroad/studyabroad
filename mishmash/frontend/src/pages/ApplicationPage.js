@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
 import {
@@ -16,6 +17,10 @@ import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
 import DeadlineIndicator from "../components/DeadlineIndicator";
 import StudentLetterRequests from "../components/StudentLetterRequests";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import {
   ALL_STATUSES,
   ALL_ADMIN_EDITABLE_STATUSES,
@@ -114,6 +119,7 @@ const ApplicationPage = () => {
   const { program_id } = useParams();
   const { user } = useAuth();
   const [tempGPA, setTempGPA] = useState(0);
+  const navigate = useNavigate();
   // Consolidated state object managing:
   // - program: Study abroad program details
   // - application: Student's application data and status
@@ -160,6 +166,7 @@ const ApplicationPage = () => {
     activeTab,
   } = state;
   const [prereqStatus, setPrereqStatus] = useState(null);
+  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
   // useEffect(() => {
@@ -355,12 +362,18 @@ const ApplicationPage = () => {
     }
 
     // Check prerequisites and warn user if prerequisites are not met
-    if (!prereqStatus.meets_all) {
-      if (window.confirm(`You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`)) {
-        updateState({ loading: true, error: "" });
-      } else {
-        updateState({ error: "User canceled submission action." });
-        return
+    if (application.program.prerequisites) {
+      if (!user.ulink_username) {
+        setUlinkDialogOpen(true);
+        return;
+      }
+      else if (!prereqStatus.meets_all) {
+        if (window.confirm(`You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`)) {
+          updateState({ loading: true, error: "" });
+        } else {
+          updateState({ error: "User canceled submission action." });
+          return
+        }
       }
     }
 
@@ -991,6 +1004,19 @@ const ApplicationPage = () => {
           />
         )}
       </ContentContainer>
+      {/* Ulink Required Dialog */}
+      <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+        <DialogTitle>Ulink Account Required</DialogTitle>
+        <DialogContent>
+          <Typography>You must connect your profile to a Ulink account in order to proceed.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUlinkDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => navigate("/connect-ulink")} variant="contained">
+            Connect Ulink
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 };
