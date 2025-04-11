@@ -127,6 +127,7 @@ const LoginModal = ({ onClose }) => {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, logout, verifyMFA } = useAuth();
@@ -250,7 +251,8 @@ const LoginModal = ({ onClose }) => {
       if (response.data.token) {
         const { token, ...userData } = response.data;
         login(userData, token);
-        // onClose();
+        setShowSignUpModal(false);
+        setShowAuthModal(false);
         setUlinkDialogOpen(true);
         return
       }
@@ -293,6 +295,7 @@ const LoginModal = ({ onClose }) => {
 
   return (
     <>
+    {showAuthModal && (
       <ModalOverlay
         onClick={handleOverlayClick}
         onMouseDown={handleOverlayMouseDown}
@@ -338,6 +341,7 @@ const LoginModal = ({ onClose }) => {
           </ModalForm>
         </ModalContainer>
       </ModalOverlay>
+    )}
 
       {showSignUpModal && (
         <ModalOverlay
@@ -423,8 +427,8 @@ const LoginModal = ({ onClose }) => {
           <Typography>You must connect your profile to a Ulink account in order to apply to a program. This can be done at any time by clicking 'Connect Ulink' in the account dropdown.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => navigate("/dashboard")}>Remind me later</Button>
-          <Button onClick={() => navigate("/connect-ulink")} variant="contained">
+          <Button onClick={() => {setUlinkDialogOpen(false); navigate("/dashboard"); }}>Remind me later</Button>
+          <Button onClick={() => {setUlinkDialogOpen(false); navigate("/connect-ulink");}} variant="contained">
             Connect Ulink
           </Button>
         </DialogActions>
