@@ -26,6 +26,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+      <TopNavBar/>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
