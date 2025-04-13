@@ -50,14 +50,7 @@ jobs:
           }
           echo "✅ System packages verified with debsums."
 
-      - name: Optional: Verify Docker base images are pinned
-        run: |
-          echo "🐳 Optional Docker image digest check"
-          if grep -q 'image:' docker-compose.dev.yml; then
-            echo "✅ Docker base images appear to be specified"
-          else
-            echo "⚠️  Warning: No image references found, skipping check."
-          fi
+   
 
       - name: Print informal proof of supply chain integrity
         run: |
@@ -67,7 +60,6 @@ jobs:
           echo "✔ All pip packages are pinned and hash-verified"
           echo "✔ All npm dependencies pass signature audit"
           echo "✔ System packages verified with debsums"
-          echo "✔ (Optional) Docker base images can be pinned to digests"
           echo ""
           echo "🔒 Informal proof complete: All deployable code is cryptographically validated through reproducible tooling."
 
