@@ -156,31 +156,6 @@ const PartnerApplicantTable = ({ programId }) => {
 
   return (
     <Paper sx={{ padding: "20px", marginTop: "20px" }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "10px",
-        }}
-      >
-        <TextField
-          select
-          label="Filter by Status"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          variant="outlined"
-          size="small"
-          sx={{ minWidth: "200px" }}
-        >
-          <MenuItem value="ALL">All</MenuItem>
-          {Object.values(STATUS).map((status) => (
-            <MenuItem key={status} value={status}>
-              {getStatusLabel(status)}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Box>
-
       <TableContainer>
         <Table
           stickyHeader
