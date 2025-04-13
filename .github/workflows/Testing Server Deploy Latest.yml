@@ -53,8 +53,8 @@ jobs:
 
 
             docker compose -f docker-compose.test.yml down
-            sudo rm -rf /var/lib/docker/volumes/studyabroad_frontend_build/_data
-            sudo rm -rf /var/lib/docker/volumes/studyabroad_static_volume/_data
+            docker volume rm studyabroad_frontend_build || true
+            docker volume rm studyabroad_static_volume || true
             docker compose -f docker-compose.test.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps
