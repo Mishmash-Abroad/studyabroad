@@ -19,6 +19,8 @@ import {
   Typography,
   Tooltip,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
@@ -33,8 +35,28 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import NoteIcon from "@mui/icons-material/Note";
 import DescriptionIcon from "@mui/icons-material/Description";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAuth } from "../context/AuthContext";
 import PaymentStatusDropDown from "./PaymentStatusDropDown";
+
+// Helper function to copy text to clipboard
+const copyToClipboard = async (text) => {
+  if (!text || text.trim() === '') {
+    console.error('No text provided to copy');
+    return { success: false, error: 'No emails found to copy' };
+  }
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+    return { 
+      success: false, 
+      error: 'Failed to copy to clipboard. Make sure you have clipboard permissions.' 
+    };
+  }
+};
 
 const ApplicantTable = ({ programId, show_track_payment }) => {
   const navigate = useNavigate();
@@ -53,6 +75,9 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
   const ALL_AVAILABLE_STATUSES = Object.values(
     get_all_available_statuses_to_edit(user.roles_object)
   );
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -446,6 +471,43 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
     );
   };
 
+  // Copy emails function
+  const handleCopyEmails = async () => {
+    if (sortedApplicants.length === 0) {
+      setSnackbarMessage('No applicants to copy emails from');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const emails = sortedApplicants
+      .map(applicant => userDetails[applicant.student]?.email)
+      .filter(Boolean);
+
+    if (emails.length === 0) {
+      setSnackbarMessage('No valid emails found');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const emailString = emails.join(';');
+    const result = await copyToClipboard(emailString);
+
+    if (result.success) {
+      setSnackbarMessage(`${emails.length} emails copied to clipboard`);
+      setSnackbarSeverity('success');
+    } else {
+      setSnackbarMessage(result.error || 'Failed to copy emails');
+      setSnackbarSeverity('error');
+    }
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   return (
     <Paper sx={{ padding: "20px", marginTop: "20px" }}>
       <Box
@@ -471,6 +533,15 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
             </MenuItem>
           ))}
         </TextField>
+
+        <Button
+          variant="outlined"
+          startIcon={<ContentCopyIcon />}
+          onClick={handleCopyEmails}
+          sx={{ height: "40px" }}
+        >
+          Copy Emails ({sortedApplicants.length})
+        </Button>
       </Box>
 
       <TableContainer>
@@ -672,6 +743,18 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for copy feedback */}
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };
