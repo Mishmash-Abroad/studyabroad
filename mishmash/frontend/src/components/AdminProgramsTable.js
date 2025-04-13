@@ -152,10 +152,10 @@ const AdminProgramsTable = () => {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const response = await axiosInstance.get('/api/users/');
+        const response = await axiosInstance.get("/api/users/");
         setAllUsers(response.data);
       } catch (err) {
-        console.error('Failed to fetch users data:', err);
+        console.error("Failed to fetch users data:", err);
       }
     };
 
@@ -434,6 +434,7 @@ const AdminProgramsTable = () => {
                   "application_open_date",
                   "application_deadline",
                   "essential_document_deadline",
+                  "payment_deadline",
                   "start_date",
                   "end_date",
                 ].map((column) => (
@@ -490,6 +491,9 @@ const AdminProgramsTable = () => {
                   </StyledTableCell>
                   <StyledTableCell>
                     {formatDate(program.essential_document_deadline)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {formatDate(program.payment_deadline) || "N/A"}
                   </StyledTableCell>
                   <StyledTableCell>
                     {formatDate(program.start_date)}
