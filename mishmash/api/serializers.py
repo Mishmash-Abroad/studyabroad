@@ -178,7 +178,20 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ["id", "title", "pdf", "uploaded_at", "application", "type", "pdf_url"]
+        fields = [
+            "id", 
+            "title", 
+            "pdf", 
+            "pdf_url", 
+            "uploaded_at", 
+            "application", 
+            "type", 
+            "form_data", 
+            "signature", 
+            "parent_guardian_signature", 
+            "is_electronic", 
+            "last_modified"
+        ]
 
     def get_pdf_url(self, obj):
         """Generate the URL for securely accessing the PDF file."""

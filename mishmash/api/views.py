@@ -1870,16 +1870,36 @@ class ConfidentialNoteViewSet(viewsets.ModelViewSet):
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [permissions.IsAuthenticated, IsDocumentOwnerOrStaff]
 
     def create(self, request, *args, **kwargs):
         """
-        Handle file upload via POST request.
+        Handle document creation via POST request.
+        Supports both PDF file uploads and electronic form submissions.
         """
-        if "pdf" not in request.data:
+        is_electronic = request.data.get('is_electronic') == 'true'
+        
+        # For electronic form submissions
+        if is_electronic:
+            # The PDF data will still be provided, generated from the form
+            if 'pdf' not in request.data:
+                return Response(
+                    {"error": "No PDF file provided for electronic form."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            # Make sure form data is included
+            if 'form_data' not in request.data:
+                return Response(
+                    {"error": "No form data provided for electronic form."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        # For traditional PDF uploads
+        elif 'pdf' not in request.data:
             return Response(
-                {"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "No file provided."}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         return super().create(request, *args, **kwargs)
