@@ -10,7 +10,6 @@ import {
   Alert,
   Chip,
   Stack,
-  Divider,
 } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -75,28 +74,6 @@ const CompletedBadge = styled(Box)(({ theme }) => ({
   textAlign: 'center',
   boxShadow: theme.customShadows.card,
   zIndex: 1,
-}));
-
-const OptionsContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(2),
-  marginTop: theme.spacing(2),
-}));
-
-const FormTypeContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  borderRadius: theme.shape.borderRadii.medium,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: theme.spacing(2),
-}));
-
-const OptionButton = styled(Button)(({ theme }) => ({
-  minWidth: '220px',
-  padding: theme.spacing(2),
 }));
 
 /**
@@ -193,7 +170,7 @@ const ElectronicDocumentHub = ({
     if (!selectedDocType) return;
     
     setActiveForm(selectedDocType);
-    setFormType(null); // Reset form type selection
+    setFormType('electronic'); // Automatically set to electronic form
   };
   
   // Handle form type selection
@@ -231,49 +208,93 @@ const ElectronicDocumentHub = ({
       // Return the appropriate electronic form component based on document type
       if (activeForm.id === 'code_of_conduct') {
         return (
-          <ElectronicCodeOfConductForm 
-            user={user}
-            application={application}
-            program={program}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-          />
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button 
+                variant="text" 
+                size="small"
+                onClick={() => setFormType('upload')}
+              >
+                Need to upload a PDF instead?
+              </Button>
+            </Box>
+            <ElectronicCodeOfConductForm 
+              user={user}
+              application={application}
+              program={program}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+            />
+          </>
         );
       }
       
       if (activeForm.id === 'assumption_of_risk') {
         return (
-          <ElectronicAssumptionOfRiskForm 
-            user={user}
-            application={application}
-            program={program}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-          />
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button 
+                variant="text" 
+                size="small"
+                onClick={() => setFormType('upload')}
+              >
+                Need to upload a PDF instead?
+              </Button>
+            </Box>
+            <ElectronicAssumptionOfRiskForm 
+              user={user}
+              application={application}
+              program={program}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+            />
+          </>
         );
       }
       
       if (activeForm.id === 'housing_questionnaire') {
         return (
-          <ElectronicHousingQuestionnaireForm 
-            user={user}
-            application={application}
-            program={program}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-          />
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button 
+                variant="text" 
+                size="small"
+                onClick={() => setFormType('upload')}
+              >
+                Need to upload a PDF instead?
+              </Button>
+            </Box>
+            <ElectronicHousingQuestionnaireForm 
+              user={user}
+              application={application}
+              program={program}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+            />
+          </>
         );
       }
       
       if (activeForm.id === 'medical_history') {
         return (
-          <ElectronicMedicalHistoryForm 
-            user={user}
-            application={application}
-            program={program}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-          />
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button 
+                variant="text" 
+                size="small"
+                onClick={() => setFormType('upload')}
+              >
+                Need to upload a PDF instead?
+              </Button>
+            </Box>
+            <ElectronicMedicalHistoryForm 
+              user={user}
+              application={application}
+              program={program}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+            />
+          </>
         );
       }
       
@@ -295,7 +316,13 @@ const ElectronicDocumentHub = ({
             application_id={application.id}
             isReadOnly={isReadOnly}
           />
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+            <Button 
+              onClick={() => setFormType('electronic')}
+              variant="text"
+            >
+              Return to Electronic Form
+            </Button>
             <Button onClick={handleFormCancel} variant="outlined">
               Back to Documents
             </Button>
@@ -453,46 +480,6 @@ const ElectronicDocumentHub = ({
             </Stack>
           )}
         </Box>
-      )}
-      
-      {/* Form type selection view */}
-      {activeForm && !formType && (
-        <FormTypeContainer>
-          <Typography variant="h5" gutterBottom align="center">
-            How would you like to complete this document?
-          </Typography>
-          
-          <Typography variant="body1" paragraph align="center">
-            You can either fill out the form electronically or download, complete, and upload the PDF.
-          </Typography>
-          
-          <Divider sx={{ width: '100%', my: 2 }} />
-          
-          <OptionsContainer>
-            <OptionButton 
-              variant="contained"
-              onClick={() => handleFormTypeSelect('electronic')}
-            >
-              Complete Form Online
-            </OptionButton>
-            
-            <Typography variant="body2" align="center">or</Typography>
-            
-            <OptionButton
-              variant="outlined"
-              onClick={() => handleFormTypeSelect('upload')}
-            >
-              Upload PDF Document
-            </OptionButton>
-          </OptionsContainer>
-          
-          <Button 
-            sx={{ mt: 3 }}
-            onClick={handleFormCancel}
-          >
-            Back to Documents
-          </Button>
-        </FormTypeContainer>
       )}
       
       {/* Form component */}

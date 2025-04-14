@@ -87,7 +87,7 @@ const handleDownloadTemplate = (path, filename) => {
 
 // -------------------- COMPONENT LOGIC --------------------
 const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, documents = [] }) => {
-  const [useElectronicForms, setUseElectronicForms] = useState(false);
+  const [useElectronicForms, setUseElectronicForms] = useState(true);
   const { user } = useAuth();
   const [programData, setProgramData] = useState(null);
   const [applicationData, setApplicationData] = useState(null);
@@ -163,6 +163,11 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
           <ToggleLabel isActive={useElectronicForms}>Electronic Forms</ToggleLabel>
         </ToggleContainer>
         
+        <Alert severity="info" sx={{ mb: 3 }}>
+          You're currently using <strong>Electronic Forms</strong>, which is the recommended option for a better user experience. 
+          If you need to upload previously completed PDF files instead, toggle the switch to "PDF Upload" mode.
+        </Alert>
+        
         <ElectronicDocumentHub 
           user={user}
           application={applicationData}
@@ -189,6 +194,11 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
         />
         <ToggleLabel isActive={useElectronicForms}>Electronic Forms</ToggleLabel>
       </ToggleContainer>
+      
+      <Alert severity="info" sx={{ mb: 3 }}>
+        You're currently using <strong>PDF Upload</strong> mode. We recommend switching to <strong>Electronic Forms</strong> for an easier, guided experience.
+        Electronic forms are automatically saved, validated, and can be completed on any device.
+      </Alert>
     
       {/* Section for Code of Conduct document */}
       <DocumentSection>
