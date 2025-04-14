@@ -7,7 +7,7 @@ ULINK_PIN_ENDPOINT = "/cgi-bin/view-pin.pl"
 ULINK_AUTH = ("abroad", "ece@458")
 
 COURSE_CODE_REGEX = re.compile(r"^[A-Z0-9]{1,8} \d{3}$")
-PASSING_GRADES = {"A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "S", "IP"}
+PASSING_GRADES = {"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "S", "IP"}
 
 
 def get_ulink_pin(username):
@@ -58,14 +58,11 @@ def refresh_ulink_transcript(ulink_username):
 
     for line in lines:
         stripped = line.strip()
-        if not stripped or stripped.startswith("siss%") or stripped.startswith("SISS Record") or stripped.startswith("*"):
+        if not stripped or stripped.startswith("siss%") or stripped.startswith("SISS Record") or stripped.startswith("*") or stripped.startswith("-"):
             continue
 
         # Example: "BIOL 101             GENERAL BIOLOGY                IP"
         parts = stripped.split()
-
-        if len(parts != 2):
-            raise ValueError(f"Malformed transcript line: '{line}'")
         
         course_code = f"{parts[0]} {parts[1]}"
         grade = parts[-1]
