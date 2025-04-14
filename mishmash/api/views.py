@@ -1717,14 +1717,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
         try:
             transcript_data = provider.fetch_transcript(user)
-            if user.ulink_transcript:
-                user.ulink_transcript.update(transcript_data)
-            else:
-                user.ulink_transcript = transcript_data
+            user.ulink_transcript = transcript_data
             user.save()
-            return Response({"message": "Transcript updated.", "transcript": transcript_data})
+            return Response({"message": "Transcript updated.", "transcript": transcript_data}, status=200)
         except Exception as e:
-            return Response({"error": str(e)}, status=502)
+            return Response({
+                "error": f"Transcript refresh failed: {str(e)}",
+                "transcript": user.ulink_transcript or {}
+            }, status=502)
 
 
 class ConfidentialNoteViewSet(viewsets.ModelViewSet):

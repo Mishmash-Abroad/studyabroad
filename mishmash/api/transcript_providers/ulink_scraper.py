@@ -1,9 +1,14 @@
+import re
 import requests
 from bs4 import BeautifulSoup
 
 ULINK_BASE_URL = "http://ulink.colab.duke.edu:8000"
 ULINK_PIN_ENDPOINT = "/cgi-bin/view-pin.pl"
 ULINK_AUTH = ("abroad", "ece@458")
+
+COURSE_CODE_REGEX = re.compile(r"^[A-Z0-9]{1,8} \d{3}$")
+PASSING_GRADES = {"A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "S", "IP"}
+
 
 def get_ulink_pin(username):
     """
@@ -58,10 +63,20 @@ def refresh_ulink_transcript(ulink_username):
 
         # Example: "BIOL 101             GENERAL BIOLOGY                IP"
         parts = stripped.split()
-        if len(parts) >= 2:
-            course_code = f"{parts[0]} {parts[1]}"
-            grade = parts[-1]
-            transcript[course_code] = grade
+
+        if len(parts != 2):
+            raise ValueError(f"Malformed transcript line: '{line}'")
+        
+        course_code = f"{parts[0]} {parts[1]}"
+        grade = parts[-1]
+        
+        if not COURSE_CODE_REGEX.match(course_code):
+            raise ValueError(f"Invalid course code format: '{course_code}'")
+
+        if grade not in PASSING_GRADES:
+            raise ValueError(f"Invalid or unrecognized grade '{grade}' for course '{course_code}'")
+
+        transcript[course_code] = grade
 
     return transcript
 
