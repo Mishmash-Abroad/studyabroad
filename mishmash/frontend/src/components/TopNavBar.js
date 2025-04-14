@@ -3,7 +3,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
-import CircularProgress from '@mui/material/CircularProgress';
+import CircularProgress from "@mui/material/CircularProgress";
 import { Menu, MenuItem, IconButton, Button } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -142,7 +142,7 @@ function TopNavBar({ onLoginClick }) {
   const [branding, setBranding] = useState({
     site_name: "Study Abroad College",
     primary_color: theme.palette.primary.main,
-    logo_url: null
+    logo_url: null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -150,7 +150,7 @@ function TopNavBar({ onLoginClick }) {
   useEffect(() => {
     setAnchorEl(null);
   }, [user]);
-  
+
   // Fetch branding settings when component mounts
   useEffect(() => {
     const fetchBranding = async () => {
@@ -160,7 +160,7 @@ function TopNavBar({ onLoginClick }) {
         setBranding({
           site_name: response.data.site_name,
           primary_color: response.data.primary_color,
-          logo_url: response.data.logo_url
+          logo_url: response.data.logo_url,
         });
       } catch (error) {
         console.error("Error fetching branding:", error);
@@ -220,12 +220,12 @@ function TopNavBar({ onLoginClick }) {
           ) : (
             <>
               {branding.logo_url ? (
-                <NavLogoImage 
-                  src={branding.logo_url} 
-                  alt="Site Logo" 
+                <NavLogoImage
+                  src={branding.logo_url}
+                  alt="Site Logo"
                   onError={(e) => {
-                    console.log('Logo failed to load:', branding.logo_url);
-                    e.target.src = '/images/logo.png';
+                    console.log("Logo failed to load:", branding.logo_url);
+                    e.target.src = "/images/logo.png";
                     e.target.onerror = null; // Prevent infinite loop
                   }}
                 />
@@ -270,9 +270,14 @@ function TopNavBar({ onLoginClick }) {
                 {!user.is_sso && (
                   <MenuItem onClick={handleMFASettings}>MFA Settings</MenuItem>
                 )}
-                {!user.is_sso && !user.ulink_username && (
-                  <MenuItem onClick={handleUlink}>Connect Ulink</MenuItem>
-                )}
+                {!user.is_sso &&
+                  !user.ulink_username &&
+                  !(
+                    user.is_admin ||
+                    user.is_faculty ||
+                    user.is_reviewer ||
+                    user.is_provider_partner
+                  ) && <MenuItem onClick={handleUlink}>Connect Ulink</MenuItem>}
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </StyledMenu>
             </>

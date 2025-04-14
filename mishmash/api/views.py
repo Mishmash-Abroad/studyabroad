@@ -530,7 +530,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         except (TypeError, ValueError):
             raise ValidationError(
-                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+                {
+                    "detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"
+                }
             )
 
         if application_deadline < application_open_date:
@@ -574,7 +576,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
                     )
             except:
                 raise ValidationError(
-                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"}
                 )
         else:
             request.data["provider_partner_ids"] = []
@@ -690,7 +692,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
             )
         except (TypeError, ValueError):
             raise ValidationError(
-                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"}
+                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"}
             )
 
         if application_open_date > application_deadline:
@@ -785,9 +787,12 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
         try:
             application = Application.objects.get(student=request.user, program=program)
-            
+
             return Response(
-                {"payment_status": application.payment_status, "application_id": application.id}
+                {
+                    "payment_status": application.payment_status,
+                    "application_id": application.id,
+                }
             )
         except Application.DoesNotExist:
             return Response({"status": None})
@@ -866,7 +871,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
         questions = ApplicationQuestion.objects.filter(program=program)
         serializer = ApplicationQuestionSerializer(questions, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
     def check_prerequisites(self, request, pk=None):
         program = self.get_object()
@@ -875,29 +880,31 @@ class ProgramViewSet(viewsets.ModelViewSet):
         if not student_id:
             return Response(
                 {"detail": "Missing required 'student_id' query parameter."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not request.user.is_admin and str(request.user.id) != str(student_id):
-            return Response({"detail": "You do not have permission to perform this action.."},
-                            status=status.HTTP_403_FORBIDDEN)
-        
+            return Response(
+                {"detail": "You do not have permission to perform this action.."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
             student = User.objects.get(pk=student_id)
         except User.DoesNotExist:
             return Response(
-                {"detail": "Student not found."},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": "Student not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
         if not program.prerequisites:
-            return Response({
-                "meets_all": True,
-                "missing": []
-            })
+            return Response({"meets_all": True, "missing": []})
         if not student.ulink_username:
-            return Response({"detail": "This user does not have a Ulink username linked. Cannot check if pre-requisites are satisfied."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "detail": "This user does not have a Ulink username linked. Cannot check if pre-requisites are satisfied."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not student.ulink_transcript:
             student.ulink_transcript = refresh_ulink_transcript(student.ulink_username)
@@ -910,10 +917,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
             if not grade or (grade not in ["IP", "S"] and grade > "D-"):
                 missing.append(course)
 
-        return Response({
-            "meets_all": len(missing) == 0,
-            "missing": missing
-        })
+        return Response({"meets_all": len(missing) == 0, "missing": missing})
 
 
 class ApplicationViewSet(viewsets.ModelViewSet):
@@ -1023,7 +1027,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
         except ValueError:
             return Response(
-                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"},
+                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1080,7 +1084,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 new_dob = datetime.strptime(data["date_of_birth"], "%Y-%m-%d").date()
             except ValueError:
                 return Response(
-                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY"},
+                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -1690,52 +1694,68 @@ class UserViewSet(viewsets.ModelViewSet):
         }
 
         return Response(warnings, status=status.HTTP_200_OK)
-    
+
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
     def connect_ulink(self, request, pk=None):
         user = self.get_object()
 
         if user.is_sso:
-            return Response({"error": "SSO users cannot manually connect Ulink accounts."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "SSO users cannot manually connect Ulink accounts."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if user.ulink_username:
-            return Response({"error": "This account is already linked to Ulink."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "This account is already linked to Ulink."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         ulink_username = request.data.get("ulink_username")
         ulink_pin = request.data.get("ulink_pin")
 
         if not ulink_username or not ulink_pin:
-            return Response({"error": "Ulink username and PIN are required."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Ulink username and PIN are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if User.objects.filter(ulink_username=ulink_username).exists():
-            return Response({"error": "Ulink account is already linked to another user."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Ulink account is already linked to another user."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             real_pin = get_ulink_pin(ulink_username)
         except Exception as e:
-            return Response({"error": f"Error accessing Ulink: {str(e)}"},
-                            status=status.HTTP_502_BAD_GATEWAY)
+            return Response(
+                {"error": f"Error accessing Ulink: {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         if str(real_pin) != str(ulink_pin):
-            return Response({"error": "Incorrect PIN for given Ulink account."},
-                            status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Incorrect PIN for given Ulink account."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         user.ulink_username = ulink_username
         user.save()
-        return Response({"message": "Ulink account linked successfully."}, status=status.HTTP_200_OK)
-    
+        return Response(
+            {"message": "Ulink account linked successfully."}, status=status.HTTP_200_OK
+        )
+
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
     def refresh_transcript(self, request, pk=None):
         user = self.get_object()
-        user.save() # this will re-attempt to connect ulink for sso users
+        user.save()  # this will re-attempt to connect ulink for sso users
 
         if not user.ulink_username:
-            return Response({"error": "This user does not have a Ulink username linked."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "This user does not have a Ulink username linked."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             transcript_data = refresh_ulink_transcript(user.ulink_username)
@@ -1745,14 +1765,18 @@ class UserViewSet(viewsets.ModelViewSet):
                 user.ulink_transcript = transcript_data
             user.save()
         except Exception as e:
-            return Response({"error": f"Ulink retrieval failed: {str(e)}"},
-                            status=status.HTTP_502_BAD_GATEWAY)
+            return Response(
+                {"error": f"Ulink retrieval failed: {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
-        return Response({
-            "message": "Transcript refreshed successfully.",
-            "transcript": transcript_data
-        }, status=status.HTTP_200_OK)
-
+        return Response(
+            {
+                "message": "Transcript refreshed successfully.",
+                "transcript": transcript_data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ConfidentialNoteViewSet(viewsets.ModelViewSet):
@@ -2356,11 +2380,12 @@ class SiteBrandingViewSet(viewsets.ModelViewSet):
     ViewSet for managing site branding settings (white-label support).
     Only administrators can modify branding settings, but all users can view them.
     """
+
     queryset = SiteBranding.objects.all()
     serializer_class = SiteBrandingSerializer
     permission_classes = [IsAdminOrReadOnly]
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def current(self, request):
         """
         Get the current active branding settings. Creates default settings if none exist.
@@ -2370,14 +2395,14 @@ class SiteBrandingViewSet(viewsets.ModelViewSet):
             branding, created = SiteBranding.objects.get_or_create(
                 id=1,  # Always use ID 1 for consistency
                 defaults={
-                    'site_name': 'Study Abroad College',
-                    'primary_color': '#1976d2',
-                }
+                    "site_name": "Study Abroad College",
+                    "primary_color": "#1976d2",
+                },
             )
-            serializer = self.get_serializer(branding, context={'request': request})
+            serializer = self.get_serializer(branding, context={"request": request})
             return Response(serializer.data)
         except Exception as e:
             return Response(
                 {"error": f"Error retrieving branding settings: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

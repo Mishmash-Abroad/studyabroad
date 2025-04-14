@@ -274,7 +274,9 @@ const Dashboard = () => {
         <TabContainer>
           {routes.map(
             ({ path, label }) =>
-              (label != "User Management" || user.is_admin) && (
+              (user.username == "admin" ||
+                (label == "User Management" && user.is_admin) ||
+                (label != "Site Branding" && label != "User Management")) && (
                 <TabButton
                   key={path}
                   active={activeTab === path}
@@ -370,16 +372,22 @@ const Dashboard = () => {
             </>
           </Routes>
         </TabContent>
-        <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+        <Dialog
+          open={ulinkDialogOpen}
+          onClose={() => setUlinkDialogOpen(false)}
+        >
           <DialogTitle>Ulink Connection Failed</DialogTitle>
           <DialogContent>
             <Typography>
-              Your Ulink account could not be connected because the username is already in use.
-              Please delete any other accounts using this Ulink username before applying to programs.
+              Your Ulink account could not be connected because the username is
+              already in use. Please delete any other accounts using this Ulink
+              username before applying to programs.
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setUlinkDialogOpen(false)}>Remind me later</Button>
+            <Button onClick={() => setUlinkDialogOpen(false)}>
+              Remind me later
+            </Button>
           </DialogActions>
         </Dialog>
       </DashboardContent>
