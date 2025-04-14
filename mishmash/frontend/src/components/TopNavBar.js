@@ -206,7 +206,7 @@ function TopNavBar({ onLoginClick }) {
 
   const handleUlink = () => {
     handleUserMenuClose();
-    navigate("/connect-ulink");
+    navigate("/connect-transcript-provider");
   };
 
   const open = Boolean(anchorEl);
