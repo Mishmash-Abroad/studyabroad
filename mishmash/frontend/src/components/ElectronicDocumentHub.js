@@ -5,8 +5,6 @@ import {
   Typography,
   Paper,
   Button,
-  Tabs,
-  Tab,
   Alert,
   Chip,
   Stack,
@@ -57,10 +55,6 @@ const DocumentStatus = styled(Box)(({ theme, completed }) => ({
   color: completed ? theme.palette.success.main : theme.palette.warning.main,
 }));
 
-const TabContainer = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(3),
-}));
-
 const CompletedBadge = styled(Box)(({ theme }) => ({
   position: 'absolute',
   top: 0,
@@ -94,7 +88,6 @@ const ElectronicDocumentHub = ({
 }) => {
   // State to track documents, active document and form view
   const [documents, setDocuments] = useState([]);
-  const [activeTab, setActiveTab] = useState(0);
   const [activeForm, setActiveForm] = useState(null);
   const [formType, setFormType] = useState(null); // 'electronic' or 'upload'
   const [loading, setLoading] = useState(true);
@@ -151,13 +144,6 @@ const ElectronicDocumentHub = ({
   
   // Get missing documents count for the notice
   const missingDocCount = documentTypes.length - documents.length;
-  
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-    setActiveForm(null);
-    setFormType(null);
-  };
   
   // Check if document is completed
   const isDocumentCompleted = (docType) => {
@@ -353,6 +339,23 @@ const ElectronicDocumentHub = ({
     );
   }
   
+  // Helper function to find document by type
+  const findDocumentByType = (docType) => {
+    return documents.find(doc => doc.type === docType);
+  };
+  
+  // Format date helper
+  const formatDate = (dateString) => {
+    const options = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+  
   return (
     <PageContainer>
       {/* Notice about missing documents and deadline */}
@@ -369,20 +372,8 @@ const ElectronicDocumentHub = ({
         </Alert>
       )}
       
-      {/* Main content */}
-      <TabContainer>
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange}
-          variant="fullWidth"
-        >
-          <Tab label="Essential Documents" />
-          <Tab label="Submitted Documents" />
-        </Tabs>
-      </TabContainer>
-      
-      {/* Form selection and completion view */}
-      {activeTab === 0 && !activeForm && (
+      {/* Document list */}
+      {!activeForm && (
         <Box>
           <Typography variant="h5" gutterBottom>
             Essential Documents
@@ -395,6 +386,7 @@ const ElectronicDocumentHub = ({
           {/* List of documents */}
           {documentTypes.map((doc) => {
             const isCompleted = isDocumentCompleted(doc.title);
+            const submittedDoc = findDocumentByType(doc.title);
             
             return (
               <DocumentCard key={doc.id} sx={{ position: 'relative' }}>
@@ -431,54 +423,24 @@ const ElectronicDocumentHub = ({
                   {doc.description}
                 </Typography>
                 
-                <Button
-                  variant={isCompleted ? "outlined" : "contained"}
-                  color={isCompleted ? "secondary" : "primary"}
-                  onClick={() => handleSelectDocument(doc.id)}
-                >
-                  {isCompleted ? "View or Replace" : "Complete Document"}
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant={isCompleted ? "outlined" : "contained"}
+                    color={isCompleted ? "secondary" : "primary"}
+                    onClick={() => handleSelectDocument(doc.id)}
+                  >
+                    {isCompleted ? "View or Replace" : "Complete Document"}
+                  </Button>
+                  
+                  {isCompleted && submittedDoc && (
+                    <Typography variant="body2" color="text.secondary">
+                      Last submitted: {formatDate(submittedDoc.uploaded_at)}
+                    </Typography>
+                  )}
+                </Box>
               </DocumentCard>
             );
           })}
-        </Box>
-      )}
-      
-      {/* Submitted documents view */}
-      {activeTab === 1 && (
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            Submitted Documents
-          </Typography>
-          
-          {documents.length === 0 ? (
-            <Alert severity="info">
-              You haven't submitted any documents yet.
-            </Alert>
-          ) : (
-            <Stack spacing={2}>
-              {documents.map((doc) => (
-                <Paper key={doc.id} sx={{ p: 2 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Box>
-                      <Typography variant="subtitle1">
-                        {doc.title || doc.type}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Submitted on: {new Date(doc.uploaded_at).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                    <Chip 
-                      icon={<CheckCircleIcon />} 
-                      label="Submitted" 
-                      color="success" 
-                      variant="outlined" 
-                    />
-                  </Stack>
-                </Paper>
-              ))}
-            </Stack>
-          )}
         </Box>
       )}
       
