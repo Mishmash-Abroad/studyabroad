@@ -91,7 +91,7 @@ import base64
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth import logout as django_logout
 import os
-from .ulink_scraper import get_ulink_pin, refresh_ulink_transcript
+from .transcript_providers.ulink import UlinkProvider
 from .email_utils import (
     send_recommendation_request_email,
     send_recommendation_retraction_email,
@@ -1696,87 +1696,35 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(warnings, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
-    def connect_ulink(self, request, pk=None):
+    def connect_transcript_provider(self, request, pk=None):
         user = self.get_object()
-
-        if user.is_sso:
-            return Response(
-                {"error": "SSO users cannot manually connect Ulink accounts."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if user.ulink_username:
-            return Response(
-                {"error": "This account is already linked to Ulink."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        ulink_username = request.data.get("ulink_username")
-        ulink_pin = request.data.get("ulink_pin")
-
-        if not ulink_username or not ulink_pin:
-            return Response(
-                {"error": "Ulink username and PIN are required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if User.objects.filter(ulink_username=ulink_username).exists():
-            return Response(
-                {"error": "Ulink account is already linked to another user."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        provider = UlinkProvider()
 
         try:
-            real_pin = get_ulink_pin(ulink_username)
+            provider.connect_account(user, request.data)
+            return Response({"message": "Transcript account linked successfully."}, status=200)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=400)
         except Exception as e:
-            return Response(
-                {"error": f"Error accessing Ulink: {str(e)}"},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
-
-        if str(real_pin) != str(ulink_pin):
-            return Response(
-                {"error": "Incorrect PIN for given Ulink account."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        user.ulink_username = ulink_username
-        user.save()
-        return Response(
-            {"message": "Ulink account linked successfully."}, status=status.HTTP_200_OK
-        )
+            return Response({"error": f"Error accessing provider: {str(e)}"}, status=502)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
     def refresh_transcript(self, request, pk=None):
         user = self.get_object()
         user.save()  # this will re-attempt to connect ulink for sso users
 
-        if not user.ulink_username:
-            return Response(
-                {"error": "This user does not have a Ulink username linked."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        provider = UlinkProvider()
 
         try:
-            transcript_data = refresh_ulink_transcript(user.ulink_username)
-            if user.ulink_transcript:
-                user.ulink_transcript.update(transcript_data)
-            else:
-                user.ulink_transcript = transcript_data
+            transcript_data = provider.fetch_transcript(user)
+            user.ulink_transcript = transcript_data
             user.save()
+            return Response({"message": "Transcript updated.", "transcript": transcript_data}, status=200)
         except Exception as e:
-            return Response(
-                {"error": f"Ulink retrieval failed: {str(e)}"},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
-
-        return Response(
-            {
-                "message": "Transcript refreshed successfully.",
-                "transcript": transcript_data,
-            },
-            status=status.HTTP_200_OK,
-        )
+            return Response({
+                "error": f"Transcript refresh failed: {str(e)}",
+                "transcript": user.ulink_transcript or {}
+            }, status=502)
 
 
 class ConfidentialNoteViewSet(viewsets.ModelViewSet):

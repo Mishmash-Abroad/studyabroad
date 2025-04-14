@@ -69,7 +69,7 @@ function App() {
             }
           />
           <Route
-            path="/connect-ulink"
+            path="/connect-transcript-provider"
             element={
               <ProtectedRoute>
                 <UlinkConnection />
