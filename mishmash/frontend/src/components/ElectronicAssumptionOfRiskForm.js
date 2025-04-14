@@ -177,7 +177,14 @@ const ElectronicAssumptionOfRiskForm = ({
     pdf.setFontSize(10);
     pdf.text('I, the undersigned, acknowledge that my participation in the Study Abroad Program at', 20, yPos); yPos += lineHeight;
     pdf.text('Hypothetical City College involves certain inherent risks, including but not limited', 20, yPos); yPos += lineHeight;
-    pdf.text('to, travel-related risks, health and safety risks, accidents, injuries, or illnesses.', 20, yPos);
+    pdf.text('to, travel-related risks, health and safety risks, accidents, injuries, or illnesses.', 20, yPos); yPos += lineHeight;
+    pdf.text('I understand that such risks may arise from various factors, including cultural differences,', 20, yPos); yPos += lineHeight;
+    pdf.text('foreign medical care systems, transportation, and natural or man-made disasters.', 20, yPos); yPos += lineHeight + 3;
+    
+    pdf.text('I fully understand that Hypothetical City College has made efforts to inform me of these', 20, yPos); yPos += lineHeight;
+    pdf.text('risks and to take reasonable precautions to ensure my safety while participating in the', 20, yPos); yPos += lineHeight;
+    pdf.text('Study Abroad Program. However, I acknowledge that it is impossible to eliminate all risks', 20, yPos); yPos += lineHeight;
+    pdf.text('associated with international travel and studying abroad.', 20, yPos);
     
     yPos += 16;
     checkPageBreak();
@@ -185,15 +192,45 @@ const ElectronicAssumptionOfRiskForm = ({
     yPos += 10;
     pdf.text('By signing this form, I acknowledge that I am voluntarily participating in the Study', 20, yPos); yPos += lineHeight;
     pdf.text('Abroad Program and assume full responsibility for any risks that may occur during my', 20, yPos); yPos += lineHeight;
-    pdf.text('participation.', 20, yPos);
+    pdf.text('participation. I understand and accept the potential for unforeseen risks and challenges', 20, yPos); yPos += lineHeight;
+    pdf.text('and agree to take all necessary precautions for my health, safety, and well-being during', 20, yPos); yPos += lineHeight;
+    pdf.text('the program.', 20, yPos);
+
+    yPos += 16;
+    checkPageBreak();
+    pdf.text('Medical Authorization and Health Information', 20, yPos);
+    yPos += 10;
+    pdf.text('I confirm that I have disclosed all relevant health information to Hypothetical City College', 20, yPos); yPos += lineHeight;
+    pdf.text('and understand that any medical conditions or special needs may affect my participation in', 20, yPos); yPos += lineHeight;
+    pdf.text('the program. I hereby authorize Hypothetical City College to seek medical treatment on my', 20, yPos); yPos += lineHeight;
+    pdf.text('behalf in the event of an emergency.', 20, yPos);
 
     yPos += 16;
     checkPageBreak();
     pdf.text('Release of Liability', 20, yPos);
     yPos += 10;
-    pdf.text('I hereby release Hypothetical City College, its officers, employees, agents, and', 20, yPos); yPos += lineHeight;
-    pdf.text('affiliates from any and all liability, claims, or demands that may arise out of or be', 20, yPos); yPos += lineHeight;
-    pdf.text('connected with my participation in the program.', 20, yPos);
+    pdf.text('In consideration of my participation in the Study Abroad Program, I, on behalf of myself,', 20, yPos); yPos += lineHeight;
+    pdf.text('my heirs, and legal representatives, hereby release Hypothetical City College, its officers,', 20, yPos); yPos += lineHeight;
+    pdf.text('employees, agents, and affiliates from any and all liability, claims, or demands that may', 20, yPos); yPos += lineHeight;
+    pdf.text('arise out of or be connected with my participation in the program, including but not limited', 20, yPos); yPos += lineHeight;
+    pdf.text('to personal injury, property damage, or loss.', 20, yPos);
+
+    yPos += 16;
+    checkPageBreak();
+    pdf.text('Insurance Coverage', 20, yPos);
+    yPos += 10;
+    pdf.text('I understand that it is my responsibility to secure appropriate insurance coverage for my', 20, yPos); yPos += lineHeight;
+    pdf.text('health, travel, and personal belongings during my participation in the Study Abroad Program.', 20, yPos); yPos += lineHeight;
+    pdf.text('Hypothetical City College strongly recommends that I purchase adequate insurance to cover', 20, yPos); yPos += lineHeight;
+    pdf.text('potential risks during the program.', 20, yPos);
+
+    yPos += 16;
+    checkPageBreak();
+    pdf.text('Understanding and Agreement', 20, yPos);
+    yPos += 10;
+    pdf.text('By signing this form, I confirm that I have read, understood, and voluntarily agree to the', 20, yPos); yPos += lineHeight;
+    pdf.text('terms outlined above. I acknowledge that I have been given the opportunity to ask questions', 20, yPos); yPos += lineHeight;
+    pdf.text('and seek clarification regarding any aspects of the Study Abroad Program.', 20, yPos);
     
     // Ensure enough space for signatures
     yPos += 26;
@@ -341,6 +378,10 @@ const ElectronicAssumptionOfRiskForm = ({
           care systems, transportation, and natural or man-made disasters.
         </Typography>
         
+        <Typography variant="body1" paragraph>
+          I fully understand that Hypothetical City College has made efforts to inform me of these risks and to take reasonable precautions to ensure my safety while participating in the Study Abroad Program. However, I acknowledge that it is impossible to eliminate all risks associated with international travel and studying abroad.
+        </Typography>
+        
         <Typography variant="h6" gutterBottom>
           Assumption of Risk
         </Typography>
@@ -353,6 +394,14 @@ const ElectronicAssumptionOfRiskForm = ({
         </Typography>
         
         <Typography variant="h6" gutterBottom>
+          Medical Authorization and Health Information
+        </Typography>
+        
+        <Typography variant="body1" paragraph>
+          I confirm that I have disclosed all relevant health information to Hypothetical City College and understand that any medical conditions or special needs may affect my participation in the program. I hereby authorize Hypothetical City College to seek medical treatment on my behalf in the event of an emergency.
+        </Typography>
+        
+        <Typography variant="h6" gutterBottom>
           Release of Liability
         </Typography>
         
@@ -362,6 +411,22 @@ const ElectronicAssumptionOfRiskForm = ({
           employees, agents, and affiliates from any and all liability, claims, or demands that may 
           arise out of or be connected with my participation in the program, including but not limited 
           to personal injury, property damage, or loss.
+        </Typography>
+        
+        <Typography variant="h6" gutterBottom>
+          Insurance Coverage
+        </Typography>
+        
+        <Typography variant="body1" paragraph>
+          I understand that it is my responsibility to secure appropriate insurance coverage for my health, travel, and personal belongings during my participation in the Study Abroad Program. Hypothetical City College strongly recommends that I purchase adequate insurance to cover potential risks during the program.
+        </Typography>
+        
+        <Typography variant="h6" gutterBottom>
+          Understanding and Agreement
+        </Typography>
+        
+        <Typography variant="body1" paragraph>
+          By signing this form, I confirm that I have read, understood, and voluntarily agree to the terms outlined above. I acknowledge that I have been given the opportunity to ask questions and seek clarification regarding any aspects of the Study Abroad Program.
         </Typography>
         
         <FormControlLabel

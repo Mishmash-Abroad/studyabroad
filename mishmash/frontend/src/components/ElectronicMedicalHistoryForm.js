@@ -246,10 +246,10 @@ const ElectronicMedicalHistoryForm = ({
     checkPageBreak();
     pdf.setFontSize(12);
     pdf.text('Emergency Contact Information:', 20, yPos); yPos += 10;
-    pdf.text(`Name: ${formData.emergencyContactName}`, 30, yPos); yPos += lineHeight;
-    pdf.text(`Relationship: ${formData.emergencyContactRelationship}`, 30, yPos); yPos += lineHeight;
-    pdf.text(`Phone: ${formData.emergencyContactPhone}`, 30, yPos); yPos += lineHeight;
-    pdf.text(`Email: ${formData.emergencyContactEmail}`, 30, yPos);
+    pdf.text(`Emergency Contact Name: ${formData.emergencyContactName}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Relationship to Student: ${formData.emergencyContactRelationship}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Phone Number(s): ${formData.emergencyContactPhone}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Email Address: ${formData.emergencyContactEmail}`, 30, yPos);
     yPos += 15;
     
     // Health Information
@@ -257,112 +257,188 @@ const ElectronicMedicalHistoryForm = ({
     pdf.setFontSize(12);
     pdf.text('General Health Information:', 20, yPos); yPos += 10;
     
-    pdf.text(`1. Chronic medical conditions or allergies: ${formData.hasMedicalConditions}`, 30, yPos);
+    pdf.text(`1. Do you have any chronic medical conditions or allergies? ${formData.hasMedicalConditions}`, 30, yPos);
     if (formData.hasMedicalConditions === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Description: ${formData.medicalConditions}`, 30, yPos);
+      pdf.text(`   If yes, please describe: ${formData.medicalConditions}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`2. Prescription medications: ${formData.hasPrescriptions}`, 30, yPos);
+    pdf.text(`2. Do you take any prescription medications? ${formData.hasPrescriptions}`, 30, yPos);
     if (formData.hasPrescriptions === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Medications: ${formData.prescriptions}`, 30, yPos);
+      pdf.text(`   If yes, please list medications and dosages: ${formData.prescriptions}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`3. Over-the-counter medications: ${formData.hasOTCMedications}`, 30, yPos);
+    pdf.text(`3. Do you have any over-the-counter medications or supplements you regularly take? ${formData.hasOTCMedications}`, 30, yPos);
     if (formData.hasOTCMedications === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Medications: ${formData.otcMedications}`, 30, yPos);
+      pdf.text(`   If yes, please list them: ${formData.otcMedications}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`4. Mental health conditions: ${formData.hasMentalHealth}`, 30, yPos);
+    pdf.text(`4. Do you have any history of mental health conditions? ${formData.hasMentalHealth}`, 30, yPos);
     if (formData.hasMentalHealth === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Description: ${formData.mentalHealth}`, 30, yPos);
+      pdf.text(`   If yes, please specify: ${formData.mentalHealth}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`5. Mobility limitations: ${formData.hasMobility}`, 30, yPos);
+    pdf.text(`5. Do you have any physical or mobility limitations that could impact your participation in the program? ${formData.hasMobility}`, 30, yPos);
     if (formData.hasMobility === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Description: ${formData.mobility}`, 30, yPos);
+      pdf.text(`   If yes, please describe: ${formData.mobility}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`6. Dietary restrictions: ${formData.dietaryRestrictions.join(', ')}${formData.otherDietary ? `, ${formData.otherDietary}` : ''}`, 30, yPos);
-    yPos += lineHeight;
+    const dietaryText = formData.dietaryRestrictions.length > 0 
+      ? formData.dietaryRestrictions.join(', ') + (formData.otherDietary ? `, ${formData.otherDietary}` : '')
+      : 'None';
+    
+    pdf.text(`6. Do you have any dietary restrictions or preferences? ${dietaryText}`, 30, yPos);
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`7. Recent surgeries or medical treatments: ${formData.hasRecentSurgeries}`, 30, yPos);
+    pdf.text(`7. Do you have any recent surgeries or medical treatments that could affect your participation? ${formData.hasRecentSurgeries}`, 30, yPos);
     if (formData.hasRecentSurgeries === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Description: ${formData.recentSurgeries}`, 30, yPos);
+      pdf.text(`   If yes, please describe: ${formData.recentSurgeries}`, 30, yPos);
     }
     yPos += 15;
     checkPageBreak();
     
     // Immunization Record
     pdf.setFontSize(12);
-    pdf.text('Immunization Record:', 20, yPos); yPos += 10;
+    pdf.text('Immunization Record', 20, yPos); yPos += 8;
+    pdf.setFontSize(10);
+    pdf.text('Please ensure all immunizations required for international travel are up-to-date. Include dates of immunization.', 20, yPos);
+    yPos += 10;
     
-    pdf.text(`1. Measles, Mumps, and Rubella (MMR): ${formData.mmr}`, 30, yPos);
+    pdf.setFontSize(11);
+    pdf.text('Required Immunizations for Study Abroad', 20, yPos); yPos += 8;
+    pdf.setFontSize(10);
+    pdf.text('The following immunizations are typically recommended or required for international travel.', 20, yPos); 
+    yPos += 10;
+
+    pdf.text('1. Measles, Mumps, and Rubella (MMR):', 30, yPos);
+    pdf.text(`${formData.mmr}`, 150, yPos);
     if (formData.mmr === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Date: ${formData.mmrDate}`, 30, yPos);
+      pdf.text(`   Date(s) of Immunization: ${formData.mmrDate}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`2. Tetanus, Diphtheria, and Pertussis (Tdap): ${formData.tdap}`, 30, yPos);
+    pdf.text('2. Tetanus, Diphtheria, and Pertussis (Tdap):', 30, yPos);
+    pdf.text(`${formData.tdap}`, 150, yPos);
     if (formData.tdap === 'Yes') {
       yPos += lineHeight;
-      pdf.text(`   Date: ${formData.tdapDate}`, 30, yPos);
+      pdf.text(`   Date(s) of Immunization: ${formData.tdapDate}`, 30, yPos);
     }
-    yPos += lineHeight;
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    // Add the remaining immunizations (simplified for space)
-    pdf.text(`3. Hepatitis A: ${formData.hepatitisA}${formData.hepatitisA === 'Yes' ? `, Date: ${formData.hepatitisADate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('3. Hepatitis A:', 30, yPos);
+    pdf.text(`${formData.hepatitisA}`, 150, yPos);
+    if (formData.hepatitisA === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.hepatitisADate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`4. Hepatitis B: ${formData.hepatitisB}${formData.hepatitisB === 'Yes' ? `, Date: ${formData.hepatitisBDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('4. Hepatitis B:', 30, yPos);
+    pdf.text(`${formData.hepatitisB}`, 150, yPos);
+    if (formData.hepatitisB === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.hepatitisBDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`5. Varicella (Chickenpox): ${formData.varicella}${formData.varicella === 'Yes' ? `, Date: ${formData.varicellaDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('5. Varicella (Chickenpox):', 30, yPos);
+    pdf.text(`${formData.varicella}`, 150, yPos);
+    if (formData.varicella === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.varicellaDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`6. Polio: ${formData.polio}${formData.polio === 'Yes' ? `, Date: ${formData.polioDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('6. Polio:', 30, yPos);
+    pdf.text(`${formData.polio}`, 150, yPos);
+    if (formData.polio === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.polioDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`7. Meningococcal: ${formData.meningococcal}${formData.meningococcal === 'Yes' ? `, Date: ${formData.meningococcalDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('7. Meningococcal:', 30, yPos);
+    pdf.text(`${formData.meningococcal}`, 150, yPos);
+    if (formData.meningococcal === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.meningococcalDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`8. Influenza (Flu): ${formData.influenza}${formData.influenza === 'Yes' ? `, Date: ${formData.influenzaDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('8. Influenza (Flu):', 30, yPos);
+    pdf.text(`${formData.influenza}`, 150, yPos);
+    if (formData.influenza === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.influenzaDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`9. Typhoid: ${formData.typhoid}${formData.typhoid === 'Yes' ? `, Date: ${formData.typhoidDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('9. Typhoid:', 30, yPos);
+    pdf.text(`${formData.typhoid}`, 150, yPos);
+    if (formData.typhoid === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.typhoidDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`10. Yellow Fever: ${formData.yellowFever}${formData.yellowFever === 'Yes' ? `, Date: ${formData.yellowFeverDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('10. Yellow Fever (Required for some countries):', 30, yPos);
+    pdf.text(`${formData.yellowFever}`, 150, yPos);
+    if (formData.yellowFever === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.yellowFeverDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`11. Rabies: ${formData.rabies}${formData.rabies === 'Yes' ? `, Date: ${formData.rabiesDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('11. Rabies (Optional, but recommended for certain regions):', 30, yPos);
+    pdf.text(`${formData.rabies}`, 150, yPos);
+    if (formData.rabies === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.rabiesDate}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
-    pdf.text(`12. COVID-19: ${formData.covid19}${formData.covid19 === 'Yes' ? `, Date: ${formData.covid19Date}` : ''}`, 30, yPos); yPos += lineHeight;
+    pdf.text('12. COVID-19:', 30, yPos);
+    pdf.text(`${formData.covid19}`, 150, yPos);
+    if (formData.covid19 === 'Yes') {
+      yPos += lineHeight;
+      pdf.text(`   Date(s) of Immunization: ${formData.covid19Date}`, 30, yPos);
+    }
+    yPos += lineHeight + 2;
     checkPageBreak();
     
     if (formData.otherVaccinations) {
-      pdf.text(`13. Other Vaccinations: ${formData.otherVaccinations}`, 30, yPos); 
+      pdf.text('13. Other Vaccinations or Immunizations:', 30, yPos); 
       yPos += lineHeight;
+      pdf.text(`   ${formData.otherVaccinations}`, 30, yPos);
+      yPos += lineHeight + 2;
     }
     
     yPos += 10;
@@ -378,7 +454,16 @@ const ElectronicMedicalHistoryForm = ({
     pdf.text('representatives to seek medical attention on my behalf and to share this medical information', 20, yPos); yPos += lineHeight;
     checkPageBreak();
     
-    pdf.text('with healthcare providers as necessary.', 20, yPos); yPos += lineHeight * 2;
+    pdf.text('with healthcare providers as necessary. I understand that it is my responsibility to ensure', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
+    pdf.text('that my immunizations are up-to-date before departing for the Study Abroad Program.', 20, yPos); yPos += lineHeight * 2;
+    checkPageBreak();
+    
+    pdf.text('I hereby consent to the use of this medical information by program administrators for the', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
+    pdf.text('purposes of ensuring my health and safety during the program.', 20, yPos); yPos += lineHeight * 2;
     checkPageBreak();
     
     // Ensure enough space for signature on the page
@@ -520,6 +605,7 @@ const ElectronicMedicalHistoryForm = ({
               required
             />
           </Grid>
+          
           <Grid item xs={12} md={6}>
             <TextField
               label="Relationship to Student"
@@ -528,9 +614,9 @@ const ElectronicMedicalHistoryForm = ({
               onChange={handleFormChange}
               fullWidth
               margin="normal"
-              required
             />
           </Grid>
+          
           <Grid item xs={12} md={6}>
             <TextField
               label="Phone Number(s)"
@@ -542,6 +628,7 @@ const ElectronicMedicalHistoryForm = ({
               required
             />
           </Grid>
+          
           <Grid item xs={12} md={6}>
             <TextField
               label="Email Address"
@@ -761,19 +848,25 @@ const ElectronicMedicalHistoryForm = ({
           Immunization Record
         </Typography>
         <Typography variant="body2" paragraph>
-          Please indicate whether you have received the following immunizations and provide the dates if available.
+          Please ensure all immunizations required for international travel are up-to-date. Include dates of immunization.
+        </Typography>
+        <Typography variant="subtitle1" gutterBottom>
+          Required Immunizations for Study Abroad
+        </Typography>
+        <Typography variant="body2" paragraph>
+          The following immunizations are typically recommended or required for international travel. Please indicate the date(s) of vaccination and whether you have received the immunization.
         </Typography>
         
-        {/* Simplified immunization form with most common vaccinations */}
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <FormField>
               <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">Measles, Mumps, and Rubella (MMR)</FormLabel>
+                <FormLabel component="legend">1. Measles, Mumps, and Rubella (MMR)</FormLabel>
                 <RadioGroup
                   name="mmr"
                   value={formData.mmr}
                   onChange={handleFormChange}
+                  row
                 >
                   <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
                   <FormControlLabel value="No" control={<Radio />} label="No" />
@@ -782,9 +875,8 @@ const ElectronicMedicalHistoryForm = ({
               
               {formData.mmr === 'Yes' && (
                 <TextField
-                  label="Date of Immunization"
+                  label="Date(s) of Immunization"
                   name="mmrDate"
-                  type="date"
                   value={formData.mmrDate}
                   onChange={handleFormChange}
                   fullWidth
@@ -798,11 +890,12 @@ const ElectronicMedicalHistoryForm = ({
           <Grid item xs={12} md={6}>
             <FormField>
               <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">Tetanus, Diphtheria, and Pertussis (Tdap)</FormLabel>
+                <FormLabel component="legend">2. Tetanus, Diphtheria, and Pertussis (Tdap)</FormLabel>
                 <RadioGroup
                   name="tdap"
                   value={formData.tdap}
                   onChange={handleFormChange}
+                  row
                 >
                   <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
                   <FormControlLabel value="No" control={<Radio />} label="No" />
@@ -811,9 +904,8 @@ const ElectronicMedicalHistoryForm = ({
               
               {formData.tdap === 'Yes' && (
                 <TextField
-                  label="Date of Immunization"
+                  label="Date(s) of Immunization"
                   name="tdapDate"
-                  type="date"
                   value={formData.tdapDate}
                   onChange={handleFormChange}
                   fullWidth
@@ -827,11 +919,273 @@ const ElectronicMedicalHistoryForm = ({
           <Grid item xs={12} md={6}>
             <FormField>
               <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">COVID-19</FormLabel>
+                <FormLabel component="legend">3. Hepatitis A</FormLabel>
+                <RadioGroup
+                  name="hepatitisA"
+                  value={formData.hepatitisA}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.hepatitisA === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="hepatitisADate"
+                  value={formData.hepatitisADate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">4. Hepatitis B</FormLabel>
+                <RadioGroup
+                  name="hepatitisB"
+                  value={formData.hepatitisB}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.hepatitisB === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="hepatitisBDate"
+                  value={formData.hepatitisBDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">5. Varicella (Chickenpox)</FormLabel>
+                <RadioGroup
+                  name="varicella"
+                  value={formData.varicella}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.varicella === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="varicellaDate"
+                  value={formData.varicellaDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">6. Polio</FormLabel>
+                <RadioGroup
+                  name="polio"
+                  value={formData.polio}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.polio === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="polioDate"
+                  value={formData.polioDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">7. Meningococcal</FormLabel>
+                <RadioGroup
+                  name="meningococcal"
+                  value={formData.meningococcal}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.meningococcal === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="meningococcalDate"
+                  value={formData.meningococcalDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">8. Influenza (Flu)</FormLabel>
+                <RadioGroup
+                  name="influenza"
+                  value={formData.influenza}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.influenza === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="influenzaDate"
+                  value={formData.influenzaDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">9. Typhoid</FormLabel>
+                <RadioGroup
+                  name="typhoid"
+                  value={formData.typhoid}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.typhoid === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="typhoidDate"
+                  value={formData.typhoidDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">10. Yellow Fever (Required for some countries)</FormLabel>
+                <RadioGroup
+                  name="yellowFever"
+                  value={formData.yellowFever}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.yellowFever === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="yellowFeverDate"
+                  value={formData.yellowFeverDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">11. Rabies (Optional, but recommended for certain regions)</FormLabel>
+                <RadioGroup
+                  name="rabies"
+                  value={formData.rabies}
+                  onChange={handleFormChange}
+                  row
+                >
+                  <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="No" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+              
+              {formData.rabies === 'Yes' && (
+                <TextField
+                  label="Date(s) of Immunization"
+                  name="rabiesDate"
+                  value={formData.rabiesDate}
+                  onChange={handleFormChange}
+                  fullWidth
+                  margin="normal"
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+            </FormField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormField>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">12. COVID-19</FormLabel>
                 <RadioGroup
                   name="covid19"
                   value={formData.covid19}
                   onChange={handleFormChange}
+                  row
                 >
                   <FormControlLabel value="Yes" control={<Radio />} label="Yes" />
                   <FormControlLabel value="No" control={<Radio />} label="No" />
@@ -840,9 +1194,8 @@ const ElectronicMedicalHistoryForm = ({
               
               {formData.covid19 === 'Yes' && (
                 <TextField
-                  label="Date of Immunization"
+                  label="Date(s) of Immunization"
                   name="covid19Date"
-                  type="date"
                   value={formData.covid19Date}
                   onChange={handleFormChange}
                   fullWidth
@@ -854,17 +1207,19 @@ const ElectronicMedicalHistoryForm = ({
           </Grid>
         </Grid>
         
-        <TextField
-          label="Other Vaccinations"
-          name="otherVaccinations"
-          value={formData.otherVaccinations}
-          onChange={handleFormChange}
-          fullWidth
-          multiline
-          rows={2}
-          margin="normal"
-          helperText="Please list any additional vaccines you have received"
-        />
+        <FormField>
+          <FormLabel component="legend">13. Other Vaccinations or Immunizations</FormLabel>
+          <TextField
+            label="Please list any additional vaccines you have received"
+            name="otherVaccinations"
+            value={formData.otherVaccinations}
+            onChange={handleFormChange}
+            fullWidth
+            multiline
+            rows={2}
+            margin="normal"
+          />
+        </FormField>
       </FormSection>
       
       <FormSection>
