@@ -90,6 +90,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
   const [useElectronicForms, setUseElectronicForms] = useState(false);
   const { user } = useAuth();
   const [programData, setProgramData] = useState(null);
+  const [applicationData, setApplicationData] = useState(null);
   
   // Fetch program data for the electronic forms
   useEffect(() => {
@@ -99,7 +100,10 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
       try {
         // Get the application to find the program_id
         const appResponse = await axiosInstance.get(`/api/applications/${application_id}/`);
-        const programId = appResponse.data.program;
+        const applicationData = appResponse.data;
+        setApplicationData(applicationData);
+        
+        const programId = applicationData.program;
         
         // Get program details
         const programResponse = await axiosInstance.get(`/api/programs/${programId}/`);
@@ -141,7 +145,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
   }
   
   // If using electronic forms and program data is available, show electronic document hub
-  if (useElectronicForms && programData) {
+  if (useElectronicForms && programData && applicationData) {
     return (
       <>
         <ToggleContainer>
@@ -161,7 +165,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
         
         <ElectronicDocumentHub 
           user={user}
-          application={{ id: application_id }}
+          application={applicationData}
           program={programData}
           isReadOnly={isReadOnly}
         />
