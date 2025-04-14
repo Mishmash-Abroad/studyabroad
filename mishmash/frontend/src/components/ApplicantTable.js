@@ -41,19 +41,20 @@ import PaymentStatusDropDown from "./PaymentStatusDropDown";
 
 // Helper function to copy text to clipboard
 const copyToClipboard = async (text) => {
-  if (!text || text.trim() === '') {
-    console.error('No text provided to copy');
-    return { success: false, error: 'No emails found to copy' };
+  if (!text || text.trim() === "") {
+    console.error("No text provided to copy");
+    return { success: false, error: "No emails found to copy" };
   }
-  
+
   try {
     await navigator.clipboard.writeText(text);
     return { success: true };
   } catch (err) {
-    console.error('Failed to copy text: ', err);
-    return { 
-      success: false, 
-      error: 'Failed to copy to clipboard. Make sure you have clipboard permissions.' 
+    console.error("Failed to copy text: ", err);
+    return {
+      success: false,
+      error:
+        "Failed to copy to clipboard. Make sure you have clipboard permissions.",
     };
   }
 };
@@ -76,8 +77,8 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
     get_all_available_statuses_to_edit(user.roles_object)
   );
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -271,20 +272,26 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
     });
 
   // Handle status dropdown change
-  const handleApplicationStatusSelect = async (e, applicantId, currentStatus) => {
+  const handleApplicationStatusSelect = async (
+    e,
+    applicantId,
+    currentStatus
+  ) => {
     e.stopPropagation();
     const newStatus = e.target.value;
     if (newStatus === currentStatus) return;
 
     try {
       // Fetch application to get student and program IDs
-      const appResponse = await axiosInstance.get(`/api/applications/${applicantId}/`);
-      
+      const appResponse = await axiosInstance.get(
+        `/api/applications/${applicantId}/`
+      );
+
       // Then fetch prerequisite check
       const prereqResponse = await axiosInstance.get(
         `/api/programs/${appResponse.data.program}/check_prerequisites/?student_id=${appResponse.data.student}`
       );
-      
+
       setPrereqCheck(prereqResponse.data);
     } catch (err) {
       console.error("Error fetching prerequisite check:", err);
@@ -474,32 +481,32 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
   // Copy emails function
   const handleCopyEmails = async () => {
     if (sortedApplicants.length === 0) {
-      setSnackbarMessage('No applicants to copy emails from');
-      setSnackbarSeverity('warning');
+      setSnackbarMessage("No applicants to copy emails from");
+      setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       return;
     }
 
     const emails = sortedApplicants
-      .map(applicant => userDetails[applicant.student]?.email)
+      .map((applicant) => userDetails[applicant.student]?.email)
       .filter(Boolean);
 
     if (emails.length === 0) {
-      setSnackbarMessage('No valid emails found');
-      setSnackbarSeverity('warning');
+      setSnackbarMessage("No valid emails found");
+      setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       return;
     }
 
-    const emailString = emails.join(';');
+    const emailString = emails.join(";");
     const result = await copyToClipboard(emailString);
 
     if (result.success) {
       setSnackbarMessage(`${emails.length} emails copied to clipboard`);
-      setSnackbarSeverity('success');
+      setSnackbarSeverity("success");
     } else {
-      setSnackbarMessage(result.error || 'Failed to copy emails');
-      setSnackbarSeverity('error');
+      setSnackbarMessage(result.error || "Failed to copy emails");
+      setSnackbarSeverity("error");
     }
     setSnackbarOpen(true);
   };
@@ -661,11 +668,13 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
                       )}
                     </TextField>
                   </TableCell>
-                  <PaymentStatusDropDown
-                    applicant={applicant}
-                    disabled={!user.is_admin}
-                    handlePaymentStatus={handlePaymentStatusSelect}
-                  />
+                  {show_track_payment && (
+                    <PaymentStatusDropDown
+                      applicant={applicant}
+                      disabled={!user.is_admin}
+                      handlePaymentStatus={handlePaymentStatusSelect}
+                    />
+                  )}
                 </TableRow>
               );
             })}
@@ -694,10 +703,10 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
             ?
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-            {!prereqCheck?.meets_all && pendingApplicationStatus.newStatus === "Eligible"
+            {!prereqCheck?.meets_all &&
+            pendingApplicationStatus.newStatus === "Eligible"
               ? `The selected user is missing the following pre-requisites: ${prereqCheck?.missing}.`
-              : "This will update the applicant's status in the system and may trigger notifications."
-            }
+              : "This will update the applicant's status in the system and may trigger notifications."}
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -745,11 +754,11 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
       </Dialog>
 
       {/* Snackbar for copy feedback */}
-      <Snackbar 
-        open={snackbarOpen} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
           {snackbarMessage}

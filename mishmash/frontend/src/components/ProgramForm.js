@@ -633,7 +633,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
                 {`*unsaved changes. 
                 ${
                   countResponse.data.total_participants > 0
-                    ? " There are already applicants to this program. "
+                    ? " THERE ARE ALREADY APPLICANTS TO THIS PROGRAM. "
                     : ""
                 }`}
               </Typography>
