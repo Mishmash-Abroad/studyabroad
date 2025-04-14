@@ -62,16 +62,22 @@ const TemplateLink = styled(Link)(({ theme }) => ({
 const ToggleContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-end",
+  justifyContent: "center",
   marginBottom: theme.spacing(3),
   padding: theme.spacing(2),
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius,
+  maxWidth: '500px',
+  margin: '0 auto',
+  marginBottom: theme.spacing(3),
 }));
 
 const ToggleLabel = styled(Typography)(({ theme, isActive }) => ({
   fontWeight: isActive ? 600 : 400,
   color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+  padding: theme.spacing(0, 2),
+  minWidth: '100px',
+  textAlign: 'center',
 }));
 
 // -------------------- HELPER FUNCTIONS --------------------
@@ -150,22 +156,24 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
       <>
         <ToggleContainer>
           <ToggleLabel isActive={!useElectronicForms}>PDF Upload</ToggleLabel>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useElectronicForms}
-                onChange={(e) => setUseElectronicForms(e.target.checked)}
-                color="primary"
-              />
-            }
-            label=""
-          />
+          <Box sx={{ mx: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useElectronicForms}
+                  onChange={(e) => setUseElectronicForms(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label=""
+            />
+          </Box>
           <ToggleLabel isActive={useElectronicForms}>Electronic Forms</ToggleLabel>
         </ToggleContainer>
         
         <Alert severity="info" sx={{ mb: 3 }}>
-          You're currently using <strong>Electronic Forms</strong>, which is the recommended option for a better user experience. 
-          If you need to upload previously completed PDF files instead, toggle the switch to "PDF Upload" mode.
+          You're currently using <strong>Electronic Forms</strong> to submit your documents.
+          If rather download a PDF template, fill it out and upload it, then toggle the switch to "PDF Upload" mode.
         </Alert>
         
         <ElectronicDocumentHub 
@@ -182,16 +190,18 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
     <>
       <ToggleContainer>
         <ToggleLabel isActive={!useElectronicForms}>PDF Upload</ToggleLabel>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={useElectronicForms}
-              onChange={(e) => setUseElectronicForms(e.target.checked)}
-              color="primary"
-            />
-          }
-          label=""
-        />
+        <Box sx={{ mx: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useElectronicForms}
+                onChange={(e) => setUseElectronicForms(e.target.checked)}
+                color="primary"
+              />
+            }
+            label=""
+          />
+        </Box>
         <ToggleLabel isActive={useElectronicForms}>Electronic Forms</ToggleLabel>
       </ToggleContainer>
       
