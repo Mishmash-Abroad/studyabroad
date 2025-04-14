@@ -11,12 +11,18 @@ import {
   Paper,
   Alert,
   Link,
+  Switch,
+  FormControlLabel,
+  Divider,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
 import axiosInstance from "../utils/axios";
 import PDFUploadForm from "../components/PDFUploadForm";
 import DocumentStatusDisplay from "../components/DocumentStatusDisplay";
+import ElectronicDocumentHub from "../components/ElectronicDocumentHub";
 import { DOCUMENTS } from "../utils/constants";
+import { useAuth } from "../context/AuthContext";
 
 // -------------------- STYLED COMPONENTS --------------------
 const DocumentSection = styled(Box)(({ theme }) => ({
@@ -53,6 +59,21 @@ const TemplateLink = styled(Link)(({ theme }) => ({
   },
 }));
 
+const ToggleContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  marginBottom: theme.spacing(3),
+  padding: theme.spacing(2),
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius,
+}));
+
+const ToggleLabel = styled(Typography)(({ theme, isActive }) => ({
+  fontWeight: isActive ? 600 : 400,
+  color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+}));
+
 // -------------------- HELPER FUNCTIONS --------------------
 const handleDownloadTemplate = (path, filename) => {
   const link = document.createElement("a");
@@ -66,6 +87,31 @@ const handleDownloadTemplate = (path, filename) => {
 
 // -------------------- COMPONENT LOGIC --------------------
 const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, documents = [] }) => {
+  const [useElectronicForms, setUseElectronicForms] = useState(false);
+  const { user } = useAuth();
+  const [programData, setProgramData] = useState(null);
+  
+  // Fetch program data for the electronic forms
+  useEffect(() => {
+    if (!application_id || !useElectronicForms) return;
+    
+    const fetchProgramData = async () => {
+      try {
+        // Get the application to find the program_id
+        const appResponse = await axiosInstance.get(`/api/applications/${application_id}/`);
+        const programId = appResponse.data.program;
+        
+        // Get program details
+        const programResponse = await axiosInstance.get(`/api/programs/${programId}/`);
+        setProgramData(programResponse.data);
+      } catch (err) {
+        console.error("Error fetching program data:", err);
+      }
+    };
+    
+    fetchProgramData();
+  }, [application_id, useElectronicForms]);
+  
   // Show message if application hasn't been created yet
   if (!application_id) {
     return (
@@ -93,21 +139,67 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
       </>
     );
   }
+  
+  // If using electronic forms and program data is available, show electronic document hub
+  if (useElectronicForms && programData) {
+    return (
+      <>
+        <ToggleContainer>
+          <ToggleLabel isActive={!useElectronicForms}>PDF Upload</ToggleLabel>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useElectronicForms}
+                onChange={(e) => setUseElectronicForms(e.target.checked)}
+                color="primary"
+              />
+            }
+            label=""
+          />
+          <ToggleLabel isActive={useElectronicForms}>Electronic Forms</ToggleLabel>
+        </ToggleContainer>
+        
+        <ElectronicDocumentHub 
+          user={user}
+          application={{ id: application_id }}
+          program={programData}
+          isReadOnly={isReadOnly}
+        />
+      </>
+    );
+  }
 
   return (
     <>
+      <ToggleContainer>
+        <ToggleLabel isActive={!useElectronicForms}>PDF Upload</ToggleLabel>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={useElectronicForms}
+              onChange={(e) => setUseElectronicForms(e.target.checked)}
+              color="primary"
+            />
+          }
+          label=""
+        />
+        <ToggleLabel isActive={useElectronicForms}>Electronic Forms</ToggleLabel>
+      </ToggleContainer>
+    
       {/* Section for Code of Conduct document */}
       <DocumentSection>
         <DocumentHeader>
           <DocumentTitle variant="h6">
             {DOCUMENTS.CODE_OF_CONDUCT.name}
           </DocumentTitle>
-          <TemplateLink 
-            onClick={() => handleDownloadTemplate(DOCUMENTS.CODE_OF_CONDUCT.path, "Code_of_Conduct.pdf")}
-          >
-            <DownloadIcon fontSize="small" />
-            Download Template
-          </TemplateLink>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TemplateLink 
+              onClick={() => handleDownloadTemplate(DOCUMENTS.CODE_OF_CONDUCT.path, "Code_of_Conduct.pdf")}
+            >
+              <DownloadIcon fontSize="small" />
+              Download Template
+            </TemplateLink>
+          </Box>
         </DocumentHeader>
         
         <PDFUploadForm
