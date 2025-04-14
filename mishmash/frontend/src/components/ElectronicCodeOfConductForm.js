@@ -170,7 +170,7 @@ const ElectronicCodeOfConductForm = ({
     pdf.text(`Date of Birth: ${new Date(formData.dateOfBirth).toLocaleDateString()}`, 30, yPos);
     yPos += 15;
     
-    // Add code of conduct text - abbreviated for the example
+    // Add introduction text
     checkPageBreak();
     pdf.setFontSize(11);
     pdf.text('Introduction', 20, yPos);
@@ -179,25 +179,100 @@ const ElectronicCodeOfConductForm = ({
     pdf.text('As a participant in the Hypothetical City College Study Abroad Program, you are', 20, yPos); yPos += lineHeight;
     pdf.text('representing not only yourself but also your college, your community, and your country.', 20, yPos); yPos += lineHeight;
     pdf.text('Therefore, it is essential to uphold the values and principles outlined in the Code of', 20, yPos); yPos += lineHeight;
-    pdf.text('Conduct to ensure a safe, respectful, and enriching experience for all participants.', 20, yPos);
+    pdf.text('Conduct to ensure a safe, respectful, and enriching experience for all participants.', 20, yPos); yPos += lineHeight;
+    pdf.text('By signing this document, you acknowledge that you have read, understood, and agree to', 20, yPos); yPos += lineHeight;
+    pdf.text('abide by the following Code of Conduct during your participation in the Study Abroad Program.', 20, yPos); yPos += lineHeight;
+    pdf.text('Violations of the Code of Conduct may result in disciplinary action, including but not limited', 20, yPos); yPos += lineHeight;
+    pdf.text('to removal from the program.', 20, yPos);
     yPos += 14;
     
-    // Code of conduct items (abbreviated)
+    // Code of conduct items
     checkPageBreak();
     pdf.setFontSize(11);
     pdf.text('Code of Conduct for Study Abroad Participants', 20, yPos);
     yPos += 10;
+    
+    // 1. Respect for Local Laws and Customs
     pdf.setFontSize(10);
-    pdf.text('1. Respect for Local Laws and Customs', 25, yPos); yPos += lineHeight + 3;
+    pdf.text('1. Respect for Local Laws and Customs', 20, yPos); yPos += lineHeight;
     checkPageBreak();
-    pdf.text('2. Respect for Others', 25, yPos); yPos += lineHeight + 3;
+    pdf.text('Participants are expected to respect and abide by the laws, regulations, and cultural norms', 25, yPos); yPos += lineHeight;
+    pdf.text('of the host country. This includes, but is not limited to, respecting local dress codes,', 25, yPos); yPos += lineHeight;
+    pdf.text('religious practices, and social customs.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 2. Respect for Others
     checkPageBreak();
-    pdf.text('3. Academic Integrity', 25, yPos); yPos += lineHeight + 3;
+    pdf.text('2. Respect for Others', 20, yPos); yPos += lineHeight;
     checkPageBreak();
-    pdf.text('4. Responsible Use of Alcohol and Drugs', 25, yPos); yPos += lineHeight + 3;
+    pdf.text('Participants should treat fellow students, faculty, staff, local residents, and others with', 25, yPos); yPos += lineHeight;
+    pdf.text('respect and dignity. Discrimination, harassment, bullying, or any other forms of inappropriate', 25, yPos); yPos += lineHeight;
+    pdf.text('behavior will not be tolerated.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 3. Academic Integrity
     checkPageBreak();
-    pdf.text('5. Health and Safety', 25, yPos);
-    yPos += 15;
+    pdf.text('3. Academic Integrity', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants must uphold high standards of academic honesty and integrity. Cheating,', 25, yPos); yPos += lineHeight;
+    pdf.text('plagiarism, or any form of academic dishonesty will result in disciplinary action.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 4. Responsible Use of Alcohol and Drugs
+    checkPageBreak();
+    pdf.text('4. Responsible Use of Alcohol and Drugs', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants are expected to be responsible in their use of alcohol and to avoid illegal drugs.', 25, yPos); yPos += lineHeight;
+    pdf.text('The legal drinking age and other regulations regarding alcohol must be observed in the host', 25, yPos); yPos += lineHeight;
+    pdf.text('country. Engaging in illegal drug use or excessive drinking that disrupts the program or', 25, yPos); yPos += lineHeight;
+    pdf.text('endangers others will not be tolerated.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 5. Health and Safety
+    checkPageBreak();
+    pdf.text('5. Health and Safety', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants must prioritize their health and safety and take precautions to avoid situations', 25, yPos); yPos += lineHeight;
+    pdf.text('that could harm their well-being. This includes following the advice of program staff, being', 25, yPos); yPos += lineHeight;
+    pdf.text('cautious in unfamiliar environments, and adhering to safety guidelines provided by the program.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 6. Behavioral Expectations
+    checkPageBreak();
+    pdf.text('6. Behavioral Expectations', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants are expected to maintain professional and respectful behavior at all times.', 25, yPos); yPos += lineHeight;
+    pdf.text('Inappropriate or disruptive behavior, including but not limited to violence, theft, vandalism,', 25, yPos); yPos += lineHeight;
+    pdf.text('or any behavior that negatively affects the reputation of the program or college, will result', 25, yPos); yPos += lineHeight;
+    pdf.text('in disciplinary action.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 7. Communication and Participation
+    checkPageBreak();
+    pdf.text('7. Communication and Participation', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants should engage actively in all program activities, attend scheduled meetings, and', 25, yPos); yPos += lineHeight;
+    pdf.text('communicate promptly with program staff regarding any issues or concerns. Failure to do so', 25, yPos); yPos += lineHeight;
+    pdf.text('may hinder both individual and group experiences.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 8. Environmental Responsibility
+    checkPageBreak();
+    pdf.text('8. Environmental Responsibility', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants should make every effort to minimize their environmental impact, including but', 25, yPos); yPos += lineHeight;
+    pdf.text('not limited to reducing waste, conserving energy and water, and adhering to environmental', 25, yPos); yPos += lineHeight;
+    pdf.text('regulations in the host country.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 9. Use of Technology
+    checkPageBreak();
+    pdf.text('9. Use of Technology', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('Participants should use technology responsibly, including respecting privacy and avoiding the', 25, yPos); yPos += lineHeight;
+    pdf.text('use of electronic devices during activities where it may be disruptive or inappropriate.', 25, yPos); yPos += lineHeight;
+    pdf.text('Cyberbullying, online harassment, or the use of technology for illegal activities will not be', 25, yPos); yPos += lineHeight;
+    pdf.text('tolerated.', 25, yPos); yPos += lineHeight + 3;
+    
+    // 10. Emergency Protocols
+    checkPageBreak();
+    pdf.text('10. Emergency Protocols', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    pdf.text('In the event of an emergency, participants are required to follow the instructions of the', 25, yPos); yPos += lineHeight;
+    pdf.text('program staff and local authorities. Failure to cooperate in an emergency situation may', 25, yPos); yPos += lineHeight;
+    pdf.text('result in removal from the program.', 25, yPos); yPos += lineHeight + 3;
     
     // Add acknowledgment
     checkPageBreak();
@@ -207,7 +282,11 @@ const ElectronicCodeOfConductForm = ({
     pdf.setFontSize(10);
     pdf.text('By signing below, I acknowledge that I have read and understood the Code of Conduct', 20, yPos); yPos += lineHeight;
     pdf.text('for the Hypothetical City College Study Abroad Program. I agree to follow the guidelines', 20, yPos); yPos += lineHeight;
-    pdf.text('outlined above, and I understand that failure to do so may result in disciplinary action.', 20, yPos);
+    pdf.text('outlined above, and I understand that failure to do so may result in disciplinary action,', 20, yPos); yPos += lineHeight;
+    pdf.text('including possible removal from the program.', 20, yPos); yPos += lineHeight;
+    pdf.text('I understand that the purpose of the program is to provide an enriching cultural and academic', 20, yPos); yPos += lineHeight;
+    pdf.text('experience, and I commit to representing myself and my college in a responsible, respectful,', 20, yPos); yPos += lineHeight;
+    pdf.text('and safe manner.', 20, yPos);
     yPos += 16;
     
     // Ensure enough space for signatures
@@ -344,7 +423,7 @@ const ElectronicCodeOfConductForm = ({
       
       <FormSection>
         <Typography variant="h6" gutterBottom>
-          Code of Conduct Summary
+          Code of Conduct
         </Typography>
         
         <Typography variant="body1" paragraph>
@@ -354,20 +433,92 @@ const ElectronicCodeOfConductForm = ({
           Conduct to ensure a safe, respectful, and enriching experience for all participants.
         </Typography>
         
+        <Typography variant="body1" paragraph>
+          By signing this document, you acknowledge that you have read, understood, and agree to abide by the following Code of Conduct during your participation in the Study Abroad Program. Violations of the Code of Conduct may result in disciplinary action, including but not limited to removal from the program.
+        </Typography>
+
+        <Typography variant="subtitle1" fontWeight="bold" paragraph>
+          Code of Conduct for Study Abroad Participants
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          1. Respect for Local Laws and Customs
+        </Typography>
         <Typography variant="body2" paragraph>
-          The Code of Conduct includes important guidelines regarding:
-          <ul>
-            <li>Respect for local laws and customs</li>
-            <li>Respect for others and prevention of discrimination or harassment</li>
-            <li>Academic integrity</li>
-            <li>Responsible use of alcohol and drugs</li>
-            <li>Health and safety practices</li>
-            <li>Behavioral expectations</li>
-            <li>Communication and participation</li>
-            <li>Environmental responsibility</li>
-            <li>Responsible use of technology</li>
-            <li>Emergency protocols</li>
-          </ul>
+          Participants are expected to respect and abide by the laws, regulations, and cultural norms of the host country. This includes, but is not limited to, respecting local dress codes, religious practices, and social customs.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          2. Respect for Others
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants should treat fellow students, faculty, staff, local residents, and others with respect and dignity. Discrimination, harassment, bullying, or any other forms of inappropriate behavior will not be tolerated.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          3. Academic Integrity
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants must uphold high standards of academic honesty and integrity. Cheating, plagiarism, or any form of academic dishonesty will result in disciplinary action.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          4. Responsible Use of Alcohol and Drugs
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants are expected to be responsible in their use of alcohol and to avoid illegal drugs. The legal drinking age and other regulations regarding alcohol must be observed in the host country. Engaging in illegal drug use or excessive drinking that disrupts the program or endangers others will not be tolerated.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          5. Health and Safety
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants must prioritize their health and safety and take precautions to avoid situations that could harm their well-being. This includes following the advice of program staff, being cautious in unfamiliar environments, and adhering to safety guidelines provided by the program.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          6. Behavioral Expectations
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants are expected to maintain professional and respectful behavior at all times. Inappropriate or disruptive behavior, including but not limited to violence, theft, vandalism, or any behavior that negatively affects the reputation of the program or college, will result in disciplinary action.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          7. Communication and Participation
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants should engage actively in all program activities, attend scheduled meetings, and communicate promptly with program staff regarding any issues or concerns. Failure to do so may hinder both individual and group experiences.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          8. Environmental Responsibility
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants should make every effort to minimize their environmental impact, including but not limited to reducing waste, conserving energy and water, and adhering to environmental regulations in the host country.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          9. Use of Technology
+        </Typography>
+        <Typography variant="body2" paragraph>
+          Participants should use technology responsibly, including respecting privacy and avoiding the use of electronic devices during activities where it may be disruptive or inappropriate. Cyberbullying, online harassment, or the use of technology for illegal activities will not be tolerated.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight="bold">
+          10. Emergency Protocols
+        </Typography>
+        <Typography variant="body2" paragraph>
+          In the event of an emergency, participants are required to follow the instructions of the program staff and local authorities. Failure to cooperate in an emergency situation may result in removal from the program.
+        </Typography>
+
+        <Typography variant="subtitle1" fontWeight="bold" mt={2} paragraph>
+          Acknowledgment
+        </Typography>
+        <Typography variant="body2" paragraph>
+          By signing below, I acknowledge that I have read and understood the Code of Conduct for the Hypothetical City College Study Abroad Program. I agree to follow the guidelines outlined above, and I understand that failure to do so may result in disciplinary action, including possible removal from the program.
+        </Typography>
+        <Typography variant="body2" paragraph>
+          I understand that the purpose of the program is to provide an enriching cultural and academic experience, and I commit to representing myself and my college in a responsible, respectful, and safe manner.
         </Typography>
         
         <FormControlLabel

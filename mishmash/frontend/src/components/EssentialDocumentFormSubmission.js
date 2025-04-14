@@ -173,7 +173,7 @@ const EssentialDocumentFormSubmission = ({ application_id, isReadOnly = false, d
         
         <Alert severity="info" sx={{ mb: 3 }}>
           You're currently using <strong>Electronic Forms</strong> to submit your documents.
-          If rather download a PDF template, fill it out and upload it, then toggle the switch to "PDF Upload" mode.
+          If you would rather download a PDF template, fill it out and upload it, then toggle the switch to "PDF Upload" mode.
         </Alert>
         
         <ElectronicDocumentHub 
