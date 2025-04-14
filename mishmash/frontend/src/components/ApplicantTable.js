@@ -597,13 +597,12 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
           </TableHead>
           <TableBody>
             {sortedApplicants.map((applicant) => {
-              const user = userDetails[applicant.student] || {};
+              const app_user = userDetails[applicant.student] || {};
               const docs = documents[applicant.id] || [];
               const notes = confidentialNotes[applicant.id] || {
                 count: 0,
                 lastUpdated: "N/A",
               };
-              console.log(applicant.payment_status);
               return (
                 <TableRow
                   key={applicant.id}
@@ -611,9 +610,9 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
                   onClick={() => navigate(`/applications/${applicant.id}`)}
                   style={{ cursor: "pointer" }}
                 >
-                  <TableCell>{user.display_name || "N/A"}</TableCell>
-                  <TableCell>{user.username || "N/A"}</TableCell>
-                  <TableCell>{user.email || "N/A"}</TableCell>
+                  <TableCell>{app_user.display_name || "N/A"}</TableCell>
+                  <TableCell>{app_user.username || "N/A"}</TableCell>
+                  <TableCell>{app_user.email || "N/A"}</TableCell>
                   <TableCell>{applicant.date_of_birth}</TableCell>
                   <TableCell>{applicant.gpa}</TableCell>
                   <TableCell>{applicant.major}</TableCell>
@@ -664,6 +663,7 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
                   </TableCell>
                   <PaymentStatusDropDown
                     applicant={applicant}
+                    disabled={!user.is_admin}
                     handlePaymentStatus={handlePaymentStatusSelect}
                   />
                 </TableRow>

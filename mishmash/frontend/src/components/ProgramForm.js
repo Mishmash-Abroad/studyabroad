@@ -60,6 +60,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  const [countResponse, setCountResponse] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [deletedQuestions, setDeletedQuestions] = useState([]);
   const [editQuestions, setEditQuestions] = useState([]);
@@ -70,6 +71,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   useEffect(() => {
     if (editingProgram) {
+      axiosInstance
+        .get(`/api/programs/${editingProgram.id}/applicant_counts/`)
+        .then((response) => {
+          setCountResponse(response);
+        });
+
       setProgramData({
         title: editingProgram.title,
         year: editingProgram.year,
@@ -216,6 +223,17 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       return;
     }
 
+    if (editingProgram) {
+      if (!programData.track_payment && editingProgram.track_payment) {
+        if (
+          !window.confirm(
+            `Are you sure you want to remove track payments? This will delete all relevant payment information`
+          )
+        )
+          return;
+      }
+    }
+
     if (
       programData.track_payment &&
       programData.provider_partner_ids.length === 0
@@ -231,7 +249,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   };
 
   const normalizeCourse = (input) => {
-    const cleaned = input.trim().toUpperCase().replace(/\s+/g, ' ');
+    const cleaned = input.trim().toUpperCase().replace(/\s+/g, " ");
     const isValid = /^[A-Z0-9]{1,8} \d{3}$/.test(cleaned);
     return { normalized: cleaned, isValid };
   };
@@ -246,11 +264,15 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
   const submitProgram = async () => {
     setIsSubmitting(true);
     try {
-      const normalizedPrereqs = programData.prerequisites.map((p) => normalizeCourse(p));
+      const normalizedPrereqs = programData.prerequisites.map((p) =>
+        normalizeCourse(p)
+      );
       const invalid = normalizedPrereqs.find((item) => !item.isValid);
 
       if (invalid) {
-        setErrorMessage('Course designations must be in the format "<DEPARTMENT> <NUMBER>"');
+        setErrorMessage(
+          'Course designations must be in the format "<DEPARTMENT> <NUMBER>"'
+        );
         return;
       }
 
@@ -258,10 +280,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       const payload = { ...programData, prerequisites: updatedPrereqs };
 
       if (editingProgram) {
-        await axiosInstance.put(
-          `/api/programs/${editingProgram.id}/`,
-          payload
-        );
+        await axiosInstance.put(`/api/programs/${editingProgram.id}/`, payload);
 
         for (const question of newQuestions) {
           await axiosInstance.post(`/api/questions/`, {
@@ -343,12 +362,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
 
   const handleDeleteProgram = async () => {
     if (!editingProgram) return;
-    const countResponse = await axiosInstance.get(
+    const currCountResponse = await axiosInstance.get(
       `/api/programs/${editingProgram.id}/applicant_counts/`
     );
     if (
       !window.confirm(
-        `Are you sure you want to delete this program? This action cannot be undone, and will affect ${countResponse.data.total_participants} total participants and ${countResponse.data.enrolled} enrolled students.`
+        `Are you sure you want to delete this program? This action cannot be undone, and will affect ${currCountResponse.data.total_participants} total participants and ${currCountResponse.data.enrolled} enrolled students.`
       )
     )
       return;
@@ -535,12 +554,16 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
                 disabled={!user.is_admin}
                 label={`Course ${index + 1}`}
                 value={course}
-                onChange={(e) => handlePrerequisiteChange(index, e.target.value)}
+                onChange={(e) =>
+                  handlePrerequisiteChange(index, e.target.value)
+                }
               />
               <IconButton
                 disabled={!user.is_admin}
                 onClick={() => {
-                  const updated = programData.prerequisites.filter((_, i) => i !== index);
+                  const updated = programData.prerequisites.filter(
+                    (_, i) => i !== index
+                  );
                   setProgramData({ ...programData, prerequisites: updated });
                   setDirty(true);
                 }}
@@ -607,7 +630,12 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
                 color="error"
                 sx={{ mr: "10", fontWeight: 500 }}
               >
-                *unsaved changes
+                {`*unsaved changes. 
+                ${
+                  countResponse.data.total_participants > 0
+                    ? " There are already applicants to this program. "
+                    : ""
+                }`}
               </Typography>
             )}
             {editingProgram && (
