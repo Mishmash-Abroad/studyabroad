@@ -308,7 +308,6 @@ const ApplicationPage = () => {
 
   // -------------------- EVENT HANDLERS --------------------
   const handleSubmit = async (e) => {
-    console.log("submitting...");
     e.preventDefault();
     if (
       isApplicationReadOnly() ||
