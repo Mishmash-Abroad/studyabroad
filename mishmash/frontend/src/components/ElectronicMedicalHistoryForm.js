@@ -319,7 +319,7 @@ const ElectronicMedicalHistoryForm = ({
     pdf.setFontSize(10);
     pdf.text('Please ensure all immunizations required for international travel are up-to-date. Include dates of immunization.', 20, yPos);
     yPos += 10;
-    
+
     pdf.setFontSize(11);
     pdf.text('Required Immunizations for Study Abroad', 20, yPos); yPos += 8;
     pdf.setFontSize(10);
@@ -328,109 +328,85 @@ const ElectronicMedicalHistoryForm = ({
 
     pdf.text('1. Measles, Mumps, and Rubella (MMR):', 30, yPos);
     pdf.text(`${formData.mmr}`, 150, yPos);
-    if (formData.mmr === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.mmrDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.mmrDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('2. Tetanus, Diphtheria, and Pertussis (Tdap):', 30, yPos);
     pdf.text(`${formData.tdap}`, 150, yPos);
-    if (formData.tdap === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.tdapDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.tdapDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('3. Hepatitis A:', 30, yPos);
     pdf.text(`${formData.hepatitisA}`, 150, yPos);
-    if (formData.hepatitisA === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.hepatitisADate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.hepatitisADate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('4. Hepatitis B:', 30, yPos);
     pdf.text(`${formData.hepatitisB}`, 150, yPos);
-    if (formData.hepatitisB === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.hepatitisBDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.hepatitisBDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('5. Varicella (Chickenpox):', 30, yPos);
     pdf.text(`${formData.varicella}`, 150, yPos);
-    if (formData.varicella === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.varicellaDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.varicellaDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('6. Polio:', 30, yPos);
     pdf.text(`${formData.polio}`, 150, yPos);
-    if (formData.polio === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.polioDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.polioDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('7. Meningococcal:', 30, yPos);
     pdf.text(`${formData.meningococcal}`, 150, yPos);
-    if (formData.meningococcal === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.meningococcalDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.meningococcalDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('8. Influenza (Flu):', 30, yPos);
     pdf.text(`${formData.influenza}`, 150, yPos);
-    if (formData.influenza === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.influenzaDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.influenzaDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('9. Typhoid:', 30, yPos);
     pdf.text(`${formData.typhoid}`, 150, yPos);
-    if (formData.typhoid === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.typhoidDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.typhoidDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('10. Yellow Fever (Required for some countries):', 30, yPos);
     pdf.text(`${formData.yellowFever}`, 150, yPos);
-    if (formData.yellowFever === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.yellowFeverDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.yellowFeverDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('11. Rabies (Optional, but recommended for certain regions):', 30, yPos);
     pdf.text(`${formData.rabies}`, 150, yPos);
-    if (formData.rabies === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.rabiesDate}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.rabiesDate || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
     pdf.text('12. COVID-19:', 30, yPos);
     pdf.text(`${formData.covid19}`, 150, yPos);
-    if (formData.covid19 === 'Yes') {
-      yPos += lineHeight;
-      pdf.text(`   Date(s) of Immunization: ${formData.covid19Date}`, 30, yPos);
-    }
+    yPos += lineHeight;
+    pdf.text(`   Date(s) of Immunization: ${formData.covid19Date || 'Not provided'}`, 30, yPos);
     yPos += lineHeight + 2;
     checkPageBreak();
     
@@ -873,17 +849,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.mmr === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="mmrDate"
-                  value={formData.mmrDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="mmrDate"
+                value={formData.mmrDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -902,17 +877,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.tdap === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="tdapDate"
-                  value={formData.tdapDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="tdapDate"
+                value={formData.tdapDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -931,17 +905,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.hepatitisA === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="hepatitisADate"
-                  value={formData.hepatitisADate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="hepatitisADate"
+                value={formData.hepatitisADate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -960,17 +933,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.hepatitisB === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="hepatitisBDate"
-                  value={formData.hepatitisBDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="hepatitisBDate"
+                value={formData.hepatitisBDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -989,17 +961,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.varicella === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="varicellaDate"
-                  value={formData.varicellaDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="varicellaDate"
+                value={formData.varicellaDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1018,17 +989,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.polio === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="polioDate"
-                  value={formData.polioDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="polioDate"
+                value={formData.polioDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1047,17 +1017,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.meningococcal === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="meningococcalDate"
-                  value={formData.meningococcalDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="meningococcalDate"
+                value={formData.meningococcalDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1076,17 +1045,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.influenza === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="influenzaDate"
-                  value={formData.influenzaDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="influenzaDate"
+                value={formData.influenzaDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1105,17 +1073,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.typhoid === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="typhoidDate"
-                  value={formData.typhoidDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="typhoidDate"
+                value={formData.typhoidDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1134,17 +1101,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.yellowFever === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="yellowFeverDate"
-                  value={formData.yellowFeverDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="yellowFeverDate"
+                value={formData.yellowFeverDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1163,17 +1129,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.rabies === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="rabiesDate"
-                  value={formData.rabiesDate}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="rabiesDate"
+                value={formData.rabiesDate}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
           
@@ -1192,17 +1157,16 @@ const ElectronicMedicalHistoryForm = ({
                 </RadioGroup>
               </FormControl>
               
-              {formData.covid19 === 'Yes' && (
-                <TextField
-                  label="Date(s) of Immunization"
-                  name="covid19Date"
-                  value={formData.covid19Date}
-                  onChange={handleFormChange}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                />
-              )}
+              <TextField
+                label="Date(s) of Immunization"
+                name="covid19Date"
+                value={formData.covid19Date}
+                onChange={handleFormChange}
+                fullWidth
+                margin="normal"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
             </FormField>
           </Grid>
         </Grid>
