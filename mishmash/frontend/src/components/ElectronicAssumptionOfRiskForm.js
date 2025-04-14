@@ -140,6 +140,18 @@ const ElectronicAssumptionOfRiskForm = ({
   
   const generatePDF = () => {
     const pdf = new jsPDF();
+    const pageHeight = pdf.internal.pageSize.height;
+    const margin = 20;
+    let yPos = 20;
+    const lineHeight = 7;
+    
+    // Function to check if we need a new page
+    const checkPageBreak = () => {
+      if (yPos > pageHeight - margin) {
+        pdf.addPage();
+        yPos = 20;
+      }
+    };
     
     // Add header
     pdf.setFontSize(16);
@@ -148,43 +160,63 @@ const ElectronicAssumptionOfRiskForm = ({
     pdf.text('Assumption of Risk and Release of Liability Form', 105, 30, { align: 'center' });
     
     // Add student information
+    yPos = 45;
     pdf.setFontSize(12);
-    pdf.text('Student Information:', 20, 45);
-    pdf.text(`Full Name: ${formData.studentName}`, 30, 55);
-    pdf.text(`Student ID (NetID): ${formData.studentId}`, 30, 65);
-    pdf.text(`Date of Birth: ${new Date(formData.dateOfBirth).toLocaleDateString()}`, 30, 75);
+    pdf.text('Student Information:', 20, yPos);
+    yPos += 10;
+    pdf.text(`Full Name: ${formData.studentName}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Student ID (NetID): ${formData.studentId}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Date of Birth: ${new Date(formData.dateOfBirth).toLocaleDateString()}`, 30, yPos);
     
     // Add assumption of risk text
+    yPos = 90;
+    checkPageBreak();
     pdf.setFontSize(11);
-    pdf.text('Acknowledgment of Risk', 20, 90);
+    pdf.text('Acknowledgment of Risk', 20, yPos);
+    yPos += 10;
     pdf.setFontSize(10);
-    pdf.text('I, the undersigned, acknowledge that my participation in the Study Abroad Program at', 20, 100);
-    pdf.text('Hypothetical City College involves certain inherent risks, including but not limited', 20, 107);
-    pdf.text('to, travel-related risks, health and safety risks, accidents, injuries, or illnesses.', 20, 114);
+    pdf.text('I, the undersigned, acknowledge that my participation in the Study Abroad Program at', 20, yPos); yPos += lineHeight;
+    pdf.text('Hypothetical City College involves certain inherent risks, including but not limited', 20, yPos); yPos += lineHeight;
+    pdf.text('to, travel-related risks, health and safety risks, accidents, injuries, or illnesses.', 20, yPos);
     
-    pdf.text('Assumption of Risk', 20, 130);
-    pdf.text('By signing this form, I acknowledge that I am voluntarily participating in the Study', 20, 140);
-    pdf.text('Abroad Program and assume full responsibility for any risks that may occur during my', 20, 147);
-    pdf.text('participation.', 20, 154);
+    yPos += 16;
+    checkPageBreak();
+    pdf.text('Assumption of Risk', 20, yPos);
+    yPos += 10;
+    pdf.text('By signing this form, I acknowledge that I am voluntarily participating in the Study', 20, yPos); yPos += lineHeight;
+    pdf.text('Abroad Program and assume full responsibility for any risks that may occur during my', 20, yPos); yPos += lineHeight;
+    pdf.text('participation.', 20, yPos);
 
-    pdf.text('Release of Liability', 20, 170);
-    pdf.text('I hereby release Hypothetical City College, its officers, employees, agents, and', 20, 180);
-    pdf.text('affiliates from any and all liability, claims, or demands that may arise out of or be', 20, 187);
-    pdf.text('connected with my participation in the program.', 20, 194);
+    yPos += 16;
+    checkPageBreak();
+    pdf.text('Release of Liability', 20, yPos);
+    yPos += 10;
+    pdf.text('I hereby release Hypothetical City College, its officers, employees, agents, and', 20, yPos); yPos += lineHeight;
+    pdf.text('affiliates from any and all liability, claims, or demands that may arise out of or be', 20, yPos); yPos += lineHeight;
+    pdf.text('connected with my participation in the program.', 20, yPos);
+    
+    // Ensure enough space for signatures
+    yPos += 26;
+    if (yPos > pageHeight - 40) {
+      pdf.addPage();
+      yPos = 20;
+    }
     
     // Add signatures
-    pdf.text(`Student Signature:`, 20, 220);
+    pdf.text(`Student Signature:`, 20, yPos);
     // Add the student signature image
     const studentSigData = sigPadStudent.current.toDataURL();
-    pdf.addImage(studentSigData, 'PNG', 70, 210, 60, 20);
-    pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, 220);
+    pdf.addImage(studentSigData, 'PNG', 70, yPos - 10, 60, 20);
+    pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, yPos);
     
     // Add parent/guardian signature if applicable
     if (formData.underAge && sigPadGuardian.current) {
-      pdf.text(`Parent/Guardian Signature:`, 20, 240);
+      yPos += 20;
+      checkPageBreak();
+      pdf.text(`Parent/Guardian Signature:`, 20, yPos);
       const guardianSigData = sigPadGuardian.current.toDataURL();
-      pdf.addImage(guardianSigData, 'PNG', 70, 230, 60, 20);
-      pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, 240);
+      pdf.addImage(guardianSigData, 'PNG', 70, yPos - 10, 60, 20);
+      pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, yPos);
     }
     
     return pdf;

@@ -214,6 +214,16 @@ const ElectronicMedicalHistoryForm = ({
     const pdf = new jsPDF();
     let yPos = 20;
     const lineHeight = 7;
+    const pageHeight = pdf.internal.pageSize.height;
+    const margin = 20;
+    
+    // Function to check if we need a new page
+    const checkPageBreak = () => {
+      if (yPos > pageHeight - margin) {
+        pdf.addPage();
+        yPos = 20;
+      }
+    };
     
     // Add header
     pdf.setFontSize(16);
@@ -233,6 +243,7 @@ const ElectronicMedicalHistoryForm = ({
     yPos += 15;
     
     // Emergency Contact
+    checkPageBreak();
     pdf.setFontSize(12);
     pdf.text('Emergency Contact Information:', 20, yPos); yPos += 10;
     pdf.text(`Name: ${formData.emergencyContactName}`, 30, yPos); yPos += lineHeight;
@@ -242,6 +253,7 @@ const ElectronicMedicalHistoryForm = ({
     yPos += 15;
     
     // Health Information
+    checkPageBreak();
     pdf.setFontSize(12);
     pdf.text('General Health Information:', 20, yPos); yPos += 10;
     
@@ -251,6 +263,7 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Description: ${formData.medicalConditions}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`2. Prescription medications: ${formData.hasPrescriptions}`, 30, yPos);
     if (formData.hasPrescriptions === 'Yes') {
@@ -258,6 +271,7 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Medications: ${formData.prescriptions}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`3. Over-the-counter medications: ${formData.hasOTCMedications}`, 30, yPos);
     if (formData.hasOTCMedications === 'Yes') {
@@ -265,6 +279,7 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Medications: ${formData.otcMedications}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`4. Mental health conditions: ${formData.hasMentalHealth}`, 30, yPos);
     if (formData.hasMentalHealth === 'Yes') {
@@ -272,6 +287,7 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Description: ${formData.mentalHealth}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`5. Mobility limitations: ${formData.hasMobility}`, 30, yPos);
     if (formData.hasMobility === 'Yes') {
@@ -279,9 +295,11 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Description: ${formData.mobility}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`6. Dietary restrictions: ${formData.dietaryRestrictions.join(', ')}${formData.otherDietary ? `, ${formData.otherDietary}` : ''}`, 30, yPos);
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`7. Recent surgeries or medical treatments: ${formData.hasRecentSurgeries}`, 30, yPos);
     if (formData.hasRecentSurgeries === 'Yes') {
@@ -289,6 +307,7 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Description: ${formData.recentSurgeries}`, 30, yPos);
     }
     yPos += 15;
+    checkPageBreak();
     
     // Immunization Record
     pdf.setFontSize(12);
@@ -300,6 +319,7 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Date: ${formData.mmrDate}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     pdf.text(`2. Tetanus, Diphtheria, and Pertussis (Tdap): ${formData.tdap}`, 30, yPos);
     if (formData.tdap === 'Yes') {
@@ -307,18 +327,38 @@ const ElectronicMedicalHistoryForm = ({
       pdf.text(`   Date: ${formData.tdapDate}`, 30, yPos);
     }
     yPos += lineHeight;
+    checkPageBreak();
     
     // Add the remaining immunizations (simplified for space)
     pdf.text(`3. Hepatitis A: ${formData.hepatitisA}${formData.hepatitisA === 'Yes' ? `, Date: ${formData.hepatitisADate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`4. Hepatitis B: ${formData.hepatitisB}${formData.hepatitisB === 'Yes' ? `, Date: ${formData.hepatitisBDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`5. Varicella (Chickenpox): ${formData.varicella}${formData.varicella === 'Yes' ? `, Date: ${formData.varicellaDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`6. Polio: ${formData.polio}${formData.polio === 'Yes' ? `, Date: ${formData.polioDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`7. Meningococcal: ${formData.meningococcal}${formData.meningococcal === 'Yes' ? `, Date: ${formData.meningococcalDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`8. Influenza (Flu): ${formData.influenza}${formData.influenza === 'Yes' ? `, Date: ${formData.influenzaDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`9. Typhoid: ${formData.typhoid}${formData.typhoid === 'Yes' ? `, Date: ${formData.typhoidDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`10. Yellow Fever: ${formData.yellowFever}${formData.yellowFever === 'Yes' ? `, Date: ${formData.yellowFeverDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`11. Rabies: ${formData.rabies}${formData.rabies === 'Yes' ? `, Date: ${formData.rabiesDate}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text(`12. COVID-19: ${formData.covid19}${formData.covid19 === 'Yes' ? `, Date: ${formData.covid19Date}` : ''}`, 30, yPos); yPos += lineHeight;
+    checkPageBreak();
     
     if (formData.otherVaccinations) {
       pdf.text(`13. Other Vaccinations: ${formData.otherVaccinations}`, 30, yPos); 
@@ -326,14 +366,26 @@ const ElectronicMedicalHistoryForm = ({
     }
     
     yPos += 10;
+    checkPageBreak();
     
     // Medical Consent
     pdf.setFontSize(11);
     pdf.text('Medical Consent and Acknowledgment', 20, yPos); yPos += 10;
     pdf.setFontSize(10);
     pdf.text('In the event of an emergency, I authorize Hypothetical City College and its designated', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text('representatives to seek medical attention on my behalf and to share this medical information', 20, yPos); yPos += lineHeight;
+    checkPageBreak();
+    
     pdf.text('with healthcare providers as necessary.', 20, yPos); yPos += lineHeight * 2;
+    checkPageBreak();
+    
+    // Ensure enough space for signature on the page
+    if (yPos > pageHeight - 40) {
+      pdf.addPage();
+      yPos = 20;
+    }
     
     // Add student signature
     pdf.text(`Student Signature:`, 20, yPos);

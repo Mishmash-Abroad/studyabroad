@@ -140,60 +140,97 @@ const ElectronicCodeOfConductForm = ({
   
   const generatePDF = () => {
     const pdf = new jsPDF();
+    const pageHeight = pdf.internal.pageSize.height;
+    const margin = 20;
+    let yPos = 20;
+    const lineHeight = 7;
+    
+    // Function to check if we need a new page
+    const checkPageBreak = () => {
+      if (yPos > pageHeight - margin) {
+        pdf.addPage();
+        yPos = 20;
+      }
+    };
     
     // Add header
     pdf.setFontSize(16);
-    pdf.text('Hypothetical City College Study Abroad Program', 105, 20, { align: 'center' });
+    pdf.text('Hypothetical City College Study Abroad Program', 105, yPos, { align: 'center' });
+    yPos += 10;
     pdf.setFontSize(14);
-    pdf.text('Acknowledgment of the Code of Conduct', 105, 30, { align: 'center' });
+    pdf.text('Acknowledgment of the Code of Conduct', 105, yPos, { align: 'center' });
+    yPos += 15;
     
     // Add student information
     pdf.setFontSize(12);
-    pdf.text('Student Information:', 20, 45);
-    pdf.text(`Full Name: ${formData.studentName}`, 30, 55);
-    pdf.text(`Student ID (NetID): ${formData.studentId}`, 30, 65);
-    pdf.text(`Date of Birth: ${new Date(formData.dateOfBirth).toLocaleDateString()}`, 30, 75);
+    pdf.text('Student Information:', 20, yPos);
+    yPos += 10;
+    pdf.text(`Full Name: ${formData.studentName}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Student ID (NetID): ${formData.studentId}`, 30, yPos); yPos += lineHeight;
+    pdf.text(`Date of Birth: ${new Date(formData.dateOfBirth).toLocaleDateString()}`, 30, yPos);
+    yPos += 15;
     
     // Add code of conduct text - abbreviated for the example
+    checkPageBreak();
     pdf.setFontSize(11);
-    pdf.text('Introduction', 20, 90);
+    pdf.text('Introduction', 20, yPos);
+    yPos += 10;
     pdf.setFontSize(10);
-    pdf.text('As a participant in the Hypothetical City College Study Abroad Program, you are', 20, 100);
-    pdf.text('representing not only yourself but also your college, your community, and your country.', 20, 107);
-    pdf.text('Therefore, it is essential to uphold the values and principles outlined in the Code of', 20, 114);
-    pdf.text('Conduct to ensure a safe, respectful, and enriching experience for all participants.', 20, 121);
+    pdf.text('As a participant in the Hypothetical City College Study Abroad Program, you are', 20, yPos); yPos += lineHeight;
+    pdf.text('representing not only yourself but also your college, your community, and your country.', 20, yPos); yPos += lineHeight;
+    pdf.text('Therefore, it is essential to uphold the values and principles outlined in the Code of', 20, yPos); yPos += lineHeight;
+    pdf.text('Conduct to ensure a safe, respectful, and enriching experience for all participants.', 20, yPos);
+    yPos += 14;
     
     // Code of conduct items (abbreviated)
+    checkPageBreak();
     pdf.setFontSize(11);
-    pdf.text('Code of Conduct for Study Abroad Participants', 20, 135);
+    pdf.text('Code of Conduct for Study Abroad Participants', 20, yPos);
+    yPos += 10;
     pdf.setFontSize(10);
-    pdf.text('1. Respect for Local Laws and Customs', 25, 145);
-    pdf.text('2. Respect for Others', 25, 155);
-    pdf.text('3. Academic Integrity', 25, 165);
-    pdf.text('4. Responsible Use of Alcohol and Drugs', 25, 175);
-    pdf.text('5. Health and Safety', 25, 185);
+    pdf.text('1. Respect for Local Laws and Customs', 25, yPos); yPos += lineHeight + 3;
+    checkPageBreak();
+    pdf.text('2. Respect for Others', 25, yPos); yPos += lineHeight + 3;
+    checkPageBreak();
+    pdf.text('3. Academic Integrity', 25, yPos); yPos += lineHeight + 3;
+    checkPageBreak();
+    pdf.text('4. Responsible Use of Alcohol and Drugs', 25, yPos); yPos += lineHeight + 3;
+    checkPageBreak();
+    pdf.text('5. Health and Safety', 25, yPos);
+    yPos += 15;
     
     // Add acknowledgment
+    checkPageBreak();
     pdf.setFontSize(11);
-    pdf.text('Acknowledgment', 20, 200);
+    pdf.text('Acknowledgment', 20, yPos);
+    yPos += 10;
     pdf.setFontSize(10);
-    pdf.text('By signing below, I acknowledge that I have read and understood the Code of Conduct', 20, 210);
-    pdf.text('for the Hypothetical City College Study Abroad Program. I agree to follow the guidelines', 20, 217);
-    pdf.text('outlined above, and I understand that failure to do so may result in disciplinary action.', 20, 224);
+    pdf.text('By signing below, I acknowledge that I have read and understood the Code of Conduct', 20, yPos); yPos += lineHeight;
+    pdf.text('for the Hypothetical City College Study Abroad Program. I agree to follow the guidelines', 20, yPos); yPos += lineHeight;
+    pdf.text('outlined above, and I understand that failure to do so may result in disciplinary action.', 20, yPos);
+    yPos += 16;
+    
+    // Ensure enough space for signatures
+    if (yPos > pageHeight - 40) {
+      pdf.addPage();
+      yPos = 20;
+    }
     
     // Add signatures
-    pdf.text(`Student Signature:`, 20, 240);
+    pdf.text(`Student Signature:`, 20, yPos);
     // Add the student signature image
     const studentSigData = sigPadStudent.current.toDataURL();
-    pdf.addImage(studentSigData, 'PNG', 70, 230, 60, 20);
-    pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, 240);
+    pdf.addImage(studentSigData, 'PNG', 70, yPos - 10, 60, 20);
+    pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, yPos);
     
     // Add parent/guardian signature if applicable
     if (formData.underAge && sigPadGuardian.current) {
-      pdf.text(`Parent/Guardian Signature:`, 20, 260);
+      yPos += 20;
+      checkPageBreak();
+      pdf.text(`Parent/Guardian Signature:`, 20, yPos);
       const guardianSigData = sigPadGuardian.current.toDataURL();
-      pdf.addImage(guardianSigData, 'PNG', 70, 250, 60, 20);
-      pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, 260);
+      pdf.addImage(guardianSigData, 'PNG', 70, yPos - 10, 60, 20);
+      pdf.text(`Date: ${new Date(formData.signatureDate).toLocaleDateString()}`, 150, yPos);
     }
     
     return pdf;
