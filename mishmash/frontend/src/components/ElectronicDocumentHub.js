@@ -195,15 +195,6 @@ const ElectronicDocumentHub = ({
       if (activeForm.id === 'code_of_conduct') {
         return (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button 
-                variant="text" 
-                size="small"
-                onClick={() => setFormType('upload')}
-              >
-                Need to upload a PDF instead?
-              </Button>
-            </Box>
             <ElectronicCodeOfConductForm 
               user={user}
               application={application}
@@ -218,15 +209,6 @@ const ElectronicDocumentHub = ({
       if (activeForm.id === 'assumption_of_risk') {
         return (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button 
-                variant="text" 
-                size="small"
-                onClick={() => setFormType('upload')}
-              >
-                Need to upload a PDF instead?
-              </Button>
-            </Box>
             <ElectronicAssumptionOfRiskForm 
               user={user}
               application={application}
@@ -241,15 +223,6 @@ const ElectronicDocumentHub = ({
       if (activeForm.id === 'housing_questionnaire') {
         return (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button 
-                variant="text" 
-                size="small"
-                onClick={() => setFormType('upload')}
-              >
-                Need to upload a PDF instead?
-              </Button>
-            </Box>
             <ElectronicHousingQuestionnaireForm 
               user={user}
               application={application}
@@ -264,15 +237,6 @@ const ElectronicDocumentHub = ({
       if (activeForm.id === 'medical_history') {
         return (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button 
-                variant="text" 
-                size="small"
-                onClick={() => setFormType('upload')}
-              >
-                Need to upload a PDF instead?
-              </Button>
-            </Box>
             <ElectronicMedicalHistoryForm 
               user={user}
               application={application}
