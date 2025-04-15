@@ -50,7 +50,6 @@ services:
              python manage.py makemigrations --noinput &&
              python manage.py migrate api --noinput &&
              python manage.py migrate --noinput && 
-             python manage.py flush --no-input &&
              python manage.py add_test_users &&
              python manage.py add_test_programs &&
              python manage.py add_test_applications &&
