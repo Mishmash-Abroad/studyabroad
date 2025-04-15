@@ -31,6 +31,7 @@ import {
   STATUS,
   PROGRAM_STATUS,
   WITHDRAWABLE_APPLICATION_STATUSES,
+  ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
 import confetti from "canvas-confetti";
 
@@ -211,7 +212,9 @@ const ApplicationPage = () => {
             setPrereqStatus(prereqRes.data);
           } catch (err) {
             console.error("Error checking prerequisites:", err);
-            setPrereqStatus({ error: "Unable to determine prerequisite status." });
+            setPrereqStatus({
+              error: "Unable to determine prerequisite status.",
+            });
           }
         }
 
@@ -367,11 +370,15 @@ const ApplicationPage = () => {
         setUlinkDialogOpen(true);
         return;
       } else if (!prereqStatus.meets_all) {
-        if (window.confirm(`You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`)) {
+        if (
+          window.confirm(
+            `You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`
+          )
+        ) {
           updateState({ loading: true, error: "" });
         } else {
           updateState({ error: "User canceled submission action." });
-          return
+          return;
         }
       }
     }
@@ -739,6 +746,25 @@ const ApplicationPage = () => {
                   {application.status || "Not Applied"}
                 </Typography>
               </Box>
+              {ALL_PAYMENT_APPLICATION_STATUSES.includes(application.status) &&
+                program.track_payment && (
+                  <Box>
+                    <Typography variant="subtitle2">Payment Status</Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: getStatusColor,
+                        fontWeight: "medium",
+                      }}
+                    >
+                      {!ALL_PAYMENT_APPLICATION_STATUSES.includes(
+                        application.status
+                      )
+                        ? "N/A"
+                        : application.payment_status}
+                    </Typography>
+                  </Box>
+                )}
             </InfoGrid>
 
             <Typography
@@ -765,7 +791,13 @@ const ApplicationPage = () => {
 
             {program?.prerequisites?.length > 0 && (
               <Box sx={{ mt: 4 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Typography variant="h6" gutterBottom color="primary">
                     Prerequisite Status
                   </Typography>
@@ -773,7 +805,11 @@ const ApplicationPage = () => {
                     Refresh Transcript
                   </Button>
                 </Box>
-                {successMessage && <p style={{ color: "green", justifySelf: "right" }}>{successMessage}</p>}
+                {successMessage && (
+                  <p style={{ color: "green", justifySelf: "right" }}>
+                    {successMessage}
+                  </p>
+                )}
 
                 {prereqStatus ? (
                   prereqStatus.error ? (
@@ -1007,11 +1043,17 @@ const ApplicationPage = () => {
       <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
         <DialogTitle>Ulink Account Required</DialogTitle>
         <DialogContent>
-          <Typography>You must connect your profile to a Ulink account in order to proceed.</Typography>
+          <Typography>
+            You must connect your profile to a Ulink account in order to
+            proceed.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUlinkDialogOpen(false)}>Cancel</Button>
-          <Button onClick={() => navigate("/connect-ulink")} variant="contained">
+          <Button
+            onClick={() => navigate("/connect-ulink")}
+            variant="contained"
+          >
             Connect Ulink
           </Button>
         </DialogActions>
