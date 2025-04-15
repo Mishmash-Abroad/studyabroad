@@ -887,7 +887,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not (request.user.is_admin or request.user.is_faculty or request.user.is_reviewer) and str(request.user.id) != str(student_id):
+        if not (
+            request.user.is_admin or request.user.is_faculty or request.user.is_reviewer
+        ) and str(request.user.id) != str(student_id):
             return Response(
                 {"detail": "You do not have permission to perform this action.."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -1254,7 +1256,11 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 
             queryset = queryset.filter(application=application)
 
-        if not self.request.user.is_admin and not self.request.user.is_faculty and not self.request.user.is_reviewer:
+        if (
+            not self.request.user.is_admin
+            and not self.request.user.is_faculty
+            and not self.request.user.is_reviewer
+        ):
             queryset = queryset.filter(application__student=self.request.user)
 
         return queryset
@@ -1472,7 +1478,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 f"Removed {user.username} from faculty leads of {programs.count()} programs"
             )
 
-        if new_is_provider_partner:
+        if not user.is_provider_partner and new_is_provider_partner:
             request.data["is_admin"] = False
             request.data["is_faculty"] = False
             request.data["is_reviewer"] = False
