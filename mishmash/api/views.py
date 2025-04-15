@@ -883,7 +883,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.is_admin and str(request.user.id) != str(student_id):
+        if not (request.user.is_admin or request.user.is_faculty or request.user.is_reviewer) and str(request.user.id) != str(student_id):
             return Response(
                 {"detail": "You do not have permission to perform this action.."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -1246,7 +1246,7 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 
             queryset = queryset.filter(application=application)
 
-        if not self.request.user.is_admin:
+        if not self.request.user.is_admin and not self.request.user.is_faculty and not self.request.user.is_reviewer:
             queryset = queryset.filter(application__student=self.request.user)
 
         return queryset
