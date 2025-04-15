@@ -304,8 +304,8 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         // Show success message for update
         setSuccessMessage(
           systemAdminWarning
-            ? "Program updated successfully! System Administrator has been added as faculty lead. Now Navigating to Admin Programs Table!"
-            : "Program updated successfully! Now Navigating to Admin Programs Table!"
+            ? "Program updated successfully! System Administrator has been added as faculty lead."
+            : "Program updated successfully!"
         );
       } else {
         await axiosInstance.post("/api/programs/", {
@@ -316,8 +316,8 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         // Show success message for creation
         setSuccessMessage(
           systemAdminWarning
-            ? "Program created successfully! System Administrator has been added as faculty lead. Now Navigating to Admin Programs Table!"
-            : "Program created successfully! Now Navigating to Admin Programs Table!"
+            ? "Program created successfully! System Administrator has been added as faculty lead."
+            : "Program created successfully!"
         );
       }
 
@@ -327,9 +327,9 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
       setSuccessSnackbarOpen(true);
 
       // Navigate after a short delay to allow the user to see the success message
-      setTimeout(() => {
-        navigate("/dashboard/admin-programs");
-      }, 2000);
+      // setTimeout(() => {
+      //   navigate("/dashboard/admin-programs");
+      // }, 2000);
     } catch (error) {
       console.error("Error saving program:", error);
       setErrorMessage(
@@ -337,7 +337,13 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           "Failed to save program. Please check your input."
       );
     } finally {
-      // setIsSubmitting(false);
+      setIsSubmitting(false);
+      // TODO  might need to revaluate this - Alexis
+      navigate(
+        `/dashboard/admin-programs/${encodeURIComponent(
+          programData.title.trim().replace(/\s+/g, "-")
+        )}`
+      );
     }
   };
 
@@ -730,10 +736,8 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
         message={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Check sx={{ fontSize: "2rem", color: "white" }} />
-            <span style={{ fontSize: "1.25rem", fontWeight: "500" }}>
-              {successMessage}
-            </span>
+            <Check color="success" />
+            <span>{successMessage}</span>
           </Box>
         }
         sx={{
@@ -741,12 +745,6 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           "& .MuiSnackbarContent-root": {
             bgcolor: "success.main",
             color: "success.contrastText",
-            fontSize: "1.2rem",
-            py: 2,
-            px: 3,
-            borderRadius: 2,
-            boxShadow: 3,
-            minWidth: "400px", // optional: makes the snackbar wider
           },
         }}
       />
