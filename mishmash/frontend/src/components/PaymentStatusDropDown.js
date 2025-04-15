@@ -3,7 +3,7 @@ import {
   getPaymentStatusLabel,
   ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
-import { TextField, MenuItem } from "@mui/material";
+import { TextField, MenuItem, TableCell } from "@mui/material";
 const PaymentStatusDropDown = ({
   applicant,
   disabled,
