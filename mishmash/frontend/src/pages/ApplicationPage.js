@@ -365,21 +365,22 @@ const ApplicationPage = () => {
     }
 
     // Check prerequisites and warn user if prerequisites are not met
-    if (program.prerequisites) {
+    if (program.prerequisites?.length > 0) {
       if (!user.ulink_username) {
         setUlinkDialogOpen(true);
         return;
-      } else if (!prereqStatus.meets_all) {
-        if (
-          window.confirm(
-            `You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`
-          )
-        ) {
-          updateState({ loading: true, error: "" });
-        } else {
-          updateState({ error: "User canceled submission action." });
-          return;
+      } else if (prereqStatus) {
+        if (!prereqStatus.meets_all) {
+          if (window.confirm(`You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`)) {
+            updateState({ loading: true, error: "" });
+          } else {
+            updateState({ error: "User canceled submission action." });
+            return;
+          }
         }
+      } else {
+        updateState({ error: "Please wait while we check your prerequisites." });
+        return;
       }
     }
 
