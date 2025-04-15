@@ -22,6 +22,11 @@ scp -r backup_admin@$SRC_SERVER:/home/vcm/backups/* "$DEST_PATH"
 # Check the exit status
 if [ $? -eq 0 ]; then
     echo "SCP transfer succeeded to $DEST_PATH"
+    # Send webhook notification using curl
+    curl -X POST \
+      -H "Content-Type: application/json" \
+      -d "{\"value1\":\"$DEST_PATH\",\"value2\":\"$(hostname)\",\"value3\":\"$(date)\"}" \
+      "https://maker.ifttt.com/trigger/Backups_good/json/with/key/gxWFYRMC0fqf9Sl96i10YELsVXAywAZJqmd9LnWZhI2"
 
     # Count the number of backup files
     BACKUP_COUNT=$(find "$DEST_PATH" -type f | wc -l)

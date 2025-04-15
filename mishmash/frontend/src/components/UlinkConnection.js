@@ -24,7 +24,7 @@ const UlinkConnection = () => {
     setError("");
     try {
       const response = await axiosInstance.post(
-        `/api/users/${user.id}/connect_ulink/`,
+        `/api/users/${user.id}/connect_transcript_provider/`,
         {
             ulink_username: ulinkUsername,
             ulink_pin: ulinkPin,

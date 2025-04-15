@@ -4,7 +4,7 @@ import {
   ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
 import { TextField, MenuItem } from "@mui/material";
-const PaymentStatusDropDown = ({ applicant, handlePaymentStatus }) => {
+const PaymentStatusDropDown = ({ applicant, disabled, handlePaymentStatus }) => {
   return (
     <>
       {ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status) && (
@@ -12,6 +12,7 @@ const PaymentStatusDropDown = ({ applicant, handlePaymentStatus }) => {
           select
           size="small"
           value={applicant.payment_status}
+          disabled={disabled}
           onChange={(e) =>
             handlePaymentStatus(e, applicant.id, applicant.payment_status)
           }

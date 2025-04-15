@@ -6,7 +6,7 @@ import LoginModal from "../components/LoginModal";
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import axiosInstance from "../utils/axios";
-
+import TopNavBar from "../components/TopNavBar";
 import AnnouncementsBrowser from '../components/AnnouncementsBrowser';
 
 // -------------------- STYLES (moved from index.js) --------------------
@@ -266,6 +266,7 @@ useEffect(() => {
 
   return (
     <HomeContainer>
+      <TopNavBar onLoginClick={() => setShowLoginModal(true)} />
       <Hero customColor={branding.primary_color}>
         <HeroOverlay />
         {branding.logo_url ? (

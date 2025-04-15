@@ -52,7 +52,10 @@ jobs:
             EOF
 
             docker compose -f docker-compose.dev.yml down
-            docker volume rm $(docker volume ls -q)
+            docker volume rm studyabroad_frontend_build || true
+            docker volume rm studyabroad_static_volume || true
+
+
             docker compose -f docker-compose.dev.yml up -d --build
             echo "🔄 Checking container status..."
             docker compose ps

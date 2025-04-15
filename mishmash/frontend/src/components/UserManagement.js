@@ -370,7 +370,12 @@ const UserManagement = () => {
   // Column definitions
   const columns = [
     { id: "username", label: "Username", sortable: true, align: "left" },
-    { id: "ulink_username", label: "Ulink Username", sortable: true, align: "left" },
+    {
+      id: "ulink_username",
+      label: "Ulink Username",
+      sortable: true,
+      align: "left",
+    },
     {
       id: "display_name",
       label: "Display Name",
@@ -475,16 +480,24 @@ const UserManagement = () => {
         title = `Warning: Promote to ${
           roleType.charAt(0).toUpperCase() + roleType.slice(1)
         }`;
-        
+
+        message = `Are you sure you want to promote ${user.display_name} to ${roleType}? `;
         if (hasNoApplications) {
-          message = `Are you sure you want to promote ${user.display_name} to ${roleType}?`;
-          
-          message +=
-            roleType != "provider_partner"
-              ? ``
-              : `This will remove all other roles`;
+          if (roleType == "provider_partner") {
+            message += `This will remove all other roles. `;
+
+            if (
+              user.is_faculty &&
+              faculty_programs &&
+              faculty_programs.length > 0
+            ) {
+              message += `This will remove them as faculty lead for the following programs: ${faculty_programs.join(
+                ", "
+              )}.`;
+            }
+          }
         } else {
-          message = `Promoting ${user.display_name} to ${roleType} will delete their ${applications_count} submitted applications. Do you wish to proceed?`;
+          message += `This will delete their ${applications_count} submitted applications. Do you wish to proceed?`;
         }
 
         action = { [`is_${roleType}`]: true };

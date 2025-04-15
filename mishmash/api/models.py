@@ -267,12 +267,37 @@ class Document(models.Model):
         ),
     ]
     title = models.CharField(max_length=255)
-    pdf = models.FileField(upload_to="pdfs/")  # Uploads to MEDIA_ROOT/pdfs/
+    pdf = models.FileField(upload_to="pdfs/", blank=True, null=True)  # Now optional for electronic forms
     uploaded_at = models.DateTimeField(auto_now_add=True)
     application = models.ForeignKey("Application", on_delete=models.CASCADE)
     type = models.CharField(  # Change TextField to CharField
         max_length=100,  # Set a max_length that fits your longest choice
         choices=TYPES_OF_DOCS,
+    )
+    
+    # New fields for electronic forms
+    form_data = models.JSONField(
+        blank=True, 
+        null=True, 
+        help_text="JSON data for electronic form fields"
+    )
+    signature = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="SVG or base64 encoded PNG signature data"
+    )
+    parent_guardian_signature = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="SVG or base64 encoded PNG signature data for parent/guardian (if under 18)"
+    )
+    is_electronic = models.BooleanField(
+        default=False,
+        help_text="True if this is an electronic form submission, False if it's a PDF upload"
+    )
+    last_modified = models.DateTimeField(
+        auto_now=True,
+        help_text="Timestamp of the last modification"
     )
 
     def __str__(self):

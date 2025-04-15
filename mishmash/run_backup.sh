@@ -8,6 +8,11 @@ export DEBUG=1
 
 if /usr/local/bin/python /app/manage.py backup_db --aes-key=$AES_CIPHER_KEY >> /var/log/cron.log 2>&1; then
     echo "Exit code of 0, success" >> /var/log/cron.log
+    curl -X POST \
+      -H "Content-Type: application/json" \
+      -d "{\"value1\":\"encrypted_backup\",\"value2\":\"$(hostname)\",\"value3\":\"$(date)\"}" \
+      "https://maker.ifttt.com/trigger/Backups_good/json/with/key/gxWFYRMC0fqf9Sl96i10YELsVXAywAZJqmd9LnWZhI2"
+
 else
     EXIT_CODE=$?
     ERROR_MESSAGE="Backup failed with exit code $EXIT_CODE"

@@ -21,12 +21,12 @@ import PublicLetterUploadPage from "./pages/PublicLetterUploadPage";
 import UlinkConnection from "./components/UlinkConnection";
 
 function App() {
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  // const [showLoginModal, setShowLoginModal] = useState(false);
 
   return (
     <Router>
       <AuthProvider>
-        <TopNavBar onLoginClick={() => setShowLoginModal(true)} />
+      <TopNavBar/>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
@@ -69,7 +69,7 @@ function App() {
             }
           />
           <Route
-            path="/connect-ulink"
+            path="/connect-transcript-provider"
             element={
               <ProtectedRoute>
                 <UlinkConnection />
@@ -80,11 +80,6 @@ function App() {
           {/* Alexis - I changed this logic TODO might have to change back /dashboard*/}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-
-        {/* Login Modal */}
-        {showLoginModal && (
-          <LoginModal onClose={() => setShowLoginModal(false)} />
-        )}
       </AuthProvider>
     </Router>
   );
