@@ -54,7 +54,7 @@ const PartnerApplicantTable = ({ programId }) => {
   const [error, setError] = useState(null);
   const [orderBy, setOrderBy] = useState("applied_on");
   const [order, setOrder] = useState("desc");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("Approved & Enrolled");
   const [userDetails, setUserDetails] = useState({});
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -76,7 +76,6 @@ const PartnerApplicantTable = ({ programId }) => {
     try {
       setLoading(true);
       let url = `/api/applications/?program=${programId}`;
-      if (statusFilter !== "ALL") url += `&status=${statusFilter}`;
 
       const response = await axiosInstance.get(url);
       setApplicants(response.data);
@@ -116,7 +115,9 @@ const PartnerApplicantTable = ({ programId }) => {
 
   const sortedApplicants = applicants
     .filter((applicant) =>
-      statusFilter !== "ALL" ? applicant.status === statusFilter : true
+      statusFilter !== "Approved & Enrolled"
+        ? applicant.status === statusFilter
+        : applicant.status === "Enrolled" || applicant.status === "Approved"
     )
     .sort((a, b) => {
       const userA = userDetails[a.student] || {};
@@ -238,7 +239,7 @@ const PartnerApplicantTable = ({ programId }) => {
           size="small"
           sx={{ minWidth: "200px" }}
         >
-          <MenuItem value="ALL">All</MenuItem>
+          <MenuItem value="Approved & Enrolled">Approved & Enrolled</MenuItem>
           {Object.values(ALL_PAYMENT_APPLICATION_STATUSES).map((status) => (
             <MenuItem key={status} value={status}>
               {getStatusLabel(status)}

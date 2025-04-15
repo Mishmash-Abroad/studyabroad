@@ -18,7 +18,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
 import {
   ALL_ADMIN_EDITABLE_STATUSES,
+  ALL_PAYMENT_APPLICATION_STATUSES,
+  ALL_PAYMENT_STATUSES,
   get_all_available_statuses_to_edit,
+  getStatusLabel,
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
 import LetterReview from "./LetterReview";
@@ -38,7 +41,9 @@ const AdminAppView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogPaymentOpen, setDialogPaymentOpen] = useState(false);
   const { user } = useAuth();
   const ALL_AVAILABLE_STATUSES = Object.values(
     get_all_available_statuses_to_edit(user.roles_object)
@@ -57,6 +62,7 @@ const AdminAppView = () => {
       const appResponse = await axiosInstance.get(`/api/applications/${id}/`);
       setApplication(appResponse.data);
       setStatus(appResponse.data.status);
+      setPaymentStatus(appResponse.data.payment_status);
 
       // Fetch user details
       const userResponse = await axiosInstance.get(
@@ -122,10 +128,15 @@ const AdminAppView = () => {
     setDialogOpen(true);
   };
 
+  const handlePaymentStatusChange = async (newStatus) => {
+    setPaymentStatus(newStatus);
+    setDialogPaymentOpen(true);
+  };
+
   const confirmStatusChange = async () => {
     try {
       await axiosInstance.patch(`/api/applications/${id}/`, { status });
-      setApplication({...application, status: status});
+      setApplication({ ...application, status: status });
       setDialogOpen(false);
     } catch (error) {
       console.error("Error updating status:", error);
@@ -134,9 +145,28 @@ const AdminAppView = () => {
     }
   };
 
+  const confirmPaymentStatusChange = async () => {
+    try {
+      await axiosInstance.patch(`/api/applications/${id}/`, {
+        payment_status: paymentStatus,
+      });
+      setApplication({ ...application, payment_status: paymentStatus });
+      setDialogPaymentOpen(false);
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      setError("Failed to update application status.");
+      setDialogPaymentOpen(false);
+    }
+  };
+
   const cancelStatusChange = () => {
     setStatus(application.status); // Reset to original status
     setDialogOpen(false);
+  };
+
+  const cancelPaymentStatusChange = () => {
+    setPaymentStatus(application.payment_status); // Reset to original status
+    setDialogPaymentOpen(false);
   };
 
   const handleAddNote = async () => {
@@ -179,11 +209,11 @@ const AdminAppView = () => {
   const refreshPrerequisites = async () => {
     try {
       await axiosInstance.post(`/api/users/${student.id}/refresh_transcript/`);
-  
+
       const response = await axiosInstance.get(
         `/api/programs/${application.program}/check_prerequisites/?student_id=${application.student}`
       );
-  
+
       setPrereqCheck(response.data);
       setError(null);
     } catch (err) {
@@ -240,6 +270,14 @@ const AdminAppView = () => {
               InputProps={{ readOnly: true }}
             />
             <TextField
+              label="Provider Partners"
+              value={program.provider_partners
+                .map((f) => f.display_name)
+                .join(", ")}
+              fullWidth
+              InputProps={{ readOnly: true }}
+            />
+            <TextField
               label="Application Open Date"
               value={program.application_open_date}
               fullWidth
@@ -277,6 +315,13 @@ const AdminAppView = () => {
           Current Status: <strong>{status}</strong>
         </Typography>
 
+        {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) &&
+          program.payment_status && (
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Current Payment Status: <strong>{paymentStatus}</strong>
+            </Typography>
+          )}
+
         {/* Applicant Info */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h5" sx={{ mb: 2 }}>
@@ -303,37 +348,37 @@ const AdminAppView = () => {
         </Box>
 
         {program?.prerequisites?.length > 0 && prereqCheck && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Prerequisite Check
-          </Typography>
-          <Button variant="outlined" onClick={refreshPrerequisites}>
-            Refresh Prerequisites
-          </Button>
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Prerequisite Check
+            </Typography>
+            <Button variant="outlined" onClick={refreshPrerequisites}>
+              Refresh Prerequisites
+            </Button>
 
-          {prereqCheck.error ? (
-            <Typography color="error">{prereqCheck.error}</Typography>
-          ) : (
-            <ul>
-              {program.prerequisites.map((course) => {
-                const isMet = !prereqCheck.missing.includes(course);
-                return (
-                  <li key={course}>
-                    <Typography
-                      sx={{
-                        color: isMet ? "green" : "red",
-                        fontWeight: isMet ? 500 : 400,
-                      }}
-                    >
-                      {course} – {isMet ? "Complete" : "Missing"}
-                    </Typography>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Box>
-      )}
+            {prereqCheck.error ? (
+              <Typography color="error">{prereqCheck.error}</Typography>
+            ) : (
+              <ul>
+                {program.prerequisites.map((course) => {
+                  const isMet = !prereqCheck.missing.includes(course);
+                  return (
+                    <li key={course}>
+                      <Typography
+                        sx={{
+                          color: isMet ? "green" : "red",
+                          fontWeight: isMet ? 500 : 400,
+                        }}
+                      >
+                        {course} – {isMet ? "Complete" : "Missing"}
+                      </Typography>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Box>
+        )}
 
         {/* Application Responses */}
         <Typography variant="h5" sx={{ mb: 2 }}>
@@ -365,7 +410,10 @@ const AdminAppView = () => {
         <Typography variant="h5" sx={{ mb: 2 }}>
           Essential Documents Review
         </Typography>
-        <DocumentReview application_id={id} isAdminOrFaculty={user.is_admin || user.is_faculty} />
+        <DocumentReview
+          application_id={id}
+          isAdminOrFaculty={user.is_admin || user.is_faculty}
+        />
 
         {/* Letters of Recommendation Review */}
         <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
@@ -467,15 +515,21 @@ const AdminAppView = () => {
               labelId="status-select-label"
               id="status-select"
               value={status}
+              disabled={!ALL_AVAILABLE_STATUSES.includes(status)}
               label="Application Status"
               onChange={(e) => setStatus(e.target.value)}
               sx={{ minWidth: "250px", maxWidth: "500px", justifySelf: "left" }}
             >
-              {ALL_AVAILABLE_STATUSES.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
+              {ALL_AVAILABLE_STATUSES.map((tmp_status, index) => (
+                <MenuItem key={index} value={tmp_status}>
+                  {tmp_status}
                 </MenuItem>
               ))}
+              {!ALL_AVAILABLE_STATUSES.includes(status) && (
+                <MenuItem key="current" value={status} disabled>
+                  {status}
+                </MenuItem>
+              )}
             </Select>
           </FormControl>
           <Button
@@ -489,6 +543,71 @@ const AdminAppView = () => {
           </Button>
         </Box>
       </Paper>
+      {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) &&
+        program.payment_status && (
+          <Paper
+            sx={{
+              padding: 3,
+              marginTop: 4,
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e0e0e0",
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Change Payment Status
+            </Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+              Update the payment status to reflect the applicant's current
+              payment status in the program.
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <FormControl>
+                <InputLabel id="status-select-label">
+                  Application Status
+                </InputLabel>
+                <Select
+                  labelId="status-select-label"
+                  id="status-select"
+                  value={paymentStatus}
+                  disabled={
+                    !Object.keys(ALL_PAYMENT_STATUSES).includes(paymentStatus)
+                  }
+                  label="Application Status"
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                  sx={{
+                    minWidth: "250px",
+                    maxWidth: "500px",
+                    justifySelf: "left",
+                  }}
+                >
+                  {Object.keys(ALL_PAYMENT_STATUSES).map(
+                    (tmp_status, index) => (
+                      <MenuItem key={index} value={tmp_status}>
+                        {tmp_status}
+                      </MenuItem>
+                    )
+                  )}
+                  {!Object.keys(ALL_PAYMENT_STATUSES).includes(
+                    paymentStatus
+                  ) && (
+                    <MenuItem key="current" value={paymentStatus} disabled>
+                      {paymentStatus}
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handlePaymentStatusChange(paymentStatus)}
+                disabled={paymentStatus === application?.payment_status}
+                sx={{ height: "56px", minWidth: "170px" }}
+              >
+                Update Payment Status
+              </Button>
+            </Box>
+          </Paper>
+        )}
       <Button
         variant="contained"
         sx={{ mt: 2 }}
@@ -514,8 +633,7 @@ const AdminAppView = () => {
           <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
             {!prereqCheck?.meets_all && status === "Eligible"
               ? `The selected user is missing the following pre-requisites: ${prereqCheck?.missing}.`
-              : "This will update the applicant's status in the system and may trigger notifications."
-            }
+              : "This will update the applicant's status in the system and may trigger notifications."}
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -524,6 +642,30 @@ const AdminAppView = () => {
           </Button>
           <Button
             onClick={confirmStatusChange}
+            color="primary"
+            variant="contained"
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={dialogPaymentOpen} onClose={cancelPaymentStatusChange}>
+        <DialogTitle>Confirm Status Change</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to change the payment status from{" "}
+            <strong>{application?.payment_status}</strong> to{" "}
+            <strong>{paymentStatus}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelPaymentStatusChange} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmPaymentStatusChange}
             color="primary"
             variant="contained"
           >
