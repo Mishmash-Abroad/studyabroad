@@ -19,6 +19,7 @@ import axiosInstance from "../utils/axios";
 import {
   ALL_ADMIN_EDITABLE_STATUSES,
   get_all_available_statuses_to_edit,
+  getStatusLabel,
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
 import LetterReview from "./LetterReview";
@@ -125,7 +126,7 @@ const AdminAppView = () => {
   const confirmStatusChange = async () => {
     try {
       await axiosInstance.patch(`/api/applications/${id}/`, { status });
-      setApplication({...application, status: status});
+      setApplication({ ...application, status: status });
       setDialogOpen(false);
     } catch (error) {
       console.error("Error updating status:", error);
@@ -179,11 +180,11 @@ const AdminAppView = () => {
   const refreshPrerequisites = async () => {
     try {
       await axiosInstance.post(`/api/users/${student.id}/refresh_transcript/`);
-  
+
       const response = await axiosInstance.get(
         `/api/programs/${application.program}/check_prerequisites/?student_id=${application.student}`
       );
-  
+
       setPrereqCheck(response.data);
       setError(null);
     } catch (err) {
@@ -303,37 +304,37 @@ const AdminAppView = () => {
         </Box>
 
         {program?.prerequisites?.length > 0 && prereqCheck && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Prerequisite Check
-          </Typography>
-          <Button variant="outlined" onClick={refreshPrerequisites}>
-            Refresh Prerequisites
-          </Button>
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Prerequisite Check
+            </Typography>
+            <Button variant="outlined" onClick={refreshPrerequisites}>
+              Refresh Prerequisites
+            </Button>
 
-          {prereqCheck.error ? (
-            <Typography color="error">{prereqCheck.error}</Typography>
-          ) : (
-            <ul>
-              {program.prerequisites.map((course) => {
-                const isMet = !prereqCheck.missing.includes(course);
-                return (
-                  <li key={course}>
-                    <Typography
-                      sx={{
-                        color: isMet ? "green" : "red",
-                        fontWeight: isMet ? 500 : 400,
-                      }}
-                    >
-                      {course} – {isMet ? "Complete" : "Missing"}
-                    </Typography>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Box>
-      )}
+            {prereqCheck.error ? (
+              <Typography color="error">{prereqCheck.error}</Typography>
+            ) : (
+              <ul>
+                {program.prerequisites.map((course) => {
+                  const isMet = !prereqCheck.missing.includes(course);
+                  return (
+                    <li key={course}>
+                      <Typography
+                        sx={{
+                          color: isMet ? "green" : "red",
+                          fontWeight: isMet ? 500 : 400,
+                        }}
+                      >
+                        {course} – {isMet ? "Complete" : "Missing"}
+                      </Typography>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Box>
+        )}
 
         {/* Application Responses */}
         <Typography variant="h5" sx={{ mb: 2 }}>
@@ -365,7 +366,10 @@ const AdminAppView = () => {
         <Typography variant="h5" sx={{ mb: 2 }}>
           Essential Documents Review
         </Typography>
-        <DocumentReview application_id={id} isAdminOrFaculty={user.is_admin || user.is_faculty} />
+        <DocumentReview
+          application_id={id}
+          isAdminOrFaculty={user.is_admin || user.is_faculty}
+        />
 
         {/* Letters of Recommendation Review */}
         <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
@@ -467,15 +471,21 @@ const AdminAppView = () => {
               labelId="status-select-label"
               id="status-select"
               value={status}
+              disabled={!ALL_AVAILABLE_STATUSES.includes(status)}
               label="Application Status"
               onChange={(e) => setStatus(e.target.value)}
               sx={{ minWidth: "250px", maxWidth: "500px", justifySelf: "left" }}
             >
-              {ALL_AVAILABLE_STATUSES.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
+              {ALL_AVAILABLE_STATUSES.map((tmp_status, index) => (
+                <MenuItem key={index} value={tmp_status}>
+                  {tmp_status}
                 </MenuItem>
               ))}
+              {!ALL_AVAILABLE_STATUSES.includes(status) && (
+                <MenuItem key="current" value={status} disabled>
+                  {status}
+                </MenuItem>
+              )}
             </Select>
           </FormControl>
           <Button
@@ -514,8 +524,7 @@ const AdminAppView = () => {
           <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
             {!prereqCheck?.meets_all && status === "Eligible"
               ? `The selected user is missing the following pre-requisites: ${prereqCheck?.missing}.`
-              : "This will update the applicant's status in the system and may trigger notifications."
-            }
+              : "This will update the applicant's status in the system and may trigger notifications."}
           </Typography>
         </DialogContent>
         <DialogActions>

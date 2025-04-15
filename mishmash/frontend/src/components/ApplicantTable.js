@@ -29,7 +29,6 @@ import {
   STATUS,
   getStatusLabel,
   getPaymentStatusLabel,
-  ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -633,6 +632,7 @@ const ApplicantTable = ({ programId, show_track_payment }) => {
                       select
                       size="small"
                       value={applicant.status}
+                      disabled={!ALL_AVAILABLE_STATUSES.includes(applicant.status)}
                       onChange={(e) =>
                         handleApplicationStatusSelect(
                           e,
