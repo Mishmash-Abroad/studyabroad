@@ -337,7 +337,7 @@ const ProgramForm = ({ onClose, refreshPrograms, editingProgram }) => {
           "Failed to save program. Please check your input."
       );
     } finally {
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
     }
   };
 
