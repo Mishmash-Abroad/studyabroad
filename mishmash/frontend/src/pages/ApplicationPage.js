@@ -1014,20 +1014,12 @@ const ApplicationPage = () => {
 
         {/* Letters of Recommendation Tab */}
         {activeTab === 2 && (
-          <>
-            <DeadlineContainer>
-              <DeadlineIndicator
-                deadline={program.essential_document_deadline}
-                type="document"
-                size="medium"
-              />
-            </DeadlineContainer>
-            <EssentialDocumentFormSubmission
-              application_id={application.id}
-              isReadOnly={isDocumentsReadOnly}
-              documents={documents.submitted || []}
-            />
-          </>
+          <StudentLetterRequests
+            application_id={application.id}
+            applicationStatus={application.status}
+            programDeadline={program.application_deadline}
+            isReadOnly={isReadOnly}
+          />
         )}
 
         {/* Required Documents Tab */}
@@ -1040,11 +1032,10 @@ const ApplicationPage = () => {
                 size="medium"
               />
             </DeadlineContainer>
-            <StudentLetterRequests
+            <EssentialDocumentFormSubmission
               application_id={application.id}
-              applicationStatus={application.status}
-              programDeadline={program.application_deadline}
-              isReadOnly={isReadOnly}
+              isReadOnly={isDocumentsReadOnly}
+              documents={documents.submitted || []}
             />
           </>
         )}
