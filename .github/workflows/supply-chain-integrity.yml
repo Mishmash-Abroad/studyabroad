@@ -1,8 +1,7 @@
 name: Supply Chain Integrity Check
 
 on:
-  push:
-    branches: [main]
+  
   workflow_dispatch:
 
 jobs:
