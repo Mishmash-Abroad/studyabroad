@@ -388,13 +388,32 @@ const ElectronicDocumentHub = ({
                 </Typography>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Button
-                    variant={isCompleted ? "outlined" : "contained"}
-                    color={isCompleted ? "secondary" : "primary"}
-                    onClick={() => handleSelectDocument(doc.id)}
-                  >
-                    {isCompleted ? "View or Replace" : "Complete Document"}
-                  </Button>
+                  {isCompleted ? (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        onClick={() => window.open(submittedDoc.file, '_blank')}
+                      >
+                        View Document
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleSelectDocument(doc.id)}
+                      >
+                        Replace Document
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleSelectDocument(doc.id)}
+                    >
+                      Complete Document
+                    </Button>
+                  )}
                   
                   {isCompleted && submittedDoc && (
                     <Typography variant="body2" color="text.secondary">
