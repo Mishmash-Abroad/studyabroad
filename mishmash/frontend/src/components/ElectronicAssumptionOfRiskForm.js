@@ -17,6 +17,7 @@ import {
 import SignatureCanvas from 'react-signature-canvas';
 import { jsPDF } from "jspdf";
 import axiosInstance from '../utils/axios';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const FormContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -93,6 +94,8 @@ const ElectronicAssumptionOfRiskForm = ({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDocUrl, setSelectedDocUrl] = useState(null);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   
   const handleFormChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -270,6 +273,48 @@ const ElectronicAssumptionOfRiskForm = ({
   
   const handleClosePreview = () => {
     setPreviewOpen(false);
+  };
+  
+  const handleView = async () => {
+    try {
+      // Check if a document of this type already exists for this application
+      const documentsResponse = await axiosInstance.get(`/api/documents/?application=${application.id}`);
+      const existingDoc = documentsResponse.data.find(
+        doc => doc.type === 'Assumption of risk form'
+      );
+      
+      if (!existingDoc) {
+        // If no document exists yet, generate a preview
+        const pdf = generatePDF();
+        const pdfBlob = pdf.output('blob');
+        const blobUrl = window.URL.createObjectURL(pdfBlob);
+        setSelectedDocUrl(blobUrl);
+        setPdfViewerOpen(true);
+        return;
+      }
+      
+      // If document exists, fetch it from the server
+      const response = await axiosInstance.get(`/api/documents/${existingDoc.id}/pdf/`, {
+        responseType: 'blob'
+      });
+      
+      // Create a blob URL from the PDF data
+      const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+      const blobUrl = window.URL.createObjectURL(pdfBlob);
+      setSelectedDocUrl(blobUrl);
+      setPdfViewerOpen(true);
+    } catch (err) {
+      console.error("Error viewing document:", err);
+      setError("Failed to view document");
+    }
+  };
+
+  const handleCloseViewer = () => {
+    if (selectedDocUrl) {
+      URL.revokeObjectURL(selectedDocUrl);
+    }
+    setSelectedDocUrl(null);
+    setPdfViewerOpen(false);
   };
   
   const handleSubmit = async () => {
@@ -536,9 +581,10 @@ const ElectronicAssumptionOfRiskForm = ({
         
         <Button 
           variant="outlined" 
-          onClick={handlePreview}
+          onClick={handleView}
+          startIcon={<VisibilityIcon />}
         >
-          Preview PDF
+          View
         </Button>
         
         <Button 
@@ -551,7 +597,35 @@ const ElectronicAssumptionOfRiskForm = ({
         </Button>
       </ButtonContainer>
       
-      {/* PDF Preview Dialog */}
+      {/* PDF Viewer Dialog */}
+      <Dialog 
+        open={pdfViewerOpen} 
+        onClose={handleCloseViewer}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>View Assumption of Risk Form</DialogTitle>
+        <DialogContent>
+          <PreviewContainer>
+            {selectedDocUrl && (
+              <iframe
+                src={selectedDocUrl}
+                title="PDF Preview"
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+              />
+            )}
+          </PreviewContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseViewer} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Original Preview Dialog */}
       <Dialog 
         open={previewOpen} 
         onClose={handleClosePreview}
