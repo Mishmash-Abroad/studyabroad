@@ -428,7 +428,7 @@ const LoginModal = ({ onClose }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => {setUlinkDialogOpen(false); navigate("/dashboard"); }}>Remind me later</Button>
-          <Button onClick={() => {setUlinkDialogOpen(false); navigate("/connect-ulink");}} variant="contained">
+          <Button onClick={() => {setUlinkDialogOpen(false); navigate("/connect-transcript-provider");}} variant="contained">
             Connect Ulink
           </Button>
         </DialogActions>

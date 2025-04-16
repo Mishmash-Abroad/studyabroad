@@ -537,7 +537,7 @@ const ProgramCard = ({ program, onExpand }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUlinkDialogOpen(false)}>Cancel</Button>
-          <Button onClick={() => navigate("/connect-ulink")} variant="contained">
+          <Button onClick={() => navigate("/connect-transcript-provider")} variant="contained">
             Connect Ulink
           </Button>
         </DialogActions>

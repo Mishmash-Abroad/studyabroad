@@ -370,8 +370,12 @@ const ApplicationPage = () => {
         setUlinkDialogOpen(true);
         return;
       } else if (prereqStatus) {
-        if (!prereqStatus.meets_all) {
-          if (window.confirm(`You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`)) {
+        if (prereqStatus.meets_all == false) {
+          if (
+            window.confirm(
+              `You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`
+            )
+          ) {
             updateState({ loading: true, error: "" });
           } else {
             updateState({ error: "User canceled submission action." });
@@ -379,7 +383,9 @@ const ApplicationPage = () => {
           }
         }
       } else {
-        updateState({ error: "Please wait while we check your prerequisites." });
+        updateState({
+          error: "Please wait while we check your prerequisites.",
+        });
         return;
       }
     }
@@ -1052,7 +1058,7 @@ const ApplicationPage = () => {
         <DialogActions>
           <Button onClick={() => setUlinkDialogOpen(false)}>Cancel</Button>
           <Button
-            onClick={() => navigate("/connect-ulink")}
+            onClick={() => navigate("/connect-transcript-provider")}
             variant="contained"
           >
             Connect Ulink
