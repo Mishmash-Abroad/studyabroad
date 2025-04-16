@@ -673,6 +673,7 @@ const UserManagement = () => {
               <MenuItem value="ADMIN">Admins</MenuItem>
               <MenuItem value="FACULTY">Faculty</MenuItem>
               <MenuItem value="REVIEWER">Reviewers</MenuItem>
+              <MenuItem value="PROVIDER_PARTNER">Provider Partners</MenuItem>
               <MenuItem value="REGULAR">Regular Users</MenuItem>
             </Select>
           </FormControl>

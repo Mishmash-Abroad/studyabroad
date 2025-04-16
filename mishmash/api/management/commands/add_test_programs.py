@@ -382,6 +382,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2025, 12, 28),
                 "faculty": ["Jessica Anderson"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":["MATH 101"],
+                "track_payment":True,
+                "provider_partners":["jamescarter92", "danielbrooks77"],
+                "payment_deadline": datetime(2025, 6, 30),
             },
             {
                 "title": "History in Canada",
@@ -395,6 +399,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2025, 12, 28),
                 "faculty": ["Emily Bletsch"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":[],
+                "track_payment":True,
+                "provider_partners":["emilywatson88"],
+                "payment_deadline": datetime(2025, 4, 30),
             },
             {
                 "title": "Art in Italy",
@@ -408,6 +416,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2024, 12, 29),
                 "faculty": ["Emily Walker"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":["CIS 101"],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
             {
                 "title": "Medicine in India",
@@ -421,6 +433,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2028, 12, 31),
                 "faculty": ["Emily Bletsch"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":[],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
             {
                 "title": "Language in Japan",
@@ -434,6 +450,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2029, 12, 30),
                 "faculty": ["Jessica Anderson"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":[],
+                "track_payment":True,
+                "provider_partners":["oliviagreen21", "danielbrooks77"],
+                "payment_deadline": datetime(2029, 4, 30),
             },
             {
                 "title": "Technology in Japan",
@@ -447,6 +467,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2030, 12, 29),
                 "faculty": ["Sarah Smith"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":[],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
             {
                 "title": "Medicine in Canada",
@@ -462,6 +486,10 @@ class Command(BaseCommand):
                 "questions":["What's your opinion of this program?",
                              "Have you ever did familiar project related to this program?",
                             ],
+                "prerequisites":[],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
             {
                 "title": "Technology in Australia",
@@ -475,6 +503,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2027, 5, 2),
                 "faculty": ["Emily Bletsch"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":[],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
             {
                 "title": "Art in Australia",
@@ -488,6 +520,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2028, 5, 7),
                 "faculty": ["Sarah Smith"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":["ART 140"],
+                "track_payment":True,
+                "provider_partners":["oliviagreen21", "jamescarter92", "emilywatson88"],
+                "payment_deadline": datetime(2028, 1, 1),
             },
             {
                 "title": "Art in Japan",
@@ -501,6 +537,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2029, 5, 6),
                 "faculty": ["Emily Bletsch"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":["ART 140", "JPAN 108"],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
             {
                 "title": "Art in France",
@@ -514,6 +554,10 @@ class Command(BaseCommand):
                 "end_date": datetime(2025, 8, 17),
                 "faculty": ["Jessica Anderson"],
                 "questions":DEFAULT_QUESTIONS,
+                "prerequisites":["ART 140"],
+                "track_payment":False,
+                "provider_partners":[],
+                "payment_deadline": None,
             },
         ]
 
@@ -534,9 +578,15 @@ class Command(BaseCommand):
                     essential_document_deadline = program_data["essential_document_deadline"],
                     start_date = program_data["start_date"],
                     end_date = program_data["end_date"],
+                    prerequisites = program_data["prerequisites"],
+                    track_payment = program_data["track_payment"],
+                    payment_deadline = program_data["payment_deadline"],
                 )
                 faculty_users = [User.objects.get(display_name=x) for x in program_data["faculty"]]
                 program.faculty_leads.set(faculty_users)
+
+                provider_partners = [User.objects.get(username=x) for x in program_data["provider_partners"]]
+                program.provider_partners.set(provider_partners)
 
                 for question_text in program_data["questions"]:
                     ApplicationQuestion.objects.create(

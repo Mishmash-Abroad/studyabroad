@@ -25,6 +25,7 @@ import {
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
 import LetterReview from "./LetterReview";
+import LetterSummary from "./LetterSummary";
 import ProgramForm from "./ProgramForm";
 import { useAuth } from "../context/AuthContext";
 
@@ -315,11 +316,12 @@ const AdminAppView = () => {
           Current Status: <strong>{status}</strong>
         </Typography>
 
-        {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) && (
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Current Status: <strong>{paymentStatus}</strong>
-          </Typography>
-        )}
+        {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) &&
+          program?.track_payment && (
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Current Payment Status: <strong>{paymentStatus}</strong>
+            </Typography>
+          )}
 
         {/* Applicant Info */}
         <Box sx={{ mb: 3 }}>
@@ -418,7 +420,13 @@ const AdminAppView = () => {
         <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
           Letters of Recommendation Review
         </Typography>
-        <LetterReview application_id={id} />
+        {user.is_admin || user.is_faculty ? (
+          /* Full letter review for admins and faculty */
+          <LetterReview application_id={id} />
+        ) : (
+          /* Restricted view for reviewers - only shows counts */
+          <LetterSummary application_id={id} />
+        )}
       </Paper>
 
       {/* Confidential Notes Section */}
@@ -542,58 +550,71 @@ const AdminAppView = () => {
           </Button>
         </Box>
       </Paper>
-      <Paper
-        sx={{
-          padding: 3,
-          marginTop: 4,
-          backgroundColor: "#f8f9fa",
-          border: "1px solid #e0e0e0",
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          Change Payment Status
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          Update the payment status to reflect the applicant's current payment
-          status in the program.
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <FormControl>
-            <InputLabel id="status-select-label">Application Status</InputLabel>
-            <Select
-              labelId="status-select-label"
-              id="status-select"
-              value={paymentStatus}
-              disabled={
-                !Object.keys(ALL_PAYMENT_STATUSES).includes(paymentStatus)
-              }
-              label="Application Status"
-              onChange={(e) => setPaymentStatus(e.target.value)}
-              sx={{ minWidth: "250px", maxWidth: "500px", justifySelf: "left" }}
-            >
-              {Object.keys(ALL_PAYMENT_STATUSES).map((tmp_status, index) => (
-                <MenuItem key={index} value={tmp_status}>
-                  {tmp_status}
-                </MenuItem>
-              ))}
-              {!Object.keys(ALL_PAYMENT_STATUSES).includes(paymentStatus) && (
-                <MenuItem key="current" value={paymentStatus} disabled>
-                  {paymentStatus}
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => handlePaymentStatusChange(paymentStatus)}
-            disabled={paymentStatus === application?.payment_status}
-            sx={{ height: "56px", minWidth: "170px" }}
+      {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) &&
+        program?.track_payment && (
+          <Paper
+            sx={{
+              padding: 3,
+              marginTop: 4,
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e0e0e0",
+            }}
           >
-            Update Payment Status
-          </Button>
-        </Box>
-      </Paper>
+            <Typography variant="h6" gutterBottom>
+              Change Payment Status
+            </Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+              Update the payment status to reflect the applicant's current
+              payment status in the program.
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <FormControl>
+                <InputLabel id="status-select-label">
+                  Application Status
+                </InputLabel>
+                <Select
+                  labelId="status-select-label"
+                  id="status-select"
+                  value={paymentStatus}
+                  disabled={
+                    !Object.keys(ALL_PAYMENT_STATUSES).includes(paymentStatus)
+                  }
+                  label="Application Status"
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                  sx={{
+                    minWidth: "250px",
+                    maxWidth: "500px",
+                    justifySelf: "left",
+                  }}
+                >
+                  {Object.keys(ALL_PAYMENT_STATUSES).map(
+                    (tmp_status, index) => (
+                      <MenuItem key={index} value={tmp_status}>
+                        {tmp_status}
+                      </MenuItem>
+                    )
+                  )}
+                  {!Object.keys(ALL_PAYMENT_STATUSES).includes(
+                    paymentStatus
+                  ) && (
+                    <MenuItem key="current" value={paymentStatus} disabled>
+                      {paymentStatus}
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handlePaymentStatusChange(paymentStatus)}
+                disabled={paymentStatus === application?.payment_status}
+                sx={{ height: "56px", minWidth: "170px" }}
+              >
+                Update Payment Status
+              </Button>
+            </Box>
+          </Paper>
+        )}
       <Button
         variant="contained"
         sx={{ mt: 2 }}
