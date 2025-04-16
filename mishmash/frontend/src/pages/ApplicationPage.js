@@ -370,7 +370,7 @@ const ApplicationPage = () => {
         setUlinkDialogOpen(true);
         return;
       } else if (prereqStatus) {
-        if (prereqStatus.meets_all == false) {
+        if (prereqStatus.missing && prereqStatus.meets_all == false) {
           if (
             window.confirm(
               `You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`
