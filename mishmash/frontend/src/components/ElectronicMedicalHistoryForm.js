@@ -493,16 +493,33 @@ const ElectronicMedicalHistoryForm = ({
       // Add the electronic form data as JSON
       const electronicData = {
         ...formData,
-        studentSignature: sigPadStudent.current.toDataURL('image/svg+xml')
+        studentSignature: sigPadStudent.current.toDataURL('image/svg+xml'),
+        guardianSignature: formData.underAge && sigPadGuardian.current 
+          ? sigPadGuardian.current.toDataURL('image/svg+xml') 
+          : null
       };
       
       formDataToSubmit.append('form_data', JSON.stringify(electronicData));
       formDataToSubmit.append('is_electronic', 'true');
       
-      // Submit the form
-      const response = await axiosInstance.post('/api/documents/', formDataToSubmit, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Check if a document of this type already exists for this application
+      const documentsResponse = await axiosInstance.get(`/api/documents/?application=${application.id}`);
+      const existingDoc = documentsResponse.data.find(
+        doc => doc.type === 'Medical/health history and immunization records'
+      );
+      
+      let response;
+      // If document exists, update it with PATCH
+      if (existingDoc) {
+        response = await axiosInstance.patch(`/api/documents/${existingDoc.id}/`, formDataToSubmit, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        // Otherwise create a new document
+        response = await axiosInstance.post('/api/documents/', formDataToSubmit, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
       
       // Call the onSubmit callback with the result
       onSubmit(response.data);
