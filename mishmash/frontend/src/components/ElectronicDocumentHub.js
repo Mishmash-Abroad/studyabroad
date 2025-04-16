@@ -8,6 +8,8 @@ import {
   Alert,
   Chip,
   Stack,
+  Dialog,
+  DialogContent,
 } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -92,6 +94,8 @@ const ElectronicDocumentHub = ({
   const [formType, setFormType] = useState(null); // 'electronic' or 'upload'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [selectedDocUrl, setSelectedDocUrl] = useState(null);
   
   // Load existing documents
   useEffect(() => {
@@ -184,6 +188,40 @@ const ElectronicDocumentHub = ({
   const handleFormCancel = () => {
     setActiveForm(null);
     setFormType(null);
+  };
+  
+  // Handle PDF view using blob approach
+  const handleViewDocument = async (submittedDoc) => {
+    if (!submittedDoc || (!submittedDoc.pdf_url && !submittedDoc.file)) {
+      setError("Document URL not available");
+      return;
+    }
+
+    try {
+      // Use pdf_url if available (from uploaded documents), otherwise fall back to file
+      const docUrl = submittedDoc.pdf_url || submittedDoc.file;
+      
+      const response = await axiosInstance.get(docUrl, {
+        responseType: 'blob',
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blobUrl = window.URL.createObjectURL(blob);
+      setSelectedDocUrl(blobUrl);
+      setPdfViewerOpen(true);
+      setError(null);
+    } catch (err) {
+      console.error("Error viewing document:", err);
+      setError(`Failed to view document: ${err.message}`);
+    }
+  };
+
+  const handleCloseViewer = () => {
+    if (selectedDocUrl) {
+      URL.revokeObjectURL(selectedDocUrl);
+    }
+    setSelectedDocUrl(null);
+    setPdfViewerOpen(false);
   };
   
   // Get the form component based on document type and form type
@@ -388,13 +426,32 @@ const ElectronicDocumentHub = ({
                 </Typography>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Button
-                    variant={isCompleted ? "outlined" : "contained"}
-                    color={isCompleted ? "secondary" : "primary"}
-                    onClick={() => handleSelectDocument(doc.id)}
-                  >
-                    {isCompleted ? "View or Replace" : "Complete Document"}
-                  </Button>
+                  {isCompleted ? (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        onClick={() => handleViewDocument(submittedDoc)}
+                      >
+                        View Document
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleSelectDocument(doc.id)}
+                      >
+                        Replace Document
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleSelectDocument(doc.id)}
+                    >
+                      Complete Document
+                    </Button>
+                  )}
                   
                   {isCompleted && submittedDoc && (
                     <Typography variant="body2" color="text.secondary">
@@ -410,6 +467,31 @@ const ElectronicDocumentHub = ({
       
       {/* Form component */}
       {activeForm && formType && getFormComponent()}
+
+      {/* PDF Viewer Dialog */}
+      <Dialog
+        open={pdfViewerOpen}
+        onClose={handleCloseViewer}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogContent>
+          {selectedDocUrl && (
+            <Box sx={{ height: "80vh" }}>
+              <iframe
+                src={selectedDocUrl}
+                width="100%"
+                height="100%"
+                style={{ border: "none" }}
+              >
+                <Typography>
+                  PDF cannot be displayed. Please try downloading it instead.
+                </Typography>
+              </iframe>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 };
