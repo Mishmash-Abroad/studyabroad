@@ -818,7 +818,7 @@ const ApplicationPage = () => {
                   ) : (
                     <ul>
                       {program.prerequisites.map((course) => {
-                        const isMet = !prereqStatus.missing.includes(course);
+                        const isMet = !prereqStatus?.missing?.includes(course);
                         return (
                           <li key={course}>
                             <Typography
