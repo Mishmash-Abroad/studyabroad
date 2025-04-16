@@ -143,7 +143,10 @@ const ElectronicMedicalHistoryForm = ({
     consentToMedical: false,
     
     // Signature date
-    signatureDate: new Date().toISOString().split('T')[0]
+    signatureDate: new Date().toISOString().split('T')[0],
+    
+    // Added underAge field
+    underAge: false
   });
   
   // Signature pad ref
@@ -485,7 +488,7 @@ const ElectronicMedicalHistoryForm = ({
       
       // Create form data for upload
       const formDataToSubmit = new FormData();
-      formDataToSubmit.append('title', 'Medical History and Immunization Record');
+      formDataToSubmit.append('title', 'Medical History Form');
       formDataToSubmit.append('pdf', pdfBlob, 'medical_history.pdf');
       formDataToSubmit.append('application', application.id);
       formDataToSubmit.append('type', 'Medical/health history and immunization records');
@@ -493,16 +496,31 @@ const ElectronicMedicalHistoryForm = ({
       // Add the electronic form data as JSON
       const electronicData = {
         ...formData,
-        studentSignature: sigPadStudent.current.toDataURL('image/svg+xml')
+        studentSignature: sigPadStudent.current.toDataURL('image/svg+xml'),
+        guardianSignature: null
       };
       
       formDataToSubmit.append('form_data', JSON.stringify(electronicData));
       formDataToSubmit.append('is_electronic', 'true');
       
-      // Submit the form
-      const response = await axiosInstance.post('/api/documents/', formDataToSubmit, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Check if a document of this type already exists for this application
+      const documentsResponse = await axiosInstance.get(`/api/documents/?application=${application.id}`);
+      const existingDoc = documentsResponse.data.find(
+        doc => doc.type === 'Medical/health history and immunization records'
+      );
+      
+      let response;
+      // If document exists, update it with PATCH
+      if (existingDoc) {
+        response = await axiosInstance.patch(`/api/documents/${existingDoc.id}/`, formDataToSubmit, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        // Otherwise create a new document
+        response = await axiosInstance.post('/api/documents/', formDataToSubmit, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
       
       // Call the onSubmit callback with the result
       onSubmit(response.data);
