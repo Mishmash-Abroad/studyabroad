@@ -19,6 +19,8 @@ import {
   Typography,
   Tooltip,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios";
@@ -26,14 +28,37 @@ import {
   get_all_available_statuses_to_edit,
   STATUS,
   getStatusLabel,
+  getPaymentStatusLabel,
 } from "../utils/constants";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import NoteIcon from "@mui/icons-material/Note";
 import DescriptionIcon from "@mui/icons-material/Description";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAuth } from "../context/AuthContext";
+import PaymentStatusDropDown from "./PaymentStatusDropDown";
 
-const ApplicantTable = ({ programId }) => {
+// Helper function to copy text to clipboard
+const copyToClipboard = async (text) => {
+  if (!text || text.trim() === "") {
+    console.error("No text provided to copy");
+    return { success: false, error: "No emails found to copy" };
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to copy text: ", err);
+    return {
+      success: false,
+      error:
+        "Failed to copy to clipboard. Make sure you have clipboard permissions.",
+    };
+  }
+};
+
+const ApplicantTable = ({ programId, show_track_payment }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [applicants, setApplicants] = useState([]);
@@ -46,13 +71,24 @@ const ApplicantTable = ({ programId }) => {
   const [userDetails, setUserDetails] = useState({});
   const [documents, setDocuments] = useState({});
   const [confidentialNotes, setConfidentialNotes] = useState({});
+  const [prereqCheck, setPrereqCheck] = useState(null);
   const ALL_AVAILABLE_STATUSES = Object.values(
     get_all_available_statuses_to_edit(user.roles_object)
   );
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   // State for the confirmation dialog and pending status update
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState({
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [pendingApplicationStatus, setPendingApplicationStatus] = useState({
+    applicantId: null,
+    newStatus: "",
+    currentStatus: "",
+  });
+
+  const [pendingPaymentStatus, setPendingPaymentStatus] = useState({
     applicantId: null,
     newStatus: "",
     currentStatus: "",
@@ -235,21 +271,52 @@ const ApplicantTable = ({ programId }) => {
     });
 
   // Handle status dropdown change
-  const handleStatusSelect = (e, applicantId, currentStatus) => {
+  const handleApplicationStatusSelect = async (
+    e,
+    applicantId,
+    currentStatus
+  ) => {
     e.stopPropagation();
     const newStatus = e.target.value;
     if (newStatus === currentStatus) return;
-    setPendingStatus({ applicantId, newStatus, currentStatus });
+
+    try {
+      // Fetch application to get student and program IDs
+      const appResponse = await axiosInstance.get(
+        `/api/applications/${applicantId}/`
+      );
+
+      // Then fetch prerequisite check
+      const prereqResponse = await axiosInstance.get(
+        `/api/programs/${appResponse.data.program}/check_prerequisites/?student_id=${appResponse.data.student}`
+      );
+
+      setPrereqCheck(prereqResponse.data);
+    } catch (err) {
+      console.error("Error fetching prerequisite check:", err);
+      setPrereqCheck({ error: err.response?.data?.detail || "Unknown error" });
+    }
+
+    setPendingApplicationStatus({ applicantId, newStatus, currentStatus });
     setDialogOpen(true);
   };
 
+  // Handle payment status dropdown change
+  const handlePaymentStatusSelect = (e, applicantId, currentStatus) => {
+    e.stopPropagation();
+    const newStatus = e.target.value;
+    if (newStatus === currentStatus) return;
+    setPendingPaymentStatus({ applicantId, newStatus, currentStatus });
+    setPaymentDialogOpen(true);
+  };
+
   // Confirm status change
-  const confirmStatusChange = async () => {
+  const confirmApplicationStatusChange = async () => {
     try {
       await axiosInstance.patch(
-        `/api/applications/${pendingStatus.applicantId}/`,
+        `/api/applications/${pendingApplicationStatus.applicantId}/`,
         {
-          status: pendingStatus.newStatus,
+          status: pendingApplicationStatus.newStatus,
         }
       );
       fetchApplicants();
@@ -258,14 +325,55 @@ const ApplicantTable = ({ programId }) => {
       setError("Failed to update status.");
     } finally {
       setDialogOpen(false);
-      setPendingStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+      setPendingApplicationStatus({
+        applicantId: null,
+        newStatus: "",
+        currentStatus: "",
+      });
+    }
+  };
+
+  // Confirm status change
+  const confirmPaymentStatusChange = async () => {
+    try {
+      await axiosInstance.patch(
+        `/api/applications/${pendingPaymentStatus.applicantId}/`,
+        {
+          payment_status: pendingPaymentStatus.newStatus,
+        }
+      );
+      fetchApplicants();
+    } catch (err) {
+      console.error("Error updating status:", err);
+      setError("Failed to update status.");
+    } finally {
+      setPaymentDialogOpen(false);
+      setPendingPaymentStatus({
+        applicantId: null,
+        newStatus: "",
+        currentStatus: "",
+      });
     }
   };
 
   // Cancel status change
-  const cancelStatusChange = () => {
+  const cancelApplicationStatusChange = () => {
     setDialogOpen(false);
-    setPendingStatus({ applicantId: null, newStatus: "", currentStatus: "" });
+    setPendingApplicationStatus({
+      applicantId: null,
+      newStatus: "",
+      currentStatus: "",
+    });
+  };
+
+  // Cancel status change
+  const cancelPaymentStatusChange = () => {
+    setPaymentDialogOpen(false);
+    setPendingPaymentStatus({
+      applicantId: null,
+      newStatus: "",
+      currentStatus: "",
+    });
   };
 
   // Helper function to check document status
@@ -369,6 +477,43 @@ const ApplicantTable = ({ programId }) => {
     );
   };
 
+  // Copy emails function
+  const handleCopyEmails = async () => {
+    if (sortedApplicants.length === 0) {
+      setSnackbarMessage("No applicants to copy emails from");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const emails = sortedApplicants
+      .map((applicant) => userDetails[applicant.student]?.email)
+      .filter(Boolean);
+
+    if (emails.length === 0) {
+      setSnackbarMessage("No valid emails found");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const emailString = emails.join(";");
+    const result = await copyToClipboard(emailString);
+
+    if (result.success) {
+      setSnackbarMessage(`${emails.length} emails copied to clipboard`);
+      setSnackbarSeverity("success");
+    } else {
+      setSnackbarMessage(result.error || "Failed to copy emails");
+      setSnackbarSeverity("error");
+    }
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   return (
     <Paper sx={{ padding: "20px", marginTop: "20px" }}>
       <Box
@@ -394,6 +539,15 @@ const ApplicantTable = ({ programId }) => {
             </MenuItem>
           ))}
         </TextField>
+
+        <Button
+          variant="outlined"
+          startIcon={<ContentCopyIcon />}
+          onClick={handleCopyEmails}
+          sx={{ height: "40px" }}
+        >
+          Copy Emails ({sortedApplicants.length})
+        </Button>
       </Box>
 
       <TableContainer>
@@ -428,31 +582,33 @@ const ApplicantTable = ({ programId }) => {
                   }`,
                 },
                 { id: "status", label: "Status" },
+                { id: "payment_status", label: "Payment Status" },
               ].map((column) => (
                 <TableCell
                   key={column.id}
                   style={column.id === "status" ? { width: "80px" } : {}}
                 >
-                  <TableSortLabel
-                    active={orderBy === column.id}
-                    direction={orderBy === column.id ? order : "asc"}
-                    onClick={() => handleRequestSort(column.id)}
-                  >
-                    {column.label}
-                  </TableSortLabel>
+                  {(show_track_payment || column.id != "payment_status") && (
+                    <TableSortLabel
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : "asc"}
+                      onClick={() => handleRequestSort(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  )}
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {sortedApplicants.map((applicant) => {
-              const user = userDetails[applicant.student] || {};
+              const app_user = userDetails[applicant.student] || {};
               const docs = documents[applicant.id] || [];
               const notes = confidentialNotes[applicant.id] || {
                 count: 0,
                 lastUpdated: "N/A",
               };
-
               return (
                 <TableRow
                   key={applicant.id}
@@ -460,9 +616,9 @@ const ApplicantTable = ({ programId }) => {
                   onClick={() => navigate(`/applications/${applicant.id}`)}
                   style={{ cursor: "pointer" }}
                 >
-                  <TableCell>{user.display_name || "N/A"}</TableCell>
-                  <TableCell>{user.username || "N/A"}</TableCell>
-                  <TableCell>{user.email || "N/A"}</TableCell>
+                  <TableCell>{app_user.display_name || "N/A"}</TableCell>
+                  <TableCell>{app_user.username || "N/A"}</TableCell>
+                  <TableCell>{app_user.email || "N/A"}</TableCell>
                   <TableCell>{applicant.date_of_birth}</TableCell>
                   <TableCell>{applicant.gpa}</TableCell>
                   <TableCell>{applicant.major}</TableCell>
@@ -476,8 +632,13 @@ const ApplicantTable = ({ programId }) => {
                       select
                       size="small"
                       value={applicant.status}
+                      disabled={!ALL_AVAILABLE_STATUSES.includes(applicant.status)}
                       onChange={(e) =>
-                        handleStatusSelect(e, applicant.id, applicant.status)
+                        handleApplicationStatusSelect(
+                          e,
+                          applicant.id,
+                          applicant.status
+                        )
                       }
                       onClick={(e) => e.stopPropagation()}
                       sx={{
@@ -507,6 +668,13 @@ const ApplicantTable = ({ programId }) => {
                       )}
                     </TextField>
                   </TableCell>
+                  {show_track_payment && (
+                    <PaymentStatusDropDown
+                      applicant={applicant}
+                      disabled={!user.is_admin}
+                      handlePaymentStatus={handlePaymentStatusSelect}
+                    />
+                  )}
                 </TableRow>
               );
             })}
@@ -520,21 +688,33 @@ const ApplicantTable = ({ programId }) => {
       )}
 
       {/* Confirmation Dialog */}
-      <Dialog open={dialogOpen} onClose={cancelStatusChange}>
+      <Dialog open={dialogOpen} onClose={cancelApplicationStatusChange}>
         <DialogTitle>Confirm Status Change</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to change the status from{" "}
-            <strong>{getStatusLabel(pendingStatus.currentStatus)}</strong> to{" "}
-            <strong>{getStatusLabel(pendingStatus.newStatus)}</strong>?
+            <strong>
+              {getStatusLabel(pendingApplicationStatus.currentStatus)}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {getStatusLabel(pendingApplicationStatus.newStatus)}
+            </strong>
+            ?
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+            {!prereqCheck?.meets_all &&
+            pendingApplicationStatus.newStatus === "Eligible"
+              ? `The selected user is missing the following pre-requisites: ${prereqCheck?.missing}.`
+              : "This will update the applicant's status in the system and may trigger notifications."}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={cancelStatusChange} color="inherit">
+          <Button onClick={cancelApplicationStatusChange} color="inherit">
             Cancel
           </Button>
           <Button
-            onClick={confirmStatusChange}
+            onClick={confirmApplicationStatusChange}
             color="primary"
             variant="contained"
           >
@@ -542,6 +722,48 @@ const ApplicantTable = ({ programId }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={cancelPaymentStatusChange}>
+        <DialogTitle>Confirm Status Change</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to change the status from{" "}
+            <strong>
+              {getPaymentStatusLabel(pendingPaymentStatus.currentStatus)}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {getPaymentStatusLabel(pendingPaymentStatus.newStatus)}
+            </strong>
+            ?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelPaymentStatusChange} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmPaymentStatusChange}
+            color="primary"
+            variant="contained"
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for copy feedback */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

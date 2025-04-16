@@ -4,6 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../utils/axios";
 import DocumentStatusDisplay from "../components/DocumentStatusDisplay";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import {
   STATUS,
   PROGRAM_STATUS,
@@ -148,6 +154,7 @@ const ProgramCard = ({ program, onExpand }) => {
   const [applicationId, setApplicationId] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [expanded, setExpanded] = useState(false);
+  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -228,7 +235,16 @@ const ProgramCard = ({ program, onExpand }) => {
   };
 
   // Get the button click handler.
-  const getButtonHandler = () => () => navigate(`/apply/${program.id}`);
+  const handleApplyClick = () => () => {
+    const hasPrereqs = program.prerequisites && program.prerequisites.length > 0;
+    const needsUlink = hasPrereqs && !user.ulink_username;
+    console.log(user);
+    if (needsUlink) {
+      setUlinkDialogOpen(true);
+      return;
+    }
+    navigate(`/apply/${program.id}`);
+  };
 
   // Render a deadline indicator (only when no application exists).
   const renderDeadlineIndicator = () => {
@@ -266,7 +282,7 @@ const ProgramCard = ({ program, onExpand }) => {
       user?.is_admin;
     return (
       <ApplicationButton
-        onClick={!isDisabledButton ? getButtonHandler() : undefined}
+        onClick={!isDisabledButton ? handleApplyClick() : undefined}
         disabled={isDisabledButton}
         variant={isDisabledButton ? "disabled" : "success"}
       >
@@ -366,6 +382,43 @@ const ProgramCard = ({ program, onExpand }) => {
                 {program.description}
               </p>
             </div>
+
+            {program.prerequisites && program.prerequisites.length > 0 && (
+              <div
+                style={{
+                  marginBottom: "24px",
+                  padding: "16px",
+                  backgroundColor: theme.palette.grey[100],
+                  borderRadius: theme.shape.borderRadii.medium,
+                  boxShadow: theme.customShadows.z1,
+                }}
+              >
+                <h4
+                  style={{
+                    marginBottom: "12px",
+                    color: theme.palette.primary.main,
+                    fontSize: theme.typography.h6.fontSize,
+                    fontWeight: theme.typography.h6.fontWeight,
+                  }}
+                >
+                  Prerequisites
+                </h4>
+                <ul style={{ marginLeft: "20px", paddingLeft: "0" }}>
+                  {program.prerequisites.map((course) => (
+                    <li key={course}>
+                      <span
+                        style={{
+                          color: theme.palette.text.primary,
+                          fontSize: theme.typography.body1.fontSize,
+                        }}
+                      >
+                        {course}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div
               style={{
@@ -476,6 +529,19 @@ const ProgramCard = ({ program, onExpand }) => {
           </div>
         </div>
       )}
+      {/* Ulink Required Dialog */}
+      <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+        <DialogTitle>Ulink Account Required</DialogTitle>
+        <DialogContent>
+          <Typography>You must connect your profile to a Ulink account in order to proceed.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUlinkDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => navigate("/connect-transcript-provider")} variant="contained">
+            Connect Ulink
+          </Button>
+        </DialogActions>
+      </Dialog>
     </StyledProgramCard>
   );
 };

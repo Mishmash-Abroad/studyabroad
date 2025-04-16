@@ -113,13 +113,17 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
                 DEFAULT_QUESTIONS[3]: "I want to explore new cultures and enhance my academic knowledge.",
                 DEFAULT_QUESTIONS[4]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively."
-             }),
+             },
+             "Unpaid",
+             ),
 
             ('tylerharris352', 'Medicine in Canada', 'Enrolled', '2004-09-01', 3.52, 'Biology',
              {
                 "What's your opinion of this program?": "I think it's a quite great program.",
                 "Have you ever did familiar project related to this program?": "I did one project related to this program before."
-             }),
+             },
+             "Unpaid",
+             ),
 
             ('davidclark074', 'Science in Spain', 'Canceled', '2004-06-15', 2.54, 'Psychology',
              {
@@ -128,7 +132,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program aligns with my passion for international relations and global studies.",
                 DEFAULT_QUESTIONS[3]: "I anticipate communication barriers but will overcome them through active learning and collaboration.",
                 DEFAULT_QUESTIONS[4]: "I am excited to network with peers and professionals in this field."
-            }),
+            },
+             "Fully",
+             ),
 
             ('elizabethjohnson303', 'History in Canada', 'Enrolled', '2008-03-20', 3.95, 'Psychology',
              {
@@ -137,7 +143,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "I want to explore new cultures and enhance my academic knowledge.",
                 DEFAULT_QUESTIONS[3]: "This program provides hands-on experience crucial for my future career.",
                 DEFAULT_QUESTIONS[4]: "This program aligns with my passion for international relations and global studies."
-            }),
+            },
+             "Partially",
+             ),
 
             ('jamestaylor121', 'Science in Spain', 'Applied', '2000-02-29', 2.6, 'Psychology',
              {
@@ -146,7 +154,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
                 DEFAULT_QUESTIONS[3]: "I anticipate communication barriers but will overcome them through active learning and collaboration.",
                 DEFAULT_QUESTIONS[4]: "I bring a collaborative spirit and a unique cultural perspective."
-            }),
+            },
+             "Unpaid",
+             ),
 
             ('emilyharris658', 'Science in Spain', 'Withdrawn', '2001-04-12', 3.64, 'Biology',
              {
@@ -155,7 +165,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
                 DEFAULT_QUESTIONS[3]: "I anticipate communication barriers but will overcome them through active learning and collaboration.",
                 DEFAULT_QUESTIONS[4]: "This program aligns with my passion for international relations and global studies."
-             }),
+             },
+             "Partially",
+             ),
 
             ('elizabethlewis588', 'Art in Italy', 'Enrolled', '2000-03-16', 3.1, 'Psychology',
              {
@@ -164,7 +176,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program aligns with my passion for international relations and global studies.",
                 DEFAULT_QUESTIONS[3]: "The opportunity to learn in a different environment is invaluable.",
                 DEFAULT_QUESTIONS[4]: "This program provides hands-on experience crucial for my future career."
-            }),
+            },
+             "Unpaid",
+             ),
 
             ('jessicasmith684', 'Art in Italy', 'Withdrawn', '2008-08-08', 3.0, 'Engineering',
              {
@@ -173,7 +187,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program provides hands-on experience crucial for my future career.",
                 DEFAULT_QUESTIONS[3]: "I adapted to a new job environment by quickly learning the workflows and collaborating effectively.",
                 DEFAULT_QUESTIONS[4]: "This program provides hands-on experience crucial for my future career."
-             }),
+             },
+             "Unpaid",
+             ),
 
             ('jessicasmith684', 'History in Canada', 'Canceled', '2008-08-08', 3.0, 'Engineering',
              {
@@ -182,7 +198,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
                 DEFAULT_QUESTIONS[3]: "I bring a collaborative spirit and a unique cultural perspective.",
                 DEFAULT_QUESTIONS[4]: "The opportunity to learn in a different environment is invaluable."
-             }),
+             },
+             "Unpaid",
+             ),
              
             ('jessicasmith610', 'History in Canada', 'Applied', '2001-07-07', 3.6, 'Computer Science',
              {
@@ -191,7 +209,9 @@ class Command(BaseCommand):
                 DEFAULT_QUESTIONS[2]: "This program supports my career aspirations in global business.",
                 DEFAULT_QUESTIONS[3]: "I want to explore new cultures and enhance my academic knowledge.",
                 DEFAULT_QUESTIONS[4]: "I am excited to network with peers and professionals in this field."
-             }),
+             },
+             "Unpaid",
+             ),
         ]
 
 
@@ -238,7 +258,7 @@ class Command(BaseCommand):
         self.stdout.write('Cleared existing applications and responses')
 
         if prod_mode:
-            for username, program_title, status, dob, gpa, major, questionnaire in prod_applications_data:
+            for username, program_title, status, dob, gpa, major, questionnaire, payment_status in prod_applications_data:
                 try:
                     user = User.objects.get(username=username)
                     program = Program.objects.get(title=program_title)
@@ -249,7 +269,8 @@ class Command(BaseCommand):
                         date_of_birth=datetime.strptime(dob, '%Y-%m-%d').date(),
                         gpa=gpa,
                         major=major,
-                        status=status
+                        status=status,
+                        payment_status=payment_status,
                     )
                     
                     self.stdout.write(f'Created application: {username} -> {program_title} ({status})')

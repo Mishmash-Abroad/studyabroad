@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import { useParams } from "react-router-dom";
 import {
@@ -16,6 +17,10 @@ import { useAuth } from "../context/AuthContext";
 import EssentialDocumentFormSubmission from "../components/EssentialDocumentFormSubmission";
 import DeadlineIndicator from "../components/DeadlineIndicator";
 import StudentLetterRequests from "../components/StudentLetterRequests";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import {
   ALL_STATUSES,
   ALL_ADMIN_EDITABLE_STATUSES,
@@ -26,8 +31,9 @@ import {
   STATUS,
   PROGRAM_STATUS,
   WITHDRAWABLE_APPLICATION_STATUSES,
+  ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
-// import confetti from "canvas-confetti";
+import confetti from "canvas-confetti";
 
 // -------------------- STYLED COMPONENTS --------------------
 const StyledComponents = {
@@ -114,6 +120,7 @@ const ApplicationPage = () => {
   const { program_id } = useParams();
   const { user } = useAuth();
   const [tempGPA, setTempGPA] = useState(0);
+  const navigate = useNavigate();
   // Consolidated state object managing:
   // - program: Study abroad program details
   // - application: Student's application data and status
@@ -159,18 +166,21 @@ const ApplicationPage = () => {
     loading,
     activeTab,
   } = state;
+  const [prereqStatus, setPrereqStatus] = useState(null);
+  const [ulinkDialogOpen, setUlinkDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // useEffect(() => {
-  //   const shouldShowConfetti = localStorage.getItem("showConfetti");
-  //   if (shouldShowConfetti) {
-  //     confetti({
-  //       particleCount: 150,
-  //       spread: 70,
-  //       origin: { y: 0.6 },
-  //     });
-  //     localStorage.removeItem("showConfetti");
-  //   }
-  // }, []);
+  useEffect(() => {
+    const shouldShowConfetti = localStorage.getItem("showConfetti");
+    if (shouldShowConfetti) {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      localStorage.removeItem("showConfetti");
+    }
+  }, []);
 
   // -------------------- DATA FETCHING --------------------
   useEffect(() => {
@@ -193,6 +203,20 @@ const ApplicationPage = () => {
         const existingApp = applicationsRes.data.find(
           (app) => app.program == program_id
         );
+
+        if (programData?.prerequisites?.length > 0) {
+          try {
+            const prereqRes = await axiosInstance.get(
+              `/api/programs/${program_id}/check_prerequisites/?student_id=${user.id}`
+            );
+            setPrereqStatus(prereqRes.data);
+          } catch (err) {
+            console.error("Error checking prerequisites:", err);
+            setPrereqStatus({
+              error: "Unable to determine prerequisite status.",
+            });
+          }
+        }
 
         // Application becomes read-only if:
         // - Past the program's deadline OR
@@ -340,7 +364,31 @@ const ApplicationPage = () => {
       return;
     }
 
-    updateState({ loading: true, error: "" });
+    // Check prerequisites and warn user if prerequisites are not met
+    if (program.prerequisites?.length > 0) {
+      if (!user.ulink_username) {
+        setUlinkDialogOpen(true);
+        return;
+      } else if (prereqStatus) {
+        if (prereqStatus.missing && prereqStatus.meets_all == false) {
+          if (
+            window.confirm(
+              `You are missing the following pre-requisites for this course: ${prereqStatus.missing}. Please contact the faculty leads for this program if you wish to request an exception. Do you want to apply anyway?`
+            )
+          ) {
+            updateState({ loading: true, error: "" });
+          } else {
+            updateState({ error: "User canceled submission action." });
+            return;
+          }
+        }
+      } else {
+        updateState({
+          error: "Please wait while we check your prerequisites.",
+        });
+        return;
+      }
+    }
 
     try {
       // Submit or update application
@@ -387,7 +435,7 @@ const ApplicationPage = () => {
             : axiosInstance.post("/api/responses/", payload);
         })
       );
-      // localStorage.setItem("showConfetti", "true");
+      localStorage.setItem("showConfetti", "true");
       window.location.reload();
     } catch (err) {
       console.error("Application submission error:", err);
@@ -428,6 +476,21 @@ const ApplicationPage = () => {
         error: "Failed to withdraw application",
         loading: false,
       });
+    }
+  };
+
+  const handleRefreshTranscript = async () => {
+    try {
+      await axiosInstance.post(`/api/users/${user.id}/refresh_transcript/`);
+      const prereqRes = await axiosInstance.get(
+        `/api/programs/${program_id}/check_prerequisites/?student_id=${user.id}`
+      );
+      setPrereqStatus(prereqRes.data);
+      setSuccessMessage("Transcript refreshed!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      console.error("Transcript refresh failed:", err);
+      updateState({ error: "Failed to refresh transcript." });
     }
   };
 
@@ -508,8 +571,8 @@ const ApplicationPage = () => {
           >
             <Tab label="Program Details" />
             <Tab label="Application Form" />
-            <Tab label="Required Documents" />
             <Tab label="Letters of Recommendation" />
+            <Tab label="Required Documents" />
           </Tabs>
         </TabContainer>
 
@@ -690,6 +753,25 @@ const ApplicationPage = () => {
                   {application.status || "Not Applied"}
                 </Typography>
               </Box>
+              {ALL_PAYMENT_APPLICATION_STATUSES.includes(application.status) &&
+                program.track_payment && (
+                  <Box>
+                    <Typography variant="subtitle2">Payment Status</Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: getStatusColor,
+                        fontWeight: "medium",
+                      }}
+                    >
+                      {!ALL_PAYMENT_APPLICATION_STATUSES.includes(
+                        application.status
+                      )
+                        ? "N/A"
+                        : application.payment_status}
+                    </Typography>
+                  </Box>
+                )}
             </InfoGrid>
 
             <Typography
@@ -713,6 +795,56 @@ const ApplicationPage = () => {
               {program.description ||
                 "No description provided for this program."}
             </Typography>
+
+            {program?.prerequisites?.length > 0 && (
+              <Box sx={{ mt: 4 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography variant="h6" gutterBottom color="primary">
+                    Prerequisite Status
+                  </Typography>
+                  <Button variant="outlined" onClick={handleRefreshTranscript}>
+                    Refresh Transcript
+                  </Button>
+                </Box>
+                {successMessage && (
+                  <p style={{ color: "green", justifySelf: "right" }}>
+                    {successMessage}
+                  </p>
+                )}
+
+                {prereqStatus ? (
+                  prereqStatus.error ? (
+                    <Typography color="error">{prereqStatus.error}</Typography>
+                  ) : (
+                    <ul>
+                      {program.prerequisites.map((course) => {
+                        const isMet = !prereqStatus?.missing?.includes(course);
+                        return (
+                          <li key={course}>
+                            <Typography
+                              sx={{
+                                color: isMet ? "green" : "red",
+                                fontWeight: isMet ? 500 : 400,
+                              }}
+                            >
+                              {course} – {isMet ? "Complete" : "Missing"}
+                            </Typography>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )
+                ) : (
+                  <Typography>Loading prerequisite information...</Typography>
+                )}
+              </Box>
+            )}
 
             <Box sx={{ mt: 3 }}>
               {!application.id && (
@@ -886,8 +1018,18 @@ const ApplicationPage = () => {
           </form>
         )}
 
-        {/* Required Documents Tab */}
+        {/* Letters of Recommendation Tab */}
         {activeTab === 2 && (
+          <StudentLetterRequests
+            application_id={application.id}
+            applicationStatus={application.status}
+            programDeadline={program.application_deadline}
+            isReadOnly={isReadOnly}
+          />
+        )}
+
+        {/* Required Documents Tab */}
+        {activeTab === 3 && (
           <>
             <DeadlineContainer>
               <DeadlineIndicator
@@ -903,17 +1045,26 @@ const ApplicationPage = () => {
             />
           </>
         )}
-
-        {/* Letters of Recommendation Tab */}
-        {activeTab === 3 && (
-          <StudentLetterRequests
-            application_id={application.id}
-            applicationStatus={application.status}
-            programDeadline={program.application_deadline}
-            isReadOnly={isReadOnly}
-          />
-        )}
       </ContentContainer>
+      {/* Ulink Required Dialog */}
+      <Dialog open={ulinkDialogOpen} onClose={() => setUlinkDialogOpen(false)}>
+        <DialogTitle>Ulink Account Required</DialogTitle>
+        <DialogContent>
+          <Typography>
+            You must connect your profile to a Ulink account in order to
+            proceed.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUlinkDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => navigate("/connect-transcript-provider")}
+            variant="contained"
+          >
+            Connect Ulink
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 };

@@ -32,7 +32,7 @@ django-allauth[socialaccount]
 fido2==1.1.2
 django-otp==1.3.0
 qrcode[pil]
-Pillow==9.0.0  # Add Pillow as the dependency for image handling
+Pillow==10.3.0  # Add Pillow as the dependency for image handling
 
 sentry-sdk[django]
 
@@ -47,3 +47,6 @@ sendgrid==6.10.0
 
 # env var import to django
 python-dotenv
+
+# bs4 for scraping Bletsch's site
+beautifulsoup4

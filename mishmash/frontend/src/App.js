@@ -18,14 +18,15 @@ import MFAOverview from "./mfa/MFAOverview";
 import ActivateTOTP from "./mfa/ActivateTOTP";
 import DeactivateTOTP from "./mfa/DeactivateTOTP";
 import PublicLetterUploadPage from "./pages/PublicLetterUploadPage";
+import UlinkConnection from "./components/UlinkConnection";
 
 function App() {
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  // const [showLoginModal, setShowLoginModal] = useState(false);
 
   return (
     <Router>
       <AuthProvider>
-        <TopNavBar onLoginClick={() => setShowLoginModal(true)} />
+      <TopNavBar/>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
@@ -67,15 +68,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/connect-transcript-provider"
+            element={
+              <ProtectedRoute>
+                <UlinkConnection />
+              </ProtectedRoute>
+            }
+          />
           {/* Redirect any other path to Dashboard */}
           {/* Alexis - I changed this logic TODO might have to change back /dashboard*/}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-
-        {/* Login Modal */}
-        {showLoginModal && (
-          <LoginModal onClose={() => setShowLoginModal(false)} />
-        )}
       </AuthProvider>
     </Router>
   );

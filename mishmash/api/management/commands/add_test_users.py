@@ -93,20 +93,27 @@ class Command(BaseCommand):
         ]
 
         prod_user_data = [
-            ("Tyler Harris", "tylerharris352", "tylerharris352@service.net", "bVByhlT1", False, False, False),
-            ("David Clark", "davidclark074", "davidclark074@service.net", "9mtPZ6M2", False, False, False),
-            ("Elizabeth Johnson", "elizabethjohnson303", "elizabethjohnson303@domain.org", "kTr1guGj", False, False, False),
-            ("James Taylor", "jamestaylor121", "jamestaylor121@service.net", "LBUL23vh", False, False, False),
-            ("Emily Harris", "emilyharris658", "emilyharris658@service.net", "Z1HAX9yj", False, False, False),
-            ("Elizabeth Lewis", "elizabethlewis588", "elizabethlewis588@example.com", "TTSRKJtH", False, False, False),
-            ("Jessica Smith", "jessicasmith684", "jessicasmith684@example.com", "JOVMVjjA", False, False, False),
-            ("James Taylor", "jamestaylor844", "jamestaylor844@service.net", "DdukcK85", False, True, False),
-            ("Jessica Smith", "jessicasmith610", "jessicasmith610@mail.com", "b3zCmWYA", False, False, False),
-            ('Jessica Anderson', 'jessicaanderson409', 'jessicaanderson409@domain.org', 'XKqzZq6l', True, False, True),
-            ('Ashley Brown', 'ashleybrown862', 'ashleybrown862@mail.com', 'bq1qw1Kj', False, False, True),
-            ('Emily Bletsch', 'emilybletsch943', 'emilybletsch943@service.net', 'cWdcUokz', True, False, False),
-            ('Emily Walker', 'emilywalker026', 'emilywalker026@domain.org', 'B366kKuA', True, False, False),
-            ('Sarah Smith', 'sarahsmith682', 'sarahsmith682@domain.org', 'ye6GGoNf', True, False, True),
+            ("Tyler Harris", "tylerharris352", "tylerharris352@service.net", "bVByhlT1", False, False, False, "th352"),
+            ("David Clark", "davidclark074", "davidclark074@service.net", "9mtPZ6M2", False, False, False, "dc74"),
+            ("Elizabeth Johnson", "elizabethjohnson303", "elizabethjohnson303@domain.org", "kTr1guGj", False, False, False, None),
+            ("James Taylor", "jamestaylor121", "jamestaylor121@service.net", "LBUL23vh", False, False, False, None),
+            ("Emily Harris", "emilyharris658", "emilyharris658@service.net", "Z1HAX9yj", False, False, False, None),
+            ("Elizabeth Lewis", "elizabethlewis588", "elizabethlewis588@example.com", "TTSRKJtH", False, False, False, "el58"),
+            ("Jessica Smith", "jessicasmith684", "jessicasmith684@example.com", "JOVMVjjA", False, False, False, None),
+            ("James Taylor", "jamestaylor844", "jamestaylor844@service.net", "DdukcK85", False, True, False, None),
+            ("Jessica Smith", "jessicasmith610", "jessicasmith610@mail.com", "b3zCmWYA", False, False, False, None),
+            ('Jessica Anderson', 'jessicaanderson409', 'jessicaanderson409@domain.org', 'XKqzZq6l', True, False, True, None),
+            ('Ashley Brown', 'ashleybrown862', 'ashleybrown862@mail.com', 'bq1qw1Kj', False, False, True, None),
+            ('Emily Bletsch', 'emilybletsch943', 'emilybletsch943@service.net', 'cWdcUokz', True, False, False, None),
+            ('Emily Walker', 'emilywalker026', 'emilywalker026@domain.org', 'B366kKuA', True, False, False, None),
+            ('Sarah Smith', 'sarahsmith682', 'sarahsmith682@domain.org', 'ye6GGoNf', True, False, True, None),
+        ]
+
+        prod_partners = [
+            ("jamescarter92", "James Carter", "H1j94D-x", "james.carter92@example.com"),
+            ("emilywatson88", "Emily Watson", "Kjs13ski!", "emily.watson88@example.com"),
+            ("danielbrooks77", "Daniel Brooks", "Jsk8k9q+", "daniel.brooks77@example.com"),
+            ("oliviagreen21", "Olivia Green", "A3jsa0-", "olivia.green21@example.com"),
         ]
 
         User.objects.all().delete()
@@ -125,7 +132,7 @@ class Command(BaseCommand):
         self.stdout.write(f'Created admin user: {admin.username} (Superuser: {admin.is_superuser})')
 
         if prod_mode:
-            for display_name, username, email, password, is_faculty, is_reviewer, is_admin in prod_user_data:
+            for display_name, username, email, password, is_faculty, is_reviewer, is_admin, ulink_username in prod_user_data:
                 user = User.objects.create(
                     username=username,
                     password=make_password(password),
@@ -133,9 +140,20 @@ class Command(BaseCommand):
                     email=email,
                     is_faculty=is_faculty,
                     is_reviewer=is_reviewer,
-                    is_admin=is_admin
+                    is_admin=is_admin,
+                    ulink_username=ulink_username,
                 )
                 self.stdout.write(f'Created user: {display_name} - Faculty = {is_faculty}, Reviewer = {is_reviewer}, Administrator = {is_admin}')
+
+            for username, display_name, password, email in prod_partners:
+                user = User.objects.create(
+                    username=username,
+                    password=make_password(password),
+                    display_name=display_name,
+                    email=email,
+                    is_provider_partner=True,
+                )
+                self.stdout.write(f'Created partner: {display_name}')
                 
         else:
             for display_name, username, email, password, is_faculty, is_reviewer, is_admin in students_data:

@@ -9,6 +9,7 @@ from .models import (
     Document,
     ConfidentialNote,
     LetterOfRecommendation,
+    SiteBranding,
 )
 from allauth.socialaccount.models import SocialAccount
 
@@ -26,17 +27,27 @@ class UserSerializer(serializers.ModelSerializer):
             "is_admin",
             "is_faculty",
             "is_reviewer",
+            "is_provider_partner",
             "is_mfa_enabled",
             "is_sso",
             "roles_object",
+            "ulink_username",
         ]
 
 
 class ProgramSerializer(serializers.ModelSerializer):
     faculty_leads = UserSerializer(many=True, read_only=True)
+    provider_partners = UserSerializer(many=True, read_only=True)
     faculty_lead_ids = serializers.PrimaryKeyRelatedField(
         source="faculty_leads",
         queryset=User.objects.filter(is_faculty=True),
+        many=True,
+        write_only=True,
+        required=False,
+    )
+    provider_partner_ids = serializers.PrimaryKeyRelatedField(
+        source="provider_partners",
+        queryset=User.objects.filter(is_provider_partner=True),
         many=True,
         write_only=True,
         required=False,
@@ -53,11 +64,16 @@ class ProgramSerializer(serializers.ModelSerializer):
             "description",
             "faculty_leads",
             "faculty_lead_ids",
+            "provider_partners",
+            "provider_partner_ids",
             "application_open_date",
             "application_deadline",
             "essential_document_deadline",
+            "payment_deadline",
             "start_date",
             "end_date",
+            "track_payment",
+            "prerequisites",
         ]
 
 
@@ -83,6 +99,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "gpa",
             "major",
             "status",
+            "payment_status",
             "applied_on",
         ]
 
@@ -161,13 +178,26 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ["id", "title", "pdf", "uploaded_at", "application", "type", "pdf_url"]
+        fields = [
+            "id", 
+            "title", 
+            "pdf", 
+            "pdf_url", 
+            "uploaded_at", 
+            "application", 
+            "type", 
+            "form_data", 
+            "signature", 
+            "parent_guardian_signature", 
+            "is_electronic", 
+            "last_modified"
+        ]
 
     def get_pdf_url(self, obj):
         """Generate the URL for securely accessing the PDF file."""
         # return only the relative path which will be combined with the baseURL by axios
         if obj.pdf:
-            return f'/api/documents/{obj.id}/secure_file/'
+            return f"/api/documents/{obj.id}/secure_file/"
         return None
 
 
@@ -192,7 +222,7 @@ class LetterOfRecommendationSerializer(serializers.ModelSerializer):
             "pdf_url",
             "is_fulfilled",
             "student_name",
-            "program_title"
+            "program_title",
         ]
         read_only_fields = [
             "id",
@@ -205,23 +235,49 @@ class LetterOfRecommendationSerializer(serializers.ModelSerializer):
             "pdf_url",
             "is_fulfilled",
             "student_name",
-            "program_title"
+            "program_title",
         ]
 
     def get_pdf_url(self, obj):
-        request = self.context.get('request')
-        if request and hasattr(request, 'user'):
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
             user = request.user
             if user.is_admin or user.is_faculty or user.is_reviewer:
                 if obj.pdf and obj.is_fulfilled:
-                    return f'/api/letters/{obj.id}/secure_file/'
+                    return f"/api/letters/{obj.id}/secure_file/"
         return None
-    
+
     def get_student_name(self, obj):
         return obj.application.student.display_name
-    
+
     def get_program_title(self, obj):
         return obj.application.program.title
-    
+
     def get_is_fulfilled(self, obj):
         return obj.is_fulfilled
+
+
+class SiteBrandingSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = SiteBranding
+        fields = [
+            "id", 
+            "site_name", 
+            "primary_color", 
+            "logo", 
+            "logo_url", 
+            "welcome_message"
+        ]
+    
+    def get_logo_url(self, obj):
+        request = self.context.get("request")
+        if obj.logo and hasattr(obj.logo, 'url'):
+            try:
+                # For Docker environment, return a relative URL that will be properly served by Nginx
+                return f"/media/{obj.logo.name}"
+            except Exception as e:
+                print(f"Error generating logo URL: {e}")
+                return None
+        return None
