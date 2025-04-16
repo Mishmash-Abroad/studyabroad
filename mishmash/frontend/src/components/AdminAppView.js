@@ -316,7 +316,7 @@ const AdminAppView = () => {
         </Typography>
 
         {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) &&
-          program.payment_status && (
+          program?.track_payment && (
             <Typography variant="h5" sx={{ mb: 2 }}>
               Current Payment Status: <strong>{paymentStatus}</strong>
             </Typography>
@@ -544,7 +544,7 @@ const AdminAppView = () => {
         </Box>
       </Paper>
       {ALL_PAYMENT_APPLICATION_STATUSES.includes(status) &&
-        program.payment_status && (
+        program?.track_payment && (
           <Paper
             sx={{
               padding: 3,
