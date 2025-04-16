@@ -25,6 +25,7 @@ import {
 } from "../utils/constants";
 import DocumentReview from "./DocumentReview";
 import LetterReview from "./LetterReview";
+import LetterSummary from "./LetterSummary";
 import ProgramForm from "./ProgramForm";
 import { useAuth } from "../context/AuthContext";
 
@@ -419,7 +420,13 @@ const AdminAppView = () => {
         <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
           Letters of Recommendation Review
         </Typography>
-        <LetterReview application_id={id} />
+        {user.is_admin || user.is_faculty ? (
+          /* Full letter review for admins and faculty */
+          <LetterReview application_id={id} />
+        ) : (
+          /* Restricted view for reviewers - only shows counts */
+          <LetterSummary application_id={id} />
+        )}
       </Paper>
 
       {/* Confidential Notes Section */}
