@@ -576,7 +576,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
                     )
             except:
                 raise ValidationError(
-                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"}
+                    {
+                        "detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"
+                    }
                 )
         else:
             request.data["provider_partner_ids"] = []
@@ -692,7 +694,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
             )
         except (TypeError, ValueError):
             raise ValidationError(
-                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"}
+                {
+                    "detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"
+                }
             )
 
         if application_open_date > application_deadline:
@@ -883,7 +887,9 @@ class ProgramViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not (request.user.is_admin or request.user.is_faculty or request.user.is_reviewer) and str(request.user.id) != str(student_id):
+        if not (
+            request.user.is_admin or request.user.is_faculty or request.user.is_reviewer
+        ) and str(request.user.id) != str(student_id):
             return Response(
                 {"detail": "You do not have permission to perform this action.."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -1042,7 +1048,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
         except ValueError:
             return Response(
-                {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"},
+                {
+                    "detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1099,7 +1107,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 new_dob = datetime.strptime(data["date_of_birth"], "%Y-%m-%d").date()
             except ValueError:
                 return Response(
-                    {"detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"},
+                    {
+                        "detail": "Invalid date format or missing date. Use MM-DD-YYYY. Also check whether date exists (i.e. 04-31-2025 is not available)"
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -1261,7 +1271,11 @@ class ApplicationResponseViewSet(viewsets.ModelViewSet):
 
             queryset = queryset.filter(application=application)
 
-        if not self.request.user.is_admin and not self.request.user.is_faculty and not self.request.user.is_reviewer:
+        if (
+            not self.request.user.is_admin
+            and not self.request.user.is_faculty
+            and not self.request.user.is_reviewer
+        ):
             queryset = queryset.filter(application__student=self.request.user)
 
         return queryset
@@ -1448,9 +1462,15 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         new_is_admin = request.data.get("is_admin", user.is_admin)
         new_is_faculty = request.data.get("is_faculty", user.is_faculty)
+        new_is_reviewer = request.data.get("is_reviewer", user.is_reviewer)
         new_is_provider_partner = request.data.get(
             "is_provider_partner", user.is_provider_partner
         )
+
+        if user.is_provider_partner and (
+            new_is_admin or new_is_faculty or new_is_reviewer
+        ):
+            request.data["is_provider_partner"] = False
 
         if not user.is_admin and new_is_admin or new_is_provider_partner:
             # User is being promoted to admin, delete applications
@@ -1473,7 +1493,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 f"Removed {user.username} from faculty leads of {programs.count()} programs"
             )
 
-        if new_is_provider_partner:
+        if not user.is_provider_partner and new_is_provider_partner:
             request.data["is_admin"] = False
             request.data["is_faculty"] = False
             request.data["is_reviewer"] = False
@@ -1717,11 +1737,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
         try:
             provider.connect_account(user, request.data)
-            return Response({"message": "Transcript account linked successfully."}, status=200)
+            return Response(
+                {"message": "Transcript account linked successfully."}, status=200
+            )
         except ValidationError as e:
             return Response({"error": str(e)}, status=400)
         except Exception as e:
-            return Response({"error": f"Error accessing provider: {str(e)}"}, status=502)
+            return Response(
+                {"error": f"Error accessing provider: {str(e)}"}, status=502
+            )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
     def refresh_transcript(self, request, pk=None):
@@ -1734,12 +1758,18 @@ class UserViewSet(viewsets.ModelViewSet):
             transcript_data = provider.fetch_transcript(user)
             user.ulink_transcript = transcript_data
             user.save()
-            return Response({"message": "Transcript updated.", "transcript": transcript_data}, status=200)
+            return Response(
+                {"message": "Transcript updated.", "transcript": transcript_data},
+                status=200,
+            )
         except Exception as e:
-            return Response({
-                "error": f"Transcript refresh failed: {str(e)}",
-                "transcript": user.ulink_transcript or {}
-            }, status=502)
+            return Response(
+                {
+                    "error": f"Transcript refresh failed: {str(e)}",
+                    "transcript": user.ulink_transcript or {},
+                },
+                status=502,
+            )
 
 
 class ConfidentialNoteViewSet(viewsets.ModelViewSet):
@@ -1865,28 +1895,27 @@ class DocumentViewSet(viewsets.ModelViewSet):
         Handle document creation via POST request.
         Supports both PDF file uploads and electronic form submissions.
         """
-        is_electronic = request.data.get('is_electronic') == 'true'
-        
+        is_electronic = request.data.get("is_electronic") == "true"
+
         # For electronic form submissions
         if is_electronic:
             # The PDF data will still be provided, generated from the form
-            if 'pdf' not in request.data:
+            if "pdf" not in request.data:
                 return Response(
-                    {"error": "No PDF file provided for electronic form."}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "No PDF file provided for electronic form."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-                
+
             # Make sure form data is included
-            if 'form_data' not in request.data:
+            if "form_data" not in request.data:
                 return Response(
-                    {"error": "No form data provided for electronic form."}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "No form data provided for electronic form."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
         # For traditional PDF uploads
-        elif 'pdf' not in request.data:
+        elif "pdf" not in request.data:
             return Response(
-                {"error": "No file provided."}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST
             )
 
         return super().create(request, *args, **kwargs)

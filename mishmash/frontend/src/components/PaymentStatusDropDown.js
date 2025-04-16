@@ -3,10 +3,14 @@ import {
   getPaymentStatusLabel,
   ALL_PAYMENT_APPLICATION_STATUSES,
 } from "../utils/constants";
-import { TextField, MenuItem } from "@mui/material";
-const PaymentStatusDropDown = ({ applicant, disabled, handlePaymentStatus }) => {
+import { TextField, MenuItem, TableCell } from "@mui/material";
+const PaymentStatusDropDown = ({
+  applicant,
+  disabled,
+  handlePaymentStatus,
+}) => {
   return (
-    <>
+    <TableCell style={{ padding: "6px 4px" }}>
       {ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status) && (
         <TextField
           select
@@ -38,7 +42,7 @@ const PaymentStatusDropDown = ({ applicant, disabled, handlePaymentStatus }) => 
       {!ALL_PAYMENT_APPLICATION_STATUSES.includes(applicant.status) && (
         <h3> N/A </h3>
       )}
-    </>
+    </TableCell>
   );
 };
 

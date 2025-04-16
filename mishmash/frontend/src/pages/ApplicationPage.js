@@ -565,8 +565,8 @@ const ApplicationPage = () => {
           >
             <Tab label="Program Details" />
             <Tab label="Application Form" />
-            <Tab label="Required Documents" />
             <Tab label="Letters of Recommendation" />
+            <Tab label="Required Documents" />
           </Tabs>
         </TabContainer>
 
@@ -1012,8 +1012,18 @@ const ApplicationPage = () => {
           </form>
         )}
 
-        {/* Required Documents Tab */}
+        {/* Letters of Recommendation Tab */}
         {activeTab === 2 && (
+          <StudentLetterRequests
+            application_id={application.id}
+            applicationStatus={application.status}
+            programDeadline={program.application_deadline}
+            isReadOnly={isReadOnly}
+          />
+        )}
+
+        {/* Required Documents Tab */}
+        {activeTab === 3 && (
           <>
             <DeadlineContainer>
               <DeadlineIndicator
@@ -1028,16 +1038,6 @@ const ApplicationPage = () => {
               documents={documents.submitted || []}
             />
           </>
-        )}
-
-        {/* Letters of Recommendation Tab */}
-        {activeTab === 3 && (
-          <StudentLetterRequests
-            application_id={application.id}
-            applicationStatus={application.status}
-            programDeadline={program.application_deadline}
-            isReadOnly={isReadOnly}
-          />
         )}
       </ContentContainer>
       {/* Ulink Required Dialog */}
