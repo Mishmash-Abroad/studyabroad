@@ -907,8 +907,23 @@ class ProgramViewSet(viewsets.ModelViewSet):
             )
 
         if not student.ulink_transcript:
-            student.ulink_transcript = refresh_ulink_transcript(student.ulink_username)
-            student.save()
+            student.save()  # this will re-attempt to connect ulink for sso users
+
+            provider = UlinkProvider()
+
+            try:
+                print("a")
+                transcript_data = provider.fetch_transcript(student)
+                print("b")
+                student.ulink_transcript = transcript_data
+                student.save()
+                return Response({"message": "Transcript updated.", "transcript": transcript_data}, status=200)
+            except Exception as e:
+                print("we got an error :(")
+                return Response({
+                    "error": f"Transcript refresh failed: {str(e)}",
+                    "transcript": student.ulink_transcript or {}
+                }, status=502)
 
         transcript = student.ulink_transcript
         missing = []
