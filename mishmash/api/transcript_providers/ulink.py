@@ -19,7 +19,6 @@ class UlinkProvider(TranscriptProvider):
         return True
 
     def fetch_transcript(self, user):
-        print("test")
         if not user.ulink_username:
             raise ValidationError("User does not have a linked Ulink account.")
         return refresh_ulink_transcript(user.ulink_username)

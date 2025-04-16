@@ -918,14 +918,11 @@ class ProgramViewSet(viewsets.ModelViewSet):
             provider = UlinkProvider()
 
             try:
-                print("a")
                 transcript_data = provider.fetch_transcript(student)
-                print("b")
                 student.ulink_transcript = transcript_data
                 student.save()
                 return Response({"message": "Transcript updated.", "transcript": transcript_data}, status=200)
             except Exception as e:
-                print("we got an error :(")
                 return Response({
                     "error": f"Transcript refresh failed: {str(e)}",
                     "transcript": student.ulink_transcript or {}
