@@ -143,7 +143,10 @@ const ElectronicMedicalHistoryForm = ({
     consentToMedical: false,
     
     // Signature date
-    signatureDate: new Date().toISOString().split('T')[0]
+    signatureDate: new Date().toISOString().split('T')[0],
+    
+    // Added underAge field
+    underAge: false
   });
   
   // Signature pad ref
@@ -485,7 +488,7 @@ const ElectronicMedicalHistoryForm = ({
       
       // Create form data for upload
       const formDataToSubmit = new FormData();
-      formDataToSubmit.append('title', 'Medical History and Immunization Record');
+      formDataToSubmit.append('title', 'Medical History Form');
       formDataToSubmit.append('pdf', pdfBlob, 'medical_history.pdf');
       formDataToSubmit.append('application', application.id);
       formDataToSubmit.append('type', 'Medical/health history and immunization records');
@@ -494,9 +497,7 @@ const ElectronicMedicalHistoryForm = ({
       const electronicData = {
         ...formData,
         studentSignature: sigPadStudent.current.toDataURL('image/svg+xml'),
-        guardianSignature: formData.underAge && sigPadGuardian.current 
-          ? sigPadGuardian.current.toDataURL('image/svg+xml') 
-          : null
+        guardianSignature: null
       };
       
       formDataToSubmit.append('form_data', JSON.stringify(electronicData));
