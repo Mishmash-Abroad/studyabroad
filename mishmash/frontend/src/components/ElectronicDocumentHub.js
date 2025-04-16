@@ -191,13 +191,16 @@ const ElectronicDocumentHub = ({
   };
   
   // Handle PDF view using blob approach
-  const handleViewDocument = async (docUrl) => {
-    if (!docUrl) {
+  const handleViewDocument = async (submittedDoc) => {
+    if (!submittedDoc || (!submittedDoc.pdf_url && !submittedDoc.file)) {
       setError("Document URL not available");
       return;
     }
 
     try {
+      // Use pdf_url if available (from uploaded documents), otherwise fall back to file
+      const docUrl = submittedDoc.pdf_url || submittedDoc.file;
+      
       const response = await axiosInstance.get(docUrl, {
         responseType: 'blob',
       });
@@ -428,7 +431,7 @@ const ElectronicDocumentHub = ({
                       <Button
                         variant="outlined"
                         color="info"
-                        onClick={() => handleViewDocument(submittedDoc.file)}
+                        onClick={() => handleViewDocument(submittedDoc)}
                       >
                         View Document
                       </Button>
